@@ -2,102 +2,66 @@ import torch
 import torch.nn as nn
 import numpy as np
 from collections import defaultdict
+from stable_baselines3 import PPO
 import time
 
-def actor_saliency(actor_gradients, actor_weights):
-    """
-    Compute importance scores for actor weights.
-    INPUT: gradients from actor loss, actor network weights
-    OUTPUT: importance score tensor (same shape as weights)
+def set_seed(seed):
+    np.random.seed(seed)
+    torch.manual_seed(seed)
 
-    """
-    pass
+class SparsePPOCriterion:
 
-def actor_saliency(actor_gradients, actor_weights):
-    """
-    Compute importance scores for actor weights.
-    INPUT: gradients from actor loss, actor network weights
-    OUTPUT: importance score tensor (same shape as weights)
+    def __init__(self, config, seed):
+        self.config = config
+        self.gradient_history = {}
+        self.masks = {"actor": {}, "critic": ""}
+        self.seed = seed
+
+    def actor_saliency(self, gradient_history, config):
+        """
+        Compute importance scores for actor weights.
+        INPUT: gradient_history (dict of per-weight gradients over time), config
+        OUTPUT: importance score tensor
+        """
+
+        importance_scores = {}
+        for param_name, gradients in gradient_history.items():
+            grad_median = np.median(gradients)
+            grad_std = np.std(gradients)
+
+            importance_scores[param_name] = grad_median / (1 + grad_std)
+        
+        return importance_scores
+
+    def critic_saliency(self, gradient_history, config):
+        """
+        Compute importance scores for critic weights using median + variance.
+        INPUT: gradient_history (dict of per-weight gradients over time), config
+        OUTPUT: importance score tensor
+        """
+        pass
+
+
+    def mask_by_saliency(self, importance_scores, config):
+        """
+        Create mask: keep top (1 - sparsity_ratio)% of weights by importance.
+        INPUT: importance scores, sparsity ratio (e.g., 0.8 = prune 80%)
+        OUTPUT: boolean mask (True = keep, False = prune)
+        """
+        scores_array = np.array(list(importance_scores.values()))
+        importance_score_cutoff = np.nanpercentile(scores_array, (1 - config['dst']['sparsity_ratio']) * 100)
+        mask = {}
+
+        for param_name, score in importance_scores.items():
+            mask[param_name] = 1 if score > importance_score_cutoff else 0
+
+        return mask
     
-    """
-    pass
 
-
-def critic_saliency(critic_gradients, critic_weights):
-    """
-    Compute importance scores for critic weights.
-    INPUT: gradients from critic loss, critic network weights
-    OUTPUT: importance score tensor (same shape as weights)
-    
-    """
-    pass
-
-
-def prune_by_saliency(importance_scores, sparsity_ratio):
-    """
-    Create mask: keep top (1 - sparsity_ratio)% of weights by importance.
-    INPUT: importance scores, target sparsity (e.g., 0.8 = keep 20%)
-    OUTPUT: boolean mask (True = keep, False = prune)
-
-    """
-    pass
-
-
-def apply_mask(weights, mask):
-    """
-    Zero out pruned weights.
-    INPUT: network weights, boolean mask
-    OUTPUT: masked weights (pruned weights = 0)
-    
-    """
-    pass
-
-
-def count_dormant_neurons(activations, threshold=1e-4):
-    """
-    Count neurons with near-zero activations.
-    INPUT: activation values from forward pass, threshold for "dead"
-    OUTPUT: integer count of dormant neurons
-    
-    """
-    pass
-
-
-def regrow_weights(mask, importance_scores, regrow_ratio):
-    """
-    Restore some pruned weights if they become important.
-    INPUT: current mask, latest importance scores, % of pruned to restore
-    OUTPUT: updated mask with some connections restored
-    
-    """
-    pass
-
-
-def dst_step(actor_mask, critic_mask, actor_sal, critic_sal, step, config):
-    """
-    Dynamic sparse training: prune and regrow if scheduled.
-    INPUT: current masks, saliency scores, current step, config dict
-    OUTPUT: updated masks for actor and critic
-
-    """
-    pass
-
-
-def run_ppo_episode(env, actor, critic, actor_mask, critic_mask):
-    """
-    Collect one PPO rollout with masked networks.
-    INPUT: environment, actor network, critic network, masks for both
-    OUTPUT: dict with trajectory data (states, actions, rewards, dones, actor_grads, critic_grads)
-    
-    """
-    pass
-
-
-def compare_baselines(env_name, num_seeds=5):
-    """
-    Run experiment comparing SparsePPO to baselines.
-    INPUT: environment name, number of random seeds
-    OUTPUT: results dict with metrics for all baselines
-    
-    """
-    pass
+    def count_dormant_neurons(self, model, threshold=1e-4):
+        """
+        Count neurons with near-zero activations in actor/critic.
+        INPUT: SB3 model, threshold for "dead"
+        OUTPUT: dict with dormant counts for actor and critic
+        """
+        pass

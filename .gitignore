@@ -1,6 +1,7 @@
+models/
 results/
-outputs/
+logs/
+wandb/
 __pycache__/
 *.pyc
 .DS_Store
-.venv/
