@@ -150,7 +150,7 @@ class Agent(nn.Module):
 
     def apply_masks(self, actor_mask=None, critic_mask=None):
         """Apply masks to actor and critic weights"""
-        if actor_mask is not None:
+        """if actor_mask is not None:
             for name, param in self.actor_mean.named_parameters():
                 if name in actor_mask:
                     param.data *= torch.tensor(actor_mask[name], dtype=param.data.dtype, device=param.device)
@@ -158,7 +158,17 @@ class Agent(nn.Module):
         if critic_mask is not None:
             for name, param in self.critic.named_parameters():
                 if name in critic_mask:
-                    param.data *= torch.tensor(critic_mask[name], dtype=param.data.dtype, device=param.device)
+                    param.data *= torch.tensor(critic_mask[name], dtype=param.data.dtype, device=param.device)"""
+
+        with torch.no_grad():
+            for name, param in self.named_parameters():
+
+                if actor_mask is not None and name in actor_mask:
+                    param.mul_(actor_mask[name].to(param.device))
+
+                """if critic_mask is not None and name in critic_mask:
+                    param.mul_(critic_mask[name].to(param.device))"""
+
 
 if __name__ == "__main__":
     args = tyro.cli(Args)
@@ -190,7 +200,7 @@ if __name__ == "__main__":
     torch.manual_seed(args.seed)
     torch.backends.cudnn.deterministic = args.torch_deterministic
 
-    device = torch.device("cuda" if torch.cuda.is_available() and args.cuda else "cpu")
+    device = torch.device("cpu")
 
     # env setup
     envs = gym.vector.SyncVectorEnv(
@@ -200,6 +210,10 @@ if __name__ == "__main__":
 
     agent = Agent(envs).to(device)
     criterion = SparsePPOCriterion(args, args.seed)
+
+    for name, param in agent.named_parameters():
+        criterion.param_shapes[name] = param.shape
+        
     optimizer = optim.Adam(agent.parameters(), lr=args.learning_rate, eps=1e-5)
 
     # ALGO Logic: Storage setup
@@ -323,21 +337,35 @@ if __name__ == "__main__":
                 loss = pg_loss - args.ent_coef * entropy_loss + v_loss * args.vf_coef
 
                 optimizer.zero_grad()
-
-                # Enable gradient tracking for actor/critic
-                for param in agent.actor_mean.parameters():
-                    param.retain_grad()
-                for param in agent.critic.parameters():
-                    param.retain_grad()
-
                 loss.backward()
 
                 # Store gradients in history
                 for name, param in agent.named_parameters():
-                    if param.grad is not None:
-                        if name not in criterion.gradient_history:
-                            criterion.gradient_history[name] = deque(maxlen=args.gradient_history_window)
-                        criterion.gradient_history[name].append(param.grad.detach().cpu().numpy().flatten())
+                    """if param.grad is not None:
+                        is_actor_grad = "actor" in name
+
+                        # Initialize deque if not exists
+                        if is_actor_grad:
+                            if name not in criterion.gradient_history["actor"]:
+                                criterion.gradient_history["actor"][name] = deque(maxlen=args.gradient_history_window)
+                            criterion.gradient_history["actor"][name].append(param.grad.detach().cpu().numpy().flatten())
+                        else:
+                            if name not in criterion.gradient_history["critic"]:
+                                criterion.gradient_history["critic"][name] = deque(maxlen=args.gradient_history_window)
+                            criterion.gradient_history["critic"][name].append(param.grad.detach().cpu().numpy().flatten())"""
+                    
+                    if param.grad is None:
+                        continue
+
+                    if "actor_mean" in name and "bias" not in name:
+                        criterion.gradient_history["actor"][name].append(
+                            param.grad.detach().clone()
+                        )
+                    elif "critic" in name and "bias" not in name:
+                        criterion.gradient_history["critic"][name].append(
+                            param.grad.detach().clone()
+                        )
+
 
                 nn.utils.clip_grad_norm_(agent.parameters(), args.max_grad_norm)
                 optimizer.step()
@@ -346,10 +374,17 @@ if __name__ == "__main__":
                 break
             
         # DST: Prune and regrow
-        if global_step % config['dst']['prune_interval'] == 0:
-            actor_scores = criterion.actor_saliency(criterion.gradient_history, args)
-            actor_mask = criterion.mask_by_saliency(actor_scores, args)
-            criterion.masks['actor'] = actor_mask
+        if global_step % config["dst"]["prune_interval"] == 0:
+            actor_scores = criterion.actor_saliency(criterion.gradient_history["actor"], args)
+            #critic_scores = criterion.critic_saliency(criterion.gradient_history["critic"], args)
+
+            actor_mask = criterion.mask_by_saliency(actor_scores, args) # remember to add critic_mask back
+            criterion.masks["actor"] = actor_mask
+            #criterion.masks["critic"] = critic_mask
+
+            agent.apply_masks(
+                criterion.masks["actor"]
+            )
 
         y_pred, y_true = b_values.cpu().numpy(), b_returns.cpu().numpy()
         var_y = np.var(y_true)

@@ -21,7 +21,7 @@ training:
 
 dst:
   prune_interval: 500
-  sparsity_ratio: 0.8
+  actor_sparsity_ratio: 0.8
   regrow_ratio: 0.1
   gradient_history_window: 10000
 
