@@ -12,26 +12,28 @@ import torch.optim as optim
 import tyro
 from torch.distributions.normal import Normal
 from torch.utils.tensorboard import SummaryWriter
-from sparseppo import SparsePPOCriterion, set_seed
-from collections import deque
+from collections import defaultdict, deque
 import yaml
+from sparseppo import *
+
 
 with open("configs/default.yaml") as f:
     config = yaml.safe_load(f)
+
 
 @dataclass
 class Args:
     exp_name: str = os.path.basename(__file__)[: -len(".py")]
     """the name of this experiment"""
-    seed: int = 1
+    seed: int = 108
     """seed of the experiment"""
     torch_deterministic: bool = True
     """if toggled, `torch.backends.cudnn.deterministic=False`"""
-    cuda: bool = True
+    cuda: bool = False
     """if toggled, cuda will be enabled by default"""
     track: bool = False
     """if toggled, this experiment will be tracked with Weights and Biases"""
-    wandb_project_name: str = "cleanRL"
+    wandb_project_name: str = config["logging"]["project"]
     """the wandb's project name"""
     wandb_entity: str = None
     """the entity (team) of wandb's project"""
@@ -45,13 +47,13 @@ class Args:
     """the user or org name of the model repository from the Hugging Face Hub"""
 
     # Algorithm specific arguments
-    env_id: str = "HalfCheetah-v4"
+    env_id: str = config["environments"]["Reacher"]["env_id"]
     """the id of the environment"""
-    total_timesteps: int = 1000000
+    total_timesteps: int = config["environments"]["Reacher"]["total_timesteps"]
     """total timesteps of the experiments"""
     learning_rate: float = 3e-4
     """the learning rate of the optimizer"""
-    num_envs: int = 1
+    num_envs: int = config["experiment"]["num_envs"]
     """the number of parallel game environments"""
     num_steps: int = 2048
     """the number of steps to run in each environment per policy rollout"""
@@ -88,9 +90,6 @@ class Args:
     num_iterations: int = 0
     """the number of iterations (computed in runtime)"""
 
-    # DST hyperparameters
-    gradient_history_window: int = 10000
-    """"gradient history window size"""
 
 def make_env(env_id, idx, capture_video, run_name, gamma):
     def thunk():
@@ -99,11 +98,17 @@ def make_env(env_id, idx, capture_video, run_name, gamma):
             env = gym.wrappers.RecordVideo(env, f"videos/{run_name}")
         else:
             env = gym.make(env_id)
-        env = gym.wrappers.FlattenObservation(env)  # deal with dm_control's Dict observation space
+        env = gym.wrappers.FlattenObservation(env)  
         env = gym.wrappers.RecordEpisodeStatistics(env)
         env = gym.wrappers.ClipAction(env)
         env = gym.wrappers.NormalizeObservation(env)
-        env = gym.wrappers.TransformObservation(env, lambda obs: np.clip(obs, -10, 10))
+        
+        env = gym.wrappers.TransformObservation(
+            env, 
+            lambda obs: np.clip(obs, -10.0, 10.0),
+            observation_space=env.observation_space
+        )
+        
         env = gym.wrappers.NormalizeReward(env, gamma=gamma)
         env = gym.wrappers.TransformReward(env, lambda reward: np.clip(reward, -10, 10))
         return env
@@ -122,16 +127,16 @@ class Agent(nn.Module):
         super().__init__()
         self.critic = nn.Sequential(
             layer_init(nn.Linear(np.array(envs.single_observation_space.shape).prod(), 64)),
-            nn.Tanh(),
+            nn.ReLU(),
             layer_init(nn.Linear(64, 64)),
-            nn.Tanh(),
+            nn.ReLU(),
             layer_init(nn.Linear(64, 1), std=1.0),
         )
         self.actor_mean = nn.Sequential(
             layer_init(nn.Linear(np.array(envs.single_observation_space.shape).prod(), 64)),
-            nn.Tanh(),
+            nn.ReLU(),
             layer_init(nn.Linear(64, 64)),
-            nn.Tanh(),
+            nn.ReLU(),
             layer_init(nn.Linear(64, np.prod(envs.single_action_space.shape)), std=0.01),
         )
         self.actor_logstd = nn.Parameter(torch.zeros(1, np.prod(envs.single_action_space.shape)))
@@ -148,26 +153,7 @@ class Agent(nn.Module):
             action = probs.sample()
         return action, probs.log_prob(action).sum(1), probs.entropy().sum(1), self.critic(x)
 
-    def apply_masks(self, actor_mask=None, critic_mask=None):
-        """Apply masks to actor and critic weights"""
-        """if actor_mask is not None:
-            for name, param in self.actor_mean.named_parameters():
-                if name in actor_mask:
-                    param.data *= torch.tensor(actor_mask[name], dtype=param.data.dtype, device=param.device)
-
-        if critic_mask is not None:
-            for name, param in self.critic.named_parameters():
-                if name in critic_mask:
-                    param.data *= torch.tensor(critic_mask[name], dtype=param.data.dtype, device=param.device)"""
-
-        with torch.no_grad():
-            for name, param in self.named_parameters():
-
-                if actor_mask is not None and name in actor_mask:
-                    param.mul_(actor_mask[name].to(param.device))
-
-                """if critic_mask is not None and name in critic_mask:
-                    param.mul_(critic_mask[name].to(param.device))"""
+    
 
 
 if __name__ == "__main__":
@@ -209,11 +195,10 @@ if __name__ == "__main__":
     assert isinstance(envs.single_action_space, gym.spaces.Box), "only continuous action space is supported"
 
     agent = Agent(envs).to(device)
-    criterion = SparsePPOCriterion(args, args.seed)
 
-    for name, param in agent.named_parameters():
-        criterion.param_shapes[name] = param.shape
-        
+    criterion = SparsePPOCriterion(config, args.seed)
+    criterion.initialize_module_sparsity(agent, ["actor"], config["dst"]["actor_sparsity_ratio"])
+
     optimizer = optim.Adam(agent.parameters(), lr=args.learning_rate, eps=1e-5)
 
     # ALGO Logic: Storage setup
@@ -242,9 +227,6 @@ if __name__ == "__main__":
             global_step += args.num_envs
             obs[step] = next_obs
             dones[step] = next_done
-            
-            # Applying binary mask
-            agent.apply_masks(criterion.masks["actor"], criterion.masks["critic"])
 
             # ALGO LOGIC: action logic
             with torch.no_grad():
@@ -339,33 +321,12 @@ if __name__ == "__main__":
                 optimizer.zero_grad()
                 loss.backward()
 
-                # Store gradients in history
                 for name, param in agent.named_parameters():
-                    """if param.grad is not None:
-                        is_actor_grad = "actor" in name
-
-                        # Initialize deque if not exists
-                        if is_actor_grad:
-                            if name not in criterion.gradient_history["actor"]:
-                                criterion.gradient_history["actor"][name] = deque(maxlen=args.gradient_history_window)
-                            criterion.gradient_history["actor"][name].append(param.grad.detach().cpu().numpy().flatten())
+                    if name in criterion.masks and param.grad is not None:
+                        if name not in criterion.saved_gradients:
+                            criterion.saved_gradients[name] = param.grad.clone()
                         else:
-                            if name not in criterion.gradient_history["critic"]:
-                                criterion.gradient_history["critic"][name] = deque(maxlen=args.gradient_history_window)
-                            criterion.gradient_history["critic"][name].append(param.grad.detach().cpu().numpy().flatten())"""
-                    
-                    if param.grad is None:
-                        continue
-
-                    if "actor_mean" in name and "bias" not in name:
-                        criterion.gradient_history["actor"][name].append(
-                            param.grad.detach().clone()
-                        )
-                    elif "critic" in name and "bias" not in name:
-                        criterion.gradient_history["critic"][name].append(
-                            param.grad.detach().clone()
-                        )
-
+                            criterion.saved_gradients[name] += param.grad
 
                 nn.utils.clip_grad_norm_(agent.parameters(), args.max_grad_norm)
                 optimizer.step()
@@ -374,17 +335,11 @@ if __name__ == "__main__":
                 break
             
         # DST: Prune and regrow
-        if global_step % config["dst"]["prune_interval"] == 0:
-            actor_scores = criterion.actor_saliency(criterion.gradient_history["actor"], args)
-            #critic_scores = criterion.critic_saliency(criterion.gradient_history["critic"], args)
+        if iteration % config["dst"]["prune_interval"] == 0:
+            criterion.update_sparsity_masks(agent, config)
 
-            actor_mask = criterion.mask_by_saliency(actor_scores, args) # remember to add critic_mask back
-            criterion.masks["actor"] = actor_mask
-            #criterion.masks["critic"] = critic_mask
-
-            agent.apply_masks(
-                criterion.masks["actor"]
-            )
+        if iteration >= config["dst"]["prune_interval"]:
+            print(f"Actor Sparsity: {criterion.calculate_sparsity(agent, ["actor_mean"])}")
 
         y_pred, y_true = b_values.cpu().numpy(), b_returns.cpu().numpy()
         var_y = np.var(y_true)

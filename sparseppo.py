@@ -3,7 +3,12 @@ import torch.nn as nn
 import numpy as np
 from collections import defaultdict, deque
 from stable_baselines3 import PPO
-import time
+import copy
+import yaml
+
+with open("configs/default.yaml") as f:
+    config = yaml.safe_load(f)
+
 
 def set_seed(seed):
     np.random.seed(seed)
@@ -13,30 +18,58 @@ class SparsePPOCriterion:
 
     def __init__(self, config, seed):
         self.config = config
-        self.gradient_history = {
-            "actor": defaultdict(lambda: deque(maxlen=config["dst"]["gradient_history_window"])),
-            "critic": defaultdict(lambda: deque(maxlen=config["dst"]["gradient_history_window"]))
-        }
-        self.masks = {"actor": {}, "critic": {}}
-        self.param_shapes = {}
+        self.masks = {}
+        self.saved_gradients = {}
+        self.saliency_scores = {}
+        self.device = torch.device("cpu")
         self.seed = seed
+    
+    def initialize_module_sparsity(self, agent, target_modules, sparsity_ratio):
+        for name, param in agent.named_parameters():
+            if any(module_key in name for module_key in target_modules) and name.endswith(".weight"):
+                random_matrix = torch.rand_like(param, device=self.device)
 
-    def actor_saliency(self, gradient_history, config):
+                num_active = int(param.numel() * (1.0 - sparsity_ratio))
+                threshold = torch.kthvalue(random_matrix.flatten(), param.numel() - num_active + 1).values
+                self.masks[name] = (random_matrix >= threshold).float()
+
+                self.saliency_scores[name] = torch.zeros_like(param, device=self.device)
+                self.saved_gradients[name] = torch.zeros_like(param, device=self.device)
+
+                with torch.no_grad():
+                    param.mul_(self.masks[name])
+
+
+    def actor_saliency(self, agent, config):
         """
         Compute importance scores for actor weights.
         INPUT: gradient_history (dict of per-weight gradients over time), config
         OUTPUT: importance score tensor
         """
 
-        actor_importance_scores = {}
-        for param_name, gradients in gradient_history.items():
-            history = torch.stack(list(gradients))
-            grad_median = torch.median(torch.abs(history), dim=0).values
-            grad_var = torch.var(history, dim=0)
+        named_params = dict(agent.named_parameters())
 
-            actor_importance_scores[param_name] = grad_median / (1 + grad_var)
-        
-        return actor_importance_scores
+        for name in self.masks.keys():
+            if name not in named_params:
+                continue
+
+            weights = named_params[name]
+            gradients = self.saved_gradients[name]
+            mask = self.masks[name]
+
+            abs_w = torch.abs(weights)
+            abs_g = torch.abs(gradients)
+
+            relu_safeguard = (weights < 0) & (abs_w > abs_g)
+
+            dom_score_numerator = abs_w - abs_g
+            dom_score_denominator = abs_w + abs_g + config["dst"]["actor_eplison"]
+            xor_boost = 1 + torch.pow(dom_score_numerator / dom_score_denominator, 2)
+            other_weights_branch = (abs_w * abs_g) * xor_boost
+
+            raw_scores = torch.where(relu_safeguard, (abs_w * abs_g), other_weights_branch)
+            self.saliency_scores[name] = raw_scores * mask
+            
 
     def critic_saliency(self, gradient_history, config):
         """
@@ -45,54 +78,59 @@ class SparsePPOCriterion:
         OUTPUT: importance score tensor
         """
         pass
-
-
-    def mask_by_saliency(self, actor_importance_scores, config): # add back critic_importance_scores
-        """
-        Create mask: keep top (1 - sparsity_ratio)% of weights by importance.
-        INPUT: importance scores, sparsity ratio (e.g., 0.8 = prune 80%)
-        OUTPUT: boolean mask (True = keep, False = prune)
-        """
-        """actor_scores_array = np.array(list(actor_importance_scores.values()))
-        actor_importance_score_cutoff = np.nanpercentile(actor_scores_array, (1 - config['dst']['sparsity_ratio']) * 100)
-        actor_mask = {}
-
-        for param_name, score in actor_importance_scores.items():
-            mask_value = 1 if score > actor_importance_score_cutoff else 0
-            actor_mask[param_name] = np.full(self.param_shapes[param_name], mask_value)
-
-        """"""critic_scores_array = np.array(list(critic_importance_scores.values()))
-        critic_importance_score_cutoff = np.nanpercentile(critic_scores_array, (1 - config['dst']['sparsity_ratio']) * 100)
-        critic_mask = {}
-
-        for param_name, score in critic_importance_scores.items():
-            mask_value = 1 if score > critic_importance_score_cutoff else 0
-            critic_mask[param_name] = np.full(self.param_shapes[param_name], mask_value)""""""
-
-        return actor_mask # remember to add critic_mask back""" 
-
-        actor_prune_ratio = config["dst"]["actor_prune_ratio"]
-
-        all_actor_scores = torch.cat(
-            [   
-                actor_score.flatten()
-                for actor_score in actor_importance_scores.values()
-            ]
-        )
-
-        actor_threshold = torch.quantile(all_actor_scores, actor_prune_ratio)
-
-        actor_mask = {}
-        for param_name, importance_scores in actor_importance_scores.items():
-            if "bias" in param_name or "logstd" in param_name:
-                continue
-
-            mask = (importance_scores >= actor_threshold).float()
-
-            actor_mask[param_name] = mask
-        
-        return actor_mask
     
+    def update_sparsity_masks(self, agent, config):
+        self.actor_saliency(agent, config)
+        all_actor_active_scores = []
+
+        for name in self.masks.keys():
+            actor_scores = self.saliency_scores[name]
+            actor_mask = self.masks[name]
+
+            active_actor_scores_in_layer = actor_scores[actor_mask==1]
+            all_actor_active_scores.append(active_actor_scores_in_layer)
+
+        global_active_actor_pool = torch.cat(all_actor_active_scores)
+
+        num_actor_to_mask = int(len(global_active_actor_pool) * config["dst"]["regrow_ratio"])
+        global_actor_mask_threshold = torch.kthvalue(global_active_actor_pool, 
+                                                    num_actor_to_mask).values
+
+        all_actor_inactive_scores = []
+
+        for name in self.masks.keys():
+            actor_gradients = self.saved_gradients[name]
+            actor_mask = self.masks[name]
+
+            inactive_actor_grads_in_layer = torch.abs(actor_gradients)[actor_mask == 0.0]
+            all_actor_inactive_scores.append(inactive_actor_grads_in_layer)
+
+        global_actor_inactive_pool = torch.cat(all_actor_inactive_scores)
+        num_actor_to_regrow = num_actor_to_mask
+
+        global_actor_regrow_threshold = torch.kthvalue(global_actor_inactive_pool, 
+                                                        len(global_actor_inactive_pool) - num_actor_to_regrow + 1).values
+        
+
+        with torch.no_grad():
+            for name in self.masks.keys():
+                actor_scores = self.saliency_scores[name]
+                actor_abs_grads = torch.abs(self.saved_gradients[name])
+                actor_mask = self.masks[name]
+                
+                # Global Actor Mask Condition
+                actor_mask_condition = (actor_scores <= global_actor_mask_threshold) & (actor_mask == 1.0)
+                actor_mask[actor_mask_condition] = 0.0
+                
+                # Global Actor Regrow Condition
+                actor_regrow_condition = (actor_abs_grads >= global_actor_regrow_threshold) & (actor_mask == 0.0)
+                actor_mask[actor_regrow_condition] = 1.0
+                
+                # Update Agent's Actor Weights
+                named_params = dict(agent.named_parameters())
+                named_params[name].data *= actor_mask
+            
+
 
     def count_dormant_neurons(self, model, threshold=1e-4):
         """
@@ -101,3 +139,14 @@ class SparsePPOCriterion:
         OUTPUT: dict with dormant counts for actor and critic
         """
         pass
+
+    def calculate_sparsity(self, agent, module):
+        total_weights = 0
+        total_inactive_weights = 0
+
+        for name, param in agent.named_parameters():
+            if module in name and name.endswith(".weight"):
+                total_weights += self.masks[name].numel()
+                total_inactive_weights += (self.masks[name] == 0).sum().item()
+
+        return total_inactive_weights / total_weights

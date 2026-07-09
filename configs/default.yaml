@@ -4,29 +4,29 @@ experiment:
   num_envs: 4
 
 environments:
-  Reacher-v5:
+  Reacher:
+    env_id: "Reacher-v5"
     total_timesteps: 500000
 
-  Swimmer-v5:
+  Swimmer:
+    env_id: "Swimmer-v5"
     total_timesteps: 1000000
 
-  Hopper-v5:
+  Hopper:
+    env_id: "Hopper-v5"
     total_timesteps: 3000000
 
 training:
   learning_rate: 3e-4
   batch_size: 64
   n_steps: 2048
-  n_epochs: 10
+  n_epochs: int = 10
 
 dst:
-  prune_interval: 500
+  prune_interval: 2048
   actor_sparsity_ratio: 0.8
+  actor_eplison: 1e-8
   regrow_ratio: 0.1
-  gradient_history_window: 10000
-
-algorithm:
-  actor_saliency: median_var # gradient median and variance
 
 logging:
-  project: sparseppo 
+  project: str = sparse-ppo-drl-"research" 
