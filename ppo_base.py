@@ -15,6 +15,7 @@ from torch.utils.tensorboard import SummaryWriter
 from collections import defaultdict, deque
 import yaml
 from sparseppo import *
+import psutil
 
 
 with open("configs/default.yaml") as f:
@@ -89,6 +90,8 @@ class Args:
     """the mini-batch size (computed in runtime)"""
     num_iterations: int = 0
     """the number of iterations (computed in runtime)"""
+    prune_interval: int = 0
+    """the number of times the pruning algorithm runs (computed in runtime)"""
 
 
 def make_env(env_id, idx, capture_video, run_name, gamma):
@@ -153,14 +156,19 @@ class Agent(nn.Module):
             action = probs.sample()
         return action, probs.log_prob(action).sum(1), probs.entropy().sum(1), self.critic(x)
 
+def make_activation_hook(layer_name, activation_logs):
+    def hook(module, input, output):
+        activation_logs[layer_name] = torch.mean(torch.abs(output), dim=0)
     
-
+    return hook
 
 if __name__ == "__main__":
     args = tyro.cli(Args)
     args.batch_size = int(args.num_envs * args.num_steps)
     args.minibatch_size = int(args.batch_size // args.num_minibatches)
     args.num_iterations = args.total_timesteps // args.batch_size
+    args.prune_interval = config["dst"]["grad_steps"] // (args.num_minibatches * args.update_epochs)
+
     run_name = f"{args.env_id}__{args.exp_name}__{args.seed}__{int(time.time())}"
     if args.track:
         import wandb
@@ -195,8 +203,13 @@ if __name__ == "__main__":
     assert isinstance(envs.single_action_space, gym.spaces.Box), "only continuous action space is supported"
 
     agent = Agent(envs).to(device)
+    
+    layer_abs_activations = {}
+    agent.actor_mean[1].register_forward_hook(make_activation_hook("actor_layer_1_relu", layer_abs_activations))
+    agent.actor_mean[3].register_forward_hook(make_activation_hook("actor_layer_2_relu", layer_abs_activations))
 
     criterion = SparsePPOCriterion(config, args.seed)
+    criterion.register_rank_hooks(agent, writer)
     criterion.initialize_module_sparsity(agent, ["actor"], config["dst"]["actor_sparsity_ratio"])
 
     optimizer = optim.Adam(agent.parameters(), lr=args.learning_rate, eps=1e-5)
@@ -216,6 +229,11 @@ if __name__ == "__main__":
     next_obs = torch.Tensor(next_obs).to(device)
     next_done = torch.zeros(args.num_envs).to(device)
 
+    pruning_events_count = 0
+
+    start_time = time.time()
+    process = psutil.Process(os.getpid())
+
     for iteration in range(1, args.num_iterations + 1):
         # Annealing the rate if instructed to do so.
         if args.anneal_lr:
@@ -225,6 +243,7 @@ if __name__ == "__main__":
 
         for step in range(0, args.num_steps):
             global_step += args.num_envs
+            criterion.current_step = global_step
             obs[step] = next_obs
             dones[step] = next_done
 
@@ -244,9 +263,21 @@ if __name__ == "__main__":
             if "final_info" in infos:
                 for info in infos["final_info"]:
                     if info and "episode" in info:
-                        print(f"global_step={global_step}, episodic_return={info['episode']['r']}")
-                        writer.add_scalar("charts/episodic_return", info["episode"]["r"], global_step)
-                        writer.add_scalar("charts/episodic_length", info["episode"]["l"], global_step)
+                        r = info['episode']['r'].item() if hasattr(info['episode']['r'], 'item') else info['episode']['r']
+                        l = info['episode']['l'].item() if hasattr(info['episode']['l'], 'item') else info['episode']['l']
+                        print(f"Success! global_step={global_step}, episodic_return={float(r)}")
+                        writer.add_scalar("charts/episodic_return", float(r), global_step)
+                        writer.add_scalar("charts/episodic_length", float(l), global_step)
+            
+            elif isinstance(infos, dict) and "episode" in infos:
+                # Find which environments in the batch just finished
+                for env_idx in range(len(infos["episode"]["r"])):
+                    if infos["_episode"][env_idx]: 
+                        r = infos["episode"]["r"][env_idx]
+                        l = infos["episode"]["l"][env_idx]
+                        print(f"--> SUCCESS (FALLBACK)! global_step={global_step}, episodic_return={float(r)}")
+                        writer.add_scalar("charts/episodic_return", float(r), global_step)
+                        writer.add_scalar("charts/episodic_length", float(l), global_step)
 
         # bootstrap value if not done
         with torch.no_grad():
@@ -271,10 +302,14 @@ if __name__ == "__main__":
         b_advantages = advantages.reshape(-1)
         b_returns = returns.reshape(-1)
         b_values = values.reshape(-1)
+        current_rollout_batch = (b_obs, b_actions, b_logprobs, b_advantages)
 
         # Optimizing the policy and value network
         b_inds = np.arange(args.batch_size)
         clipfracs = []
+
+        criterion.gradient_count = defaultdict(int)
+        
         for epoch in range(args.update_epochs):
             np.random.shuffle(b_inds)
             for start in range(0, args.batch_size, args.minibatch_size):
@@ -321,25 +356,92 @@ if __name__ == "__main__":
                 optimizer.zero_grad()
                 loss.backward()
 
+                
                 for name, param in agent.named_parameters():
                     if name in criterion.masks and param.grad is not None:
-                        if name not in criterion.saved_gradients:
+                        if criterion.gradient_count[name] == 0:
                             criterion.saved_gradients[name] = param.grad.clone()
                         else:
-                            criterion.saved_gradients[name] += param.grad
+                            criterion.saved_gradients[name] += param.grad.clone()
+                        
+                        criterion.gradient_count[name] += 1
 
                 nn.utils.clip_grad_norm_(agent.parameters(), args.max_grad_norm)
                 optimizer.step()
 
             if args.target_kl is not None and approx_kl > args.target_kl:
                 break
-            
-        # DST: Prune and regrow
-        if iteration % config["dst"]["prune_interval"] == 0:
-            criterion.update_sparsity_masks(agent, config)
+        
+        # Normalize before pruning
+        for name in criterion.saved_gradients:
+            criterion.saved_gradients[name] /= criterion.gradient_count[name]
 
-        if iteration >= config["dst"]["prune_interval"]:
-            print(f"Actor Sparsity: {criterion.calculate_sparsity(agent, ["actor_mean"])}")
+        # DST: Prune and regrow        
+        if iteration % args.prune_interval == 0:
+            old_masks = {name: mask.clone() for name, mask in criterion.masks.items()}
+            batch = criterion.get_random_batch(current_rollout_batch, args.batch_size)
+
+            criterion.update_agent(agent, batch, config)
+            criterion.saved_gradients = {}
+            criterion.gradient_count = defaultdict(int)
+
+            pruning_events_count += 1
+
+            writer.add_scalar("dst/pruning_events", pruning_events_count, global_step)
+
+            regrowth_count = 0
+            if old_masks:
+                for name, current_mask in criterion.masks.items():
+                    if name in old_masks:
+                        # Regrown means it was 0 in old_mask but is now 1 in current_mask
+                        regrowth_count += torch.sum((old_masks[name] == 0) & (current_mask == 1)).item()
+
+            writer.add_scalar("dst/regrowth_count", regrowth_count, global_step)
+            
+        if iteration >= args.prune_interval and iteration % args.prune_interval == 0:
+            print(f"Actor Sparsity: {criterion.calculate_sparsity(agent, "actor_mean")}")
+
+            current_actor_sparsity = criterion.calculate_sparsity(agent, "actor_mean")
+            writer.add_scalar("dst/sparsity_ratio_actor", current_actor_sparsity, global_step)
+
+            layer_mapping = {
+                "actor_layer_1_relu": "actor_mean.0.weight",
+                "actor_layer_2_relu": "actor_mean.2.weight"
+            }
+
+            total_dormant_neurons = 0
+            for hook_name, weight_key in layer_mapping.items():
+                neuron_abs_acts = layer_abs_activations[hook_name]
+
+                unmasked_neuron_flags = torch.any(criterion.masks[weight_key] == 1, dim=1)
+                active_layer_avg_abs = torch.mean(neuron_abs_acts[unmasked_neuron_flags])
+
+                dormant_neuron_ratios = neuron_abs_acts / (active_layer_avg_abs + 1e-8)
+                dormant_neuron_flags = (dormant_neuron_ratios < config["logging"]["dormant_threshold"]) & unmasked_neuron_flags
+                dormant_count = torch.sum(dormant_neuron_flags).item()
+                total_dormant_neurons += dormant_count
+
+                print(f"Dormant in Layer: {dormant_count}")
+                print(f"Total Dormant:{total_dormant_neurons}")
+
+                writer.add_scalar(f"dst/redo_dormant_neurons_{hook_name}", dormant_count, global_step)
+                writer.add_scalar(f"activations/layer_avg_abs_{hook_name}", active_layer_avg_abs.item(), global_step)
+            
+            # Track total elapsed wall-clock time
+            elapsed_time = time.time() - start_time
+            writer.add_scalar("meta/wall_clock_time", elapsed_time, global_step)
+
+            # Track System RAM Usage (in Megabytes)
+            ram_usage = process.memory_info().rss / (1024 * 1024)
+            writer.add_scalar("meta/ram_usage_mb", ram_usage, global_step)
+
+            writer.add_scalar("dst/dormant_neurons_actor", total_dormant_neurons, global_step)
+            
+            # Compute Dead Connection Ratio of Actor
+            writer.add_scalar("dst/global_actor_sparsity", compute_dead_connection(criterion), global_step)
+
+            # Compute Gradient Norm of Actor
+            writer.add_scalar("loss/actor_grad_norm", compute_gradient_norm(agent))
 
         y_pred, y_true = b_values.cpu().numpy(), b_returns.cpu().numpy()
         var_y = np.var(y_true)

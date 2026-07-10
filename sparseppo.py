@@ -63,7 +63,7 @@ class SparsePPOCriterion:
             relu_safeguard = (weights < 0) & (abs_w > abs_g)
 
             dom_score_numerator = abs_w - abs_g
-            dom_score_denominator = abs_w + abs_g + config["dst"]["actor_eplison"]
+            dom_score_denominator = abs_w + abs_g + config["dst"]["actor_epsilon"]
             xor_boost = 1 + torch.pow(dom_score_numerator / dom_score_denominator, 2)
             other_weights_branch = (abs_w * abs_g) * xor_boost
 
@@ -79,6 +79,45 @@ class SparsePPOCriterion:
         """
         pass
     
+    def get_random_batch(rollout_buffer, batch_size):
+        buffer_size = rollout_buffer["obs"].shape[0]
+        random_indices = torch.randint(0, buffer_size, (batch_size,))
+        
+        batch = (
+            rollout_buffer["obs"][random_indices],
+            rollout_buffer["actions"][random_indices],
+            rollout_buffer["logprobs"][random_indices],
+            rollout_buffer["advantages"][random_indices]
+        )
+    
+        return batch
+    
+    def compute_actor_loss(self, agent, batch, config):
+        """Computes PPO actor policy loss"""
+        b_obs, b_actions, b_logprobs, b_advantages = batch[:4]
+
+        _, newlogprob, entropy, _ = agent.get_action_and_value(
+            b_obs, b_actions, force_dense=True
+        )
+        
+        logratio = newlogprob - b_logprobs
+        ratio = logratio.exp()
+        
+        if config["dst"].get("norm_adv", True):
+            b_advantages = (b_advantages - b_advantages.mean()) / (b_advantages.std() + 1e-8)
+            
+        clip_coef = config["dst"].get("clip_coef", 0.2)
+        pg_loss1 = -b_advantages * ratio
+        pg_loss2 = -b_advantages * torch.clamp(ratio, 1 - clip_coef, 1 + clip_coef)
+        pg_loss = torch.max(pg_loss1, pg_loss2).mean()
+        
+        ent_coef = config["dst"].get("ent_coef", 0.01)
+        entropy_loss = entropy.mean()
+        
+        actor_loss = pg_loss - ent_coef * entropy_loss
+        
+        return actor_loss
+    
     def update_sparsity_masks(self, agent, config):
         self.actor_saliency(agent, config)
         all_actor_active_scores = []
@@ -87,7 +126,7 @@ class SparsePPOCriterion:
             actor_scores = self.saliency_scores[name]
             actor_mask = self.masks[name]
 
-            active_actor_scores_in_layer = actor_scores[actor_mask==1]
+            active_actor_scores_in_layer = actor_scores[actor_mask == 1.0]
             all_actor_active_scores.append(active_actor_scores_in_layer)
 
         global_active_actor_pool = torch.cat(all_actor_active_scores)
@@ -111,35 +150,42 @@ class SparsePPOCriterion:
         global_actor_regrow_threshold = torch.kthvalue(global_actor_inactive_pool, 
                                                         len(global_actor_inactive_pool) - num_actor_to_regrow + 1).values
         
-
+        named_params = dict(agent.named_parameters())
         with torch.no_grad():
             for name in self.masks.keys():
                 actor_scores = self.saliency_scores[name]
                 actor_abs_grads = torch.abs(self.saved_gradients[name])
                 actor_mask = self.masks[name]
                 
+                original_actor_mask = actor_mask.clone()
                 # Global Actor Mask Condition
-                actor_mask_condition = (actor_scores <= global_actor_mask_threshold) & (actor_mask == 1.0)
+                actor_mask_condition = (actor_scores <= global_actor_mask_threshold) & (original_actor_mask == 1.0)
                 actor_mask[actor_mask_condition] = 0.0
                 
                 # Global Actor Regrow Condition
-                actor_regrow_condition = (actor_abs_grads >= global_actor_regrow_threshold) & (actor_mask == 0.0)
+                actor_regrow_condition = (actor_abs_grads >= global_actor_regrow_threshold) & (original_actor_mask == 0.0)
                 actor_mask[actor_regrow_condition] = 1.0
                 
                 # Update Agent's Actor Weights
-                named_params = dict(agent.named_parameters())
-                named_params[name].data *= actor_mask
-            
+                if name in named_params:
+                    named_params[name].mul_(actor_mask)
 
+    def update_agent(self, agent, batch, config):
+        b_obs, b_actions, b_logprobs, b_advantages = batch # problem this is the entire rollout so it will not likely work
 
-    def count_dormant_neurons(self, model, threshold=1e-4):
-        """
-        Count neurons with near-zero activations in actor/critic.
-        INPUT: SB3 model, threshold for "dead"
-        OUTPUT: dict with dormant counts for actor and critic
-        """
-        pass
+        target_module = getattr(agent, "actor_mean", agent)
+        actor_outputs = target_module(states)
+        loss = self.compute_actor_loss(agent, batch, config)
 
+        target_module.zero_grad()
+        loss.backward()
+
+        for name, param in target_module.named_parameters():
+            if name in self.masks:
+                self.saved_gradients[name] = param.grad.clone()
+
+        self.update_sparsity_masks(agent, config)
+    
     def calculate_sparsity(self, agent, module):
         total_weights = 0
         total_inactive_weights = 0
@@ -149,4 +195,59 @@ class SparsePPOCriterion:
                 total_weights += self.masks[name].numel()
                 total_inactive_weights += (self.masks[name] == 0).sum().item()
 
-        return total_inactive_weights / total_weights
+        return float(total_inactive_weights / total_weights)
+    
+    def compute_effective_rank(self, activations_tensor):
+        if activations_tensor.numel() == 0 or activations_tensor.shape[0] <= 1:
+            return 0.0
+        with torch.no_grad():
+            X = activations_tensor.detach().float()
+            X = X - X.mean(dim=0, keepdim=True)
+            try:
+                _, S, _ = torch.linalg.svd(X, full_matrices=False)
+                if S.sum() > 0:
+                    p = S / S.sum()
+                    entropy = -torch.sum(p * torch.log(p + 1e-10))
+                    return torch.exp(entropy).item()
+            except:
+                pass
+        return 0.0
+
+    def register_rank_hooks(self, agent, writer):
+        """Registers forward hooks to log effective rank per layer using TensorBoard."""
+        def get_hook(layer_name):
+            def hook_fn(module, input, output):
+                # Reads step from the class tracker
+                rank = self.compute_effective_rank(output)
+                clean_name = layer_name.replace(".", "_")
+                writer.add_scalar(f"expressivity/effective_rank_{clean_name}", rank, self.current_step)
+            return hook_fn
+
+        target_module = getattr(agent, "actor_mean", agent)
+        # Loop through active Linear layers in the actor
+        for name, layer in target_module.named_modules():
+            if isinstance(layer, torch.nn.Linear):
+                layer.register_forward_hook(get_hook(f"actor_{name}"))
+
+
+def compute_dead_connection(agent):
+    total_elements = 0
+    total_zeros = 0
+
+    masks_dict = getattr(agent, "masks", {})
+    for name, mask in masks_dict.items():
+        total_elements += mask.numel()
+        total_zeros += (mask == 0.0).sum().item()
+
+    return total_zeros / total_elements
+
+def compute_gradient_norm(agent):
+    total_norm = 0.0
+    target_module = getattr(agent, "actor_mean", agent)
+
+    for param in target_module.parameters():
+        if param.grad is not None:
+            param_norm = param.grad.data.norm(2)
+            total_norm += param_norm.item() ** 2
+
+    return total_norm ** 0.5
