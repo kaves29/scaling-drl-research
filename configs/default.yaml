@@ -1,27 +1,40 @@
 # Experiment setup
 experiment:
-  num_seeds: 5
-  num_envs: 1
-
-environments:
-  Reacher:
-    env_id: "Reacher-v5"
-    total_timesteps: 1500000
-
-  Swimmer:
-    env_id: "Swimmer-v5"
-    total_timesteps: 1000000
-
-  Hopper:
-    env_id: "Hopper-v5"
-    total_timesteps: 3000000
+  num_seeds: 3
+  num_envs: 4
+  num_test_envs: 2
+  envs:
+    Reacher:
+      env_id: "Reacher-v5"
+      total_timesteps: 200000
+    Swimmer:
+      env_id: "Swimmer-v5"
+      total_timesteps: 1000000
+    Hopper:
+      env_id: "Hopper-v5"
+      total_timesteps: 2500000
 
 dst:
-  prune_interval: 1
+  grad_steps: 1500
   actor_sparsity_ratio: 0.8
   actor_epsilon: 0.00000001
   regrow_ratio: 0.1
 
 logging:
-  project: "sparse-ppo-drl-research" 
+  project: "sparse-ppo-drl-research"
   dormant_threshold: 0.1
+
+phase_0:
+  exp:
+    num_seeds: 2
+    num_envs: 4
+  envs:
+    env_list: ["Reacher", "Hopper"]
+    Reacher:
+      env_id: "Reacher-v5"
+      total_timesteps: 200000
+    Hopper:
+      env_id: "Hopper-v5"
+      total_timesteps: 2500000
+  sparsity:
+    dense_allocation: [0.15, 0.10, 0.05, 0.01]

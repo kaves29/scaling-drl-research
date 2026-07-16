@@ -379,9 +379,16 @@ if __name__ == "__main__":
         # DST: Prune and regrow        
         if iteration % args.prune_interval == 0:
             old_masks = {name: mask.clone() for name, mask in criterion.masks.items()}
-            batch = criterion.get_random_batch(current_rollout_batch, args.batch_size)
 
-            criterion.update_agent(agent, batch, config)
+            random_indices = np.random.choice(args.batch_size, size=args.minibatch_size, replace=False)
+            mini_batch = (
+                b_obs[random_indices],
+                b_actions[random_indices],
+                b_logprobs[random_indices],
+                b_advantages[random_indices]
+            )
+
+            criterion.update_agent(agent, mini_batch, config)
             criterion.saved_gradients = {}
             criterion.gradient_count = defaultdict(int)
 
@@ -411,6 +418,9 @@ if __name__ == "__main__":
 
             total_dormant_neurons = 0
             for hook_name, weight_key in layer_mapping.items():
+                if hook_name not in layer_abs_activations:
+                    continue
+                
                 neuron_abs_acts = layer_abs_activations[hook_name]
 
                 unmasked_neuron_flags = torch.any(criterion.masks[weight_key] == 1, dim=1)
@@ -441,7 +451,7 @@ if __name__ == "__main__":
             writer.add_scalar("dst/global_actor_sparsity", compute_dead_connection(criterion), global_step)
 
             # Compute Gradient Norm of Actor
-            writer.add_scalar("loss/actor_grad_norm", compute_gradient_norm(agent))
+            writer.add_scalar("loss/actor_grad_norm", compute_gradient_norm(agent), global_step)
 
         y_pred, y_true = b_values.cpu().numpy(), b_returns.cpu().numpy()
         var_y = np.var(y_true)

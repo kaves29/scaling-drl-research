@@ -21,6 +21,7 @@ class SparsePPOCriterion:
         self.masks = {}
         self.saved_gradients = {}
         self.saliency_scores = {}
+        self.dense_weights = {}
         self.device = torch.device("cpu")
         self.seed = seed
     
@@ -28,6 +29,7 @@ class SparsePPOCriterion:
         for name, param in agent.named_parameters():
             if any(module_key in name for module_key in target_modules) and name.endswith(".weight"):
                 random_matrix = torch.rand_like(param, device=self.device)
+                self.dense_weights[name] = param.data.clone()
 
                 num_active = int(param.numel() * (1.0 - sparsity_ratio))
                 threshold = torch.kthvalue(random_matrix.flatten(), param.numel() - num_active + 1).values
@@ -35,9 +37,6 @@ class SparsePPOCriterion:
 
                 self.saliency_scores[name] = torch.zeros_like(param, device=self.device)
                 self.saved_gradients[name] = torch.zeros_like(param, device=self.device)
-
-                with torch.no_grad():
-                    param.mul_(self.masks[name])
 
 
     def actor_saliency(self, agent, config):
@@ -79,26 +78,11 @@ class SparsePPOCriterion:
         """
         pass
     
-    def get_random_batch(rollout_buffer, batch_size):
-        buffer_size = rollout_buffer["obs"].shape[0]
-        random_indices = torch.randint(0, buffer_size, (batch_size,))
-        
-        batch = (
-            rollout_buffer["obs"][random_indices],
-            rollout_buffer["actions"][random_indices],
-            rollout_buffer["logprobs"][random_indices],
-            rollout_buffer["advantages"][random_indices]
-        )
-    
-        return batch
-    
-    def compute_actor_loss(self, agent, batch, config):
+    def compute_actor_loss(self, agent, mini_batch, config):
         """Computes PPO actor policy loss"""
-        b_obs, b_actions, b_logprobs, b_advantages = batch[:4]
+        b_obs, b_actions, b_logprobs, b_advantages = mini_batch[:4]
 
-        _, newlogprob, entropy, _ = agent.get_action_and_value(
-            b_obs, b_actions, force_dense=True
-        )
+        _, newlogprob, entropy, _ = agent.get_action_and_value(b_obs, b_actions)
         
         logratio = newlogprob - b_logprobs
         ratio = logratio.exp()
@@ -157,25 +141,21 @@ class SparsePPOCriterion:
                 actor_abs_grads = torch.abs(self.saved_gradients[name])
                 actor_mask = self.masks[name]
                 
-                original_actor_mask = actor_mask.clone()
                 # Global Actor Mask Condition
-                actor_mask_condition = (actor_scores <= global_actor_mask_threshold) & (original_actor_mask == 1.0)
+                actor_mask_condition = (actor_scores <= global_actor_mask_threshold) & (actor_mask == 1.0)
                 actor_mask[actor_mask_condition] = 0.0
                 
                 # Global Actor Regrow Condition
-                actor_regrow_condition = (actor_abs_grads >= global_actor_regrow_threshold) & (original_actor_mask == 0.0)
+                actor_regrow_condition = (actor_abs_grads >= global_actor_regrow_threshold) & (actor_mask == 0.0)
                 actor_mask[actor_regrow_condition] = 1.0
                 
                 # Update Agent's Actor Weights
                 if name in named_params:
-                    named_params[name].mul_(actor_mask)
+                    named_params[name].data = self.dense_weights[name] * actor_mask
 
-    def update_agent(self, agent, batch, config):
-        b_obs, b_actions, b_logprobs, b_advantages = batch # problem this is the entire rollout so it will not likely work
-
+    def update_agent(self, agent, mini_batch, config):
         target_module = getattr(agent, "actor_mean", agent)
-        actor_outputs = target_module(states)
-        loss = self.compute_actor_loss(agent, batch, config)
+        loss = self.compute_actor_loss(agent, mini_batch, config)
 
         target_module.zero_grad()
         loss.backward()
