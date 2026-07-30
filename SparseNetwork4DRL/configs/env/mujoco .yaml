@@ -1,0 +1,17 @@
+##################################################################################
+# Mujoco with Hopper-V4
+##################################################################################
+
+env_type: 'mujoco'
+env_name: ${env_name}
+num_env_steps: 100_000
+episodic: false
+
+seed: ${seed}
+num_train_envs: 1
+num_eval_envs: 1
+no_termination: false
+action_repeat: 2
+rescale_action: true
+reward_scale: 1
+max_episode_steps: 1000
