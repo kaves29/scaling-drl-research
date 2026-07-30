@@ -121,7 +121,7 @@ class SparseManager:
         for name, param in agent.named_parameters():
             if name.endswith(".weight") and len(param.shape) == 2:
                 _, mask = initializeSparsityLevelWeightMask(name, sparsity_level, *param.shape)
-                self.masks[name] = torch.tensor(mask).to(param.device)
+                self.masks[name] = torch.tensor(mask).to(param.device).bool()
 
                 print(f"SANITY CHECK -----------> Param.shape: {param.shape} | self.masks[name].shape: {self.masks[name].shape}")
 
@@ -134,5 +134,9 @@ class SparseManager:
     def evolve(self, agent, zeta):
         for name, param in agent.named_parameters():
             if name in self.masks:
-                new_mask, stats = changeConnectivitySET(param.data.cpu().numpy(), np.count_nonzero(self.masks[name].cpu().numpy()), self.masks[name].cpu().numpy(), zeta, False, 0)
-                self.masks[name] = torch.tensor(new_mask).to(param.device)
+                old_mask = self.masks[name].cpu().numpy()
+                param_np = param.data.cpu().numpy()
+                new_mask, _ = changeConnectivitySET(param_np, np.count_nonzero(old_mask), old_mask, zeta, False, 0)
+                new_mask_tensor = torch.tensor(new_mask).to(param.device).bool()
+                param.data *= new_mask_tensor
+                self.masks[name] = new_mask_tensor.bool()

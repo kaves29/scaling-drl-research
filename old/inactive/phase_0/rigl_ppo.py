@@ -13,7 +13,9 @@ from torch.distributions.normal import Normal
 from torch.utils.tensorboard import SummaryWriter
 import yaml
 
-from set_utils import *
+from rigl_torch.RigL import RigLScheduler
+from torch.optim.lr_scheduler import CosineAnnealingLR
+from pathology_computation_utils import *
 
 with open("configs/default.yaml") as f:
     config = yaml.safe_load(f)
@@ -28,9 +30,9 @@ class Args:
     """if toggled, `torch.backends.cudnn.deterministic=False`"""
     cuda: bool = False
     """if toggled, cuda will be enabled by default"""
-    track: bool = False
+    track: bool = True
     """if toggled, this experiment will be tracked with Weights and Biases"""
-    wandb_project_name: str = "actor_critic_ld_validation"
+    wandb_project_name: str = "sparse-ppo-drl-research"
     """the wandb's project name"""
     wandb_entity: str = None
     """the entity (team) of wandb's project"""
@@ -58,8 +60,6 @@ class Args:
     """the number of mini-batches"""
     update_epochs: int = 10
     """the K epochs to update the policy"""
-    zeta: float = 0.3
-    """hyperparameter to compute how many weights are pruned and grow every pruning cycle"""
     norm_adv: bool = True
     """Toggles advantages normalization"""
     clip_coef: float = 0.2
@@ -129,6 +129,12 @@ class Agent(nn.Module):
             layer_init(nn.Linear(64, np.prod(envs.single_action_space.shape)), std=0.01),
         )
         self.actor_logstd = nn.Parameter(torch.zeros(1, np.prod(envs.single_action_space.shape)))
+        self.actor_topology_hist = {"previous_mask": torch.tensor([]), "current_mask": torch.tensor([])}
+        self.critic_topology_hist = {"previous_mask": torch.tensor([]), "current_mask": torch.tensor([])}
+        self.activations = {}
+
+        self.critic[0].register_forward_hook(self.get_hook('critic_h1'))
+        self.critic[2].register_forward_hook(self.get_hook('critic_h2'))
 
     def get_value(self, x):
         return self.critic(x)
@@ -142,6 +148,10 @@ class Agent(nn.Module):
             action = probs.sample()
         return action, probs.log_prob(action).sum(1), probs.entropy().sum(1), self.critic(x)
 
+    def get_hook(self, name):
+        def hook(model, input, output):
+            self.activations[name] = output.detach()
+        return hook
 
 if __name__ == "__main__":
     for env_idx in range(len(config["phase_0"]["envs"]["env_list"])):
@@ -158,8 +168,11 @@ if __name__ == "__main__":
                 args.batch_size = int(args.num_envs * args.num_steps)
                 args.minibatch_size = int(args.batch_size // args.num_minibatches)
                 args.num_iterations = args.total_timesteps // args.batch_size
+                args.compute_iteration = max(1, int(args.num_iterations // 25))
+                args.t_max = int(args.num_iterations * args.update_epochs * args.num_minibatches)
+                args.t_end = int(0.75 * args.t_max)
 
-                run_name = f"SET__{args.env_id}__{args.exp_name}__{sparsity_level}{env_seed}"
+                run_name = f"RigL__{args.env_id}__{args.exp_name}__{sparsity_level}_{env_seed}"
                 if args.track:
                     import wandb
 
@@ -171,6 +184,9 @@ if __name__ == "__main__":
                         name=run_name,
                         monitor_gym=True,
                         save_code=True,
+                        group="phase_0/rigl",
+                        job_type=env_name,
+                        resume="allow"
                     )
                 writer = SummaryWriter(f"runs/{run_name}")
                 writer.add_text(
@@ -194,8 +210,6 @@ if __name__ == "__main__":
 
                 agent = Agent(envs).to(device)
                 optimizer = optim.Adam(agent.parameters(), lr=args.learning_rate, eps=1e-5)
-                
-                sparse_engine = SparseManager(agent, sparsity_level)
 
                 # ALGO Logic: Storage setup
                 obs = torch.zeros((args.num_steps, args.num_envs) + envs.single_observation_space.shape).to(device)
@@ -211,6 +225,29 @@ if __name__ == "__main__":
                 next_obs, _ = envs.reset(seed=args.seed)
                 next_obs = torch.Tensor(next_obs).to(device)
                 next_done = torch.zeros(args.num_envs).to(device)
+                
+                # Initialize LR Scheduler
+                rigl_lr_scheduler = CosineAnnealingLR(optimizer, T_max=args.t_max, eta_min=1e-6)
+
+                # Initializing RigL
+                rigl_pruner = RigLScheduler(
+                    model=agent,
+                    optimizer=optimizer,
+                    dense_allocation=sparsity_level,
+                    T_end=args.t_end
+                )
+
+                actor_layer_masks = [torch.ones_like(p).flatten().bool() for name, p in agent.named_parameters() 
+                     if "actor_mean" in name and name.endswith(".weight")]
+                critic_layer_masks = [torch.ones_like(p).flatten().bool() for name, p in agent.named_parameters() 
+                                    if "critic" in name and name.endswith(".weight")]
+                
+                initial_stacked_actor = torch.cat(actor_layer_masks)
+                initial_stacked_critic = torch.cat(critic_layer_masks)
+                agent.actor_topology_hist["previous_mask"] = initial_stacked_actor
+                agent.actor_topology_hist["current_mask"] = initial_stacked_actor
+                agent.critic_topology_hist["previous_mask"] = initial_stacked_critic
+                agent.critic_topology_hist["current_mask"] = initial_stacked_critic
 
                 for iteration in range(1, args.num_iterations + 1):
 
@@ -238,8 +275,8 @@ if __name__ == "__main__":
                                     r = info['episode']['r'].item() if hasattr(info['episode']['r'], 'item') else info['episode']['r']
                                     l = info['episode']['l'].item() if hasattr(info['episode']['l'], 'item') else info['episode']['l']
                                     print(f"Success! global_step={global_step}, episodic_return={float(r)}")
-                                    writer.add_scalar("charts/episodic_return", float(r), global_step)
-                                    writer.add_scalar("charts/episodic_length", float(l), global_step)
+                                    writer.add_scalar(f"phase_0/rigl/episodic_return/{env_name}", float(r), global_step)
+                                    writer.add_scalar(f"phase_0/rigl/episodic_length/{env_name}", float(l), global_step)
                         
                         elif isinstance(infos, dict) and "episode" in infos:
                             # Find which environments in the batch just finished
@@ -248,17 +285,15 @@ if __name__ == "__main__":
                                     r = infos["episode"]["r"][env_idx]
                                     l = infos["episode"]["l"][env_idx]
                                     print(f"--> SUCCESS (FALLBACK)! global_step={global_step}, episodic_return={float(r)}")
-                                    writer.add_scalar("charts/episodic_return", float(r), global_step)
-                                    writer.add_scalar("charts/episodic_length", float(l), global_step)
-
-                    # SET Prune & Regrowth
-                    sparse_engine.evolve(agent, args.zeta)
+                                    writer.add_scalar(f"phase_0/rigl/episodic_return/{env_name}", float(r), global_step)
+                                    writer.add_scalar(f"phase_0/rigl/episodic_length/{env_name}", float(l), global_step)
 
                     # bootstrap value if not done
                     with torch.no_grad():
                         next_value = agent.get_value(next_obs).reshape(1, -1)
                         advantages = torch.zeros_like(rewards).to(device)
                         lastgaelam = 0
+
                         for t in reversed(range(args.num_steps)):
                             if t == args.num_steps - 1:
                                 nextnonterminal = 1.0 - next_done
@@ -281,6 +316,10 @@ if __name__ == "__main__":
                     # Optimizing the policy and value network
                     b_inds = np.arange(args.batch_size)
                     clipfracs = []
+
+                    actor_grad_history = {name: [] for name, param in agent.named_parameters() if param.requires_grad and "actor_mean" in name and name.endswith(".weight")}
+                    critic_grad_history = {name: [] for name, param in agent.named_parameters() if param.requires_grad and "critic" in name and name.endswith(".weight")}
+
                     for epoch in range(args.update_epochs):
                         np.random.shuffle(b_inds)
                         for start in range(0, args.batch_size, args.minibatch_size):
@@ -290,6 +329,12 @@ if __name__ == "__main__":
                             _, newlogprob, entropy, newvalue = agent.get_action_and_value(b_obs[mb_inds], b_actions[mb_inds])
                             logratio = newlogprob - b_logprobs[mb_inds]
                             ratio = logratio.exp()
+
+                            if iteration % args.compute_iteration == 0 and epoch == 0 and start == 0:
+                                rank_h1 = compute_critic_effective_rank(agent.activations['critic_h1'])
+                                rank_h2 = compute_critic_effective_rank(agent.activations['critic_h2'])
+                                writer.add_scalar(f"phase_0/rigl/critic_h1_rank/{env_name}", rank_h1.item(), global_step)
+                                writer.add_scalar(f"phase_0/rigl/critic_h2_rank/{env_name}", rank_h2.item(), global_step)
 
                             with torch.no_grad():
                                 # calculate approx_kl http://joschu.net/blog/kl-approx.html
@@ -327,31 +372,77 @@ if __name__ == "__main__":
                             optimizer.zero_grad()
                             loss.backward()
                             nn.utils.clip_grad_norm_(agent.parameters(), args.max_grad_norm)
-                            optimizer.step()
 
-                            sparse_engine.apply_mask(agent)
+                            rigl_pruner()
+ 
+                            if iteration % args.compute_iteration == 0:
+                                for name, param in agent.named_parameters():
+                                    if param.grad is not None and "actor_mean" in name and name.endswith(".weight"):
+                                        actor_grad_history[name].append(param.grad.detach().clone())
+                                    if param.grad is not None and "critic" in name and name.endswith(".weight"):
+                                        critic_grad_history[name].append(param.grad.detach().clone())
+
+                            optimizer.step()
+                            rigl_lr_scheduler.step()
 
                         if args.target_kl is not None and approx_kl > args.target_kl:
                             break
+                    
+                    if iteration % args.compute_iteration == 0:
+                        # Compute and log gradient variance across all minibatches collected
+                        actor_grad_var, critic_grad_var = compute_grad_variance(actor_grad_history, critic_grad_history)
+                        writer.add_scalar(f"phase_0/rigl/actor_gradient_variance/{env_name}", actor_grad_var, global_step)
+                        writer.add_scalar(f"phase_0/rigl/critic_gradient_variance/{env_name}", critic_grad_var, global_step)
 
+                        # Extract current masks to check for pruning updates
+                        curr_actor_layers = []
+                        curr_critic_layers = []
+                        for name, param in agent.named_parameters():
+                            if param.requires_grad:
+                                mask = (param.data != 0).bool()
+                                if "actor_mean" in name and name.endswith(".weight"):
+                                    curr_actor_layers.append(mask.flatten())
+                                elif "critic" in name and name.endswith(".weight"):
+                                    curr_critic_layers.append(mask.flatten())
+                        if curr_actor_layers:
+                            latest_actor_stacked = torch.cat(curr_actor_layers).bool()
+                            latest_critic_stacked = torch.cat(curr_critic_layers).bool()
+
+                            has_pruned = not torch.equal(latest_actor_stacked, agent.actor_topology_hist["current_mask"])
+                            if has_pruned:
+                                update_topology_history(agent, rigl_pruner)
+                                actor_jaccard, critic_jaccard = compute_mask_jaccard(agent.actor_topology_hist, agent.critic_topology_hist)
+                                writer.add_scalar(f"phase_0/rigl/actor_jaccard/{env_name}", actor_jaccard, global_step)
+                                writer.add_scalar(f"phase_0/rigl/critic_jaccard/{env_name}", critic_jaccard, global_step)
+
+                        layer_norms = compute_layer_gradient_norms(agent)
+                        for layer_name, norm in layer_norms.items():
+                            writer.add_scalar(f"phase_0/rigl/layer_grad_norm/{layer_name}/{env_name}", norm, global_step)
+
+                        dead_neurons = compute_dead_neurons(agent)
+                        for layer_name, dead_pct in dead_neurons.items():
+                            writer.add_scalar(f"phase_0/rigl/dead_neuron_pct/{layer_name}/{env_name}", dead_pct, global_step)
+
+                    current_entropy = compute_action_entropy(agent)
+                    writer.add_scalar(f"phase_0/rigl/action_entropy/{env_name}", current_entropy.item(), global_step)
                     y_pred, y_true = b_values.cpu().numpy(), b_returns.cpu().numpy()
                     var_y = np.var(y_true)
                     explained_var = np.nan if var_y == 0 else 1 - np.var(y_true - y_pred) / var_y
 
                     # TRY NOT TO MODIFY: record rewards for plotting purposes
-                    writer.add_scalar("charts/learning_rate", optimizer.param_groups[0]["lr"], global_step)
-                    writer.add_scalar("losses/value_loss", v_loss.item(), global_step)
-                    writer.add_scalar("losses/policy_loss", pg_loss.item(), global_step)
-                    writer.add_scalar("losses/entropy", entropy_loss.item(), global_step)
-                    writer.add_scalar("losses/old_approx_kl", old_approx_kl.item(), global_step)
-                    writer.add_scalar("losses/approx_kl", approx_kl.item(), global_step)
-                    writer.add_scalar("losses/clipfrac", np.mean(clipfracs), global_step)
-                    writer.add_scalar("losses/explained_variance", explained_var, global_step)
+                    writer.add_scalar(f"charts/rigl/learning_rate/{env_name}", optimizer.param_groups[0]["lr"], global_step)
+                    writer.add_scalar(f"losses/rigl/value_loss/{env_name}", v_loss.item(), global_step)
+                    writer.add_scalar(f"losses/rigl/policy_loss/{env_name}", pg_loss.item(), global_step)
+                    writer.add_scalar(f"losses/rigl/entropy/{env_name}", entropy_loss.item(), global_step)
+                    writer.add_scalar(f"losses/rigl/old_approx_kl/{env_name}", old_approx_kl.item(), global_step)
+                    writer.add_scalar(f"losses/rigl/approx_kl/{env_name}", approx_kl.item(), global_step)
+                    writer.add_scalar(f"losses/rigl/clipfrac/{env_name}", np.mean(clipfracs), global_step)
+                    writer.add_scalar(f"losses/rigl/explained_variance/{env_name}", explained_var, global_step)
                     print("SPS:", int(global_step / (time.time() - start_time)))
-                    writer.add_scalar("charts/SPS", int(global_step / (time.time() - start_time)), global_step)
+                    writer.add_scalar(f"charts/rigl/SPS/{env_name}", int(global_step / (time.time() - start_time)), global_step)
 
                 if args.save_model:
-                    model_path = f"models/{run_name}/{args.exp_name}.phase_0_model"
+                    model_path = f"models/phase_0/rigl/{run_name}.pt"
                     model_dir = os.path.dirname(model_path)
                     os.makedirs(model_dir, exist_ok=True)
                     torch.save(agent.state_dict(), model_path)

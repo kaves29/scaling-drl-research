@@ -13,20 +13,13 @@ experiment:
     Hopper:
       env_id: "Hopper-v5"
       total_timesteps: 2500000
-
-dst:
-  grad_steps: 1500
-  actor_sparsity_ratio: 0.8
-  actor_epsilon: 0.00000001
-  regrow_ratio: 0.1
-
 logging:
   project: "sparse-ppo-drl-research"
   dormant_threshold: 0.1
 
 phase_0:
   exp:
-    num_seeds: 2
+    num_seeds: 1
     num_envs: 4
   envs:
     env_list: ["Reacher", "Hopper"]
