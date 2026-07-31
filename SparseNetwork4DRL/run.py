@@ -1,6 +1,6 @@
 import os
 os.environ['PYOPENGL_PLATFORM'] = 'glfw'
-os.environ['JAX_PLATFORMS'] = 'METAL,cpu'
+os.environ['JAX_PLATFORMS'] = 'cpu'
 
 import argparse
 import random
