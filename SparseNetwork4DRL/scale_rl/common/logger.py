@@ -5,20 +5,28 @@ from omegaconf import OmegaConf
 import wandb
 
 def get_run_info(args):
-    if args.agent.actor_sparsity == 0.0 and args.agent.critic_sparsity == 0.0:
-        group = f"Dense_{args.agent.agent_type}_{args.env.env_name}_RR={args.updates_per_interaction_step}_arch={args.agent.critic_block_type[:3]}"
-    else:
-        group = f"Sparse_{args.agent.agent_type}_{args.env.env_name}_RR={args.updates_per_interaction_step}_arch={args.agent.critic_block_type[:3]}"
-    if args.agent.critic_block_type == 'residual':
-        job_type = f"P={args.num_params[:-1]}_AP={args.actor_num_params[:-1]}_D={args.agent.actor_num_blocks}_W={args.agent.actor_hidden_dim}_S={args.agent.actor_sparsity}_CP={args.critic_num_params[:-1]}_D={args.agent.critic_num_blocks}_W={args.agent.critic_hidden_dim}_S={args.agent.critic_sparsity}"
-        name = f"seed={args.agent.seed}_{args.agent.agent_type}_{args.env.env_name}_RR={args.updates_per_interaction_step}_P={args.num_params}_AP={args.actor_num_params}_AD={args.agent.actor_num_blocks}_AW={args.agent.actor_hidden_dim}_AS={args.agent.actor_sparsity}_CP={args.critic_num_params}_CD={args.agent.critic_num_blocks}_CW={args.agent.critic_hidden_dim}_CS={args.agent.critic_sparsity}"
-    else:
-        job_type = f"P={args.num_params}_AP={args.actor_num_params}D={args.agent.actor_num_blocks}W={args.agent.actor_hidden_dim}S={args.agent.actor_sparsity}CP={args.critic_num_params}D={args.agent.critic_num_blocks}W={args.agent.critic_hidden_dim}S={args.agent.critic_sparsity}"
-        name = f"seed={args.agent.seed}_{args.agent.agent_type}_{args.env.env_name}_RR={args.updates_per_interaction_step}_P={args.num_params}_AP={args.actor_num_params}_AD={args.agent.actor_num_blocks}_AW={args.agent.actor_hidden_dim}_AS={args.agent.actor_sparsity}_CP={args.critic_num_params}_CD={args.agent.critic_num_blocks}_CW={args.agent.critic_hidden_dim}_CS={args.agent.critic_sparsity}"
+    critic_size_map = {
+        (128, 1): "Small",
+        (1024, 3): "XXL",
+    }
+    critic_size_label = critic_size_map.get(
+        (args.agent.critic_hidden_dim, args.agent.critic_num_blocks),
+        f"D{args.agent.critic_num_blocks}W{args.agent.critic_hidden_dim}",
+    )
+    utd = args.updates_per_interaction_step
+    env = args.env.env_name
+    group = f"{env}_{critic_size_label}_UTD{utd}"
+    job_type = critic_size_label
+    name = (
+        f"{env}_{critic_size_label}_UTD{utd}"
+        f"_CD{args.agent.critic_num_blocks}_CW{args.agent.critic_hidden_dim}"
+        f"_AD{args.agent.actor_num_blocks}_AW{args.agent.actor_hidden_dim}"
+        f"_seed{args.seed}"
+    )
     return {
         "group": group,
         "job_type": job_type,
-        "name": name
+        "name": name,
     }
 class WandbTrainerLogger(object):
     def __init__(self, cfg: Dict):

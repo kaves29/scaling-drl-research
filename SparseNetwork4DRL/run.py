@@ -1,6 +1,6 @@
 import os
 os.environ['PYOPENGL_PLATFORM'] = 'glfw'
-os.environ['JAX_PLATFORMS'] = 'cpu'
+os.environ['JAX_PLATFORMS'] = 'METAL,cpu'
 
 import argparse
 import random
@@ -31,7 +31,7 @@ def run(args):
 
     hydra.initialize(version_base=None, config_path=config_path)
     cfg = hydra.compose(config_name=config_name, overrides=overrides)
-
+        
     def eval_resolver(s: str):
         return eval(s)
 

@@ -202,7 +202,9 @@ def _init_sac_networks(
 
     actor_loss_buffer = []
     actor_entropy_buffer = []
-    return rng, actor, critic, target_critic, temperature, actor_loss_buffer, actor_entropy_buffer
+    churn_buffer = []
+    churn_ref_batch = None
+    return rng, actor, critic, target_critic, temperature, actor_loss_buffer, actor_entropy_buffer, churn_buffer, churn_ref_batch
 
 
 @jax.jit
@@ -241,10 +243,16 @@ def _update_sac_networks(
     critic_use_cdq: bool,
     target_tau: float,
     temp_target_entropy: float,
-    entropy_buffer: list
+    churn_ref_batch: dict,
 ) -> Tuple[PRNGKey, Trainer, Trainer, Trainer, Trainer, Dict[str, float]]:
     rng, actor_key, critic_key = jax.random.split(rng, 3)
 
+    def get_deterministic_actions(actor_params, actor, observations):
+        dist = actor.apply(variables={"params": actor_params}, observations=observations)
+        pre_squash_mean = dist.distribution.mean()
+        return jnp.tanh(pre_squash_mean)
+
+    a_prev = get_deterministic_actions(actor.params, actor, churn_ref_batch["observation"])
     new_actor, actor_info = update_actor(
         key=actor_key,
         actor=actor,
@@ -253,6 +261,8 @@ def _update_sac_networks(
         batch=batch,
         critic_use_cdq=critic_use_cdq,
     )
+    a_curr = get_deterministic_actions(new_actor.params, new_actor, churn_ref_batch["observation"])
+    churn = jnp.mean(jnp.linalg.norm(a_curr - a_prev, axis=-1))
 
     new_temperature, temperature_info = update_temperature(
         temperature=temperature,
@@ -283,11 +293,10 @@ def _update_sac_networks(
         **critic_info,
         **target_critic_info,
         **temperature_info,
+        "train/policy_churn": churn,
     }
 
-    entropy_buffer.append(actor_info["train/entropy"])
-
-    return (rng, new_actor, new_critic, new_target_critic, new_temperature, entropy_buffer, info)
+    return (rng, new_actor, new_critic, new_target_critic, new_temperature, info)
 
 
 
@@ -327,7 +336,9 @@ class SACAgent(BaseAgent):
             self._target_critic,
             self._temperature,
             self.actor_loss_buffer,
-            self.actor_entropy_buffer
+            self.actor_entropy_buffer,
+            self.churn_buffer,
+            self.churn_ref_batch
         ) = _init_sac_networks(self._observation_dim, self._action_dim, self._cfg)
 
     def sample_actions(
@@ -355,13 +366,14 @@ class SACAgent(BaseAgent):
         for key, value in batch.items():
             batch[key] = jnp.asarray(value)
 
+        if self.churn_ref_batch is None:
+            self.churn_ref_batch = {k: jnp.array(v) for k, v in batch.items()}
         (
             self._rng,
             self._actor,
             self._critic,
             self._target_critic,
             self._temperature,
-            self.actor_entropy_buffer,
             update_info,
         ) = _update_sac_networks(
             rng=self._rng,
@@ -375,8 +387,12 @@ class SACAgent(BaseAgent):
             critic_use_cdq=self._cfg.critic_use_cdq,
             target_tau=self._cfg.target_tau,
             temp_target_entropy=self._cfg.temp_target_entropy,
-            entropy_buffer=self.actor_entropy_buffer
+            churn_ref_batch=self.churn_ref_batch,
         )
+
+        self.actor_entropy_buffer.append(update_info["train/entropy"])
+        self.churn_buffer.append(update_info["train/policy_churn"])
+        self.actor_loss_buffer.append(update_info["train/actor_loss"])
 
         for key, value in update_info.items():
             update_info[key] = float(value)
@@ -386,13 +402,18 @@ class SACAgent(BaseAgent):
     def flush_actor_loss_var(self):
         losses = jnp.stack(self.actor_loss_buffer)
         var = float(jnp.var(losses))
-        self._actor_loss_buffer = []
+        self.actor_loss_buffer = []
         return var
-    
+
+    def flush_policy_churn(self):
+        val = float(jnp.mean(jnp.stack(self.churn_buffer)))
+        self.churn_buffer = []
+        return val
+
     def mean_entropy(self):
-        entropy = jnp.stack(self._entropy_buffer)
+        entropy = jnp.stack(self.actor_entropy_buffer)
         mean = float(jnp.mean(entropy))
-        self._entropy_buffer = []
+        self.actor_entropy_buffer = []
         return mean
     
     def get_metrics(self, update_step: int, batch: Dict[str, np.ndarray]):
@@ -402,10 +423,12 @@ class SACAgent(BaseAgent):
         critic_metrics_info = get_critic_with_metrics(key=self._rng,actor=self._actor,critic=self._critic,batch=batch,critic_use_cdq=self._cfg.critic_use_cdq)
         actor_loss_var = self.flush_actor_loss_var()
         actor_mean_entropy = self.mean_entropy()
+        policy_churn = self.flush_policy_churn()
         combined_metric_info = {**actor_metrics_info, 
                                 **critic_metrics_info,
                                 "train/actor_loss_var": actor_loss_var,
-                                "train/entropy": actor_mean_entropy
+                                "train/entropy": actor_mean_entropy,
+                                "train/churn": policy_churn
                                 }
         return combined_metric_info
 
