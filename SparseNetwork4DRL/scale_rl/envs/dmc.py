@@ -58,6 +58,8 @@ DMC_EASY = [
 
 DMC_MED = [ "cheetah-run" ]
 
+DMC_HARD = [ "humanoid-walk" ]
+
 def make_dmc_env(
     env_name: str,
     seed: int,
