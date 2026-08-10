@@ -288,12 +288,22 @@ def _update_sac_networks(
         target_tau=target_tau,
     )
 
+    actor_grad_cosine = compute_actor_gradient_cosine(
+        key=actor_key,
+        actor=actor,
+        critic=critic,
+        temperature=temperature,
+        batch=batch,
+        critic_use_cdq=critic_use_cdq,
+    )
+
     info = {
         **actor_info,
         **critic_info,
         **target_critic_info,
         **temperature_info,
         "train/policy_churn": churn,
+        "train/actor_grad_cosine": actor_grad_cosine
     }
 
     return (rng, new_actor, new_critic, new_target_critic, new_temperature, info)
