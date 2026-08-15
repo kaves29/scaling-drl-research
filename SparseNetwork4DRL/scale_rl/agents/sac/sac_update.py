@@ -278,8 +278,8 @@ def compute_actor_gradient_cosine(
                     actions=action)                    # shape [1]
 
         # Now both log_prob, q_val are shape [1], so do either:
-        log_prob = log_prob[0]  # shape ()
-        q_val = q_val[0]        # shape ()
+        log_prob = jnp.squeeze(log_prob)  # shape ()
+        q_val = jnp.squeeze(q_val)       # shape ()
 
         loss = log_prob * temperature() - q_val
         return loss  # shape ()
