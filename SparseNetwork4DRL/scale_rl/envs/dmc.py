@@ -51,14 +51,17 @@ DMC_HARD = [
     "dog-trot",
 ]"""
 
-# 1 task
-DMC_EASY = [
-    "reacher-hard"
-]
+DMC_MED = [ 
+    "cheetah-run",
+    "quadruped-run",
+    "manipulator-bring_ball"
+     ]
 
-DMC_MED = [ "cheetah-run" ]
-
-DMC_HARD = [ "humanoid-walk" ]
+DMC_HARD = [ 
+    "humanoid-run",
+    "dog-trot",
+    "dog-run"
+             ]
 
 def make_dmc_env(
     env_name: str,
