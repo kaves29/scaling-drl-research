@@ -410,17 +410,23 @@ class SACAgent(BaseAgent):
         return update_info
 
     def flush_actor_loss_var(self):
+        if len(self.actor_loss_buffer) == 0:
+            return None
         losses = jnp.stack(self.actor_loss_buffer)
         var = float(jnp.var(losses))
         self.actor_loss_buffer = []
         return var
 
     def flush_policy_churn(self):
+        if len(self.churn_buffer) == 0:
+            return None
         val = float(jnp.mean(jnp.stack(self.churn_buffer)))
         self.churn_buffer = []
         return val
 
     def mean_entropy(self):
+        if len(self.actor_entropy_buffer) == 0:
+            return None
         entropy = jnp.stack(self.actor_entropy_buffer)
         mean = float(jnp.mean(entropy))
         self.actor_entropy_buffer = []
