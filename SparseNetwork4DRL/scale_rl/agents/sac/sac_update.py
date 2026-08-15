@@ -308,5 +308,8 @@ def compute_actor_gradient_cosine(
     dot_products = grads_flat @ grads_flat.T      # shape [N, N]
     norms = jnp.linalg.norm(grads_flat, axis=1, keepdims=True)  # shape [N,1]
     cos_mat = dot_products / (norms * norms.T + 1e-8)            # shape [N,N]
+    N = cos_mat.shape[0]
+    off_diagonal_mask = ~jnp.eye(N, dtype=bool)
+    actor_grad_cosine_mean = jnp.mean(cos_mat[off_diagonal_mask])
 
-    return cos_mat
+    return actor_grad_cosine_mean
