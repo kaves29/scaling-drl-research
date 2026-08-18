@@ -79,7 +79,7 @@ def run(args):
     #############################
     # train
     #############################
-    os.environ["WANDB_MODE"] = "offline"
+    os.environ["WANDB_MODE"] = "online"
     LOGS_DIR = "/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/SparseNetwork4DRL/logs"
     os.makedirs(LOGS_DIR, exist_ok=True)
     run_name = f"{cfg.env_name}_CD{cfg.agent.critic_num_blocks}_CW{cfg.agent.critic_hidden_dim}_AD{cfg.agent.actor_num_blocks}_AW{cfg.agent.actor_hidden_dim}_seed{cfg.seed}"
@@ -207,7 +207,7 @@ if __name__ == "__main__":
     parser.add_argument("--overrides", action="append", default=[])
     parser.add_argument("--checkpoint_dir", type=str, default=None)
     parser.add_argument("--checkpoint_interval", type=int, default=100_000)
-    parser.add_argument("--checkpoint_start_frac", type=float, default=0.5)
+    parser.add_argument("--checkpoint_start_frac", type=float, default=0.4)
     args = parser.parse_args()
     print("RUNNING SUCCESSFULLY, STANDBY!")
     run(vars(args))
