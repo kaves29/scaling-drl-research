@@ -6,7 +6,6 @@ import numpy as np
 from scale_rl.buffers.base_buffer import BaseBuffer, Batch
 from scale_rl.buffers.utils import SegmentTree
 
-
 class NpyUniformBuffer(BaseBuffer):
     def __init__(
         self,

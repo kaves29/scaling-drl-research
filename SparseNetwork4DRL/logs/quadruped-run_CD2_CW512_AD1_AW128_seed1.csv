@@ -1,0 +1,6 @@
+interaction_step,env_step,eval/avg_return,eval/avg_length,eval/avg_success,train/actor_srank,train/critic_srank,train/actor_DR0.1,train/actor_DR0.2,train/actor_fnorm,train/actor_wnorm,train/critic_DR0.1,train/critic_DR0.2,train/critic_fnorm,train/critic_wnorm,train/actor_loss_var,train/entropy,train/churn,train/actor_action,train/actor_gnorm,train/actor_grad_cosine,train/actor_loss,train/actor_pnorm,train/critic_gnorm,train/critic_loss,train/critic_pnorm,train/policy_churn,train/q1_mean,train/q2_mean,train/rew_mean,train/td_error_var,train/temperature,train/temperature_gnorm,train/temperature_loss
+0.0,0,40.72147305652561,500.0,0.0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+0.0,0,203.02283253508,500.0,0.0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+0.0,0,40.72147305652561,500.0,0.0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,6000,,,,120.0,232.0,0.0,0.0,11.313705,40.477108,0.0,0.0,22.627415,108.92371,,,,,,,,,,,,,,,,,,,
+,12000,,,,114.0,232.0,0.0,0.0,11.03039,40.488964,0.0,0.035511363,22.71606,108.66888,8.129749298095703,-4.058575283177866,0.01829298958182335,0.6814485153951845,0.2974018402568825,0.007072918370347808,-6.517416998917064,40.48232771104628,1.6123536862961418,0.021030794768189486,108.7615398319332,0.01829298755970898,6.211690871823174,6.211690871823174,0.15256117895826116,0.016299306639059857,0.00897109225889171,0.033937863630623774,0.01693478842604094

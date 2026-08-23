@@ -1,6 +1,9 @@
 import functools
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple
+import os
+from pathlib import Path
+import orbax.checkpoint
 
 import gymnasium as gym
 import jax
@@ -448,6 +451,31 @@ class SACAgent(BaseAgent):
                                 }
         return combined_metric_info
 
+    def get_q_value(self, observations: np.ndarray, actions: np.ndarray) -> np.ndarray:
+        """Raw critic Q-value estimate for (observation, action) pairs.
+
+        Uses the same critic-invocation convention as the actor loss
+        (min(q1, q2) under clipped double-Q; see update_actor in
+        sac_update.py) so this is consistent with how the critic is already
+        used everywhere else in this codebase, not a new estimator.
+
+        Callers must pass already-preprocessed observations (e.g. already
+        normalized if this agent is wrapped by ObservationNormalizer) since
+        this method operates on the raw SACAgent only. Prefer calling
+        `agent.get_q_value(...)` on the (possibly wrapped) agent object
+        returned by create_agent so normalization happens automatically.
+        """
+        observations = jnp.asarray(observations)
+        actions = jnp.asarray(actions)
+
+        if self._cfg.critic_use_cdq:
+            q1, q2 = self._critic(observations=observations, actions=actions)
+            q = jnp.minimum(q1, q2)
+        else:
+            q = self._critic(observations=observations, actions=actions)
+
+        return np.array(q).reshape(-1)
+
     def get_num_parameters(self):
         actor_num_params = print_num_parameters(flatten_dict(self._actor.params),network_type='actor_simba')
         critic_num_params = print_num_parameters(flatten_dict(self._critic.params),network_type='critic_simba')
@@ -460,4 +488,45 @@ class SACAgent(BaseAgent):
 
         return  total_params, num_str, num_str_actor, num_str_critic
     
+    def save_checkpoint(self, checkpoint_dir: str):
+        """Saves the agent's JAX PyTree state (networks, optimizers, PRNG key, churn batch) using Orbax."""
+        os.makedirs(checkpoint_dir, exist_ok=True)
+        ckpt_path = os.path.join(checkpoint_dir, "agent_ckpt")
+
+        state = {
+            "rng": self._rng,
+            "actor": self._actor,
+            "critic": self._critic,
+            "target_critic": self._target_critic,
+            "temperature": self._temperature,
+            "churn_ref_batch": self.churn_ref_batch,
+        }
+
+        checkpointer = orbax.checkpoint.PyTreeCheckpointer()
+        checkpointer.save(ckpt_path, state, force=True)
+
+    def load_checkpoint(self, checkpoint_dir: str):
+        """Restores the agent's JAX PyTree state back into their exact Flax TrainState structures."""
+        ckpt_path = os.path.join(checkpoint_dir, "agent_ckpt")
+
+        if not os.path.exists(ckpt_path):
+            raise FileNotFoundError(f"No checkpoint found at {ckpt_path}")
+
+        target_state = {
+            "rng": self._rng,
+            "actor": self._actor,
+            "critic": self._critic,
+            "target_critic": self._target_critic,
+            "temperature": self._temperature,
+            "churn_ref_batch": self.churn_ref_batch,
+        }
+
+        checkpointer = orbax.checkpoint.PyTreeCheckpointer()
+        restored = checkpointer.restore(ckpt_path, args=orbax.checkpoint.args.PyTreeRestore(item=target_state))
+        self._rng = restored["rng"]
+        self._actor = restored["actor"]
+        self._critic = restored["critic"]
+        self._target_critic = restored["target_critic"]
+        self._temperature = restored["temperature"]
+        self.churn_ref_batch = restored["churn_ref_batch"]
     

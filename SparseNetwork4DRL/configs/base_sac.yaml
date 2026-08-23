@@ -28,8 +28,8 @@ num_env_steps: ${env.num_env_steps}
 action_repeat: ${env.action_repeat}
 
 num_interaction_steps: ${eval:'${num_env_steps} / (${num_train_envs} * ${action_repeat})'}
-updates_per_interaction_step: 1           # number of updates per interaction step.
-evaluation_per_interaction_step: 100_000   # evaluation frequency per interaction step.
+updates_per_interaction_step: 5           # number of updates per interaction step.
+evaluation_per_interaction_step: 50_000   # evaluation frequency per interaction step.
 recording_per_interaction_step: ${num_interaction_steps}   # video recording frequency per interaction step.
 logging_per_interaction_step: 3_000       # logging frequency per interaction step.
 num_eval_episodes: 5
@@ -40,4 +40,75 @@ defaults:
 - agent: sac_simba
 - buffer: numpy_uniform
 - env: dmc_medium
+
+
+##################################################################################
+# Angle 1: EchoCritic onset tracking (opt-in)
+##################################################################################
+
+# Enable collection + post-hoc onset analysis for critic degradation.
+critic_degradation: false
+# Enable collection + post-hoc onset analysis for pathology propagation.
+# NOTE: propagation is only ever analyzed for runs where critic degradation
+# was also detected; see analysis/onset_detection.py.
+pathology_prop: false
+
+# N and W below are provisional until calibrated against the 5-seed default
+# SimBa baseline (see analysis/baseline_calibration.py). They are recorded
+# verbatim into onset_events.csv detection_notes/method fields so results
+# stay reproducible even as they are recalibrated.
+#
+# N and W are both expressed as a FRACTION of this run's own total
+# interaction-step horizon (num_interaction_steps), not fixed raw counts, so
+# longer-horizon runs/environments get a proportionally larger tolerance
+# window instead of a fixed number of steps that would be relatively
+# stricter for them. sustain_window / propagation_window below are the
+# resulting raw-interaction-step quantities, derived from those fractions.
+#
+# `propagation_window` is used directly in raw interaction steps (the
+# propagation search already scans recorded points by their raw
+# interaction_step value - see analysis/onset_detection.py).
+#
+# `sustain_window` is further converted onto the *recorded* metric grid at
+# analysis time (divided by logging_per_interaction_step - see
+# analysis/pipeline.py), because the sustained-exceedance run length is
+# counted in consecutive *recorded* points, not raw interaction steps. E.g.
+# with logging_per_interaction_step=3000 and sustain_window=15000, a
+# sustained run must exceed 15000/3000=5 consecutive recorded points.
+onset_detection:
+  sustain_window_fraction: 0.02
+  propagation_window_fraction: 0.05
+  sustain_window: ${eval:'${num_interaction_steps} * ${onset_detection.sustain_window_fraction}'}
+  propagation_window: ${eval:'${num_interaction_steps} * ${onset_detection.propagation_window_fraction}'}
+  # percentile of the baseline distribution used as the exceedance threshold
+  baseline_percentile: 95
+  # number of default-SimBa baseline seeds used for calibration; the
+  # scientific protocol requires EXACTLY this many - analysis/baseline_calibration.py
+  # fails clearly if baseline_seeds below doesn't have exactly this many entries.
+  baseline_num_seeds: 5
+  # seeds of the 5 default-SimBa calibration runs (must have been trained
+  # with critic_degradation=true so their metrics were persisted)
+  baseline_seeds: [1, 2, 3, 4, 5]
+  # Canonical "default SimBa" architecture id (see
+  # scale_rl.common.logger.get_architecture_id) that baseline calibration
+  # must ultimately compare against. Used both as the fallback for
+  # `baseline_architecture` below and to reject a self-baseline (a scaled
+  # run accidentally calibrating against itself).
+  default_architecture: 'D2W512'
+  # architecture id of the "default SimBa" baseline. Leave null to fall back
+  # to default_architecture above (correct for any run). Only ever needs to
+  # be set explicitly if calibrating against a non-standard default.
+  baseline_architecture: null
+  # --experiment name the 5 baseline runs were logged under. Leave null to
+  # assume they were logged under this same run's --experiment name.
+  baseline_experiment: null
+  # Force baseline recalibration even if a cached threshold file exists.
+  # Normally unnecessary: the cache is automatically invalidated whenever
+  # the underlying baseline seeds' persisted metric files change (see
+  # analysis/baseline_calibration.py's source fingerprinting). Set true to
+  # force a recompute regardless (e.g. after changing baseline_percentile).
+  force_baseline_recompute: false
+  # version identifiers persisted into the ledger's *_method columns
+  critic_degradation_method_version: 'td_variance_p95_sustained_v1'
+  propagation_method_version: 'actor_grad_cosine_p95_windowed_v1'
 

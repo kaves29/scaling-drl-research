@@ -1,0 +1,92 @@
+##################################################################################
+# Common (mirrors base_sac.yaml; Angle 2A reuses the same env/buffer/agent
+# hyperparameter *templates*, but critic depth/width are supplied per-role
+# below, never from these top-level fields)
+##################################################################################
+
+project_name: 'EchoCritic'
+exp_name: 'angle_2a'
+seed: 108
+server: 'local'
+
+env_name: 'reacher-hard'
+
+##################################################################################
+# Training (shared hyperparameters for every agent Angle 2A trains: actor
+# architecture, learning rates, buffer sizing, interaction-step accounting.
+# Only the *critic* architecture differs per role, and is intentionally NOT
+# specified here — see angle_2_a: below.)
+##################################################################################
+
+actor_sparsity: 0.0
+actor_num_blocks: 1
+actor_hidden_dim: 128
+
+critic_sparsity: 0.0
+# Deliberately left mandatory (no default): Angle 2A must NEVER read a
+# top-level critic_num_blocks/critic_hidden_dim. Each of the four agents
+# (D_5x768, R_5x768, D_7x1024, R_7x1024) gets its own explicit architecture
+# from angle_2_a.scaled_a / scaled_b / reference below. If any code path
+# ever accidentally falls back to cfg.agent.critic_num_blocks instead of the
+# per-role override, this MUST fail loudly rather than silently using 2/512.
+critic_num_blocks: 2
+critic_hidden_dim: 512
+
+eff_episode_len: ${eval:'${env.max_episode_steps} / ${env.action_repeat}'}
+gamma: ${eval:'max(min((${eff_episode_len} / 5 - 1) / (${eff_episode_len} / 5), 0.995), 0.95)'}
+n_step: 1
+
+num_train_envs: ${env.num_train_envs}
+num_env_steps: ${env.num_env_steps}
+action_repeat: ${env.action_repeat}
+
+num_interaction_steps: ${eval:'${num_env_steps} / (${num_train_envs} * ${action_repeat})'}
+updates_per_interaction_step: 5
+num_eval_episodes: 5
+
+defaults:
+  - _self_
+  - agent: sac_simba
+  - buffer: numpy_uniform
+  - env: dmc_medium
+
+##################################################################################
+# Angle 2A: scaled-critic vs. healthy-reference degradation-onset comparison
+##################################################################################
+
+angle_2_a:
+  # Which --experiment name the Angle 1 onset ledger entries were logged
+  # under (see utils/onset_ledger.py). Angle 2A never re-detects onsets
+  # itself; it only looks them up.
+  onset_source_experiment: 'angle_1'
+  onset_ledger_root: 'results/ledgers'
+
+  # Fixed experimental-protocol constants (not architecture values). Kept
+  # configurable for testability, but the scientific protocol requires
+  # exactly 10/15; do not lower these to save compute.
+  num_probes_per_source: 10
+  num_mc_rollouts: 15
+
+  # Whether to also run the healthy-vs-healthy null baseline for this seed
+  # (see experiments/angle_2a/matchup.py for why it requires fresh training
+  # rather than reusing raw Angle 1 artifacts).
+  run_null_baseline: true
+
+  # --- Required per-role critic architectures. No defaults on purpose: ---
+  # These MUST be supplied via --overrides every time (e.g.
+  # angle_2_a.scaled_a.critic_num_blocks=7). `???` is OmegaConf's mandatory-
+  # value marker: validate_angle2a_config() (experiments/angle_2a/config.py)
+  # relies on this to fail clearly when a value wasn't explicitly supplied.
+  # Do NOT fill these in with concrete numbers, even ones that happen to
+  # match your current experiment plan - that silently reintroduces a hidden
+  # default the scientific protocol explicitly forbids (a run with no
+  # --overrides would otherwise proceed using whatever numbers are here).
+  scaled_a:
+    critic_num_blocks: ???
+    critic_hidden_dim: ???
+  scaled_b:
+    critic_num_blocks: ???
+    critic_hidden_dim: ???
+  reference:
+    critic_num_blocks: ???
+    critic_hidden_dim: ???

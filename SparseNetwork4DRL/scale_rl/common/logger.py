@@ -1,18 +1,33 @@
-from typing import Dict
+from typing import Dict, Optional
 
 from omegaconf import OmegaConf
 
 import wandb
 
-def get_run_info(args):
-    critic_size_map = {
-        (128, 1): "Small",
-        (1024, 3): "XXL",
-    }
-    critic_size_label = critic_size_map.get(
-        (args.agent.critic_hidden_dim, args.agent.critic_num_blocks),
-        f"D{args.agent.critic_num_blocks}W{args.agent.critic_hidden_dim}",
+# Canonical architecture-id mapping used for both WandB run naming and the
+# onset ledger's `architecture` field. Anything not explicitly named here
+# falls back to a dynamic "D{critic_num_blocks}W{critic_hidden_dim}" id, so
+# arbitrary architectures are supported without touching this map.
+_CRITIC_SIZE_MAP = {
+    (128, 1): "Small",
+    (1024, 3): "XXL",
+}
+
+
+def get_architecture_id(cfg) -> str:
+    """Derives a stable architecture identifier from the agent config.
+
+    Single source of truth for "architecture" naming, shared by WandB
+    run/group naming (see get_run_info) and the onset ledger.
+    """
+    return _CRITIC_SIZE_MAP.get(
+        (cfg.agent.critic_hidden_dim, cfg.agent.critic_num_blocks),
+        f"D{cfg.agent.critic_num_blocks}W{cfg.agent.critic_hidden_dim}",
     )
+
+
+def get_run_info(args):
+    critic_size_label = get_architecture_id(args)
     utd = args.updates_per_interaction_step
     env = args.env.env_name
     group = f"{env}_{critic_size_label}_UTD{utd}"
@@ -43,6 +58,16 @@ class WandbTrainerLogger(object):
         )
 
         self.reset()
+
+    @property
+    def run_name(self) -> Optional[str]:
+        """Authoritative exact WandB run name (None if wandb is disabled)."""
+        return wandb.run.name if wandb.run is not None else None
+
+    @property
+    def run_id(self) -> Optional[str]:
+        """Authoritative WandB run id (None if wandb is disabled)."""
+        return wandb.run.id if wandb.run is not None else None
 
     def update_metric(self, **kwargs) -> None:
         for k, v in kwargs.items():

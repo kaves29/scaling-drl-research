@@ -4,7 +4,7 @@ from gymnasium.vector import VectorEnv
 from gymnasium.wrappers import RescaleAction, TimeLimit
 
 from scale_rl.envs.dmc import make_dmc_env
-from scale_rl.envs.mujoco import make_mujoco_env
+from scale_rl.envs.myosuite import make_myosuite_env
 
 from scale_rl.envs.wrappers import RepeatAction, ScaleReward, DoNotTerminate
 from scale_rl.envs.wrappers.vector import AsyncVectorEnv, SyncVectorEnv, VectorEnv
@@ -73,11 +73,11 @@ def create_vec_env(
         max_episode_steps: int,
         **kwargs
     ) -> gym.Env:
-        
+
         if env_type == 'dmc':
             env = make_dmc_env(env_name, seed, **kwargs)
-        elif env_type == 'mujoco':
-            env = make_mujoco_env(env_name, seed, **kwargs)
+        elif env_type == 'myosuite':
+            env = make_myosuite_env(env_name, seed, **kwargs)
         else:
             raise NotImplementedError
 

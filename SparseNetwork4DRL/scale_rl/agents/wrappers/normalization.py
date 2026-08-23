@@ -67,4 +67,17 @@ class ObservationNormalizer(AgentWrapper):
         return self.agent.get_metrics(
             update_step=update_step,
             batch=batch,
-        )                    
+        )
+
+    def get_q_value(self, observations: np.ndarray, actions: np.ndarray):
+        """Normalizes observations before delegating, matching update()/get_metrics().
+
+        Without this override, AgentWrapper.__getattr__ would forward
+        get_q_value straight to the wrapped SACAgent with *raw* observations,
+        silently producing wrong Q-values whenever normalize_observation=true
+        (the critic was trained on normalized inputs).
+        """
+        return self.agent.get_q_value(
+            observations=self._normalize(observations),
+            actions=actions,
+        )
