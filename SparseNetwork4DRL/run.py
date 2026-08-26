@@ -15,7 +15,7 @@ def build_parser() -> argparse.ArgumentParser:
         help=f"Which experiment pipeline to run. Available: {', '.join(list_experiments())}",
     )
     parser.add_argument("--config_path", type=str, default="./configs")
-    parser.add_argument("--config_name", type=str, default="base")
+    parser.add_argument("--config_name", type=str, default="base_sac")
     parser.add_argument("--overrides", action="append", default=[])
     parser.add_argument("--checkpoint_dir", type=str, default=None)
     parser.add_argument("--checkpoint_interval", type=int, default=100_000)

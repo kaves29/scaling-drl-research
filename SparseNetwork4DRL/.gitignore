@@ -156,6 +156,11 @@ cython_debug/
 wandb/**
 tmp/**
 
+# local/experiment checkpoints - real run artifacts, never meant to be
+# committed (a stale checkpoint here could get silently resumed-from on
+# another machine, and these are large binary blobs)
+check_points/
+
 # cache
 *.ipynb_checkpoints
 *.nfs*

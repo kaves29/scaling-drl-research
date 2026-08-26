@@ -4,7 +4,7 @@
 
 env_type: 'mujoco'
 env_name: ${env_name}
-num_env_steps: 100_000
+num_env_steps: 100_000s
 episodic: false
 
 seed: ${seed}

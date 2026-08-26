@@ -26,8 +26,13 @@ low-risk integration (see README-equivalent notes in the project deliverables).
 """
 
 import os
+import sys
+
 os.environ.setdefault('PYOPENGL_PLATFORM', 'glfw')
-os.environ.setdefault('JAX_PLATFORMS', 'METAL,cpu')
+if sys.platform == 'darwin':
+    # Apple Metal only exists on macOS; on Linux (Kaggle/Colab) leave
+    # JAX_PLATFORMS untouched so JAX auto-detects CUDA/CPU normally.
+    os.environ.setdefault('JAX_PLATFORMS', 'METAL,cpu')
 
 import pickle
 import random
@@ -135,7 +140,15 @@ def run(args: dict) -> None:
     # train
     #############################
     os.environ["WANDB_MODE"] = "online"
-    LOGS_DIR = "/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/SparseNetwork4DRL/logs"
+    # Keep the metrics CSV cache next to the checkpoint when one is
+    # configured, so it rides along with whatever persistence mechanism
+    # already covers checkpoint_dir (e.g. a Kaggle Dataset push) instead of
+    # living in a throwaway, machine-specific location. Falls back to a
+    # repo-relative ./logs when running without checkpointing.
+    if checkpoint_dir:
+        LOGS_DIR = str(Path(checkpoint_dir) / "logs")
+    else:
+        LOGS_DIR = str(Path(__file__).resolve().parents[1] / "logs")
     os.makedirs(LOGS_DIR, exist_ok=True)
     run_name = f"{cfg.env_name}_CD{cfg.agent.critic_num_blocks}_CW{cfg.agent.critic_hidden_dim}_AD{cfg.agent.actor_num_blocks}_AW{cfg.agent.actor_hidden_dim}_seed{cfg.seed}"
 
