@@ -1,3 +1,5 @@
+import pickle
+from pathlib import Path
 from typing import Dict
 
 import numpy as np
@@ -81,3 +83,45 @@ class ObservationNormalizer(AgentWrapper):
             observations=self._normalize(observations),
             actions=actions,
         )
+
+    def save_checkpoint(self, checkpoint_dir: str) -> None:
+        """Delegates to the wrapped agent, then additionally persists
+        obs_rms (mean/var/count).
+
+        Without this override, AgentWrapper.__getattr__ would forward
+        save_checkpoint straight to the wrapped SACAgent, which has no
+        knowledge of obs_rms - silently dropping the running normalization
+        statistics on every save. Since the actor/critic were trained on
+        normalized observations, restoring a checkpoint without obs_rms
+        would reconstruct an agent whose network parameters no longer match
+        the input distribution they were trained on.
+        """
+        self.agent.save_checkpoint(checkpoint_dir)
+        state = {
+            "mean": self.obs_rms.mean,
+            "var": self.obs_rms.var,
+            "count": self.obs_rms.count,
+        }
+        with open(Path(checkpoint_dir) / "obs_rms.pkl", "wb") as f:
+            pickle.dump(state, f, protocol=pickle.HIGHEST_PROTOCOL)
+
+    def load_checkpoint(self, checkpoint_dir: str) -> None:
+        """Delegates to the wrapped agent, then restores obs_rms - see
+        save_checkpoint for why this is required for correctness."""
+        self.agent.load_checkpoint(checkpoint_dir)
+        obs_rms_path = Path(checkpoint_dir) / "obs_rms.pkl"
+        if not obs_rms_path.exists():
+            raise FileNotFoundError(
+                f"No obs_rms checkpoint found at {obs_rms_path}. This "
+                f"checkpoint was saved without ObservationNormalizer.save_checkpoint "
+                f"(e.g. by an older code path that only called the wrapped "
+                f"agent's save_checkpoint directly); refusing to silently "
+                f"resume with freshly-initialized (mean=0, var=1) normalization "
+                f"statistics, since that would not match the actor/critic's "
+                f"actual training distribution."
+            )
+        with open(obs_rms_path, "rb") as f:
+            state = pickle.load(f)
+        self.obs_rms.mean = state["mean"]
+        self.obs_rms.var = state["var"]
+        self.obs_rms.count = state["count"]

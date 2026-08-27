@@ -48,27 +48,29 @@ Both critics' raw Q-estimates may be logged on every probe for secondary/off-dia
 
 Angle 2B
 
-Purpose: determine whether the functional error established in Angle 2A actually reaches the actor's optimization signal — not just whether the critic's beliefs are wrong, but whether that wrongness distorts what the actor is trained on. This is necessary because a critic can be biased in value while producing an unaffected local gradient (a uniform offset does not change slope); 2A cannot show this on its own.
+Purpose: determine whether the functional error established in Angle 2A actually reaches the actor's optimization signal — not just whether the critic's beliefs are wrong, but whether that wrongness distorts what the actor is trained on, and whether that distortion exceeds normal healthy-critic variability. This is necessary because a critic can be biased in value while producing an unaffected local gradient (a uniform offset does not change slope); 2A cannot show this on its own. Angle 2B reuses Angle 2A's existing infrastructure (frozen degraded agent (Q_D, π_D) and frozen reference agent (Q_R, π_R) checkpoints, matched to t*) — no additional training or environment interaction occurs anywhere in Angle 2B.
 
-Design: a frozen, single-step counterfactual. Take the real degraded agent's actor, frozen at t*. Using the same real entropy term throughout, compute:
+Primary analysis: a frozen, single-step counterfactual. Hold the degraded agent's actor π_D completely fixed. Using identical state-action inputs, entropy coefficient, and sampled evaluation conditions, compute two counterfactual actor gradients:
 
-g_D = ∇_θJ(θ, Q_D)   (real degraded critic's Q-term)
+g_{D|D} = ∇_θJ(π_D; Q_D)   (the real signal, using the critic actually present in the degraded agent)
 
-g_R = ∇_θJ(θ, Q_R)   (matched reference critic's Q-term, same actor, same batch)
+g_{D|R} = ∇_θJ(π_D; Q_R)   (the counterfactual signal, same actor, critic swapped to the reference)
 
-Only the critic's Q-term is swapped — actor parameters, state batch, and entropy term are held identical between the two.
+Only the critic changes between these two; π_D's parameters, the state batch, and the entropy term are held identical in both.
 
-Measurement:
+Distortion metrics — compute all three, on the primary analysis pair:
 
-Δg = 1 − cos(g_D, g_R)
+D_dir = 1 − cos(g_{D|D}, g_{D|R})   (direction)
 
-(direction) and
+D_mag = log(‖g_{D|D}‖ / ‖g_{D|R}‖)   (magnitude)
 
-Δ_norm = log(‖g_D‖/‖g_R‖)
+D_grad = ‖g_{D|D} − g_{D|R}‖   (raw gradient displacement)
 
-(magnitude), each compared against a healthy-critic null (identical procedure performed between two independent baseline-architecture critics on the same actor). The question is not "do the gradients differ" (trivially true even between two healthy critics due to ordinary training noise) but whether the divergence exceeds the healthy-critic null — i.e., whether the degraded critic distorts the actor's gradient by more than natural variation between healthy critics would produce.
+Secondary robustness analysis: repeat the identical counterfactual procedure using the frozen reference actor π_R instead — g_{R|R} = ∇_θJ(π_R; Q_R), g_{R|D} = ∇_θJ(π_R; Q_D) — and compute the same three distortion metrics on this pair. This is a diagnostic robustness check only, never averaged with the primary analysis: its purpose is to determine whether the observed distortion is specific to the actor that emerged from the degraded training condition, or is a property of the critic detectable regardless of which actor probes it. Report both results side by side, explicitly labeled primary vs. secondary, never combined into a single aggregate statistic.
 
-Scope boundary — do not overclaim: 2B establishes that critic inaccuracy reaches and measurably distorts the actor's training signal at a single frozen point. It does not establish that this distortion produces worse downstream policy behavior over continued training — a single-step distortion could in principle wash out under momentum-based optimizers or self-correct over many updates. That causal claim belongs to Angle 3 only. Angle 2B must never be extended into a continued-training or multi-step design — doing so collapses it into Angle 3's experiment and reintroduces confounds (actor/critic co-adaptation over time) that the frozen design exists specifically to avoid.
+Null distribution: the null must mirror the primary analysis's structure exactly, not just involve "a healthy critic." Select two independently-trained default-architecture SimBa agents, A and B (different seeds; neither critic has trained on the other's actor's data — essential, not optional). Using π_A held fixed, compute g_{A|A} = ∇_θJ(π_A; Q_A) (real signal, A's own critic) and g_{A|B} = ∇_θJ(π_A; Q_B) (foreign healthy critic swapped in), then compute D_dir, D_mag, and D_grad on this pair exactly as in the primary analysis — never a raw comparison between two healthy critics' outputs. This isolates the distortion caused by ordinary "foreign critic" unfamiliarity alone, with no pathology involved on either side. Repeat across multiple independent healthy A/B pairs (reuse baseline critics from Angle 1 seeds where possible rather than retraining) to build a real distribution, not a single point estimate. Compare the degraded-critic distortion (g_{D|D} vs g_{D|R}) against this null distribution using the same statistical criterion established elsewhere in this study (the (mean + 2σ) rule — see Onset Definitions below) — do not invent a new statistical threshold for this step. State explicitly, as a limitation, that this comparison assumes the magnitude of ordinary foreign-critic unfamiliarity is comparable between a healthy-healthy pairing and a degraded-reference pairing — a standard assumption underlying null-baseline comparisons throughout this methodology, not a fully verified equivalence.
+
+Scope boundary — do not overclaim: 2B establishes that critic inaccuracy reaches and measurably distorts the actor's training signal at a single frozen point, relative to the healthy-critic null. It does not establish that this distortion produces worse downstream policy behavior over continued training — a single-step distortion could in principle wash out under momentum-based optimizers or self-correct over many updates. That causal claim belongs to Angle 3 only. Angle 2B must never be extended into a continued-training or multi-step design — doing so collapses it into Angle 3's experiment and reintroduces confounds (actor/critic co-adaptation over time) that the frozen design exists specifically to avoid.
 
 Angle 2C
 

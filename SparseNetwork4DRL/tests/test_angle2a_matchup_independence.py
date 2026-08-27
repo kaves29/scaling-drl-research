@@ -15,6 +15,7 @@ import unittest
 from unittest import mock
 
 import numpy as np
+from omegaconf import OmegaConf
 
 from experiments.angle_2a import matchup as matchup_module
 from experiments.angle_2a.agent_runner import ProbeCapture, TrainedAgentHandle
@@ -32,6 +33,14 @@ class _FakeAgent:
 
     def sample_actions(self, interaction_step, prev_timestep, training):
         return np.zeros((1, 1), dtype=np.float32)
+
+    def save_checkpoint(self, checkpoint_dir):
+        # run_matchup() now persists a frozen-agent snapshot for every role
+        # (see experiments/angle_2a/storage.py:save_frozen_agent_snapshot,
+        # added for Angle 2B) - real training/checkpointing is still
+        # deliberately mocked out here per this module's docstring, so this
+        # only needs to satisfy the call, not produce a loadable checkpoint.
+        pass
 
 
 class _FakeEnv:
@@ -98,6 +107,12 @@ def _fake_train_agent_to_step(role, architecture, architecture_label, base_cfg, 
 
 class _FakeBaseCfg:
     gamma = 0.99
+    # run_matchup() now also resolves each role's agent config to persist
+    # alongside its checkpoint (see build_role_agent_cfg, used for Angle 2B -
+    # experiments/angle_2a/storage.py:save_frozen_agent_snapshot). This must
+    # be a real OmegaConf DictConfig, not a plain object, since
+    # build_role_agent_cfg calls OmegaConf.set_struct/to_container on it.
+    agent = OmegaConf.create({"critic_num_blocks": 2, "critic_hidden_dim": 512, "critic_use_cdq": True})
 
     class env:
         max_episode_steps = 100

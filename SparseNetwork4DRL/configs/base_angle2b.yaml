@@ -1,0 +1,51 @@
+##################################################################################
+# Angle 2B: Actor-Facing Signal Falsification
+#
+# Angle 2B reads architecture, onset step, and agent configuration entirely
+# from Angle 2A's already-persisted snapshots (see
+# experiments/angle_2b/checkpoint_io.py) - unlike base_angle2a.yaml, this
+# config does NOT need an agent/buffer/env template, and Angle 2B never
+# touches a real environment or trains anything (see
+# research-methodology.md's Angle 2B scope boundary).
+##################################################################################
+
+project_name: 'EchoCritic'
+seed: 108
+env_name: 'reacher-hard'
+
+defaults:
+  - _self_
+
+##################################################################################
+# Angle 2B: frozen counterfactual actor-gradient falsification
+##################################################################################
+
+angle_2_b:
+  # Which Angle 2A matchup(s) to analyze for this (environment, seed).
+  # Angle 2A's own naming convention: matchup_1 = scaled_a vs reference,
+  # matchup_2 = scaled_b vs reference.
+  matchup_names: ???
+
+  # Which seeds' Angle 2A null-baseline snapshots (null_matchup_1 /
+  # null_matchup_2, matched to whichever matchup_name is being analyzed) to
+  # pool into the empirical healthy-critic null distribution. Must be
+  # explicit - see experiments/angle_2b/null_baseline.py's module docstring
+  # for why this can only include seeds with an actually-available
+  # matched-timestep pair, not an arbitrary requested count.
+  null_seeds: ???
+
+  # RNG seed for Angle 2B's own state-batch sampling (see
+  # experiments/angle_2b/sampling.py). Defaults to `seed` above when null -
+  # kept separate so re-running the analysis with a different batch draw
+  # (e.g. a sensitivity check) doesn't require changing `seed` (which is
+  # also used to locate which Angle 2A snapshot to load).
+  analysis_seed: null
+
+  # States sampled per source (D-source / R-source, or A-source / B-source
+  # for a null pair) - 60 total per analysis. Kept configurable for
+  # testability, but the scientific protocol requires exactly 30; do not
+  # lower this to save compute.
+  num_states_per_source: 30
+
+  angle_2a_results_root: 'results/angle_2a'
+  output_root: 'results/angle_2b'

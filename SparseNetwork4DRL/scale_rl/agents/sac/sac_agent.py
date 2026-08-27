@@ -476,6 +476,25 @@ class SACAgent(BaseAgent):
 
         return np.array(q).reshape(-1)
 
+    @property
+    def actor(self) -> Trainer:
+        """Read-only access to the frozen actor Trainer (params + network_def),
+        for callers that need the raw JAX pytree directly (e.g. Angle 2B's
+        counterfactual actor-gradient measurement) rather than going through
+        sample_actions/update."""
+        return self._actor
+
+    @property
+    def critic(self) -> Trainer:
+        """Read-only access to the frozen critic Trainer. See `actor`."""
+        return self._critic
+
+    @property
+    def temperature(self) -> Trainer:
+        """Read-only access to the frozen temperature (entropy coefficient)
+        Trainer. See `actor`."""
+        return self._temperature
+
     def get_num_parameters(self):
         actor_num_params = print_num_parameters(flatten_dict(self._actor.params),network_type='actor_simba')
         critic_num_params = print_num_parameters(flatten_dict(self._critic.params),network_type='critic_simba')

@@ -14,6 +14,27 @@ is a small JSON sidecar.
 Everything here is independent of WandB: this is the canonical dataset,
 per project requirement; WandB (see experiments/angle_2a/matchup.py) only
 gets a run-level summary that references these paths.
+
+Frozen-agent snapshots (added for Angle 2B): Angle 2A originally discarded
+each matchup's live D/R agent objects once probes/errors were computed (see
+matchup.py's `finally: D.close() / R.close()` - envs were closed, but the
+JAX actor/critic/temperature params themselves were never checkpointed to
+disk anywhere in Angle 1 or Angle 2A). Angle 2B needs exactly those frozen
+params (pi_D/Q_D, pi_R/Q_R) with zero additional training, so
+save_frozen_agent_snapshot() below persists, per (matchup, role):
+  - the agent's full SACAgent.save_checkpoint() state (actor/critic/
+    temperature/target_critic/rng), reusable via SACAgent.load_checkpoint()
+  - that role's full ProbeCapture states/actions (NOT just the 10 probes
+    already sampled into probes_arrays.npz - a fresh, larger, independent
+    sample), so Angle 2B can draw its own state batch without being limited
+    to Angle 2A's own probe count or re-running training/environment
+    interaction to get more.
+This is deliberately symmetric across every matchup type (real matchups AND
+null-baseline matchups): run_matchup() is shared code, so null-baseline
+D/R agents (two independent healthy default-architecture critics) get
+snapshotted the same way, which is what lets Angle 2B build its healthy-
+critic null distribution from already-existing Angle 2A infrastructure
+instead of training anything new.
 """
 
 import io
@@ -123,6 +144,72 @@ def save_matchup_result(
     _atomic_write_bytes(arrays_path, arrays_buf.getvalue())
 
     return {"metadata": metadata_path, "probes_csv": csv_path, "probes_arrays": arrays_path}
+
+
+def save_frozen_agent_snapshot(
+    environment: str,
+    seed: int,
+    matchup_name: str,
+    role: str,
+    agent: Any,
+    probe_capture: Any,
+    agent_cfg: Dict[str, Any],
+    root: str = DEFAULT_OUTPUT_ROOT,
+) -> Dict[str, Path]:
+    """Persists one role's ("D" or "R") frozen agent + full probe-capture
+    data for a matchup, so it can be reloaded later (by Angle 2B or anyone
+    else) with zero retraining/environment interaction.
+
+    `agent` may be a raw SACAgent or an ObservationNormalizer-wrapped one
+    (see scale_rl.agents.wrappers.normalization) - agent.save_checkpoint()
+    handles both correctly (the wrapper override additionally persists
+    obs_rms, without which normalized-observation agents could not be
+    faithfully reconstructed).
+
+    `probe_capture` is the role's ProbeCapture (see
+    experiments/angle_2a/agent_runner.py) as of this matchup's stopping
+    step - already correctly frozen/snapshotted for the reference role by
+    train_reference_agent_with_snapshots (its live buffer keeps growing
+    past this step, but probe_capture does not).
+
+    `agent_cfg` is this role's fully-resolved agent config (as returned by
+    experiments.angle_2a.config.build_role_agent_cfg) - persisted verbatim
+    so a caller (Angle 2B) can reconstruct an architecturally-identical
+    agent shell via scale_rl.agents.create_agent() before calling
+    load_checkpoint(), without needing any live Hydra config or a real
+    gym/dm_control environment (observation_dim/action_dim are recoverable
+    from the saved probe_capture arrays' shapes instead).
+    """
+    if role not in ("D", "R"):
+        raise ValueError(f"role must be 'D' or 'R', got {role!r}")
+
+    out_dir = matchup_dir(environment, seed, matchup_name, root=root)
+    checkpoint_dir = out_dir / "checkpoints" / role
+    checkpoint_dir.mkdir(parents=True, exist_ok=True)
+    agent.save_checkpoint(str(checkpoint_dir))
+
+    n = len(probe_capture)
+    if n > 0:
+        _idxs, states, actions, _env_states = probe_capture.sample(
+            n, np.random.default_rng(seed=0)
+        )
+    else:
+        states = np.empty((0,))
+        actions = np.empty((0,))
+
+    probe_capture_buf = io.BytesIO()
+    np.savez(probe_capture_buf, states=states, actions=actions)
+    probe_capture_path = out_dir / f"probe_capture_{role}.npz"
+    _atomic_write_bytes(probe_capture_path, probe_capture_buf.getvalue())
+
+    agent_cfg_path = out_dir / f"agent_cfg_{role}.json"
+    atomic_write_text(agent_cfg_path, json.dumps(agent_cfg, indent=2, default=str))
+
+    return {
+        "checkpoint_dir": checkpoint_dir,
+        "probe_capture": probe_capture_path,
+        "agent_cfg": agent_cfg_path,
+    }
 
 
 def load_matchup_result(

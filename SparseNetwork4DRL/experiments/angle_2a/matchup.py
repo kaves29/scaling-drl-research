@@ -30,7 +30,7 @@ import numpy as np
 import wandb
 
 from experiments.angle_2a.agent_runner import TrainedAgentHandle, derive_rng_seed, train_agent_to_step
-from experiments.angle_2a.config import RoleArchitecture
+from experiments.angle_2a.config import RoleArchitecture, build_role_agent_cfg
 from experiments.angle_2a.probes import (
     Probe,
     compute_diagonal_errors,
@@ -38,7 +38,7 @@ from experiments.angle_2a.probes import (
     run_monte_carlo_rollouts,
     sample_probes,
 )
-from experiments.angle_2a.storage import save_matchup_result
+from experiments.angle_2a.storage import save_frozen_agent_snapshot, save_matchup_result
 
 MAX_ROLLOUT_STEPS_MULTIPLIER = 3  # safety cap only; natural termination is via terminated/truncated
 
@@ -135,6 +135,24 @@ def run_matchup(
         run_monte_carlo_rollouts(probes, D, R, num_mc_rollouts, gamma, max_rollout_steps)
         compute_diagonal_errors(probes)
 
+        # Persist frozen agent snapshots (checkpoint + full probe-capture
+        # data) for both roles, before anything is closed below. This is
+        # unconditional for every matchup type (real + null-baseline) since
+        # run_matchup() is shared code - see storage.py's module docstring
+        # for why downstream consumers (Angle 2B) need this.
+        snapshot_paths = {
+            "D": save_frozen_agent_snapshot(
+                environment, seed, matchup_name, "D", D.agent, D.probe_capture,
+                agent_cfg=build_role_agent_cfg(base_cfg.agent, scaled_architecture),
+                root=output_root,
+            ),
+            "R": save_frozen_agent_snapshot(
+                environment, seed, matchup_name, "R", R.agent, R.probe_capture,
+                agent_cfg=build_role_agent_cfg(base_cfg.agent, reference_architecture),
+                root=output_root,
+            ),
+        }
+
         aggregate = _aggregate_metrics(probes)
 
         run_metadata = {
@@ -159,6 +177,10 @@ def run_matchup(
             "num_mc_rollouts": num_mc_rollouts,
             "gamma": gamma,
             "duration_seconds": time.time() - started_at,
+            "snapshots": {
+                role: {k: str(v) for k, v in paths.items()}
+                for role, paths in snapshot_paths.items()
+            },
             **aggregate,
         }
         if reference_run_key is not None:
@@ -176,6 +198,7 @@ def run_matchup(
             probes=probes,
             root=output_root,
         )
+        output_paths["snapshots"] = snapshot_paths
 
         if wandb_enabled:
             _log_to_wandb(matchup_name, run_metadata, wandb_project, output_paths)
