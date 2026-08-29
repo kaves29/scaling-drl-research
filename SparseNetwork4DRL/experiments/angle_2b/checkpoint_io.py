@@ -116,20 +116,19 @@ def apply_agent_normalization(agent, raw_states: np.ndarray) -> np.ndarray:
     Returns the states unchanged for an unwrapped (non-normalized) agent.
 
     This must be applied using the HELD-FIXED actor's own normalization -
-    never per-source (e.g. D-sourced states normalized by D, R-sourced
-    states normalized by R, then concatenated) - because
-    gradients.py's _actor_loss feeds ONE shared `observations` array to both
-    the actor.apply() call (to sample actions) and the critic call (to
-    evaluate Q): whichever critic is swapped in must see exactly the
+    because gradients.py's _actor_loss feeds ONE shared `observations` array
+    to both the actor.apply() call (to sample actions) and the critic call
+    (to evaluate Q): whichever critic is swapped in must see exactly the
     observation representation the fixed actor itself operates in, not its
     own preferred normalization. Concretely: for the primary analysis
-    (pi_D held fixed), the WHOLE batch - both D-sourced and R-sourced raw
-    states - is normalized using D's own obs_rms before either Q_D or Q_R
-    ever sees it; for the secondary analysis (pi_R held fixed), the same
-    raw batch is instead normalized using R's own obs_rms. Without this,
-    feeding a state through a critic normalized under a *different* agent's
-    statistics would introduce a normalization-mismatch artifact that could
-    masquerade as "distortion" having nothing to do with critic pathology.
+    (pi_D held fixed), the batch - sourced exclusively from D's own buffer,
+    see sampling.py's own-buffer-only sourcing - is normalized using D's own
+    obs_rms before either Q_D or Q_R ever sees it; for the secondary
+    analysis (pi_R held fixed), R's own batch is instead normalized using
+    R's own obs_rms. Without this, feeding a state through a critic
+    normalized under a *different* agent's statistics would introduce a
+    normalization-mismatch artifact that could masquerade as "distortion"
+    having nothing to do with critic pathology.
     """
     if hasattr(agent, "_normalize"):
         return np.asarray(agent._normalize(raw_states))

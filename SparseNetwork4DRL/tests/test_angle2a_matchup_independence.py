@@ -205,11 +205,19 @@ class TestMatchupIndependence(unittest.TestCase):
 
 
 class TestMatchupWithSharedReferenceHandle(unittest.TestCase):
-    """run_matchup(reference_handle=...) contract: used for the two real
-    matchups so a second reference training run is never created (see
-    experiments/angle_2_a.py + agent_runner.train_reference_agent_with_snapshots).
-    The null-baseline path (reference_handle=None, exercised by the class
-    above) must remain completely unaffected."""
+    """run_matchup(reference_handle=...) contract, in isolation.
+
+    As of the 2026-08-28 audit, no caller in this codebase actually passes
+    reference_handle - experiments/angle_2_a.py previously did (sharing one
+    reference trajectory across Matchup 1 and Matchup 2), but that violated
+    research-methodology.md's Angle 2A section ("Each scaled critic gets its
+    own independently-trained reference critic... never shared across two
+    scaled architectures") and was removed; both real matchups now call
+    run_matchup() the same way the null-baseline path (exercised by the
+    class above) always has, with reference_handle=None. This class is kept
+    to verify run_matchup()'s own reference_handle contract still behaves
+    correctly as a general capability, independent of whether anything
+    currently calls it that way - see matchup.py's module docstring."""
 
     def setUp(self):
         CLOSED_HANDLES.clear()

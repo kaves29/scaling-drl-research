@@ -16,20 +16,36 @@ Two real matchups (scaled_a vs reference, scaled_b vs reference), each using
 its OWN scaled architecture's OWN onset step - never averaged, never
 substituted. `D_5x768` and `D_7x1024` are each a fresh, independent agent.
 
-The reference side (`R_2x512`) is trained exactly ONCE per seed, as a single
-continuous trajectory to max(t*_5/768, t*_7/1024), and snapshotted (frozen
-actor/critic + replay-buffer-equivalent probe data, as of that step) at each
-matchup's own onset step - see
-experiments.angle_2a.agent_runner.train_reference_agent_with_snapshots.
-Matchup 1 and Matchup 2 each get their own snapshot of that ONE trajectory;
-no second reference training run is ever created for this purpose.
+The reference side (`R_2x512`) is likewise trained fully independently per
+matchup - a separately-initialized agent (own actor, own critic, own replay
+buffer, own environment, own RNG stream), trained online from scratch for
+exactly that matchup's own onset_step, with no state shared across matchups.
+This matches research-methodology.md's Angle 2A section verbatim ("Each
+scaled critic gets its own independently-trained reference critic, matched
+to its own t* - never shared across two scaled architectures") and its
+"Must Never Change Silently" list. run_matchup() already does exactly this
+by default (reference_handle=None) - it is the same code path the
+null-baseline matchups below already use, so no separate reference-training
+primitive is needed here; the two real matchups just call run_matchup()
+twice, independently, exactly like the null-baseline loop does.
+
+(An earlier version of this module trained ONE shared reference trajectory
+and snapshotted it twice - one snapshot per matchup's onset step - which
+.claude/rules/angle2.md described as intentional but which
+research-methodology.md's Angle 2A section and "Must Never Change Silently"
+list explicitly forbid. That shared-trajectory design has been removed; see
+the 2026-08-28 audit notes in the End-of-Task Summary for the full
+before/after and why. experiments/angle_2a/agent_runner.py's
+train_reference_agent_with_snapshots()/ReferenceTrajectory/
+ProbeCapture.snapshot() supported only that removed design and were deleted
+as dead code alongside it.)
 
 An optional healthy-vs-healthy null baseline reuses each matchup's
 already-looked-up onset step (a real Angle-1-derived number, not invented)
-but requires fresh training for BOTH sides (this behavior is unchanged from
-before this change), since Angle 1 does not persist checkpoints/replay
-buffers in a form Angle 2A could probe directly - see the "null baseline"
-note in the Angle 2A deliverables for why.
+and, as always, requires fresh, independent training for BOTH sides, since
+Angle 1 does not persist checkpoints/replay buffers in a form Angle 2A could
+probe directly - see the "null baseline" note in the Angle 2A deliverables
+for why.
 """
 
 import os
@@ -37,7 +53,6 @@ import os
 import omegaconf
 from dotmap import DotMap
 
-from experiments.angle_2a.agent_runner import train_reference_agent_with_snapshots
 from experiments.angle_2a.config import architecture_label, validate_angle2a_config
 from experiments.angle_2a.errors import Angle2AOnsetLookupError
 from experiments.angle_2a.matchup import run_matchup
@@ -91,8 +106,7 @@ def run(args: dict) -> None:
 
     # Phase 1: look up BOTH onsets first (each independently, from its own
     # scaled architecture's ledger entry - never averaged, never one
-    # substituted for the other) before training anything, since the shared
-    # reference trajectory needs both target steps up front.
+    # substituted for the other).
     onsets = {}
     for matchup_name, scaled_architecture in matchup_specs:
         scaled_label = architecture_label(scaled_architecture)
@@ -112,66 +126,44 @@ def run(args: dict) -> None:
             )
             raise
 
-    # Phase 2: train the ONE shared R_2x512 trajectory to
-    # max(t*_5/768, t*_7/1024), snapshotted at each matchup's own onset step.
-    snapshot_steps = [onsets[name].onset_step for name in onsets]
-    reference_run_key = f"angle_2_a_reference_{reference_label}_{environment}_seed{seed}"
-    print(
-        f"[angle_2_a] training ONE shared R={reference_label} reference "
-        f"trajectory (run_key={reference_run_key}) to "
-        f"max(onset_steps)={max(snapshot_steps)}, snapshotting at "
-        f"{sorted(set(snapshot_steps))}"
-    )
-    reference_trajectory = train_reference_agent_with_snapshots(
-        architecture=reference,
-        architecture_label=reference_label,
-        base_cfg=cfg,
-        snapshot_steps=snapshot_steps,
-        seed_context=f"shared_reference:{reference_label}",
-    )
+    # Phase 2: run each real matchup with its own independently-trained
+    # reference agent. run_matchup() trains R fresh (own actor/critic/
+    # buffer/env/RNG) whenever no reference_handle is supplied - the same
+    # code path the null-baseline loop below already relies on - so simply
+    # not passing reference_handle here gives each matchup a genuinely
+    # separate reference agent, trained to its own onset_step, with nothing
+    # shared between matchup_1 and matchup_2.
+    for matchup_name, scaled_architecture in matchup_specs:
+        scaled_label = architecture_label(scaled_architecture)
+        onset = onsets[matchup_name]
 
-    try:
-        # Phase 3: run each real matchup against its own snapshot of the
-        # shared reference trajectory. D remains a fresh, independent agent
-        # per matchup.
-        for matchup_name, scaled_architecture in matchup_specs:
-            scaled_label = architecture_label(scaled_architecture)
-            onset = onsets[matchup_name]
+        print(
+            f"[angle_2_a] {matchup_name}: D={scaled_label} (fresh) vs "
+            f"R={reference_label} (fresh, independent) env={environment} "
+            f"seed={seed} -> stopping at onset_step={onset.onset_step} "
+            f"(from run_key={onset.run_key})"
+        )
 
-            print(
-                f"[angle_2_a] {matchup_name}: D={scaled_label} (fresh) vs "
-                f"R={reference_label}@{onset.onset_step} (shared trajectory "
-                f"snapshot) env={environment} seed={seed} -> stopping at "
-                f"onset_step={onset.onset_step} (from run_key={onset.run_key})"
-            )
+        run_matchup(
+            matchup_name=matchup_name,
+            scaled_architecture=scaled_architecture,
+            scaled_architecture_label=scaled_label,
+            reference_architecture=reference,
+            reference_architecture_label=reference_label,
+            onset_step=onset.onset_step,
+            onset_source_run_key=onset.run_key,
+            base_cfg=cfg,
+            seed=seed,
+            environment=environment,
+            experiment_name="angle_2_a",
+            num_probes_per_source=num_probes_per_source,
+            num_mc_rollouts=num_mc_rollouts,
+            output_root="results/angle_2a",
+            wandb_project=str(cfg.project_name),
+        )
 
-            run_matchup(
-                matchup_name=matchup_name,
-                scaled_architecture=scaled_architecture,
-                scaled_architecture_label=scaled_label,
-                reference_architecture=reference,
-                reference_architecture_label=reference_label,
-                onset_step=onset.onset_step,
-                onset_source_run_key=onset.run_key,
-                base_cfg=cfg,
-                seed=seed,
-                environment=environment,
-                experiment_name="angle_2_a",
-                num_probes_per_source=num_probes_per_source,
-                num_mc_rollouts=num_mc_rollouts,
-                output_root="results/angle_2a",
-                wandb_project=str(cfg.project_name),
-                reference_handle=reference_trajectory.at(onset.onset_step),
-                reference_run_key=reference_run_key,
-            )
-    finally:
-        # closed exactly once, after both matchups are done using it -
-        # never per-matchup, since both share this one trajectory's env.
-        reference_trajectory.close()
-
-    # Phase 4: null baseline - unchanged: healthy-vs-healthy, both sides
-    # freshly trained per matchup, independent of the shared-reference
-    # mechanism above.
+    # Phase 3: null baseline - unchanged: healthy-vs-healthy, both sides
+    # freshly trained per matchup, independent of the real matchups above.
     if run_null_baseline:
         for matchup_name, _scaled_architecture in matchup_specs:
             onset = onsets[matchup_name]

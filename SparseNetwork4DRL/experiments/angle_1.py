@@ -26,13 +26,18 @@ low-risk integration (see README-equivalent notes in the project deliverables).
 """
 
 import os
-import sys
 
-os.environ.setdefault('PYOPENGL_PLATFORM', 'glfw')
-if sys.platform == 'darwin':
-    # Apple Metal only exists on macOS; on Linux (Kaggle/Colab) leave
-    # JAX_PLATFORMS untouched so JAX auto-detects CUDA/CPU normally.
-    os.environ.setdefault('JAX_PLATFORMS', 'METAL,cpu')
+from utils.hardware import configure_hardware_env, validate_rocm_jax_available
+
+# Defense-in-depth: run.py's true entry point already calls this before
+# `import experiments` (which is what triggers this module's own import),
+# so in the normal run.py-launched path this is a cheap idempotent no-op
+# (see configure_hardware_env's docstring - the vendor is cached in a
+# sentinel env var after the first call). This call exists so that anything
+# importing experiments.angle_1 WITHOUT going through run.py (e.g. this
+# repo's own test suite) still gets hardware-aware env vars set correctly
+# before `import jax` below - must run before that import either way.
+_GPU_VENDOR = configure_hardware_env()
 
 import pickle
 import random
@@ -59,6 +64,8 @@ from scale_rl.evaluation import evaluate
 from utils.onset_ledger import WandbIdentity
 
 jax.config.update("jax_enable_x64", False)
+
+validate_rocm_jax_available(_GPU_VENDOR)
 
 
 @register_experiment("angle_1")

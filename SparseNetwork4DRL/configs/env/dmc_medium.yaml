@@ -4,7 +4,7 @@
 
 env_type: 'dmc'
 env_name: ${env_name}
-num_env_steps: 1_000_000
+num_env_steps: 1_250_000
 episodic: false
 
 seed: ${seed}

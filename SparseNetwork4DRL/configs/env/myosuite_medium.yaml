@@ -2,7 +2,7 @@ env_type: 'myosuite'
 env_name: ${env_name}
 seed: ${seed}
 
-num_env_steps: 1_000_000
+num_env_steps: 1_250_000
 episodic: false
 
 num_train_envs: 1

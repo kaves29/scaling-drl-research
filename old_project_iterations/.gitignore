@@ -1,8 +1,0 @@
-models/
-results/
-logs/
-wandb/
-__pycache__/
-*.pyc
-.DS_Store
-runs/

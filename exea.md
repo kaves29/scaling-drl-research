@@ -27,6 +27,15 @@ Runs once per session, before START or RESUME. Installs dependencies and
 prints which JAX device(s) are visible so a silent CPU fallback on a booked
 GPU node is caught immediately rather than discovered three hours later.
 
+As of 2026-08-28, `experiments/angle_1.py` auto-detects NVIDIA vs. AMD GPU
+hardware at import time (`nvidia-smi` / `rocm-smi` on PATH, OS-level only,
+before JAX is ever imported) and sets `JAX_PLATFORMS`, `PYOPENGL_PLATFORM`,
+and `HIP_VISIBLE_DEVICES`/`CUDA_VISIBLE_DEVICES` accordingly - see
+`utils/hardware.py`. This SETUP step does not need to set any of those
+itself on either vendor; the check below is still worth keeping as-is
+because it verifies the *result* (a real GPU device actually showing up in
+`jax.devices()`), which is orthogonal to which vendor was detected.
+
 ```bash
 cd SparseNetwork4DRL
 pip install -r requirements.txt
@@ -34,15 +43,16 @@ python -c "
 import jax
 devices = jax.devices()
 print('[exea setup] JAX devices:', devices)
-if not any(d.platform in ('gpu', 'cuda', 'tpu') for d in devices):
+if not any(d.platform in ('gpu', 'cuda', 'rocm', 'tpu') for d in devices):
     print(
         '[exea setup] WARNING: no GPU/TPU device detected - training will '
         'run on CPU and may be far too slow to make real progress in a '
         '3-hour window. requirements.txt does not pin jax/jaxlib directly '
         '(only pulled in transitively via flax==0.8.4), so a fresh '
         'environment can silently resolve to CPU-only jax. If this is '
-        'unexpected here, install a CUDA-matched build explicitly, e.g. '
-        'pip install -U \"jax[cuda12]==0.4.34\", then re-run SETUP.'
+        'unexpected here, install a build matching this machine\\'s GPU '
+        'vendor, e.g. pip install -U \"jax[cuda12]==0.4.34\" on NVIDIA or '
+        'the ROCm-matched jax/jaxlib build on AMD, then re-run SETUP.'
     )
 "
 ```

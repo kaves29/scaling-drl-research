@@ -41,11 +41,14 @@ angle_2_b:
   # also used to locate which Angle 2A snapshot to load).
   analysis_seed: null
 
-  # States sampled per source (D-source / R-source, or A-source / B-source
-  # for a null pair) - 60 total per analysis. Kept configurable for
-  # testability, but the scientific protocol requires exactly 30; do not
-  # lower this to save compute.
-  num_states_per_source: 30
+  # States sampled per analysis, drawn EXCLUSIVELY from that analysis's
+  # held-fixed actor's own probe-capture buffer (primary: D's own buffer
+  # only; secondary: R's own buffer only; a null pair: A's own buffer only -
+  # never the other side's, to avoid evaluating the fixed actor on
+  # out-of-distribution states - see experiments/angle_2b/sampling.py).
+  # Kept configurable for testability, but the scientific protocol requires
+  # exactly 40; do not lower this to save compute.
+  num_states_per_source: 40
 
   angle_2a_results_root: 'results/angle_2a'
   output_root: 'results/angle_2b'

@@ -100,12 +100,14 @@ def compute_null_pair_distortion(
             f"architecture in the same environment."
         )
 
-    # Raw states, normalized once using A's own obs_rms (pi_A is the fixed
-    # actor here) - see apply_agent_normalization's docstring for why this
-    # must not be a per-source (A-normalized/B-normalized) mix.
+    # Own-buffer-only sourcing (see sampling.py): pi_A is the fixed actor
+    # here, so the batch is drawn exclusively from A's own probe-capture
+    # buffer - B's states are never used for batch construction, only B's
+    # critic (as the swapped-in Q). Normalized using A's own obs_rms - see
+    # apply_agent_normalization's docstring for why it must be A's, not a
+    # mix.
     raw_batch = sample_state_batch(
         snap_a.states,
-        snap_b.states,
         seed=analysis_seed,
         context=f"null:{environment}:seed{seed}:{null_matchup_name}",
         num_states_per_source=num_states_per_source,

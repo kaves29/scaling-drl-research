@@ -1,1 +1,0 @@
-from scale_rl.common.logger import WandbTrainerLogger

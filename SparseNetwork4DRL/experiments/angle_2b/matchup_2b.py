@@ -3,15 +3,19 @@ seed, matchup_name):
 
   load frozen pi_D/Q_D and pi_R/Q_R snapshots (zero training/env interaction
     - see checkpoint_io.py)
-  build one shared 60-state batch (30 D-source + 30 R-source - see
-    sampling.py), reused for every gradient computation below so primary and
-    secondary are measured on identical inputs and are directly comparable
-    side by side
-  primary:   g_{D|D} vs g_{D|R}, holding pi_D fixed (the real question:
-    does the degraded critic distort the actor's real training signal?)
-  secondary: g_{R|R} vs g_{R|D}, holding pi_R fixed - a diagnostic
-    robustness check only, never averaged with the primary result (see
-    research-methodology.md's Angle 2B section)
+  build TWO separate state batches, each drawn exclusively from its own
+    held-fixed actor's own probe-capture buffer (own-buffer-only sourcing -
+    see sampling.py's module docstring for why: sourcing from the other
+    agent's buffer would evaluate a held-fixed actor on states it never
+    actually visited). Primary and secondary therefore see DIFFERENT
+    underlying states from each other; only the resulting distortion
+    metrics are compared side by side, not the raw scenes.
+  primary:   g_{D|D} vs g_{D|R}, holding pi_D fixed, batch sourced only from
+    D's own buffer (the real question: does the degraded critic distort the
+    actor's real training signal?)
+  secondary: g_{R|R} vs g_{R|D}, holding pi_R fixed, batch sourced only from
+    R's own buffer - a diagnostic robustness check only, never averaged
+    with the primary result (see research-methodology.md's Angle 2B section)
   null:      g_{A|A} vs g_{A|B} across every available matched-timestep
     healthy pair for this (environment, matchup_name) - see null_baseline.py
   compare primary's three distortion metrics against the null distribution
@@ -87,27 +91,25 @@ def run_angle_2b_analysis(
         )
     critic_use_cdq = snap_d.critic_use_cdq
 
-    # One shared batch of RAW states (30 D-sourced + 30 R-sourced) reused,
-    # unchanged, for both primary and secondary below - so the two probe
-    # the same underlying scenes and are directly comparable side by side.
-    # Normalization is applied separately per analysis (see
-    # apply_agent_normalization's docstring): each analysis's fixed actor
-    # must see its OWN normalization applied uniformly across the whole
-    # batch, not a per-source mix, since gradients.py's _actor_loss feeds
-    # one shared `observations` array to both the actor and whichever
-    # critic is swapped in.
-    raw_batch = sample_state_batch(
+    # Own-buffer-only sourcing (see sampling.py): primary's batch comes
+    # exclusively from D's own probe-capture buffer (pi_D is the fixed
+    # actor); secondary's comes exclusively from R's own buffer (pi_R is
+    # the fixed actor). Distinct `context` strings so the two draws use
+    # independent derived RNG streams. Each batch is normalized under its
+    # own analysis's fixed actor's obs_rms (see apply_agent_normalization's
+    # docstring) - since it is now also sourced from that same actor's own
+    # buffer, this is the in-distribution normalization for those states too.
+    key = jax.random.PRNGKey(analysis_seed)
+
+    # Primary: hold pi_D fixed, swap Q_D <-> Q_R. Batch sourced and
+    # normalized under D's own data/obs_rms only.
+    raw_batch_d = sample_state_batch(
         snap_d.states,
-        snap_r.states,
         seed=analysis_seed,
         context=f"primary:{environment}:seed{seed}:{matchup_name}",
         num_states_per_source=num_states_per_source,
     )
-    key = jax.random.PRNGKey(analysis_seed)
-
-    # Primary: hold pi_D fixed, swap Q_D <-> Q_R. Batch normalized under D's
-    # own obs_rms, since pi_D is the fixed actor consuming it.
-    batch_d = jnp.asarray(apply_agent_normalization(snap_d.agent, raw_batch))
+    batch_d = jnp.asarray(apply_agent_normalization(snap_d.agent, raw_batch_d))
     g_dd, g_dr = compute_counterfactual_actor_gradients(
         key, snap_d.agent.actor, snap_d.agent.critic, snap_r.agent.critic,
         snap_d.agent.temperature, batch_d, critic_use_cdq,
@@ -115,9 +117,17 @@ def run_angle_2b_analysis(
     primary = _metrics_to_float(compute_distortion_metrics(g_dd, g_dr))
 
     # Secondary (diagnostic robustness check only - see module docstring):
-    # hold pi_R fixed, swap Q_R <-> Q_D. Same raw scenes as primary, but
-    # normalized under R's own obs_rms, since pi_R is the fixed actor here.
-    batch_r = jnp.asarray(apply_agent_normalization(snap_r.agent, raw_batch))
+    # hold pi_R fixed, swap Q_R <-> Q_D. Batch sourced and normalized under
+    # R's own data/obs_rms only - a DIFFERENT underlying batch from primary's
+    # (own-buffer-only sourcing means primary and secondary no longer share
+    # scenes; only their resulting metrics are compared side by side).
+    raw_batch_r = sample_state_batch(
+        snap_r.states,
+        seed=analysis_seed,
+        context=f"secondary:{environment}:seed{seed}:{matchup_name}",
+        num_states_per_source=num_states_per_source,
+    )
+    batch_r = jnp.asarray(apply_agent_normalization(snap_r.agent, raw_batch_r))
     g_rr, g_rd = compute_counterfactual_actor_gradients(
         key, snap_r.agent.actor, snap_r.agent.critic, snap_d.agent.critic,
         snap_r.agent.temperature, batch_r, critic_use_cdq,

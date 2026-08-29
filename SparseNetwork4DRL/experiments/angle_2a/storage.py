@@ -168,9 +168,8 @@ def save_frozen_agent_snapshot(
 
     `probe_capture` is the role's ProbeCapture (see
     experiments/angle_2a/agent_runner.py) as of this matchup's stopping
-    step - already correctly frozen/snapshotted for the reference role by
-    train_reference_agent_with_snapshots (its live buffer keeps growing
-    past this step, but probe_capture does not).
+    step - populated by train_agent_to_step, which every role (D and R
+    alike) goes through independently.
 
     `agent_cfg` is this role's fully-resolved agent config (as returned by
     experiments.angle_2a.config.build_role_agent_cfg) - persisted verbatim

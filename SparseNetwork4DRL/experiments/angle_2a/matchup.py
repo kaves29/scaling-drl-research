@@ -1,10 +1,7 @@
 """Orchestrates one Angle 2A matchup end-to-end:
 
     train D (own actor/critic/buffer/env/RNG)
-    obtain R (either trained fresh here, own actor/critic/buffer/env/RNG - the
-        null-baseline path - or supplied as an already-trained snapshot from
-        the single shared reference trajectory - the real-matchup path; see
-        `reference_handle` below)
+    train R (own actor/critic/buffer/env/RNG, fully independent of D)
     sample 10 probes from D's own buffer + 10 from R's own buffer
     evaluate BOTH critics on every probe (diagonal + off-diagonal)
     15 exact-state Monte Carlo rollouts per probe, using each probe's SOURCE actor only
@@ -13,13 +10,23 @@
     mirror a run-level summary to WandB
 
 This module is reused for Matchup 1, Matchup 2, and the null baseline: the
-independence/no-sharing guarantees for D are identical in all three cases.
-For R, Matchup 1 and Matchup 2 pass in `reference_handle` - a snapshot of
-the ONE shared R_2x512 trajectory (see
-experiments.angle_2a.agent_runner.train_reference_agent_with_snapshots) -
-taken at that matchup's own onset step, so a second reference training run
-is never created. The null baseline (unchanged) omits `reference_handle`
-and gets a fresh, independently trained R, exactly as before.
+independence/no-sharing guarantees for D AND R are identical in all three
+cases - every call trains both sides fresh, from scratch, with no state
+shared between calls. This matches research-methodology.md's Angle 2A
+section ("Each scaled critic gets its own independently-trained reference
+critic... never shared across two scaled architectures").
+
+`reference_handle` (optional) lets a caller supply an already-trained R
+instead of training one here, skipping run_matchup's own R-training step.
+No caller in this codebase currently passes it - experiments/angle_2_a.py
+previously did, sharing one reference trajectory across Matchup 1 and
+Matchup 2, but that violated the methodology above and was removed (see
+the 2026-08-28 audit notes). The parameter itself is kept as a general,
+independently-tested capability of run_matchup() (see
+tests/test_angle2a_matchup_independence.py's
+TestMatchupWithSharedReferenceHandle) in case a future, methodologically
+sound use for it arises - it must never be used to share a reference across
+different scaled architectures again.
 """
 
 import time

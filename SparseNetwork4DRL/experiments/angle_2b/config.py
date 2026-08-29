@@ -74,7 +74,7 @@ def validate_angle2b_config(cfg) -> Angle2BRunConfig:
         matchup_names=matchup_names,
         null_seeds=null_seeds,
         analysis_seed=analysis_seed,
-        num_states_per_source=int(block.get("num_states_per_source", 30)),
+        num_states_per_source=int(block.get("num_states_per_source", 40)),
         angle_2a_results_root=str(block.get("angle_2a_results_root", "results/angle_2a")),
         output_root=str(block.get("output_root", "results/angle_2b")),
     )

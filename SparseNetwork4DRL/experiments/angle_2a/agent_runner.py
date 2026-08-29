@@ -14,11 +14,10 @@ Angle 1 does keeps everything else consistent with the rest of the
 repository.
 """
 
-import copy
 import hashlib
 import random
 from dataclasses import dataclass
-from typing import Any, Dict, Iterator, List, Optional, Sequence
+from typing import Any, Dict, Iterator, List, Optional
 
 import numpy as np
 from omegaconf import OmegaConf
@@ -110,34 +109,6 @@ class ProbeCapture:
         idxs = rng.choice(self._count, size=n, replace=False)
         return idxs, self._observations[idxs].copy(), self._actions[idxs].copy(), [self._env_states[i] for i in idxs]
 
-    def snapshot(self, up_to_count: int) -> "ProbeCapture":
-        """Returns a frozen view containing only the first `up_to_count`
-        transitions collected so far - i.e. "this capture's data as of
-        interaction_step up_to_count", ignoring anything collected after.
-
-        Used by train_reference_agent_with_snapshots() so the single shared
-        R_2x512 trajectory can be probed at an earlier onset step without
-        including transitions the reference only collected *after* that
-        step. This shares memory with the live capture (no copy): slots
-        below `up_to_count` are never written again once passed, because
-        `add()` only ever advances forward and this capture's capacity is
-        sized to never wrap around within one training run (see
-        train_agent_to_step / train_reference_agent_with_snapshots).
-        """
-        if not (0 <= up_to_count <= self._count):
-            raise ValueError(
-                f"cannot snapshot at {up_to_count} transitions; only "
-                f"{self._count} have been collected so far (capacity={self.capacity})"
-            )
-        snap = object.__new__(ProbeCapture)
-        snap.capacity = up_to_count
-        snap._observations = self._observations[:up_to_count]
-        snap._actions = self._actions[:up_to_count]
-        snap._env_states = self._env_states[:up_to_count]
-        snap._count = up_to_count
-        return snap
-
-
 @dataclass
 class TrainedAgentHandle:
     role: str  # "D" or "R"
@@ -156,34 +127,6 @@ class TrainedAgentHandle:
         self.eval_env.close()
 
 
-@dataclass
-class ReferenceTrajectory:
-    """The single shared R_2x512 trajectory, snapshotted at each requested
-    interaction step. All snapshots share the SAME train_env/eval_env/
-    single_env (there is only ever one reference environment instance per
-    trajectory) - only `agent` and `probe_capture` differ per snapshot,
-    frozen at that step. Close exactly once via this wrapper, not per
-    snapshot handle, to avoid double-closing the shared env.
-    """
-
-    snapshots: Dict[int, TrainedAgentHandle]
-
-    def at(self, step: int) -> TrainedAgentHandle:
-        if step not in self.snapshots:
-            raise KeyError(
-                f"No reference snapshot was taken at step {step}; available "
-                f"snapshot steps are {sorted(self.snapshots)}."
-            )
-        return self.snapshots[step]
-
-    def close(self) -> None:
-        if not self.snapshots:
-            return
-        # every snapshot handle shares the same train_env/eval_env by
-        # construction, so closing any one of them is sufficient.
-        next(iter(self.snapshots.values())).close()
-
-
 def _run_training_loop(
     agent,
     buffer,
@@ -197,9 +140,10 @@ def _run_training_loop(
     interaction_step number immediately after it has been fully processed
     (transition collected, probe captured, any due agent updates applied).
 
-    A generator so both train_agent_to_step() (drain it fully) and
-    train_reference_agent_with_snapshots() (snapshot between yields, without
-    re-implementing this loop) share exactly one copy of the stepping logic.
+    A generator so train_agent_to_step() can drain it fully; kept as a
+    generator (rather than a plain loop) so a future caller needing to
+    observe intermediate interaction_step values doesn't require
+    reimplementing this stepping logic.
     """
     observations, _ = train_env.reset()
     timestep = None
@@ -335,84 +279,3 @@ def train_agent_to_step(
         stop_step=stop_step,
         probe_capture=probe_capture,
     )
-
-
-def train_reference_agent_with_snapshots(
-    architecture: RoleArchitecture,
-    architecture_label: str,
-    base_cfg,
-    snapshot_steps: Sequence[int],
-    seed_context: str,
-) -> ReferenceTrajectory:
-    """Trains exactly ONE R_2x512 reference agent/buffer/environment
-    trajectory continuously to max(snapshot_steps), taking a frozen snapshot
-    (agent params + probe data collected so far) at every requested step.
-
-    This is the single-trajectory counterpart to train_agent_to_step(): it
-    exists so that two matchups needing the reference at two different
-    (independent) onset steps never trigger a second reference training run
-    - each snapshot is a frozen view of the SAME actor/critic/replay-buffer
-    history, truncated at that snapshot's step, not a separate agent.
-
-    Snapshotting is done via copy.deepcopy(agent) (see verification in the
-    accompanying change notes: JAX/Flax state deep-copies correctly into an
-    independent, frozen object - subsequent training on the live `agent`
-    does not affect an already-taken snapshot) plus
-    ProbeCapture.snapshot(step), which is a zero-copy view restricted to
-    transitions collected up to that step.
-
-    `seed_context`: see train_agent_to_step - same deterministic-RNG-stream
-    purpose, but there's only ever one call for the whole shared trajectory
-    (not one per snapshot), since it's one continuous training run.
-    """
-    _check_single_env_dmc(base_cfg)
-
-    unique_steps = sorted({int(s) for s in snapshot_steps})
-    if not unique_steps:
-        raise ValueError("snapshot_steps must contain at least one step")
-    final_step = unique_steps[-1]
-
-    train_env, eval_env, single_env, buffer, agent, observation_space, action_space = _build_agent_and_env(
-        architecture, base_cfg
-    )
-
-    probe_capacity = min(int(base_cfg.buffer.max_length), final_step)
-    probe_capture = ProbeCapture(
-        capacity=probe_capacity,
-        observation_shape=observation_space.shape[-1:],
-        action_shape=action_space.shape[-1:],
-    )
-
-    seed_global_rng_for_agent(int(base_cfg.seed), seed_context)
-    remaining = set(unique_steps)
-    snapshots: Dict[int, TrainedAgentHandle] = {}
-
-    for interaction_step in _run_training_loop(agent, buffer, train_env, single_env, probe_capture, base_cfg, final_step):
-        if interaction_step in remaining:
-            snapshots[interaction_step] = TrainedAgentHandle(
-                role="R",
-                architecture_label=architecture_label,
-                architecture=architecture,
-                agent=copy.deepcopy(agent),
-                # `buffer` is the SAME live object shared by every snapshot
-                # and keeps evolving as reference training continues past
-                # this step; only `agent` and `probe_capture` are frozen
-                # per-snapshot. Nothing downstream (probes.py) reads
-                # `.buffer` - `.probe_capture` is the authoritative
-                # snapshot of "R's data as of this step".
-                buffer=buffer,
-                train_env=train_env,
-                eval_env=eval_env,
-                single_env=single_env,
-                stop_step=interaction_step,
-                probe_capture=probe_capture.snapshot(interaction_step),
-            )
-            remaining.discard(interaction_step)
-
-    if remaining:
-        raise AssertionError(
-            f"internal error: reference training loop ended without ever "
-            f"reaching requested snapshot step(s) {sorted(remaining)}"
-        )
-
-    return ReferenceTrajectory(snapshots=snapshots)
