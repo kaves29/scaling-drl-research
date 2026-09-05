@@ -21,7 +21,12 @@ seed, matchup_name):
   compare primary's three distortion metrics against the null distribution
     via (null_mean + 2*null_std) - the same criterion used throughout this
     study, never a new threshold invented for this step (see statistics.py)
-  persist everything (see storage.py)
+  persist everything (see storage.py), including - added for Angle 2C - the
+    exact (s,a) pairs each gradient was taken at plus nabla_a Q and Q(s,a)
+    for both critics at each point (primary, secondary, and every null
+    pair); Angle 2B itself never needed these, only the resulting actor-
+    parameter gradient, but computing them here means Angle 2C never has to
+    resample or recompute anything Angle 2B already touched
 
 Scope boundary (see research-methodology.md's Angle 2B section): this
 establishes only that the degraded critic generates an unusually altered
@@ -39,7 +44,13 @@ import jax.numpy as jnp
 
 from experiments.angle_2a.storage import DEFAULT_OUTPUT_ROOT as ANGLE_2A_ROOT
 from experiments.angle_2b.checkpoint_io import apply_agent_normalization, load_frozen_agent_snapshot
-from experiments.angle_2b.gradients import compute_counterfactual_actor_gradients, compute_distortion_metrics
+from experiments.angle_2b.gradients import (
+    compute_action_gradient,
+    compute_counterfactual_actor_gradients,
+    compute_distortion_metrics,
+    compute_q_value,
+    sample_actor_actions,
+)
 from experiments.angle_2b.null_baseline import NullPairResult, build_null_distribution
 from experiments.angle_2b.sampling import NUM_STATES_PER_SOURCE, sample_state_batch
 from experiments.angle_2b.statistics import NullComparisonResult, compare_to_null
@@ -116,6 +127,18 @@ def run_angle_2b_analysis(
     )
     primary = _metrics_to_float(compute_distortion_metrics(g_dd, g_dr))
 
+    # Angle 2C inputs: the exact (s,a) pair the primary gradient was taken
+    # at (see sample_actor_actions - a deterministic recomputation, not a
+    # new sample), plus nabla_a Q and Q itself for both critics AT that
+    # same point. Angle 2B itself never needed these (only the actor-
+    # parameter gradient); computed here purely so Angle 2C can consume
+    # them from gradients.npz without recomputing anything or resampling.
+    actions_d = sample_actor_actions(snap_d.agent.actor, batch_d, key)
+    grad_aq_d_at_d = compute_action_gradient(snap_d.agent.critic, batch_d, actions_d, critic_use_cdq)
+    grad_aq_r_at_d = compute_action_gradient(snap_r.agent.critic, batch_d, actions_d, critic_use_cdq)
+    q_d_at_d = compute_q_value(snap_d.agent.critic, batch_d, actions_d, critic_use_cdq)
+    q_r_at_d = compute_q_value(snap_r.agent.critic, batch_d, actions_d, critic_use_cdq)
+
     # Secondary (diagnostic robustness check only - see module docstring):
     # hold pi_R fixed, swap Q_R <-> Q_D. Batch sourced and normalized under
     # R's own data/obs_rms only - a DIFFERENT underlying batch from primary's
@@ -133,6 +156,13 @@ def run_angle_2b_analysis(
         snap_r.agent.temperature, batch_r, critic_use_cdq,
     )
     secondary = _metrics_to_float(compute_distortion_metrics(g_rr, g_rd))
+
+    # Angle 2C inputs for secondary - same rationale as primary above.
+    actions_r = sample_actor_actions(snap_r.agent.actor, batch_r, key)
+    grad_aq_r_at_r = compute_action_gradient(snap_r.agent.critic, batch_r, actions_r, critic_use_cdq)
+    grad_aq_d_at_r = compute_action_gradient(snap_d.agent.critic, batch_r, actions_r, critic_use_cdq)
+    q_r_at_r = compute_q_value(snap_r.agent.critic, batch_r, actions_r, critic_use_cdq)
+    q_d_at_r = compute_q_value(snap_d.agent.critic, batch_r, actions_r, critic_use_cdq)
 
     null_pairs = build_null_distribution(
         environment, null_matchup_name, null_seeds, analysis_seed,
@@ -186,7 +216,37 @@ def run_angle_2b_analysis(
         "g_D_given_R": _flatten(g_dr),
         "g_R_given_R": _flatten(g_rr),
         "g_R_given_D": _flatten(g_rd),
+        # Angle 2C inputs (see comments above where each is computed).
+        # Naming: states_X/actions_X = the (s,a) pair actor pi_X operates
+        # at; grad_aq_Y_at_X / q_Y_at_X = critic Q_Y's action-gradient/value
+        # evaluated at THAT point (X's own point, Y's critic) - so
+        # grad_aq_D_at_D pairs with g_D_given_D, grad_aq_R_at_D pairs with
+        # g_D_given_R (same point, critic swapped), etc.
+        "states_D": jnp.asarray(batch_d),
+        "actions_D": actions_d,
+        "grad_aq_D_at_D": grad_aq_d_at_d,
+        "grad_aq_R_at_D": grad_aq_r_at_d,
+        "q_D_at_D": q_d_at_d,
+        "q_R_at_D": q_r_at_d,
+        "states_R": jnp.asarray(batch_r),
+        "actions_R": actions_r,
+        "grad_aq_R_at_R": grad_aq_r_at_r,
+        "grad_aq_D_at_R": grad_aq_d_at_r,
+        "q_R_at_R": q_r_at_r,
+        "q_D_at_R": q_d_at_r,
     }
+    # Per-null-pair (s,a)/nabla_a Q arrays, keyed by seed so Angle 2C can
+    # build its own per-pair null distribution exactly like Angle 2B's
+    # scalar null_pairs already does - folded into the same `gradients`
+    # dict/gradients.npz rather than a new file, so storage.py needs no
+    # changes at all (it already saves whatever keys this dict contains).
+    for p in null_pairs:
+        gradients[f"null_seed{p.seed}_states"] = p.states
+        gradients[f"null_seed{p.seed}_actions"] = p.actions
+        gradients[f"null_seed{p.seed}_grad_aq_a_at_a"] = p.grad_aq_a_at_a
+        gradients[f"null_seed{p.seed}_grad_aq_b_at_a"] = p.grad_aq_b_at_a
+        gradients[f"null_seed{p.seed}_q_a_at_a"] = p.q_a_at_a
+        gradients[f"null_seed{p.seed}_q_b_at_a"] = p.q_b_at_a
 
     output_paths = save_angle_2b_result(
         environment, seed, matchup_name, run_metadata, null_pairs, gradients, root=output_root,

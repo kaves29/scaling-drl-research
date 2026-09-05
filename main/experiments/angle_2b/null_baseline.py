@@ -37,16 +37,23 @@ which was out of the scope authorized for this change (only Angle 2A's
 checkpoint-persistence gap was authorized to be closed).
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import List
 
 import jax
 import jax.numpy as jnp
+import numpy as np
 
 from experiments.angle_2a.storage import DEFAULT_OUTPUT_ROOT, matchup_dir
 from experiments.angle_2b.checkpoint_io import apply_agent_normalization, load_frozen_agent_snapshot
 from experiments.angle_2b.errors import Angle2BSnapshotError
-from experiments.angle_2b.gradients import compute_counterfactual_actor_gradients, compute_distortion_metrics
+from experiments.angle_2b.gradients import (
+    compute_action_gradient,
+    compute_counterfactual_actor_gradients,
+    compute_distortion_metrics,
+    compute_q_value,
+    sample_actor_actions,
+)
 from experiments.angle_2b.sampling import NUM_STATES_PER_SOURCE, sample_state_batch
 
 
@@ -58,6 +65,18 @@ class NullPairResult:
     d_dir: float
     d_mag: float
     d_grad: float
+    # Raw (s,a) and per-action critic gradients at A's own point - added for
+    # Angle 2C, which needs nabla_a Q_A/Q_B at the same points this null
+    # pair's g_{A|A}/g_{A|B} actor-parameter gradients were taken at. Never
+    # written to null_distribution.csv (see storage.py's NULL_PAIR_COLUMNS,
+    # unchanged) - these are array-valued, not scalars; only consumed via
+    # Angle 2C's own loader off gradients.npz (see matchup_2b.py).
+    states: np.ndarray = field(default=None, repr=False)
+    actions: np.ndarray = field(default=None, repr=False)
+    grad_aq_a_at_a: np.ndarray = field(default=None, repr=False)
+    grad_aq_b_at_a: np.ndarray = field(default=None, repr=False)
+    q_a_at_a: np.ndarray = field(default=None, repr=False)
+    q_b_at_a: np.ndarray = field(default=None, repr=False)
 
 
 def discover_null_seeds(
@@ -126,6 +145,15 @@ def compute_null_pair_distortion(
     )
     metrics = compute_distortion_metrics(grad_aa, grad_ab)
 
+    # Same (s,a) recovery as matchup_2b.py's primary/secondary - see
+    # sample_actor_actions's docstring for why this is a deterministic
+    # recomputation, not a new sample.
+    actions_a = sample_actor_actions(snap_a.agent.actor, batch, key)
+    grad_aq_a_at_a = compute_action_gradient(snap_a.agent.critic, batch, actions_a, snap_a.critic_use_cdq)
+    grad_aq_b_at_a = compute_action_gradient(snap_b.agent.critic, batch, actions_a, snap_a.critic_use_cdq)
+    q_a_at_a = compute_q_value(snap_a.agent.critic, batch, actions_a, snap_a.critic_use_cdq)
+    q_b_at_a = compute_q_value(snap_b.agent.critic, batch, actions_a, snap_a.critic_use_cdq)
+
     return NullPairResult(
         environment=environment,
         seed=seed,
@@ -133,6 +161,12 @@ def compute_null_pair_distortion(
         d_dir=float(metrics["d_dir"]),
         d_mag=float(metrics["d_mag"]),
         d_grad=float(metrics["d_grad"]),
+        states=np.asarray(batch),
+        actions=np.asarray(actions_a),
+        grad_aq_a_at_a=np.asarray(grad_aq_a_at_a),
+        grad_aq_b_at_a=np.asarray(grad_aq_b_at_a),
+        q_a_at_a=np.asarray(q_a_at_a),
+        q_b_at_a=np.asarray(q_b_at_a),
     )
 
 

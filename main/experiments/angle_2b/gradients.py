@@ -79,6 +79,83 @@ def compute_counterfactual_actor_gradients(
     return grad_same, grad_swap
 
 
+@jax.jit
+def sample_actor_actions(actor: Trainer, observations: jnp.ndarray, key: PRNGKey) -> jnp.ndarray:
+    """Recovers the exact actions compute_counterfactual_actor_gradients()
+    implicitly sampled inside _actor_loss's `dist.sample(seed=key)`, without
+    touching that function's signature or behavior at all - jax.grad only
+    returns the gradient, discarding the intermediate sampled actions, and
+    Angle 2C (unlike 2B) needs the actual (s,a) pairs the gradient was taken
+    at, not just the gradient.
+
+    Calling this with the IDENTICAL `actor.params` and IDENTICAL `key` used
+    for a given compute_counterfactual_actor_gradients() call reproduces
+    bit-identical actions - JAX's PRNG is a deterministic function of its
+    key, so this is a redundant recomputation of a fixed procedure, not a
+    new sample (no new randomness is introduced; see Angle 2C's End-of-Task
+    Summary for why this satisfies "no new state-action sampling").
+    """
+    dist = actor.apply(variables={"params": actor.params}, observations=observations)
+    return dist.sample(seed=key)
+
+
+def _critic_value(critic: Trainer, observations: jnp.ndarray, actions: jnp.ndarray, critic_use_cdq: bool) -> jnp.ndarray:
+    if critic_use_cdq:
+        q1, q2 = critic(observations=observations, actions=actions)
+        return jnp.minimum(q1, q2).reshape(-1)
+    return critic(observations=observations, actions=actions).reshape(-1)
+
+
+@functools.partial(jax.jit, static_argnames=("critic_use_cdq",))
+def compute_q_value(
+    critic: Trainer,
+    observations: jnp.ndarray,
+    actions: jnp.ndarray,
+    critic_use_cdq: bool,
+) -> jnp.ndarray:
+    """Q(s,a) per (s,a) pair, for Angle 2C's raw_offset = Q_D(s,a) - Q_R(s,a).
+
+    `observations` must already be normalized under the SAME actor's obs_rms
+    that `actions` were sampled under (see sample_actor_actions) - matching
+    apply_agent_normalization's established rule that whichever critic is
+    swapped in must see the observation representation the fixed actor
+    itself operates in, never its own preferred normalization. Never call
+    this with a critic's own agent's raw (unnormalized) observations when
+    that critic is playing the "swapped-in" role.
+    """
+    return _critic_value(critic, observations, actions, critic_use_cdq)
+
+
+@functools.partial(jax.jit, static_argnames=("critic_use_cdq",))
+def compute_action_gradient(
+    critic: Trainer,
+    observations: jnp.ndarray,
+    actions: jnp.ndarray,
+    critic_use_cdq: bool,
+) -> jnp.ndarray:
+    """nabla_a Q(s,a) per (s,a) pair - the critic's gradient w.r.t. its
+    action input, evaluated at the exact (observations, actions) pair
+    Angle 2B's counterfactual actor-gradient computation used internally
+    (see sample_actor_actions) - this is the primitive Angle 2C's
+    directional-corruption, magnitude/bias-shift, and local-instability
+    properties are all built from.
+
+    Since Q(s_i, a_i) depends only on row i of a standard batched forward
+    pass (no cross-row interaction), the gradient of the SUM of per-row
+    Q-values w.r.t. the full `actions` batch gives exactly the per-row
+    d Q_i / d a_i - the standard "input gradient" trick, equivalent to (and
+    cheaper than) vmapping a per-sample grad for this shape of problem,
+    since the differentiated quantity here is per-example INPUT, not a
+    shared parameter pytree (contrast with sac_update.py's
+    compute_actor_gradient_cosine, which vmaps because IT differentiates
+    w.r.t. shared actor parameters).
+
+    Same normalization rule as compute_q_value.
+    """
+    grad_fn = jax.grad(lambda a: _critic_value(critic, observations, a, critic_use_cdq).sum())
+    return grad_fn(actions)
+
+
 def _flatten(grad_pytree) -> jnp.ndarray:
     leaves, _ = jax.tree_util.tree_flatten(grad_pytree)
     return jnp.concatenate([jnp.ravel(leaf) for leaf in leaves])

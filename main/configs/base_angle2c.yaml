@@ -1,0 +1,49 @@
+##################################################################################
+# Angle 2C: Distortion Decomposition
+#
+# Angle 2C reads everything it needs from Angle 2B's already-persisted
+# output (see experiments/angle_2c/loader.py) and Angle 1's onset ledger
+# (see experiments/angle_2c/onset_lookup.py) - like base_angle2b.yaml, this
+# config does NOT need an agent/buffer/env template, and Angle 2C never
+# touches a real environment, trains anything, or samples new states
+# (see research-methodology.md's Angle 2C section).
+##################################################################################
+
+project_name: 'EchoCritic'
+seed: 108
+env_name: 'reacher-hard'
+
+defaults:
+  - _self_
+
+##################################################################################
+# Angle 2C: candidate-property decomposition + reconstruction test
+##################################################################################
+
+angle_2_c:
+  # Which Angle 2A/2B matchup(s) to analyze for this (environment, seed).
+  matchup_names: ???
+
+  # RNG seed for Angle 2C's own perturbation draws (see
+  # experiments/angle_2c/perturbation.py). Defaults to `seed` above when
+  # null - kept separate for the same reason Angle 2B's analysis_seed is,
+  # so re-running with a different perturbation draw doesn't require
+  # changing `seed` (which also locates which Angle 2A/2B snapshot to load).
+  analysis_seed: null
+
+  # Local-instability perturbation count and magnitude (see
+  # experiments/angle_2c/perturbation.py for the full reasoning). Kept
+  # configurable for testability, but the scientific protocol requires
+  # exactly these: K=20 small Gaussian offsets, sigma=0.01 in the
+  # tanh-squashed [-1,1] action space.
+  num_perturbations: 20
+  perturbation_sigma: 0.01
+
+  # Angle 1 onset ledger location, for the single-frozen-point onset-timing
+  # proxy (see experiments/angle_2c/onset_lookup.py's module docstring for
+  # what this can and cannot actually establish).
+  onset_source_experiment: 'angle_1'
+  onset_ledger_root: 'results/ledgers'
+
+  angle_2b_results_root: 'results/angle_2b'
+  output_root: 'results/angle_2c'
