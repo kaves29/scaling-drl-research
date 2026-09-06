@@ -7,25 +7,16 @@ this to persisted metrics + the ledger).
 
 === Alignment of interaction steps ===
 Metrics are only recorded every `logging_per_interaction_step` interaction
-steps (see analysis/metrics_store.py), not every single interaction step.
-`configs/base_sac.yaml`'s `onset_detection.sustain_window` /
-`.propagation_window` are both expressed as raw interaction-step quantities
-(themselves a *fraction* of the run's total interaction-step horizon - see
-that file's comments), but the two are consumed differently here:
+steps (see analysis/metrics_store.py). N/W come from
+analysis/window_calibration.py's ACF/CCF calibration, already in the units
+this module expects:
 
-  - `sustain_window_points` (this module's parameter) counts consecutive
-    *recorded* points that exceed the baseline - i.e. it must already be
-    converted to units of `logging_per_interaction_step`, not raw
-    interaction steps, before being passed in. That conversion
-    (`sustain_window / logging_per_interaction_step`) happens in
-    analysis/pipeline.py, the one place the discretization is easy to
-    misread; the method-version string (e.g. "td_variance_p95_sustained_v1")
-    plus this module's config should be treated as the reproducibility
-    record for exactly what "sustained" meant for a given ledger row.
-  - `propagation_window` is used directly, in raw interaction steps
-    (matching the spec's "bounded window of exactly W interaction steps"):
-    the search considers every recorded point whose interaction_step falls
-    in [onset, onset + W] inclusive on both ends.
+  - `sustain_window_points` counts consecutive *recorded* points, matching
+    window_calibration.py's ACF estimate directly (no conversion needed).
+  - `propagation_window` is in raw interaction steps: the search considers
+    every recorded point whose interaction_step falls in [onset, onset + W]
+    inclusive, matching window_calibration.py's CCF-lag-times-
+    logging-interval conversion.
 
 === Degradation onset ===
 First recorded interaction_step of the first run of consecutive points whose
@@ -47,11 +38,8 @@ from analysis.baseline_calibration import BaselineThresholds
 STATUS_SUCCESS = "success"
 STATUS_NO_ONSET = "no_onset_detected"
 STATUS_NEEDS_REVIEW = "needs_manual_review"
-# NOTE: an "ambiguous" status was previously defined here but never actually
-# produced by any detection branch below, and has been intentionally removed
-# (not just left unreachable) - see utils/onset_ledger.py's VALID_STATUSES.
-# Anything that can't be confidently classified as success/no_onset_detected
-# uses needs_manual_review instead.
+# No "ambiguous" status: anything not confidently success/no_onset_detected
+# uses needs_manual_review - see utils/onset_ledger.py's VALID_STATUSES.
 
 
 @dataclass(frozen=True)

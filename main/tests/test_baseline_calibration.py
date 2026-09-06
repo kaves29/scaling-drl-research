@@ -192,6 +192,66 @@ class TestBaselineCalibration(unittest.TestCase):
             "stale cache was reused despite changed baseline source data",
         )
 
+    def test_calibrate_rejects_mixed_environments(self):
+        # Baseline distributions must be per-environment, never pooled.
+        mixed_identities = [
+            RunIdentity(experiment="angle_1", architecture="D2W512", environment="reacher-hard", seed=1),
+            RunIdentity(experiment="angle_1", architecture="D2W512", environment="reacher-hard", seed=2),
+            RunIdentity(experiment="angle_1", architecture="D2W512", environment="reacher-hard", seed=3),
+            RunIdentity(experiment="angle_1", architecture="D2W512", environment="reacher-hard", seed=4),
+            RunIdentity(experiment="angle_1", architecture="D2W512", environment="quadruped-run", seed=5),  # different env
+        ]
+        for identity in mixed_identities:
+            self._write_metrics(identity, [1000], [1.0])
+
+        with self.assertRaises(ValueError) as ctx:
+            calibrate_baseline(mixed_identities, "td_error_variance", metrics_root=self.metrics_root)
+        self.assertIn("environment", str(ctx.exception).lower())
+
+    def test_two_environments_get_distinct_not_pooled_thresholds(self):
+        # Designed to fail under pooled behavior: if "quiet"'s threshold
+        # were computed from both environments combined, it would be pulled
+        # far above the value computed from "quiet" data alone.
+        steps = [1000, 2000, 3000]
+        quiet_identities = [
+            RunIdentity(experiment="angle_1", architecture="D2W512", environment="quiet-env", seed=s)
+            for s in range(1, 6)
+        ]
+        noisy_identities = [
+            RunIdentity(experiment="angle_1", architecture="D2W512", environment="noisy-env", seed=s)
+            for s in range(1, 6)
+        ]
+        # quiet-env's 5 seeds: td_error_variance in [1, 2, 3, 4, 5] (low scale)
+        quiet_values = [1.0, 2.0, 3.0, 4.0, 5.0]
+        # noisy-env's 5 seeds: td_error_variance in [1000, 2000, 3000, 4000, 5000] (high scale)
+        noisy_values = [1000.0, 2000.0, 3000.0, 4000.0, 5000.0]
+        for identity, value in zip(quiet_identities, quiet_values):
+            self._write_metrics(identity, steps, [value] * len(steps))
+        for identity, value in zip(noisy_identities, noisy_values):
+            self._write_metrics(identity, steps, [value] * len(steps))
+
+        quiet_thresholds = calibrate_baseline(quiet_identities, "td_error_variance", percentile=95, metrics_root=self.metrics_root)
+        noisy_thresholds = calibrate_baseline(noisy_identities, "td_error_variance", percentile=95, metrics_root=self.metrics_root)
+
+        expected_quiet_only = np.quantile(quiet_values, 0.95)  # computed from quiet-env's 5 values alone
+        expected_noisy_only = np.quantile(noisy_values, 0.95)  # computed from noisy-env's 5 values alone
+
+        for t in quiet_thresholds.thresholds:
+            self.assertAlmostEqual(
+                t, expected_quiet_only,
+                msg="quiet-env threshold does not match its own 5 seeds alone - "
+                    "would indicate noisy-env data leaked into the computation",
+            )
+        for t in noisy_thresholds.thresholds:
+            self.assertAlmostEqual(t, expected_noisy_only)
+
+        # A pooled computation over all 10 values would land here - confirm
+        # neither per-environment threshold is anywhere near this, as an
+        # extra, blunt sanity check beyond the exact-match assertions above.
+        pooled_all_ten = np.quantile(quiet_values + noisy_values, 0.95)
+        self.assertLess(quiet_thresholds.thresholds[0], pooled_all_ten / 10)
+        self.assertNotAlmostEqual(noisy_thresholds.thresholds[0], quiet_thresholds.thresholds[0])
+
     def test_force_recompute_bypasses_cache_even_if_fresh(self):
         steps = [1000, 2000]
         for i, identity in enumerate(self.identities, start=1):

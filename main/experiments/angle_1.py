@@ -29,14 +29,8 @@ import os
 
 from utils.hardware import configure_hardware_env, validate_rocm_jax_available
 
-# Defense-in-depth: run.py's true entry point already calls this before
-# `import experiments` (which is what triggers this module's own import),
-# so in the normal run.py-launched path this is a cheap idempotent no-op
-# (see configure_hardware_env's docstring - the vendor is cached in a
-# sentinel env var after the first call). This call exists so that anything
-# importing experiments.angle_1 WITHOUT going through run.py (e.g. this
-# repo's own test suite) still gets hardware-aware env vars set correctly
-# before `import jax` below - must run before that import either way.
+# Idempotent (see configure_hardware_env) - covers importers that bypass
+# run.py's own call to this, e.g. the test suite. Must precede `import jax`.
 _GPU_VENDOR = configure_hardware_env()
 
 import pickle
@@ -60,6 +54,8 @@ from scale_rl.buffers import create_buffer
 from scale_rl.common import WandbTrainerLogger
 from scale_rl.common.logger import get_architecture_id
 from scale_rl.envs import create_envs
+from scale_rl.envs.dmc import validate_dmc_not_heldout
+from scale_rl.envs.myosuite import validate_myosuite_core4
 from scale_rl.evaluation import evaluate
 from utils.onset_ledger import WandbIdentity
 
@@ -78,12 +74,8 @@ def run(args: dict) -> None:
     config_path = args.config_path
     config_name = args.config_name
     overrides = args.overrides
-    # hydra.initialize() resolves a relative config_path relative to the
-    # *calling module's* file location, not the process CWD - which broke
-    # once training moved out of run.py (repo root) into this submodule.
-    # initialize_config_dir() takes an absolute path instead, preserving the
-    # original "--config_path is relative to wherever you invoke run.py
-    # from" contract.
+    # initialize_config_dir needs an absolute path - hydra.initialize()
+    # resolves relative paths against the calling module, not process CWD.
     hydra.initialize_config_dir(version_base=None, config_dir=os.path.abspath(config_path))
     cfg = hydra.compose(config_name=config_name, overrides=overrides)
 
@@ -94,6 +86,9 @@ def run(args: dict) -> None:
     omegaconf.OmegaConf.resolve(cfg)
     np.random.seed(cfg.seed)
     random.seed(cfg.seed)
+
+    validate_myosuite_core4(cfg.env.env_type, cfg.env_name)
+    validate_dmc_not_heldout(cfg.env.env_type, cfg.env_name)
 
     critic_degradation_enabled = bool(cfg.get("critic_degradation", False))
     pathology_prop_enabled = bool(cfg.get("pathology_prop", False))
@@ -133,8 +128,10 @@ def run(args: dict) -> None:
     start_step = 1
     resumed_update_step = 0
     resumed_update_counter = 0
+    resumed_wandb_run_id = None
+    is_resumed = bool(checkpoint_dir and (Path(checkpoint_dir) / "meta.pkl").exists())
 
-    if checkpoint_dir and (Path(checkpoint_dir) / "meta.pkl").exists():
+    if is_resumed:
         agent.load_checkpoint(checkpoint_dir)
         buffer.load(checkpoint_dir)
         with open(Path(checkpoint_dir) / "meta.pkl", "rb") as f:
@@ -142,16 +139,15 @@ def run(args: dict) -> None:
         start_step = meta["interaction_step"] + 1
         resumed_update_step = meta["update_step"]
         resumed_update_counter = meta["update_counter"]
+        # .get(): older checkpoints predate this field.
+        resumed_wandb_run_id = meta.get("wandb_run_id")
         print(f"Resumed from interaction_step {start_step}")
     #############################
     # train
     #############################
     os.environ["WANDB_MODE"] = "online"
-    # Keep the metrics CSV cache next to the checkpoint when one is
-    # configured, so it rides along with whatever persistence mechanism
-    # already covers checkpoint_dir (e.g. a Kaggle Dataset push) instead of
-    # living in a throwaway, machine-specific location. Falls back to a
-    # repo-relative ./logs when running without checkpointing.
+    # Keep the CSV cache next to the checkpoint so it rides along with
+    # whatever persists checkpoint_dir; ./logs otherwise.
     if checkpoint_dir:
         LOGS_DIR = str(Path(checkpoint_dir) / "logs")
     else:
@@ -176,7 +172,7 @@ def run(args: dict) -> None:
     cfg.update({'critic_num_params':params_str_critic})
     omegaconf.OmegaConf.set_struct(cfg, True)
 
-    logger = WandbTrainerLogger(cfg)
+    logger = WandbTrainerLogger(cfg, run_id=resumed_wandb_run_id)
 
     #############################
     # onset tracking (opt-in)
@@ -194,14 +190,16 @@ def run(args: dict) -> None:
         if checkpoint_dir:
             metrics_recorder.load_existing_up_to(start_step - 1)
 
-    # initial evaluation
-    eval_info = evaluate(agent, eval_env, cfg.num_eval_episodes)
-    logger.update_metric(**eval_info)
-    logger.log_metric(step=0)
-    step_snapshot = {"interaction_step": 0, "env_step": 0}
-    step_snapshot.update(logger.average_meter_dict.averages())
-    local_metrics_cache.append(step_snapshot)
-    logger.reset()
+    # skipped on resume: a step-0 baseline already exists, and re-logging one
+    # would duplicate the CSV row and misplace a point in the WandB run.
+    if not is_resumed:
+        eval_info = evaluate(agent, eval_env, cfg.num_eval_episodes)
+        logger.update_metric(**eval_info)
+        logger.log_metric(step=0)
+        step_snapshot = {"interaction_step": 0, "env_step": 0}
+        step_snapshot.update(logger.average_meter_dict.averages())
+        local_metrics_cache.append(step_snapshot)
+        logger.reset()
 
     # start training
     update_step = resumed_update_step
@@ -270,6 +268,9 @@ def run(args: dict) -> None:
                     "interaction_step": interaction_step,
                     "update_step": update_step,
                     "update_counter": update_counter,
+                    # Lets a resumed process reattach to this run - see
+                    # WandbTrainerLogger's run_id param.
+                    "wandb_run_id": logger.run_id,
                 }, f)
             pd.DataFrame(local_metrics_cache).to_csv(csv_path, index=False)
             if metrics_recorder is not None:

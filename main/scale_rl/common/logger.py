@@ -4,10 +4,8 @@ from omegaconf import OmegaConf
 
 import wandb
 
-# Canonical architecture-id mapping used for both WandB run naming and the
-# onset ledger's `architecture` field. Anything not explicitly named here
-# falls back to a dynamic "D{critic_num_blocks}W{critic_hidden_dim}" id, so
-# arbitrary architectures are supported without touching this map.
+# Canonical architecture-id map (WandB naming + onset ledger); unlisted
+# configs fall back to "D{critic_num_blocks}W{critic_hidden_dim}".
 _CRITIC_SIZE_MAP = {
     (128, 1): "Small",
     (1024, 3): "XXL",
@@ -44,7 +42,10 @@ def get_run_info(args):
         "name": name,
     }
 class WandbTrainerLogger(object):
-    def __init__(self, cfg: Dict):
+    def __init__(self, cfg: Dict, run_id: Optional[str] = None):
+        """`run_id`: a previously-saved wandb.run.id to resume into (see
+        experiments/angle_1.py's checkpointing), instead of starting a new
+        run. None (default): always start fresh."""
         self.cfg = cfg
         dict_cfg = OmegaConf.to_container(cfg, throw_on_missing=True)
         run_info = get_run_info(cfg)
@@ -54,7 +55,9 @@ class WandbTrainerLogger(object):
             group=run_info["group"],
             config=dict_cfg,
             job_type=run_info["job_type"],
-            name=run_info["name"], 
+            name=run_info["name"],
+            id=run_id,
+            resume="allow" if run_id is not None else None,
         )
 
         self.reset()

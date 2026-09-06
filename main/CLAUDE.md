@@ -16,7 +16,7 @@
 
 ## Decision Priority
 1. Explicit user instruction in the current task
-2. Current locked research methodology in `.claude/rules/research-methodology.md`
+2. Current locked research methodology in `.claude/research-methodology.md`
 3. Other project rules
 4. Existing code behavior
 5. Claude's engineering judgment
@@ -37,7 +37,11 @@ If these conflict, do not silently reconcile them. Surface the conflict.
 - UTD = 5
 - Angle 1 = 5 seeds
 - Angle 2A = 5 seeds
-- Current experiment environments = [your exact current environment list]
+- Current experiment environments (confirmed 2026-09-05 audit, DMC held-out gap closed 2026-09-05; see research-methodology.md for the full table): 10 core (Angle 1/2) + 4 held-out (Angle 3 only) = 14 total.
+  - DMC core-6, Angle 1/2 (see scale_rl/envs/dmc.py's `DMC_MED`/`DMC_HARD`): Dog-run (Hard, 2,500,000), Dog-trot (Hard, 2,500,000), Humanoid-run (Hard, 2,500,000), Cheetah-run (Medium, 1,250,000), Quadruped-run (Medium, 1,250,000), Manipulator-bring_ball (Medium, 1,250,000)
+  - DMC held-out-2, Angle 3 only (see `DMC_HELDOUT2`): Hopper-hop (Medium, 1,250,000), Fish-swim (Medium, 1,250,000)
+  - MyoSuite core-4, Angle 1/2 only (see scale_rl/envs/myosuite.py's `MYOSUITE_CORE4`): MyoElbowPose1D6MRandom (Medium, 1,250,000), MyoHandReachFixed (Hard, 2,500,000), MyoHandKeyTurnFixed (Hard, 2,500,000), MyoLegWalk (Hard, 2,500,000)
+  - MyoSuite held-out-2, Angle 3 only (see `MYOSUITE_HELDOUT2`): MyoHandPenTwirlFixed (Hard, 2,500,000), MyoHandBaodingBallsP1 (Hard, 2,500,000)
 
 ## Required Working Behavior
 - Do not hardcode experimental parameters that belong in configuration.
@@ -58,3 +62,4 @@ For non-trivial tasks report:
 
 ## Code Style
 - Follow Google's Python Style Guide and PEP 8 for all new code; use black formatting
+- Match the terse, minimal-comment convention standard in JAX/Flax research code (the style used by DeepMind/Google Research repos, including SimBa's own codebase). Comments should be rare — reserved only for genuinely non-obvious logic, a specific numerical trick, or a direct reference to a paper equation/section. Do not add comments that restate what a line of code already makes clear from its name and structure. Prefer short, well-named variables over comments explaining a longer or vaguer one. Function/module-level docstrings should be one line unless the function is a real public entry point. This is separate from the End-of-Task Summary requirement — verbose reporting belongs in that summary, never as inline code comments.

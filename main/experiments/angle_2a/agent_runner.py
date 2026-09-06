@@ -28,6 +28,7 @@ from experiments.angle_2a.errors import Angle2AConfigError
 from scale_rl.agents import create_agent
 from scale_rl.buffers import create_buffer
 from scale_rl.envs import create_envs
+from scale_rl.envs.dmc import validate_dmc_not_heldout
 
 
 def derive_rng_seed(base_seed: int, context: str) -> int:
@@ -191,6 +192,7 @@ def _run_training_loop(
 
 def _check_single_env_dmc(base_cfg) -> None:
     assert_dmc_env_type(base_cfg.env.env_type)
+    validate_dmc_not_heldout(base_cfg.env.env_type, base_cfg.env.env_name)
     if int(base_cfg.env.num_train_envs) != 1:
         raise Angle2AConfigError(
             f"Angle 2A requires env.num_train_envs == 1 (got "

@@ -51,17 +51,36 @@ DMC_HARD = [
     "dog-trot",
 ]"""
 
-DMC_MED = [ 
+DMC_MED = [
     "cheetah-run",
     "quadruped-run",
     "manipulator-bring_ball"
      ]
 
-DMC_HARD = [ 
+DMC_HARD = [
     "humanoid-run",
     "dog-trot",
     "dog-run"
              ]
+
+# Held out for Angle 3 only; mirrors MYOSUITE_HELDOUT2. Deliberately not
+# added to DMC_MED, which is the core (Angle 1/2) Medium-tier set.
+DMC_HELDOUT2 = [
+    "hopper-hop",
+    "fish-swim",
+]
+
+
+def validate_dmc_not_heldout(env_type: str, env_name: str) -> None:
+    """Mirrors validate_myosuite_core4() for DMC. No "unrecognized name"
+    check needed here: dm_control.suite.load() (via make_dmc_env) already
+    raises on an unknown domain/task. No-op for non-dmc env_type."""
+    if env_type == "dmc" and env_name in DMC_HELDOUT2:
+        raise ValueError(
+            f"env_name='{env_name}' is a DMC environment held out for Angle 3 "
+            f"only (see scale_rl/envs/dmc.py's DMC_HELDOUT2). Angle 1/2 may "
+            f"only train on the core DMC set (DMC_MED + DMC_HARD)."
+        )
 
 def make_dmc_env(
     env_name: str,

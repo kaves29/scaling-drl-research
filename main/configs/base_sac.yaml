@@ -53,38 +53,24 @@ critic_degradation: false
 # was also detected; see analysis/onset_detection.py.
 pathology_prop: false
 
-# N and W below are provisional until calibrated against the 5-seed default
-# SimBa baseline (see analysis/baseline_calibration.py). They are recorded
-# verbatim into onset_events.csv detection_notes/method fields so results
-# stay reproducible even as they are recalibrated.
-#
-# N and W are both expressed as a FRACTION of this run's own total
-# interaction-step horizon (num_interaction_steps), not fixed raw counts, so
-# longer-horizon runs/environments get a proportionally larger tolerance
-# window instead of a fixed number of steps that would be relatively
-# stricter for them. sustain_window / propagation_window below are the
-# resulting raw-interaction-step quantities, derived from those fractions.
-#
-# `propagation_window` is used directly in raw interaction steps (the
-# propagation search already scans recorded points by their raw
-# interaction_step value - see analysis/onset_detection.py).
-#
-# `sustain_window` is further converted onto the *recorded* metric grid at
-# analysis time (divided by logging_per_interaction_step - see
-# analysis/pipeline.py), because the sustained-exceedance run length is
-# counted in consecutive *recorded* points, not raw interaction steps. E.g.
-# with logging_per_interaction_step=3000 and sustain_window=15000, a
-# sustained run must exceed 15000/3000=5 consecutive recorded points.
+# N (sustain window) and W (propagation/lag window) are calibrated
+# per-environment from the 5-seed default-SimBa baseline data via ACF/CCF -
+# see analysis/window_calibration.py and research-methodology.md's Onset
+# Definitions. Not config values (no sustain_window/propagation_window
+# fields here); persisted to
+# results/baselines/{architecture}/{environment}/window_params.json.
 onset_detection:
-  sustain_window_fraction: 0.02
-  propagation_window_fraction: 0.05
-  sustain_window: ${eval:'${num_interaction_steps} * ${onset_detection.sustain_window_fraction}'}
-  propagation_window: ${eval:'${num_interaction_steps} * ${onset_detection.propagation_window_fraction}'}
+  # Burn-in fraction discarded before computing the ACF (N) / CCF (W) - a
+  # practical convention, not statistically derived. See research-methodology.md.
+  acf_ccf_burn_in_fraction: 0.25
+  # CCF candidate lag search range for W, as a fraction of the (post-burn-in)
+  # segment length, searched symmetrically (+/-) - see
+  # analysis/window_calibration.py for why a negative-lag peak is excluded.
+  ccf_lag_fraction_cap: 0.20
   # percentile of the baseline distribution used as the exceedance threshold
   baseline_percentile: 95
-  # number of default-SimBa baseline seeds used for calibration; the
-  # scientific protocol requires EXACTLY this many - analysis/baseline_calibration.py
-  # fails clearly if baseline_seeds below doesn't have exactly this many entries.
+  # number of default-SimBa baseline seeds used for calibration; must match
+  # baseline_seeds below exactly - see analysis/baseline_calibration.py.
   baseline_num_seeds: 5
   # seeds of the 5 default-SimBa calibration runs (must have been trained
   # with critic_degradation=true so their metrics were persisted)

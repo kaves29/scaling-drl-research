@@ -13,6 +13,7 @@ from typing import List, Optional
 
 from analysis.baseline_calibration import load_or_calibrate_baseline
 from analysis.metrics_store import RunIdentity, load_metrics
+from analysis.window_calibration import load_or_calibrate_window_parameters
 from analysis.onset_detection import (
     STATUS_NEEDS_REVIEW,
     STATUS_NO_ONSET,
@@ -48,18 +49,9 @@ def run_post_hoc_onset_analysis(
 ):
     """Runs onset detection for one finished run and upserts its ledger row.
 
-    `logging_per_interaction_step` is this run's own recording cadence
-    (`cfg.logging_per_interaction_step`). It is used for two things:
-      1. converting `onset_cfg["sustain_window"]` (raw interaction steps,
-         see configs/base_sac.yaml) into units of consecutive *recorded*
-         points, which is what detect_critic_degradation_onset expects;
-      2. validating that the baseline seeds were recorded at this same
-         cadence (see analysis/baseline_calibration.calibrate_baseline's
-         `expected_logging_interval`), so a mismatch fails loudly instead of
-         silently degrading into "no overlap".
-
-    Returns the ledger CSV path, or None if neither tracking flag was enabled
-    (nothing to analyze, nothing written).
+    `logging_per_interaction_step` feeds window_calibration's N/W ACF/CCF
+    calibration and validates the baseline seeds share this run's cadence.
+    Returns the ledger CSV path, or None if neither tracking flag was enabled.
     """
     if not (critic_degradation_enabled or pathology_prop_enabled):
         return None
@@ -96,6 +88,8 @@ def run_post_hoc_onset_analysis(
     force_baseline_recompute = bool(onset_cfg.get("force_baseline_recompute", False))
 
     degradation_result: Optional[OnsetResult] = None
+    # N and W are calibrated together; reused for propagation's W below.
+    window_calibration = None
     if critic_degradation_enabled:
         try:
             baseline = load_or_calibrate_baseline(
@@ -107,17 +101,20 @@ def run_post_hoc_onset_analysis(
                 force_recompute=force_baseline_recompute,
                 expected_logging_interval=logging_per_interaction_step,
             )
-            # onset_cfg["sustain_window"] is a raw-interaction-step quantity
-            # (see configs/base_sac.yaml); the sustained-run-length check
-            # operates on consecutive *recorded* points, so convert here.
-            sustain_window_points = max(
-                1, round(onset_cfg["sustain_window"] / logging_per_interaction_step)
+            window_calibration = load_or_calibrate_window_parameters(
+                baseline_identities,
+                logging_per_interaction_step=logging_per_interaction_step,
+                metrics_root=metrics_root,
+                window_root=baseline_root,
+                force_recompute=force_baseline_recompute,
+                burn_in_fraction=onset_cfg["acf_ccf_burn_in_fraction"],
+                ccf_lag_fraction_cap=onset_cfg["ccf_lag_fraction_cap"],
             )
             degradation_result = detect_critic_degradation_onset(
                 steps,
                 metrics_df["td_error_variance"].tolist(),
                 baseline,
-                sustain_window_points,
+                window_calibration.n_sustain_window_points,
             )
         except Exception as e:
             warnings.warn(f"Critic degradation onset analysis failed for {run_identity.run_key}: {e}")
@@ -138,6 +135,14 @@ def run_post_hoc_onset_analysis(
                 "run: propagation is only meaningful relative to a degradation "
                 "onset, and this run did not compute one",
             )
+        elif window_calibration is None:
+            propagation_result = OnsetResult(
+                None,
+                STATUS_NEEDS_REVIEW,
+                "window calibration (N/W) failed alongside critic degradation "
+                "analysis - see the critic_degradation note above for the "
+                "underlying error; propagation's W could not be obtained",
+            )
         else:
             try:
                 baseline = load_or_calibrate_baseline(
@@ -154,7 +159,7 @@ def run_post_hoc_onset_analysis(
                     metrics_df["actor_grad_cosine"].tolist(),
                     baseline,
                     degradation_result.onset_step if degradation_result else None,
-                    onset_cfg["propagation_window"],
+                    window_calibration.w_propagation_window_steps,
                 )
             except Exception as e:
                 warnings.warn(f"Propagation onset analysis failed for {run_identity.run_key}: {e}")

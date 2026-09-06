@@ -3,6 +3,7 @@ import shutil
 import tempfile
 import unittest
 
+import numpy as np
 import pandas as pd
 
 from analysis.metrics_store import METRIC_COLUMNS, RunIdentity, metrics_path
@@ -24,14 +25,13 @@ class _FakeRun:
 LOGGING_PER_INTERACTION_STEP = 1000  # matches the 1000-spaced `steps` fixtures below
 
 ONSET_CFG = {
-    # raw interaction steps; sustain_window / LOGGING_PER_INTERACTION_STEP == 2
-    # recorded points, reproducing the old sustain_window_n=2 test semantics.
-    "sustain_window": 2 * LOGGING_PER_INTERACTION_STEP,
-    "propagation_window": 5000,
     "baseline_percentile": 95,
     "force_baseline_recompute": False,
     "critic_degradation_method_version": "td_variance_p95_sustained_v1",
     "propagation_method_version": "actor_grad_cosine_p95_windowed_v1",
+    # Feed ACF/CCF window calibration - see analysis/window_calibration.py.
+    "acf_ccf_burn_in_fraction": 0.25,
+    "ccf_lag_fraction_cap": 0.20,
 }
 
 
@@ -70,9 +70,38 @@ class TestPostHocPipeline(unittest.TestCase):
                 actor_cos=[cos_threshold_seed_values[i]] * len(steps),
             )
 
+    @staticmethod
+    def _ar1(phi, n, seed):
+        rng = np.random.default_rng(seed)
+        noise = rng.normal(0, 1.0, size=n)
+        x = np.empty(n)
+        x[0] = noise[0]
+        for t in range(1, n):
+            x[t] = phi * x[t - 1] + noise[t]
+        return x
+
+    def _write_calibratable_baselines(self, n_points=200, true_lag=5, logging_interval=1000):
+        """Unlike _write_flat_baselines, has non-zero variance (small AR(0.3)
+        noise + an injected lag) - a zero-variance segment would get excluded
+        from every seed's CCF and hard-fail W's calibration (see
+        analysis/window_calibration.py), taking N down with it. Same per-seed
+        threshold level (~1..5) as the flat fixture otherwise."""
+        for i, identity in enumerate(self.baseline_identities):
+            base = i + 1  # matches the old flat per-seed value (1..5)
+            rng = np.random.default_rng(900 + i)
+            td_noise = self._ar1(0.3, n_points, seed=900 + i)
+            td = base + 0.05 * td_noise
+            actor = np.empty(n_points)
+            actor[:true_lag] = base + rng.normal(0, 0.05, size=true_lag)
+            actor[true_lag:] = (
+                base + 0.05 * td_noise[: n_points - true_lag] + rng.normal(0, 0.02, size=n_points - true_lag)
+            )
+            steps = [s * logging_interval for s in range(1, n_points + 1)]
+            self._write_metrics(identity, steps, td_var=td, actor_cos=actor)
+
     def test_end_to_end_success_path(self):
         steps = list(range(1000, 11000, 1000))  # 1000..10000
-        self._write_flat_baselines(steps, [1, 2, 3, 4, 5], [1, 2, 3, 4, 5])
+        self._write_calibratable_baselines()
 
         run_identity = RunIdentity(experiment="angle_1", architecture="D2W512", environment="reacher-hard", seed=42)
         td_var = [0.5, 0.5, 10.0, 10.0, 10.0, 0.5, 0.5, 0.5, 0.5, 0.5]

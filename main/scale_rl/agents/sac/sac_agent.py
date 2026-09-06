@@ -531,21 +531,26 @@ class SACAgent(BaseAgent):
         if not os.path.exists(ckpt_path):
             raise FileNotFoundError(f"No checkpoint found at {ckpt_path}")
 
+        checkpointer = orbax.checkpoint.PyTreeCheckpointer()
+
+        # churn_ref_batch excluded: PyTreeRestore uses the target's shape as
+        # ground truth per leaf, and self.churn_ref_batch is always None
+        # here - a None leaf in `item` silently discards a real saved value.
         target_state = {
             "rng": self._rng,
             "actor": self._actor,
             "critic": self._critic,
             "target_critic": self._target_critic,
             "temperature": self._temperature,
-            "churn_ref_batch": self.churn_ref_batch,
         }
-
-        checkpointer = orbax.checkpoint.PyTreeCheckpointer()
         restored = checkpointer.restore(ckpt_path, args=orbax.checkpoint.args.PyTreeRestore(item=target_state))
         self._rng = restored["rng"]
         self._actor = restored["actor"]
         self._critic = restored["critic"]
         self._target_critic = restored["target_critic"]
         self._temperature = restored["temperature"]
-        self.churn_ref_batch = restored["churn_ref_batch"]
+
+        # Unconstrained restore (no `item=`) recovers its real on-disk shape.
+        churn_restored = checkpointer.restore(ckpt_path)
+        self.churn_ref_batch = churn_restored["churn_ref_batch"]
     
