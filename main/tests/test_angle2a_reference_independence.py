@@ -29,6 +29,8 @@ from experiments.angle_2a.onset_lookup import OnsetLookupResult
 
 FULL_OVERRIDES = [
     "angle_2_a.run_null_baseline=false",  # isolate the two real matchups only
+    "angle_2_a.prereq_check.enabled=false",  # unrelated to what this test covers
+    "angle_2_a.r_calibration.enabled=false",  # unrelated to what this test covers
     "angle_2_a.scaled_a.critic_num_blocks=5",
     "angle_2_a.scaled_a.critic_hidden_dim=768",
     "angle_2_a.scaled_b.critic_num_blocks=7",

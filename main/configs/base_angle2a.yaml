@@ -29,8 +29,8 @@ critic_sparsity: 0.0
 # from angle_2_a.scaled_a / scaled_b / reference below. If any code path
 # ever accidentally falls back to cfg.agent.critic_num_blocks instead of the
 # per-role override, this MUST fail loudly rather than silently using 2/512.
-critic_num_blocks: 2
-critic_hidden_dim: 512
+critic_num_blocks: ???
+critic_hidden_dim: ???
 
 eff_episode_len: ${eval:'${env.max_episode_steps} / ${env.action_repeat}'}
 gamma: ${eval:'max(min((${eff_episode_len} / 5 - 1) / (${eff_episode_len} / 5), 0.995), 0.95)'}
@@ -61,16 +61,82 @@ angle_2_a:
   onset_source_experiment: 'angle_1'
   onset_ledger_root: 'results/ledgers'
 
-  # Fixed experimental-protocol constants (not architecture values). Kept
+  # Fixed experimental-protocol constant (not an architecture value). Kept
   # configurable for testability, but the scientific protocol requires
-  # exactly 10/15; do not lower these to save compute.
+  # exactly 10; do not lower it to save compute.
   num_probes_per_source: 10
+  # Fallback only, used when angle_2_a.r_calibration.enabled is false below -
+  # otherwise the calibrated R replaces this everywhere (main comparison and
+  # prereq_check alike). This was the sole, unvalidated fixed value before
+  # r_calibration.py - see research-methodology.md's Angle 2A section.
   num_mc_rollouts: 15
 
   # Whether to also run the healthy-vs-healthy null baseline for this seed
   # (see experiments/angle_2a/matchup.py for why it requires fresh training
   # rather than reusing raw Angle 1 artifacts).
   run_null_baseline: true
+
+  # Construct-validity prerequisite check (see experiments/angle_2a/prereq_check.py
+  # and research-methodology.md's Angle 2A section): runs before the main
+  # comparison, on seeds dedicated to this check alone - never the main
+  # comparison's cfg.seed, never reused or drawn from it, chosen before any
+  # main-analysis result exists. Descriptive only: always completes and the
+  # main comparison always proceeds regardless of what it finds (no
+  # algorithmic pass/fail - see prereq_check.py's module docstring for why).
+  prereq_check:
+    enabled: true
+    # Placeholder values - replace with real dedicated seeds of your
+    # choosing before running for real. Must be seeds Angle 1 has already
+    # been run for (critic_degradation=true) against BOTH scaled_a and
+    # scaled_b's architectures, for this same environment - this check looks
+    # up their onsets the same way the main comparison does and does not
+    # train Angle 1 itself.
+    seeds: [9001, 9002, 9003]
+    # Burn-in fraction defining the "pre" checkpoint step (as a fraction of
+    # this agent's own num_interaction_steps). Should match
+    # configs/base_sac.yaml's onset_detection.acf_ccf_burn_in_fraction /
+    # analysis/window_calibration.py's BURN_IN_FRACTION - NOT auto-synced
+    # with that value; keep in sync manually if it ever changes there.
+    burn_in_fraction: 0.25
+    num_probes: 10
+    # num_mc_rollouts removed: superseded by the calibrated R (see
+    # angle_2_a.r_calibration below), used here unconditionally same as the
+    # main comparison - do not resurrect a separately-configurable value.
+
+  # Per-environment MC rollout-count (R) calibration (see
+  # experiments/angle_2a/r_calibration.py and research-methodology.md's
+  # Angle 2A section) - replaces the fixed, previously-unvalidated R=15
+  # above with the smallest R such that sigma_rollout/sqrt(R) stays
+  # comfortably below this environment's null-distribution 95th-percentile
+  # threshold. One-time, cached per environment under
+  # results/angle_2a_r_calibration/{environment}/.
+  r_calibration:
+    enabled: true
+    # Placeholder - replace with a real dedicated seed of your choosing
+    # before running for real. Trains a dedicated healthy-vs-healthy
+    # reference pair, decoupled from any main-comparison or prereq_check
+    # seed, solely to measure this environment's sigma_rollout and null-
+    # distribution threshold.
+    calibration_seed: 9501
+    # Same burn-in convention as prereq_check above - the calibration pair
+    # trains only to this fraction of a full run, not to any specific t*.
+    burn_in_fraction: 0.25
+    # Representative (s,a) pairs sampled to measure sigma_rollout; standard
+    # deviation is computed WITHIN each pair's own repeated rollouts only,
+    # never pooled across pairs (see r_calibration.py) - then the max across
+    # pairs is used, not the average (conservative: sized for the noisiest
+    # observed state, not a typical one).
+    num_representative_pairs: 5
+    num_rollouts_for_sigma: 50
+    # Target: SE <= threshold_95 / se_margin_divisor.
+    se_margin_divisor: 2.0
+    # Hard cap on the calibrated R regardless of what the margin above would
+    # ideally require - if the ideal R exceeds this, the cap is used instead
+    # and the environment's results are explicitly flagged as underpowered
+    # relative to the margin target, rather than silently spending
+    # unbounded compute or loosening the margin. Project decision,
+    # confirmed 2026-09-06.
+    r_cap: 35
 
   # --- Required per-role critic architectures. No defaults on purpose: ---
   # These MUST be supplied via --overrides every time (e.g.

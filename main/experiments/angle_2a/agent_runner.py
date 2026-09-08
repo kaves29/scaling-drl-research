@@ -15,20 +15,23 @@ repository.
 """
 
 import hashlib
+import pickle
 import random
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any, Dict, Iterator, List, Optional
 
 import numpy as np
 from omegaconf import OmegaConf
 
 from experiments.angle_2a.config import RoleArchitecture, build_role_agent_cfg
-from experiments.angle_2a.env_state import assert_dmc_env_type, capture_env_state
+from experiments.angle_2a.env_state import assert_supported_env_type, capture_env_state, restore_env_state
 from experiments.angle_2a.errors import Angle2AConfigError
 from scale_rl.agents import create_agent
 from scale_rl.buffers import create_buffer
 from scale_rl.envs import create_envs
 from scale_rl.envs.dmc import validate_dmc_not_heldout
+from scale_rl.envs.myosuite import validate_myosuite_core4
 
 
 def derive_rng_seed(base_seed: int, context: str) -> int:
@@ -110,6 +113,46 @@ class ProbeCapture:
         idxs = rng.choice(self._count, size=n, replace=False)
         return idxs, self._observations[idxs].copy(), self._actions[idxs].copy(), [self._env_states[i] for i in idxs]
 
+    def save(self, checkpoint_dir: str) -> None:
+        """Mirrors scale_rl.buffers.base_buffer.BaseBuffer.save's plain-pickle
+        approach - _env_states is a list of dicts (dm_control or MyoSuite
+        physics arrays, dispatched by env_type - see env_state.py), not a
+        single array, so this can't reuse that function's numpy-array-
+        specific trimming logic directly, but the underlying idea (persist
+        everything needed to resume exactly) is the same."""
+        path = Path(checkpoint_dir)
+        path.mkdir(parents=True, exist_ok=True)
+        with open(path / "probe_capture_state.pkl", "wb") as f:
+            pickle.dump(
+                {
+                    "capacity": self.capacity,
+                    "observations": self._observations,
+                    "actions": self._actions,
+                    "env_states": self._env_states,
+                    "count": self._count,
+                },
+                f,
+                protocol=pickle.HIGHEST_PROTOCOL,
+            )
+
+    def load(self, checkpoint_dir: str) -> None:
+        path = Path(checkpoint_dir) / "probe_capture_state.pkl"
+        if not path.exists():
+            raise FileNotFoundError(f"No ProbeCapture checkpoint found at {path}")
+        with open(path, "rb") as f:
+            state = pickle.load(f)
+        if state["capacity"] != self.capacity:
+            raise ValueError(
+                f"Checkpointed ProbeCapture capacity ({state['capacity']}) does "
+                f"not match this instance's capacity ({self.capacity}) - "
+                f"refusing to load a mismatched checkpoint."
+            )
+        self._observations[:] = state["observations"]
+        self._actions[:] = state["actions"]
+        self._env_states = state["env_states"]
+        self._count = state["count"]
+
+
 @dataclass
 class TrainedAgentHandle:
     role: str  # "D" or "R"
@@ -128,7 +171,51 @@ class TrainedAgentHandle:
         self.eval_env.close()
 
 
-def _run_training_loop(
+def _save_training_checkpoint(
+    checkpoint_dir: str,
+    agent,
+    buffer,
+    probe_capture: "ProbeCapture",
+    interaction_step: int,
+    update_step: int,
+    update_counter: int,
+    observations: np.ndarray,
+    env_state: Dict[str, Any],
+) -> None:
+    path = Path(checkpoint_dir)
+    path.mkdir(parents=True, exist_ok=True)
+    agent.save_checkpoint(str(path))
+    buffer.save(str(path))
+    probe_capture.save(str(path))
+    with open(path / "meta.pkl", "wb") as f:
+        pickle.dump(
+            {
+                "interaction_step": interaction_step,
+                "update_step": update_step,
+                "update_counter": update_counter,
+                "observations": observations,
+                "env_state": env_state,
+            },
+            f,
+            protocol=pickle.HIGHEST_PROTOCOL,
+        )
+
+
+def load_training_checkpoint_meta(checkpoint_dir: Optional[str]) -> Optional[Dict[str, Any]]:
+    """Returns the persisted meta dict if a training checkpoint exists at
+    `checkpoint_dir`, else None. Doesn't touch agent/buffer/probe_capture -
+    train_agent_to_step calls their own .load_checkpoint()/.load() once it
+    knows (from this) that a resume is happening."""
+    if not checkpoint_dir:
+        return None
+    meta_path = Path(checkpoint_dir) / "meta.pkl"
+    if not meta_path.exists():
+        return None
+    with open(meta_path, "rb") as f:
+        return pickle.load(f)
+
+
+def run_training_loop(
     agent,
     buffer,
     train_env,
@@ -136,23 +223,45 @@ def _run_training_loop(
     probe_capture: "ProbeCapture",
     base_cfg,
     stop_step: int,
+    start_step: int = 1,
+    resumed_update_step: int = 0,
+    resumed_update_counter: int = 0,
+    resumed_observations: Optional[np.ndarray] = None,
+    resumed_env_state: Optional[Dict[str, Any]] = None,
+    checkpoint_dir: Optional[str] = None,
+    checkpoint_interval: Optional[int] = None,
 ) -> Iterator[int]:
     """Advances training one interaction_step at a time, yielding the
-    interaction_step number immediately after it has been fully processed
-    (transition collected, probe captured, any due agent updates applied).
+    interaction_step number immediately after it has been fully processed.
+    A generator so a caller can observe/act on intermediate steps (see
+    prereq_check.py's pre/post checkpointing) rather than only draining it
+    fully to stop_step (train_agent_to_step's own usage).
 
-    A generator so train_agent_to_step() can drain it fully; kept as a
-    generator (rather than a plain loop) so a future caller needing to
-    observe intermediate interaction_step values doesn't require
-    reimplementing this stepping logic.
+    start_step > 1 (with resumed_observations/resumed_env_state given) means
+    a resume: the environment's physics state is restored to exactly where
+    training left off (see env_state.py) instead of train_env.reset(), and
+    `timestep` is reconstructed from the persisted observation so the first
+    post-resume action uses the trained policy, not a fresh warm-up random
+    action - agent/buffer/probe_capture are assumed already loaded by the
+    caller (train_agent_to_step) before this generator starts.
+
+    checkpoint_dir + checkpoint_interval (both required together) save a
+    full, resumable snapshot (agent, buffer, probe_capture, and this
+    function's own step/update counters + current observation/env state)
+    every `checkpoint_interval` interaction steps.
     """
-    observations, _ = train_env.reset()
-    timestep = None
-    update_step = 0
-    update_counter = 0
+    if resumed_observations is not None:
+        restore_env_state(single_env, resumed_env_state)
+        observations = resumed_observations
+        timestep = {"next_observation": resumed_observations}
+    else:
+        observations, _ = train_env.reset()
+        timestep = None
+    update_step = resumed_update_step
+    update_counter = resumed_update_counter
 
-    for interaction_step in range(1, stop_step + 1):
-        env_state = capture_env_state(single_env)
+    for interaction_step in range(start_step, stop_step + 1):
+        env_state = capture_env_state(single_env, base_cfg.env.env_type)
 
         if timestep is not None:
             actions = agent.sample_actions(interaction_step, prev_timestep=timestep, training=True)
@@ -187,23 +296,36 @@ def _run_training_loop(
                 update_counter -= 1
                 update_step += 1
 
+        if checkpoint_dir and checkpoint_interval and interaction_step % checkpoint_interval == 0:
+            _save_training_checkpoint(
+                checkpoint_dir, agent, buffer, probe_capture,
+                interaction_step, update_step, update_counter,
+                observations, capture_env_state(single_env, base_cfg.env.env_type),
+            )
+
         yield interaction_step
 
 
-def _check_single_env_dmc(base_cfg) -> None:
-    assert_dmc_env_type(base_cfg.env.env_type)
-    validate_dmc_not_heldout(base_cfg.env.env_type, base_cfg.env.env_name)
+def check_single_env_type(base_cfg) -> None:
+    """Angle 2A supports env_type in {"dmc", "myosuite"} (see env_state.py).
+    validate_dmc_not_heldout/validate_myosuite_core4 are no-ops for the other
+    env_type, so calling both unconditionally is correct regardless of which
+    type this config uses."""
+    env_type = base_cfg.env.env_type
+    assert_supported_env_type(env_type)
+    validate_dmc_not_heldout(env_type, base_cfg.env.env_name)
+    validate_myosuite_core4(env_type, base_cfg.env.env_name)
     if int(base_cfg.env.num_train_envs) != 1:
         raise Angle2AConfigError(
             f"Angle 2A requires env.num_train_envs == 1 (got "
             f"{base_cfg.env.num_train_envs}) so that the single underlying "
-            f"dm_control environment instance can be captured/restored "
-            f"exactly for Monte Carlo rollouts. This is a deliberate, "
-            f"documented scope limitation, not an oversight."
+            f"environment instance can be captured/restored exactly for "
+            f"Monte Carlo rollouts. This is a deliberate, documented scope "
+            f"limitation, not an oversight."
         )
 
 
-def _build_agent_and_env(architecture: RoleArchitecture, base_cfg):
+def build_agent_and_env(architecture: RoleArchitecture, base_cfg):
     train_env, eval_env = create_envs(**base_cfg.env)
     observation_space = train_env.observation_space
     action_space = train_env.action_space
@@ -233,10 +355,14 @@ def train_agent_to_step(
     base_cfg,
     stop_step: int,
     seed_context: str,
+    checkpoint_dir: Optional[str] = None,
+    checkpoint_interval: Optional[int] = None,
 ) -> TrainedAgentHandle:
     """Trains one brand-new agent (own actor, critic, optimizer state,
     replay buffer, environment, RNG) from scratch to exactly `stop_step`
-    interaction steps, recording ProbeCapture data along the way.
+    interaction steps, recording ProbeCapture data along the way - or
+    resumes one from `checkpoint_dir` if a checkpoint already exists there
+    (see load_training_checkpoint_meta/run_training_loop).
 
     `base_cfg` provides everything EXCEPT the critic architecture (env,
     buffer, agent hyperparameters, seed): the same `cfg.seed` is used for
@@ -250,11 +376,18 @@ def train_agent_to_step(
     with `base_cfg.seed` to derive this agent's own deterministic global RNG
     stream for replay-buffer sampling (see seed_global_rng_for_agent), so
     that stream doesn't depend on which agent happens to train first in the
-    process.
-    """
-    _check_single_env_dmc(base_cfg)
+    process. Re-derived identically on resume (matching experiments/angle_1.py's
+    own precedent of always reseeding unconditionally near the top of run(),
+    resume or not) - some loss of bit-exact reproducibility of the exact
+    post-resume buffer-sampling sequence is an accepted, pre-existing
+    limitation shared with Angle 1, not something new here.
 
-    train_env, eval_env, single_env, buffer, agent, observation_space, action_space = _build_agent_and_env(
+    checkpoint_dir + checkpoint_interval (both required together to actually
+    checkpoint) are passed straight through to run_training_loop.
+    """
+    check_single_env_type(base_cfg)
+
+    train_env, eval_env, single_env, buffer, agent, observation_space, action_space = build_agent_and_env(
         architecture, base_cfg
     )
 
@@ -266,7 +399,30 @@ def train_agent_to_step(
     )
 
     seed_global_rng_for_agent(int(base_cfg.seed), seed_context)
-    for _ in _run_training_loop(agent, buffer, train_env, single_env, probe_capture, base_cfg, stop_step):
+
+    meta = load_training_checkpoint_meta(checkpoint_dir)
+    if meta is not None:
+        agent.load_checkpoint(checkpoint_dir)
+        buffer.load(checkpoint_dir)
+        probe_capture.load(checkpoint_dir)
+        start_step = meta["interaction_step"] + 1
+        print(f"[angle_2a] resuming {role} ({architecture_label}, {seed_context}) from interaction_step {start_step}")
+        loop = run_training_loop(
+            agent, buffer, train_env, single_env, probe_capture, base_cfg, stop_step,
+            start_step=start_step,
+            resumed_update_step=meta["update_step"],
+            resumed_update_counter=meta["update_counter"],
+            resumed_observations=meta["observations"],
+            resumed_env_state=meta["env_state"],
+            checkpoint_dir=checkpoint_dir,
+            checkpoint_interval=checkpoint_interval,
+        )
+    else:
+        loop = run_training_loop(
+            agent, buffer, train_env, single_env, probe_capture, base_cfg, stop_step,
+            checkpoint_dir=checkpoint_dir, checkpoint_interval=checkpoint_interval,
+        )
+    for _ in loop:
         pass
 
     return TrainedAgentHandle(

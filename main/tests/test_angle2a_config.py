@@ -83,6 +83,29 @@ class TestAngle2AConfigValidation(unittest.TestCase):
         self.assertEqual(architectures["reference"].critic_num_blocks, 2)
         self.assertEqual(architectures["reference"].critic_hidden_dim, 512)
 
+    def test_explicit_null_is_reported_by_field_and_collected_with_other_missing(self):
+        # --overrides angle_2_a.scaled_a.critic_num_blocks=null: an explicit
+        # null is a different case from simply omitting the override (that's
+        # MissingMandatoryValue, tested elsewhere), but must be reported the
+        # same collected-together way, identifying which field, not raised
+        # uncaught with a generic message.
+        cfg = _compose(
+            [
+                "angle_2_a.scaled_a.critic_num_blocks=null",
+                "angle_2_a.scaled_a.critic_hidden_dim=768",
+                "angle_2_a.scaled_b.critic_num_blocks=7",
+                "angle_2_a.scaled_b.critic_hidden_dim=1024",
+                # reference entirely omitted too, to confirm both problems
+                # surface together in one error, not just the null one.
+            ]
+        )
+        with self.assertRaises(Angle2AConfigError) as ctx:
+            validate_angle2a_config(cfg)
+        message = str(ctx.exception)
+        self.assertIn("angle_2_a.scaled_a.critic_num_blocks", message)
+        self.assertIn("null", message.lower())
+        self.assertIn("angle_2_a.reference", message)
+
     def test_no_hidden_default_leaks_through_when_only_some_roles_given(self):
         # Deliberately valid scaled_a/scaled_b but missing reference: the
         # implementation must not quietly substitute the top-level
@@ -98,6 +121,19 @@ class TestAngle2AConfigValidation(unittest.TestCase):
         )
         with self.assertRaises(Angle2AConfigError):
             validate_angle2a_config(cfg)
+
+    def test_top_level_critic_fields_are_genuinely_mandatory(self):
+        # The defense-in-depth this comment (and the YAML's own comment, and
+        # angle_2_a.py's docstring) claims to provide: reading the top-level
+        # fields directly (bypassing validate_angle2a_config/
+        # build_role_agent_cfg entirely, simulating a hypothetical future
+        # bug where some code path reads them by mistake) must fail loudly,
+        # not silently return a concrete fallback value.
+        cfg = _compose(FULL_OVERRIDES)
+        with self.assertRaises(omegaconf.errors.MissingMandatoryValue):
+            _ = cfg.critic_num_blocks
+        with self.assertRaises(omegaconf.errors.MissingMandatoryValue):
+            _ = cfg.critic_hidden_dim
 
     def test_architecture_label_matches_angle1_naming_convention(self):
         cfg = _compose(FULL_OVERRIDES)

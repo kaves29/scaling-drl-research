@@ -9,7 +9,7 @@ import unittest
 from dm_control import suite
 from omegaconf import OmegaConf
 
-from experiments.angle_2a.agent_runner import _check_single_env_dmc
+from experiments.angle_2a.agent_runner import check_single_env_type
 from experiments.angle_2a.errors import Angle2AConfigError
 from scale_rl.envs.dmc import DMC_HARD, DMC_HELDOUT2, DMC_MED, validate_dmc_not_heldout
 
@@ -54,17 +54,17 @@ class TestAngle2ARejectsHeldoutDmcEnvs(unittest.TestCase):
         )
 
     def test_core_dmc_env_passes(self):
-        _check_single_env_dmc(self._base_cfg("cheetah-run"))  # must not raise
+        check_single_env_type(self._base_cfg("cheetah-run"))  # must not raise
 
     def test_heldout2_dmc_env_is_rejected(self):
         for env_name in DMC_HELDOUT2:
             with self.assertRaises(ValueError) as ctx:
-                _check_single_env_dmc(self._base_cfg(env_name))
+                check_single_env_type(self._base_cfg(env_name))
             self.assertIn("held out for Angle 3", str(ctx.exception))
 
     def test_still_enforces_num_train_envs_one_after_the_heldout_check(self):
         with self.assertRaises(Angle2AConfigError):
-            _check_single_env_dmc(self._base_cfg("cheetah-run", num_train_envs=2))
+            check_single_env_type(self._base_cfg("cheetah-run", num_train_envs=2))
 
 
 if __name__ == "__main__":

@@ -36,8 +36,13 @@ class _DummyPhysics:
     Angle 2A's real single_env reuse does), so each restore must behave like
     a fresh episode start, not accumulate steps across probes."""
 
+    class _Data:
+        def __init__(self):
+            self.qacc_warmstart = np.zeros(1)
+
     def __init__(self, owner):
         self._owner = owner
+        self.data = self._Data()
 
     def get_state(self):
         return np.zeros(1)
@@ -76,7 +81,7 @@ def _fake_handle(role, q_value_fn, fixed_action, episode_len=1, reward_fn=None, 
     env = _FakeEnv(episode_len=episode_len, reward_fn=reward_fn)
     probe_capture = ProbeCapture(capacity=capacity, observation_shape=(2,), action_shape=(1,))
     for i in range(capacity):
-        probe_capture.add(i, np.array([float(i), 0.0], dtype=np.float32), np.array([float(i)], dtype=np.float32), {"physics_state": np.zeros(1), "elapsed_steps": None})
+        probe_capture.add(i, np.array([float(i), 0.0], dtype=np.float32), np.array([float(i)], dtype=np.float32), {"physics_state": np.zeros(1), "qacc_warmstart": np.zeros(1), "elapsed_steps": None, "env_type": "dmc"})
 
     return TrainedAgentHandle(
         role=role,
@@ -126,7 +131,7 @@ class TestProbeSampling(unittest.TestCase):
         R_env = _FakeEnv()
         R_capture = ProbeCapture(capacity=10, observation_shape=(2,), action_shape=(1,))
         for i in range(10):
-            R_capture.add(i, np.array([float(100 + i), 0.0], dtype=np.float32), np.array([float(100 + i)], dtype=np.float32), {"physics_state": np.zeros(1), "elapsed_steps": None})
+            R_capture.add(i, np.array([float(100 + i), 0.0], dtype=np.float32), np.array([float(100 + i)], dtype=np.float32), {"physics_state": np.zeros(1), "qacc_warmstart": np.zeros(1), "elapsed_steps": None, "env_type": "dmc"})
         R = TrainedAgentHandle(
             role="R", architecture_label="Ref", architecture=RoleArchitecture("reference", 2, 512),
             agent=R_agent, buffer=None, train_env=None, eval_env=None, single_env=R_env,

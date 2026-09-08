@@ -3,14 +3,20 @@ reference critic, evaluated at the critic's own seed-specific Angle 1
 degradation onset.
 
 See experiments/angle_2a/ for the implementation, split by concern:
-  config.py        - required-architecture validation, no hidden defaults
-  onset_lookup.py  - deterministic per-(architecture,environment,seed) Angle 1
-                     onset lookup (never averaged/borrowed)
-  env_state.py     - exact dm_control state capture/restore for MC rollouts
-  agent_runner.py  - trains one fully independent agent to an exact step
-  probes.py        - probe sampling, cross-critic Q eval, MC rollouts, errors
-  storage.py       - persistent probe-level dataset (canonical, independent of WandB)
-  matchup.py       - orchestrates one D-vs-R matchup end to end
+  config.py         - required-architecture validation, no hidden defaults
+  onset_lookup.py   - deterministic per-(architecture,environment,seed) Angle 1
+                      onset lookup (never averaged/borrowed)
+  env_state.py      - exact dm_control/MyoSuite state capture/restore for MC rollouts
+  agent_runner.py   - trains one fully independent agent to an exact step
+  probes.py         - probe sampling, cross-critic Q eval, MC rollouts, errors
+  storage.py        - persistent probe-level dataset (canonical, independent of WandB)
+  matchup.py        - orchestrates one D-vs-R matchup end to end
+  prereq_check.py   - construct-validity check run before the main comparison
+                      (see its module docstring; dedicated seeds, descriptive
+                      not gating)
+  r_calibration.py  - per-environment MC rollout-count (R) calibration, run
+                      before both prereq_check and the main comparison (see
+                      its module docstring)
 
 Two real matchups (scaled_a vs reference, scaled_b vs reference), each using
 its OWN scaled architecture's OWN onset step - never averaged, never
@@ -31,7 +37,7 @@ twice, independently, exactly like the null-baseline loop does.
 
 (An earlier version of this module trained ONE shared reference trajectory
 and snapshotted it twice - one snapshot per matchup's onset step - which
-.claude/rules/angle2.md described as intentional but which
+.claude/angle2.md described as intentional but which
 research-methodology.md's Angle 2A section and "Must Never Change Silently"
 list explicitly forbid. That shared-trajectory design has been removed; see
 the 2026-08-28 audit notes in the End-of-Task Summary for the full
@@ -50,6 +56,17 @@ for why.
 
 import os
 
+from utils.hardware import configure_hardware_env, validate_rocm_jax_available
+
+# Defense-in-depth, mirroring experiments/angle_1.py: run.py's true entry
+# point already calls this before `import experiments`, so in the normal
+# run.py-launched path this is a cheap idempotent no-op. This call exists so
+# that anything importing experiments.angle_2_a WITHOUT going through run.py
+# (e.g. this repo's own test suite) still gets hardware-aware env vars set
+# correctly before `import jax` - which the matchup import below triggers
+# transitively (experiments.angle_2a.matchup -> agent_runner -> scale_rl.agents).
+_GPU_VENDOR = configure_hardware_env()
+
 import omegaconf
 from dotmap import DotMap
 
@@ -57,9 +74,14 @@ from experiments.angle_2a.config import architecture_label, validate_angle2a_con
 from experiments.angle_2a.errors import Angle2AOnsetLookupError
 from experiments.angle_2a.matchup import run_matchup
 from experiments.angle_2a.onset_lookup import lookup_critic_degradation_onset
+from experiments.angle_2a.prereq_check import run_prereq_check
+from experiments.angle_2a.r_calibration import load_or_calibrate_r
 from experiments.registry import register_experiment
 
 import hydra
+import jax
+
+validate_rocm_jax_available(_GPU_VENDOR)
 
 
 @register_experiment("angle_2_a")
@@ -93,8 +115,18 @@ def run(args: dict) -> None:
     onset_source_experiment = str(cfg.angle_2_a.onset_source_experiment)
     onset_ledger_root = str(cfg.angle_2_a.onset_ledger_root)
     num_probes_per_source = int(cfg.angle_2_a.num_probes_per_source)
-    num_mc_rollouts = int(cfg.angle_2_a.num_mc_rollouts)
     run_null_baseline = bool(cfg.angle_2_a.run_null_baseline)
+    # Resumability (see experiments/angle_2a/matchup.py's checkpoint_dir doc)
+    # for both training (D and R each to onset_step) and MC-validation
+    # (per-rollout, not per-probe or whole-phase). checkpoint_interval reuses
+    # run.py's existing Angle-1-oriented CLI flag; checkpoint_start_frac
+    # doesn't apply here (Angle 2A's "when to start checkpointing" is simply
+    # "from the start" - there's no equivalent of Angle 1's "don't bother
+    # checkpointing early training" rationale, since Angle 2A's whole
+    # training run is exactly as exposed to interruption from step 1 as at
+    # any later step).
+    checkpoint_root = args.checkpoint_dir or None
+    checkpoint_interval = int(args.checkpoint_interval) if args.checkpoint_interval else None
 
     reference = architectures["reference"]
     reference_label = architecture_label(reference)
@@ -103,6 +135,50 @@ def run(args: dict) -> None:
         ("matchup_1", architectures["scaled_a"]),
         ("matchup_2", architectures["scaled_b"]),
     ]
+
+    # Phase -1: per-environment MC rollout-count (R) calibration (see
+    # experiments/angle_2a/r_calibration.py and research-methodology.md's
+    # Angle 2A section) - must finalize before both the prereq check and the
+    # main comparison below, since both rely on the R it determines.
+    # cfg.angle_2_a.num_mc_rollouts is intentionally never read anymore -
+    # the fixed default it held is exactly what this replaces.
+    if bool(cfg.angle_2_a.r_calibration.enabled):
+        r_result = load_or_calibrate_r(
+            reference_architecture=reference,
+            reference_architecture_label=reference_label,
+            base_cfg=cfg,
+            environment=environment,
+            calibration_seed=int(cfg.angle_2_a.r_calibration.calibration_seed),
+            burn_in_fraction=float(cfg.angle_2_a.r_calibration.burn_in_fraction),
+            num_representative_pairs=int(cfg.angle_2_a.r_calibration.num_representative_pairs),
+            num_rollouts_for_sigma=int(cfg.angle_2_a.r_calibration.num_rollouts_for_sigma),
+            se_margin_divisor=float(cfg.angle_2_a.r_calibration.se_margin_divisor),
+            r_cap=int(cfg.angle_2_a.r_calibration.r_cap),
+        )
+        num_mc_rollouts = r_result.calibrated_r
+    else:
+        num_mc_rollouts = int(cfg.angle_2_a.num_mc_rollouts)
+
+    # Phase 0: construct-validity prerequisite check (see
+    # experiments/angle_2a/prereq_check.py and research-methodology.md's
+    # Angle 2A section) - runs on its own dedicated seeds, before anything
+    # else, and is purely descriptive: it always completes and the main
+    # comparison below always proceeds regardless of its findings.
+    if bool(cfg.angle_2_a.prereq_check.enabled):
+        run_prereq_check(
+            scaled_architectures={
+                architecture_label(architectures["scaled_a"]): architectures["scaled_a"],
+                architecture_label(architectures["scaled_b"]): architectures["scaled_b"],
+            },
+            base_cfg=cfg,
+            environment=environment,
+            dedicated_seeds=[int(s) for s in cfg.angle_2_a.prereq_check.seeds],
+            onset_source_experiment=onset_source_experiment,
+            onset_ledger_root=onset_ledger_root,
+            burn_in_fraction=float(cfg.angle_2_a.prereq_check.burn_in_fraction),
+            num_probes=int(cfg.angle_2_a.prereq_check.num_probes),
+            num_mc_rollouts=num_mc_rollouts,
+        )
 
     # Phase 1: look up BOTH onsets first (each independently, from its own
     # scaled architecture's ledger entry - never averaged, never one
@@ -160,6 +236,8 @@ def run(args: dict) -> None:
             num_mc_rollouts=num_mc_rollouts,
             output_root="results/angle_2a",
             wandb_project=str(cfg.project_name),
+            checkpoint_dir=f"{checkpoint_root}/{matchup_name}" if checkpoint_root else None,
+            checkpoint_interval=checkpoint_interval,
         )
 
     # Phase 3: null baseline - unchanged: healthy-vs-healthy, both sides
@@ -191,6 +269,8 @@ def run(args: dict) -> None:
                 num_mc_rollouts=num_mc_rollouts,
                 output_root="results/angle_2a",
                 wandb_project=str(cfg.project_name),
+                checkpoint_dir=f"{checkpoint_root}/{null_matchup_name}" if checkpoint_root else None,
+                checkpoint_interval=checkpoint_interval,
             )
 
     print(f"[angle_2_a] done. seed={seed} environment={environment}")

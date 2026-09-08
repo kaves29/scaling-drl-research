@@ -35,3 +35,25 @@ def atomic_write_text(path: "str | Path", text: str, encoding: str = "utf-8") ->
         except OSError:
             pass
         raise
+
+
+def atomic_write_bytes(path: "str | Path", data: bytes) -> None:
+    """Like atomic_write_text, for binary payloads (e.g. .npz buffers)."""
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    fd, tmp_path = tempfile.mkstemp(
+        prefix=f".{path.name}.", suffix=".tmp", dir=str(path.parent)
+    )
+    try:
+        with os.fdopen(fd, "wb") as f:
+            f.write(data)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp_path, path)
+    except BaseException:
+        try:
+            os.remove(tmp_path)
+        except OSError:
+            pass
+        raise

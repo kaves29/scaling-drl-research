@@ -52,9 +52,11 @@ MYOSUITE_HELDOUT2 = [
 
 
 def validate_myosuite_core4(env_type: str, env_name: str) -> None:
-    """Rejects a held-out-2 MyoSuite env_name for Angle 1/2 (Angle 2A is
-    DMC-only; 2B/2C never instantiate a live env). No-op for non-myosuite
-    env_type - see dmc.py's validate_dmc_not_heldout for that side."""
+    """Rejects a held-out-2 MyoSuite env_name for Angle 1/2. No-op for
+    non-myosuite env_type - see dmc.py's validate_dmc_not_heldout for that
+    side. Angle 2A supports myosuite as of 2026-09-07 (see
+    experiments/angle_2a/env_state.py); 2B/2C still never instantiate a live
+    env (they only ever read Angle 2A's already-persisted snapshots)."""
     if env_type != "myosuite" or env_name in MYOSUITE_CORE4:
         return
     if env_name in MYOSUITE_HELDOUT2:

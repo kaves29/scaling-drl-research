@@ -6,13 +6,16 @@ Kept free of any "which matchup is this" framing - it only knows about a
 for Matchup 1, Matchup 2, and the null baseline (see matchup.py).
 """
 
+import pickle
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import numpy as np
 
 from experiments.angle_2a.agent_runner import TrainedAgentHandle
 from experiments.angle_2a.env_state import restore_env_state
+from utils.atomic_io import atomic_write_bytes
 
 SOURCE_D = "D"
 SOURCE_R = "R"
@@ -32,6 +35,7 @@ class Probe:
     q_r: Optional[float] = None
     mc_rollout_returns: List[float] = field(default_factory=list)
     mc_return: Optional[float] = None
+    mc_return_se: Optional[float] = None  # sigma_rollout_sample / sqrt(R) - see r_calibration.py
     diagonal_error: Optional[float] = None
 
     @property
@@ -51,8 +55,7 @@ def sample_probes(
     rng: np.random.Generator,
 ) -> List[Probe]:
     """Samples `num_probes_per_source` transitions from D's OWN buffer and
-    `num_probes_per_source` from R's OWN buffer - never combined, never
-    cross-contaminated. Each probe is permanently tagged with its source."""
+    `num_probes_per_source` from R's OWN buffer. Each probe is permanently tagged with its source."""
     probes: List[Probe] = []
 
     d_idxs, d_states, d_actions, d_env_states = D.probe_capture.sample(num_probes_per_source, rng)
@@ -82,6 +85,30 @@ def sample_probes(
     return probes
 
 
+def sample_single_source_probes(
+    probe_id_prefix: str,
+    probe_capture,
+    num_probes: int,
+    rng: np.random.Generator,
+) -> List[Probe]:
+    """Like sample_probes, but for a single agent with no counterpart to pair
+    against (see experiments/angle_2a/prereq_check.py) - every probe is
+    tagged source=SOURCE_D so evaluate_both_critics/run_monte_carlo_rollouts/
+    compute_diagonal_errors work unmodified when passed the same
+    TrainedAgentHandle for both their D and R parameters."""
+    idxs, states, actions, env_states = probe_capture.sample(num_probes, rng)
+    return [
+        Probe(
+            probe_id=f"{probe_id_prefix}_{int(idx)}",
+            source=SOURCE_D,
+            state=states[i],
+            action=actions[i],
+            env_state=env_states[i],
+        )
+        for i, idx in enumerate(idxs)
+    ]
+
+
 def evaluate_both_critics(probes: List[Probe], D: TrainedAgentHandle, R: TrainedAgentHandle) -> None:
     """Evaluates BOTH agents' critics on EVERY probe (diagonal + off-diagonal)."""
     if not probes:
@@ -98,6 +125,17 @@ def evaluate_both_critics(probes: List[Probe], D: TrainedAgentHandle, R: Trained
         probe.q_r = float(q_r)
 
 
+def _load_mc_progress(checkpoint_path: Optional[str]) -> Dict[str, List[float]]:
+    if not checkpoint_path or not Path(checkpoint_path).exists():
+        return {}
+    with open(checkpoint_path, "rb") as f:
+        return pickle.load(f)
+
+
+def _save_mc_progress(checkpoint_path: str, progress: Dict[str, List[float]]) -> None:
+    atomic_write_bytes(checkpoint_path, pickle.dumps(progress, protocol=pickle.HIGHEST_PROTOCOL))
+
+
 def run_monte_carlo_rollouts(
     probes: List[Probe],
     D: TrainedAgentHandle,
@@ -105,33 +143,52 @@ def run_monte_carlo_rollouts(
     num_rollouts: int,
     gamma: float,
     max_rollout_steps: int,
+    checkpoint_path: Optional[str] = None,
 ) -> None:
     """For every probe, runs exactly `num_rollouts` independent rollouts:
     reset the probe's SOURCE agent's own environment to the probe's exact
     captured state, force the probe's action, then continue with the SOURCE
-    agent's actor only (never the other agent's actor) until termination/
-    truncation. Fills in probe.mc_rollout_returns and probe.mc_return (their
-    mean) with the discounted return gamma^t * r_t summed to episode end -
-    matching what a Q-function estimates, not the undiscounted return
-    evaluation.py reports for benchmarking.
+    agent's *stochastic* actor only (never the other agent's actor, and
+    never its deterministic mean action - see run_rollouts_for_probe) until
+    termination/truncation. Fills in probe.mc_rollout_returns and
+    probe.mc_return (their mean) with the discounted return gamma^t * r_t
+    summed to episode end - matching what a Q-function estimates, not the
+    undiscounted return evaluation.py reports for benchmarking.
+
+    checkpoint_path (optional): per-probe-id progress (a plain
+    {probe_id: [completed returns so far]} dict) is persisted after every
+    single rollout, not just every probe - resuming with the same
+    checkpoint_path picks back up from the exact interrupted rollout for a
+    partially-done probe, and skips re-running any already-fully-done probe
+    entirely, rather than restarting a probe's full run or this whole phase.
     """
+    progress = _load_mc_progress(checkpoint_path)
     for probe in probes:
         agent_handle = D if probe.source == SOURCE_D else R
-        _run_rollouts_for_probe(probe, agent_handle, num_rollouts, gamma, max_rollout_steps)
+        run_rollouts_for_probe(
+            probe, agent_handle, num_rollouts, gamma, max_rollout_steps,
+            already_completed_returns=progress.get(probe.probe_id),
+            checkpoint_path=checkpoint_path,
+            progress=progress,
+        )
 
 
-def _run_rollouts_for_probe(
+def run_rollouts_for_probe(
     probe: Probe,
     agent_handle: TrainedAgentHandle,
     num_rollouts: int,
     gamma: float,
     max_rollout_steps: int,
+    already_completed_returns: Optional[List[float]] = None,
+    checkpoint_path: Optional[str] = None,
+    progress: Optional[Dict[str, List[float]]] = None,
 ) -> None:
     env = agent_handle.single_env
     agent = agent_handle.agent
-    returns = []
+    returns = list(already_completed_returns) if already_completed_returns else []
+    num_remaining = num_rollouts - len(returns)
 
-    for _ in range(num_rollouts):
+    for _ in range(num_remaining):
         restore_env_state(env, probe.env_state)
         action = np.asarray(probe.action)
         total_return = 0.0
@@ -146,14 +203,42 @@ def _run_rollouts_for_probe(
                 break
 
             prev_timestep = {"next_observation": np.asarray(next_obs)[None, :]}
+            # training=True (temperature=1, not 0): Q_MC^pi denotes the
+            # return under the actual stochastic trained policy pi, not its
+            # deterministic mean action - temperature=0 makes the policy's
+            # scale_diag exactly zero (scale_rl/networks/policies.py),
+            # making dm_control's otherwise-deterministic dynamics produce
+            # bit-identical returns across repeated rollouts (confirmed
+            # directly: sigma=0.0 exactly) - i.e. no genuine MC estimate at
+            # all. Fixed 2026-09-06; see research-methodology.md's Angle 2A
+            # section for the full history of this correction.
             action = np.asarray(
-                agent.sample_actions(interaction_step=0, prev_timestep=prev_timestep, training=False)
+                agent.sample_actions(interaction_step=0, prev_timestep=prev_timestep, training=True)
             )[0]
 
         returns.append(total_return)
 
+        if checkpoint_path is not None and progress is not None:
+            progress[probe.probe_id] = list(returns)
+            _save_mc_progress(checkpoint_path, progress)
+
     probe.mc_rollout_returns = returns
     probe.mc_return = float(np.mean(returns))
+    # ddof=1: sample std (Bessel's correction), consistent with
+    # r_calibration.py's sigma_rollout estimate. Requires R>=2 - R=1 is
+    # never valid here (see r_calibration.py's calibrated_r floor).
+    probe.mc_return_se = float(np.std(returns, ddof=1) / np.sqrt(len(returns))) if len(returns) > 1 else None
+
+
+def mean_and_se(values: List[float]) -> "tuple[float, Optional[float]]":
+    """SE here is the standard error of the mean *across* the given values
+    (e.g. across probes, or across pre/post-checkpoint probes) - a
+    different, additional source of uncertainty from any one value's own
+    mc_return_se (which reflects only that single estimate's own R-rollout
+    MC noise). See research-methodology.md's Angle 2A section."""
+    mean = float(np.mean(values))
+    se = float(np.std(values, ddof=1) / np.sqrt(len(values))) if len(values) > 1 else None
+    return mean, se
 
 
 def compute_diagonal_errors(probes: List[Probe]) -> None:

@@ -8,6 +8,10 @@ import unittest
 
 import gymnasium as gym
 
+from omegaconf import OmegaConf
+
+from experiments.angle_2a.agent_runner import check_single_env_type
+from experiments.angle_2a.errors import Angle2AConfigError
 from scale_rl.envs.myosuite import (
     MYOSUITE_CORE4,
     MYOSUITE_HELDOUT2,
@@ -53,6 +57,31 @@ class TestMyosuiteCore4Validation(unittest.TestCase):
         with self.assertRaises(ValueError) as ctx:
             validate_myosuite_core4("myosuite", "myo-not-a-real-alias")
         self.assertIn("not one of the core-4", str(ctx.exception))
+
+
+class TestAngle2AAcceptsMyosuiteEnvs(unittest.TestCase):
+    """Angle 2A gained MyoSuite support 2026-09-07 (see env_state.py) - prior
+    to this, check_single_env_type (formerly check_single_env_dmc) rejected
+    every myosuite config outright via assert_supported_env_type."""
+
+    def _base_cfg(self, env_name: str, num_train_envs: int = 1):
+        return OmegaConf.create(
+            {"env": {"env_type": "myosuite", "env_name": env_name, "num_train_envs": num_train_envs}}
+        )
+
+    def test_core4_myosuite_env_passes(self):
+        for alias in MYOSUITE_CORE4:
+            check_single_env_type(self._base_cfg(alias))  # must not raise
+
+    def test_heldout2_myosuite_env_is_rejected(self):
+        for alias in MYOSUITE_HELDOUT2:
+            with self.assertRaises(ValueError) as ctx:
+                check_single_env_type(self._base_cfg(alias))
+            self.assertIn("held out for Angle 3", str(ctx.exception))
+
+    def test_still_enforces_num_train_envs_one_after_the_core4_check(self):
+        with self.assertRaises(Angle2AConfigError):
+            check_single_env_type(self._base_cfg(MYOSUITE_CORE4[0], num_train_envs=2))
 
 
 if __name__ == "__main__":

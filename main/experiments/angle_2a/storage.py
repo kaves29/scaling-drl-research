@@ -39,8 +39,6 @@ instead of training anything new.
 
 import io
 import json
-import os
-import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
@@ -49,7 +47,7 @@ import numpy as np
 import pandas as pd
 
 from experiments.angle_2a.probes import Probe
-from utils.atomic_io import atomic_write_text
+from utils.atomic_io import atomic_write_bytes, atomic_write_text
 
 DEFAULT_OUTPUT_ROOT = "results/angle_2a"
 
@@ -59,6 +57,7 @@ PROBE_SCALAR_COLUMNS = [
     "q_d",
     "q_r",
     "mc_return",
+    "mc_return_se",
     "diagonal_error",
     "num_rollouts",
     "mc_return_std",
@@ -67,23 +66,6 @@ PROBE_SCALAR_COLUMNS = [
 
 def matchup_dir(environment: str, seed: int, matchup_name: str, root: str = DEFAULT_OUTPUT_ROOT) -> Path:
     return Path(root) / environment / f"seed{seed}" / matchup_name
-
-
-def _atomic_write_bytes(path: Path, data: bytes) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    fd, tmp_path = tempfile.mkstemp(prefix=f".{path.name}.", suffix=".tmp", dir=str(path.parent))
-    try:
-        with os.fdopen(fd, "wb") as f:
-            f.write(data)
-            f.flush()
-            os.fsync(f.fileno())
-        os.replace(tmp_path, path)
-    except BaseException:
-        try:
-            os.remove(tmp_path)
-        except OSError:
-            pass
-        raise
 
 
 def save_matchup_result(
@@ -115,6 +97,7 @@ def save_matchup_result(
                 "q_d": p.q_d,
                 "q_r": p.q_r,
                 "mc_return": p.mc_return,
+                "mc_return_se": p.mc_return_se,
                 "diagonal_error": p.diagonal_error,
                 "num_rollouts": len(p.mc_rollout_returns),
                 "mc_return_std": float(np.std(p.mc_rollout_returns)) if p.mc_rollout_returns else None,
@@ -141,7 +124,7 @@ def save_matchup_result(
         rollout_returns=rollout_returns,
     )
     arrays_path = out_dir / "probes_arrays.npz"
-    _atomic_write_bytes(arrays_path, arrays_buf.getvalue())
+    atomic_write_bytes(arrays_path, arrays_buf.getvalue())
 
     return {"metadata": metadata_path, "probes_csv": csv_path, "probes_arrays": arrays_path}
 
@@ -189,6 +172,10 @@ def save_frozen_agent_snapshot(
 
     n = len(probe_capture)
     if n > 0:
+        # seed=0 fixed deliberately, not derive_rng_seed: n == len(probe_capture)
+        # means every entry is sampled (just shuffled order), not a genuine
+        # random subsample - a fixed seed introduces no bias or cross-context
+        # collision risk here, unlike the package's other RNG usages.
         _idxs, states, actions, _env_states = probe_capture.sample(
             n, np.random.default_rng(seed=0)
         )
@@ -199,7 +186,7 @@ def save_frozen_agent_snapshot(
     probe_capture_buf = io.BytesIO()
     np.savez(probe_capture_buf, states=states, actions=actions)
     probe_capture_path = out_dir / f"probe_capture_{role}.npz"
-    _atomic_write_bytes(probe_capture_path, probe_capture_buf.getvalue())
+    atomic_write_bytes(probe_capture_path, probe_capture_buf.getvalue())
 
     agent_cfg_path = out_dir / f"agent_cfg_{role}.json"
     atomic_write_text(agent_cfg_path, json.dumps(agent_cfg, indent=2, default=str))

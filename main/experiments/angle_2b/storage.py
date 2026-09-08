@@ -18,7 +18,7 @@ from typing import Any, Dict, List
 import numpy as np
 import pandas as pd
 
-from experiments.angle_2a.storage import _atomic_write_bytes
+from utils.atomic_io import atomic_write_bytes
 from experiments.angle_2b.null_baseline import NullPairResult
 from utils.atomic_io import atomic_write_text
 
@@ -71,7 +71,7 @@ def save_angle_2b_result(
     gradients_buf = io.BytesIO()
     np.savez(gradients_buf, **{k: np.asarray(v) for k, v in gradients.items()})
     gradients_path = out_dir / "gradients.npz"
-    _atomic_write_bytes(gradients_path, gradients_buf.getvalue())
+    atomic_write_bytes(gradients_path, gradients_buf.getvalue())
 
     return {
         "metadata": metadata_path,

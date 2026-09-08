@@ -80,7 +80,7 @@ def configure_hardware_env() -> Optional[str]:
     only current AMD usage); HIP_VISIBLE_DEVICES mirrored from
     CUDA_VISIBLE_DEVICES when an operator/launcher already set that (this
     repo's existing per-process device-assignment convention - see
-    .claude/rules/compute-and-data-safety.md), so existing launch commands
+    .claude/compute-and-data-safety.md), so existing launch commands
     keep working unchanged on AMD without learning a new env var name.
 
     NVIDIA / no vendor detected / macOS: unchanged from before AMD support

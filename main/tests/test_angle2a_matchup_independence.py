@@ -44,7 +44,14 @@ class _FakeAgent:
 
 
 class _FakeEnv:
+    class _PhysicsData:
+        def __init__(self):
+            self.qacc_warmstart = np.zeros(1)
+
     class _Physics:
+        def __init__(self):
+            self.data = _FakeEnv._PhysicsData()
+
         def get_state(self):
             return np.zeros(1)
 
@@ -81,7 +88,7 @@ def _make_fake_handle(role, architecture, architecture_label, stop_step):
             i,
             np.array([float(i), 0.0], dtype=np.float32),
             np.array([float(i)], dtype=np.float32),
-            {"physics_state": np.zeros(1), "elapsed_steps": None},
+            {"physics_state": np.zeros(1), "qacc_warmstart": np.zeros(1), "elapsed_steps": None, "env_type": "dmc"},
         )
 
     handle = TrainedAgentHandle(
@@ -99,7 +106,11 @@ def _make_fake_handle(role, architecture, architecture_label, stop_step):
     return handle
 
 
-def _fake_train_agent_to_step(role, architecture, architecture_label, base_cfg, stop_step, seed_context):
+def _fake_train_agent_to_step(role, architecture, architecture_label, base_cfg, stop_step, seed_context, **kwargs):
+    # **kwargs swallows checkpoint_dir/checkpoint_interval (added for
+    # resumability, see agent_runner.train_agent_to_step) - this fake never
+    # actually trains anything, so checkpointing them is not this test
+    # module's concern (see test_angle2a_resumability.py for that).
     handle = _make_fake_handle(role, architecture, architecture_label, stop_step)
     CLOSED_HANDLES.append(handle)
     return handle

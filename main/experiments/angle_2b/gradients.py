@@ -3,7 +3,7 @@
 The loss formula here is copied verbatim from scale_rl/agents/sac/sac_update.py's
 update_actor() (actor_loss = (log_probs * temperature() - q).mean()) - Angle
 2B must never redefine the actor's objective (see
-.claude/rules/jax-rl-safety.md and CLAUDE.md's "do not change an algorithm
+.claude/jax-rl-safety.md and CLAUDE.md's "do not change an algorithm
 ... because another approach seems better"). The only difference from
 update_actor is that this never calls actor.apply_gradient() (which would
 also update actor/optimizer state) - it only ever computes jax.grad() of the

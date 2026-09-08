@@ -57,10 +57,17 @@ def validate_angle2a_config(cfg) -> Dict[str, RoleArchitecture]:
         for field in REQUIRED_ARCH_FIELDS:
             try:
                 value = role_cfg[field]
-                if value is None:
-                    raise Angle2AConfigError("null is not a valid architecture value")
             except MissingMandatoryValue:
                 missing.append(f"angle_2_a.{role}.{field}")
+                continue
+            if value is None:
+                # Explicitly set to null (e.g. --overrides ...field=null),
+                # as opposed to left unset/mandatory (the MissingMandatoryValue
+                # case above) - reported through the same collect-everything
+                # path, not raised uncaught here, so a user who nulls out
+                # several fields at once sees all of them together, same as
+                # every other missing-field scenario this function handles.
+                missing.append(f"angle_2_a.{role}.{field} (explicitly null, not a valid architecture value)")
                 continue
             values[field] = value
 

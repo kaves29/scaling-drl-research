@@ -18,7 +18,7 @@ from typing import Any, Dict, List
 import numpy as np
 import pandas as pd
 
-from experiments.angle_2a.storage import _atomic_write_bytes
+from utils.atomic_io import atomic_write_bytes
 from utils.atomic_io import atomic_write_text
 
 DEFAULT_OUTPUT_ROOT = "results/angle_2c"
@@ -62,7 +62,7 @@ def save_angle_2c_result(
     arrays_buf = io.BytesIO()
     np.savez(arrays_buf, **{k: np.asarray(v) for k, v in property_arrays.items()})
     arrays_path = out_dir / "properties.npz"
-    _atomic_write_bytes(arrays_path, arrays_buf.getvalue())
+    atomic_write_bytes(arrays_path, arrays_buf.getvalue())
 
     return {
         "metadata": metadata_path,

@@ -42,6 +42,7 @@ from experiments.angle_2a.probes import (
     Probe,
     compute_diagonal_errors,
     evaluate_both_critics,
+    mean_and_se,
     run_monte_carlo_rollouts,
     sample_probes,
 )
@@ -63,10 +64,10 @@ def _aggregate_metrics(probes: List[Probe]) -> Dict[str, float]:
     r_errors = [p.diagonal_error for p in probes if p.source == "R"]
     metrics = {}
     if d_errors:
-        metrics["mean_diagonal_error_D"] = float(np.mean(d_errors))
+        metrics["mean_diagonal_error_D"], metrics["mean_diagonal_error_D_se"] = mean_and_se(d_errors)
         metrics["median_diagonal_error_D"] = float(np.median(d_errors))
     if r_errors:
-        metrics["mean_diagonal_error_R"] = float(np.mean(r_errors))
+        metrics["mean_diagonal_error_R"], metrics["mean_diagonal_error_R_se"] = mean_and_se(r_errors)
         metrics["median_diagonal_error_R"] = float(np.median(r_errors))
     return metrics
 
@@ -90,6 +91,8 @@ def run_matchup(
     wandb_enabled: bool = True,
     reference_handle: Optional[TrainedAgentHandle] = None,
     reference_run_key: Optional[str] = None,
+    checkpoint_dir: Optional[str] = None,
+    checkpoint_interval: Optional[int] = None,
 ) -> MatchupResult:
     """Runs one D-vs-R matchup.
 
@@ -102,6 +105,18 @@ def run_matchup(
         recorded in run_metadata so two matchups' persisted results can be
         matched back to "the same underlying R_2x512 run". Only meaningful
         (and only ever passed) alongside `reference_handle`.
+    checkpoint_dir + checkpoint_interval (both required together for
+    training to actually checkpoint): resumability for both the training
+    phase (D and R each to onset_step - see agent_runner.train_agent_to_step)
+    and the MC-validation phase (per-rollout, not per-probe or whole-phase -
+    see probes.run_monte_carlo_rollouts). A crash/kill at any point resumes
+    from exactly where it left off on the next identical invocation, rather
+    than restarting training from step 0 or re-running already-completed
+    rollouts. checkpoint_dir is this matchup's OWN root (the caller is
+    responsible for making it matchup-specific, e.g.
+    f"{args.checkpoint_dir}/{matchup_name}") - D training, R training, and
+    MC-validation progress each get their own subdirectory/file under it, so
+    the three are independently resumable.
     """
     # derive_rng_seed (hashlib-based) rather than Python's built-in hash():
     # hash() of a str/tuple-containing-str is randomized per-process by
@@ -124,6 +139,8 @@ def run_matchup(
             base_cfg=base_cfg,
             stop_step=onset_step,
             seed_context=f"{matchup_name}:D:{scaled_architecture_label}",
+            checkpoint_dir=f"{checkpoint_dir}/D_training" if checkpoint_dir else None,
+            checkpoint_interval=checkpoint_interval,
         )
         if reference_handle is not None:
             R = reference_handle
@@ -135,11 +152,16 @@ def run_matchup(
                 base_cfg=base_cfg,
                 stop_step=onset_step,
                 seed_context=f"{matchup_name}:R:{reference_architecture_label}",
+                checkpoint_dir=f"{checkpoint_dir}/R_training" if checkpoint_dir else None,
+                checkpoint_interval=checkpoint_interval,
             )
 
         probes = sample_probes(matchup_name, D, R, num_probes_per_source, rng)
         evaluate_both_critics(probes, D, R)
-        run_monte_carlo_rollouts(probes, D, R, num_mc_rollouts, gamma, max_rollout_steps)
+        run_monte_carlo_rollouts(
+            probes, D, R, num_mc_rollouts, gamma, max_rollout_steps,
+            checkpoint_path=f"{checkpoint_dir}/mc_progress.pkl" if checkpoint_dir else None,
+        )
         compute_diagonal_errors(probes)
 
         # Persist frozen agent snapshots (checkpoint + full probe-capture
