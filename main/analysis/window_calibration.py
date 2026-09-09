@@ -1,7 +1,19 @@
 """ACF/CCF calibration of N (sustain window) and W (propagation/lag window)
-from the 5-seed default-SimBa baseline data, per environment - see
+from the default-SimBa baseline data, per environment - see
 research-methodology.md's Onset Definitions for the full procedure.
-Companion to analysis/baseline_calibration.py (percentile threshold).
+Companion to analysis/baseline_calibration.py (percentile threshold) - that
+module's onset/propagation percentile threshold is intentionally NOT
+expanded by the 2026-09-08 shared-pool change (see
+analysis/baseline_calibration_pool.py): Angle 1's 150 already-completed runs'
+onset-detection results must never be silently re-thresholded (see
+research-methodology.md's "Things Claude Must Never Change Silently"), so
+baseline_calibration.py keeps its original, unchanged 5-seed-only input.
+Window calibration is not a "must never change silently" threshold in that
+same sense (N/W are windowing parameters, not the pathology-onset
+determination itself), and unlike a pairwise null distribution, N/W's
+per-seed-averaged design (see calibrate_window_parameters's docstring)
+extends cleanly to more seeds without changing what each seed's own
+computation means - hence it accepts the expanded 10-seed pool.
 """
 
 import json
@@ -17,7 +29,12 @@ from analysis.baseline_calibration import compute_baseline_source_fingerprint
 from analysis.metrics_store import RunIdentity, load_metrics
 from utils.atomic_io import atomic_write_text
 
-REQUIRED_BASELINE_SEED_COUNT = 5
+# Both values are valid: 5 is Angle 1's original locked baseline seed count
+# (existing callers/configs keep working unchanged); 10 is the expanded
+# shared calibration pool (see analysis/baseline_calibration_pool.py),
+# added 2026-09-08. Anything else is very likely a caller bug (e.g. a
+# mismatched seed list), not a deliberate choice, so it still fails loudly.
+VALID_BASELINE_SEED_COUNTS = (5, 10)
 WINDOW_CALIBRATION_ROOT = "results/baselines"
 
 # Practical conventions, not statistically derived - see research-methodology.md.
@@ -111,11 +128,13 @@ def calibrate_window_parameters(
     """N via ACF decorrelation time (1/e rule) of td_error_variance; W via
     CCF peak lag (not ACF) between td_error_variance and actor_grad_cosine -
     see research-methodology.md's Onset Definitions. Per seed, then averaged
-    across all 5."""
-    if len(baseline_identities) != REQUIRED_BASELINE_SEED_COUNT:
+    across all seeds (5 for Angle 1's original baseline, 10 for the expanded
+    shared calibration pool - see VALID_BASELINE_SEED_COUNTS)."""
+    if len(baseline_identities) not in VALID_BASELINE_SEED_COUNTS:
         raise ValueError(
-            f"Window calibration requires exactly {REQUIRED_BASELINE_SEED_COUNT} "
-            f"default-SimBa baseline seeds; got {len(baseline_identities)}."
+            f"Window calibration requires exactly one of "
+            f"{VALID_BASELINE_SEED_COUNTS} default-SimBa baseline seeds; "
+            f"got {len(baseline_identities)}."
         )
 
     architectures = {i.architecture for i in baseline_identities}

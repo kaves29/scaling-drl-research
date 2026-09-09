@@ -24,7 +24,7 @@ from utils.atomic_io import atomic_write_text
 
 DEFAULT_OUTPUT_ROOT = "results/angle_2b"
 
-NULL_PAIR_COLUMNS = ["environment", "seed", "null_matchup_name", "d_dir", "d_mag", "d_grad"]
+NULL_PAIR_COLUMNS = ["environment", "seed_a", "seed_b", "d_dir", "d_mag", "d_grad"]
 
 
 def analysis_dir(environment: str, seed: int, matchup_name: str, root: str = DEFAULT_OUTPUT_ROOT) -> Path:
@@ -54,8 +54,8 @@ def save_angle_2b_result(
     rows = [
         {
             "environment": p.environment,
-            "seed": p.seed,
-            "null_matchup_name": p.null_matchup_name,
+            "seed_a": p.seed_a,
+            "seed_b": p.seed_b,
             "d_dir": p.d_dir,
             "d_mag": p.d_mag,
             "d_grad": p.d_grad,

@@ -66,7 +66,6 @@ def run(args: dict) -> None:
             environment=run_cfg.environment,
             seed=run_cfg.seed,
             matchup_name=matchup_name,
-            null_seeds=run_cfg.null_seeds,
             analysis_seed=run_cfg.analysis_seed,
             num_states_per_source=run_cfg.num_states_per_source,
             angle_2a_root=run_cfg.angle_2a_results_root,
@@ -76,11 +75,14 @@ def run(args: dict) -> None:
         print(
             f"[angle_2_b] {matchup_name}: "
             f"primary D_dir={result.primary['d_dir']:.4f} "
-            f"(exceeds_null={result.null_comparison['d_dir'].exceeds_null}), "
+            f"(exceeds_null={result.null_comparison['d_dir'].exceeds_null}, "
+            f"marginal={result.null_comparison['d_dir'].is_marginal}), "
             f"D_mag={result.primary['d_mag']:.4f} "
-            f"(exceeds_null={result.null_comparison['d_mag'].exceeds_null}), "
+            f"(exceeds_null={result.null_comparison['d_mag'].exceeds_null}, "
+            f"marginal={result.null_comparison['d_mag'].is_marginal}), "
             f"D_grad={result.primary['d_grad']:.4f} "
-            f"(exceeds_null={result.null_comparison['d_grad'].exceeds_null}); "
+            f"(exceeds_null={result.null_comparison['d_grad'].exceeds_null}, "
+            f"marginal={result.null_comparison['d_grad'].is_marginal}); "
             f"secondary D_dir={result.secondary['d_dir']:.4f} "
             f"D_mag={result.secondary['d_mag']:.4f} "
             f"D_grad={result.secondary['d_grad']:.4f}; "

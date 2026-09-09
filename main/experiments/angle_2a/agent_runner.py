@@ -152,6 +152,30 @@ class ProbeCapture:
         self._env_states = state["env_states"]
         self._count = state["count"]
 
+    @classmethod
+    def load_fresh(cls, checkpoint_dir: str) -> "ProbeCapture":
+        """Constructs a new, correctly-sized ProbeCapture directly from a
+        saved checkpoint, for a caller that doesn't already know (and
+        shouldn't have to guess) the original capacity - e.g. the shared
+        baseline-calibration pool (see analysis/baseline_calibration_pool.py),
+        loaded by a consumer that only knows the checkpoint_dir, not
+        whatever num_interaction_steps/buffer.max_length produced it."""
+        path = Path(checkpoint_dir) / "probe_capture_state.pkl"
+        if not path.exists():
+            raise FileNotFoundError(f"No ProbeCapture checkpoint found at {path}")
+        with open(path, "rb") as f:
+            state = pickle.load(f)
+        instance = cls(
+            capacity=state["capacity"],
+            observation_shape=state["observations"].shape[1:],
+            action_shape=state["actions"].shape[1:],
+        )
+        instance._observations[:] = state["observations"]
+        instance._actions[:] = state["actions"]
+        instance._env_states = state["env_states"]
+        instance._count = state["count"]
+        return instance
+
 
 @dataclass
 class TrainedAgentHandle:

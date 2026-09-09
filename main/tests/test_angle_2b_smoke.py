@@ -30,12 +30,14 @@ import shutil
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 import numpy as np
 from omegaconf import OmegaConf
 
 from experiments.angle_2a.agent_runner import ProbeCapture
 from experiments.angle_2a.storage import save_frozen_agent_snapshot
+from experiments.angle_2b import null_baseline
 from experiments.angle_2b.matchup_2b import run_angle_2b_analysis
 from experiments.angle_2b.storage import analysis_dir
 from scale_rl.agents import create_agent
@@ -162,21 +164,28 @@ class Angle2BSmokeTest(unittest.TestCase):
         self._persist(self.environment, seed, "matchup_1", "D", seed_for_agent=101, critic_num_blocks=3, critic_hidden_dim=16)
         self._persist(self.environment, seed, "matchup_1", "R", seed_for_agent=102, critic_num_blocks=1, critic_hidden_dim=8)
 
-        # Two independent null-baseline pairs (two seeds), both default (1x8) architecture.
-        for null_seed, (a_init, b_init) in {1: (201, 202), 2: (203, 204)}.items():
-            self._persist(self.environment, null_seed, "null_matchup_1", "D", seed_for_agent=a_init, critic_num_blocks=1, critic_hidden_dim=8)
-            self._persist(self.environment, null_seed, "null_matchup_1", "R", seed_for_agent=b_init, critic_num_blocks=1, critic_hidden_dim=8)
+        # Shared baseline-calibration pool (2026-09-08): 4 independent
+        # standalone default (1x8) architecture agents, forming C(4,2)=6
+        # pairs - not 2 pre-formed pairs like the old null_matchup design.
+        pool_seeds_and_inits = {1: 201, 2: 202, 3: 203, 4: 204}
+        for pool_seed, agent_init in pool_seeds_and_inits.items():
+            self._persist(
+                self.environment, pool_seed, "baseline_pool", "pool",
+                seed_for_agent=agent_init, critic_num_blocks=1, critic_hidden_dim=8,
+            )
+        fake_identities = [type("Ident", (), {"seed": s})() for s in pool_seeds_and_inits]
 
-        result = run_angle_2b_analysis(
-            environment=self.environment,
-            seed=seed,
-            matchup_name="matchup_1",
-            null_seeds=[1, 2],
-            analysis_seed=42,
-            num_states_per_source=NUM_STATES_PER_SOURCE,
-            angle_2a_root=str(self.angle_2a_root),
-            output_root=str(self.angle_2b_root),
-        )
+        with mock.patch.object(null_baseline, "get_baseline_calibration_pool", return_value=fake_identities):
+            result = run_angle_2b_analysis(
+                environment=self.environment,
+                seed=seed,
+                matchup_name="matchup_1",
+                analysis_seed=42,
+                num_states_per_source=NUM_STATES_PER_SOURCE,
+                angle_2a_root=str(self.angle_2a_root),
+                pool_root=str(self.angle_2a_root),
+                output_root=str(self.angle_2b_root),
+            )
 
         # --- primary / secondary: finite, sane ---
         for label, metrics in (("primary", result.primary), ("secondary", result.secondary)):
@@ -187,13 +196,13 @@ class Angle2BSmokeTest(unittest.TestCase):
             self.assertGreaterEqual(metrics["d_grad"], 0.0, "D_grad is a norm, must be >= 0")
 
         # --- null distribution: non-degenerate ---
-        self.assertEqual(len(result.null_pairs), 2, "expected both null seeds to be found")
+        self.assertEqual(len(result.null_pairs), 6, "expected all C(4,2)=6 pool pairs to be found")
         null_d_dirs = [p.d_dir for p in result.null_pairs]
         for p in result.null_pairs:
             self.assertTrue(np.isfinite(p.d_dir) and np.isfinite(p.d_mag) and np.isfinite(p.d_grad))
-        self.assertNotEqual(
-            null_d_dirs[0], null_d_dirs[1],
-            "the two null pairs collapsed to an identical D_dir - null distribution is degenerate",
+        self.assertGreater(
+            len(set(null_d_dirs)), 1,
+            "every null pair collapsed to an identical D_dir - null distribution is degenerate",
         )
 
         # --- null comparison: well-formed for all three metrics ---
@@ -201,7 +210,7 @@ class Angle2BSmokeTest(unittest.TestCase):
             comparison = result.null_comparison[metric_name]
             self.assertTrue(np.isfinite(comparison.null_mean))
             self.assertTrue(np.isfinite(comparison.threshold))
-            self.assertEqual(comparison.null_n, 2)
+            self.assertEqual(comparison.null_n, 6)
             self.assertIsInstance(comparison.exceeds_null, bool)
 
         # --- persisted outputs exist and round-trip ---
@@ -215,7 +224,7 @@ class Angle2BSmokeTest(unittest.TestCase):
         with open(out_dir / "run_metadata.json") as f:
             metadata = json.load(f)
         self.assertEqual(metadata["matchup_name"], "matchup_1")
-        self.assertEqual(metadata["null_matchup_name"], "null_matchup_1")
+        self.assertEqual(len(metadata["null_pool_pairs_used"]), 6)
         self.assertAlmostEqual(metadata["primary"]["d_dir"], result.primary["d_dir"], places=5)
 
         with np.load(out_dir / "gradients.npz") as npz:

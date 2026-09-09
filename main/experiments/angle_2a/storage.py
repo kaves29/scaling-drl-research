@@ -161,9 +161,16 @@ def save_frozen_agent_snapshot(
     load_checkpoint(), without needing any live Hydra config or a real
     gym/dm_control environment (observation_dim/action_dim are recoverable
     from the saved probe_capture arrays' shapes instead).
+
+    role="pool": a standalone shared baseline-calibration-pool agent (added
+    2026-09-08 - see analysis/baseline_calibration_pool.py), not part of a
+    D-vs-R matchup at all. Reuses this same function/format (with a distinct
+    `root`, e.g. "results/baseline_calibration_pool") rather than a separate
+    storage module, per the project decision not to duplicate infrastructure
+    per consumer.
     """
-    if role not in ("D", "R"):
-        raise ValueError(f"role must be 'D' or 'R', got {role!r}")
+    if role not in ("D", "R", "pool"):
+        raise ValueError(f"role must be 'D', 'R', or 'pool', got {role!r}")
 
     out_dir = matchup_dir(environment, seed, matchup_name, root=root)
     checkpoint_dir = out_dir / "checkpoints" / role

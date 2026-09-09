@@ -181,11 +181,12 @@ class EndToEndSourcingTest(unittest.TestCase):
         # test's actual subject (state sourcing) - see End-of-Task Summary.
         self._persist(seed, "matchup_1", "D", D_RANGE, agent_seed=11, num_blocks=3, hidden_dim=16)
         self._persist(seed, "matchup_1", "R", R_RANGE, agent_seed=12, num_blocks=1, hidden_dim=8)
-        # One null pair so run_angle_2b_analysis doesn't need to fail on a
-        # missing null distribution - not the focus of this test, but must
-        # exist for the call to succeed.
-        self._persist(1, "null_matchup_1", "D", A_RANGE, agent_seed=21, num_blocks=2, hidden_dim=8)
-        self._persist(1, "null_matchup_1", "R", B_RANGE, agent_seed=22, num_blocks=2, hidden_dim=8)
+        # One pool pair (shared baseline-calibration pool, 2026-09-08) so
+        # run_angle_2b_analysis doesn't need to fail on a missing null
+        # distribution - not the focus of this test, but must exist for the
+        # call to succeed.
+        self._persist(1, "baseline_pool", "pool", A_RANGE, agent_seed=21, num_blocks=2, hidden_dim=8)
+        self._persist(2, "baseline_pool", "pool", B_RANGE, agent_seed=22, num_blocks=2, hidden_dim=8)
 
         captured = []
         real_sample = sampling.sample_state_batch
@@ -195,16 +196,18 @@ class EndToEndSourcingTest(unittest.TestCase):
             captured.append((context, batch.copy()))
             return batch
 
+        fake_identities = [type("Ident", (), {"seed": s})() for s in (1, 2)]
         with mock.patch.object(matchup_2b, "sample_state_batch", side_effect=spy), \
-             mock.patch.object(null_baseline, "sample_state_batch", side_effect=spy):
+             mock.patch.object(null_baseline, "sample_state_batch", side_effect=spy), \
+             mock.patch.object(null_baseline, "get_baseline_calibration_pool", return_value=fake_identities):
             result = matchup_2b.run_angle_2b_analysis(
                 environment=self.environment,
                 seed=seed,
                 matchup_name="matchup_1",
-                null_seeds=[1],
                 analysis_seed=42,
                 num_states_per_source=10,
                 angle_2a_root=str(self.angle_2a_root),
+                pool_root=str(self.angle_2a_root),
                 output_root=str(self.tmp_root / "angle_2b"),
             )
 

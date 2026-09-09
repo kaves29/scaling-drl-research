@@ -12,19 +12,24 @@ import json
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Tuple
 
 import numpy as np
 
 from experiments.angle_2b.storage import analysis_dir
 from experiments.angle_2c.errors import Angle2CDataError
 
-_NULL_SEED_KEY_RE = re.compile(r"^null_seed(\d+)_states$")
+# Matches the shared baseline-calibration-pool key format (2026-09-08 - see
+# experiments/angle_2b/matchup_2b.py), replacing the old single-seed
+# null_seed{N}_states format from when null pairs came from one Angle 2A
+# null_matchup training run per seed.
+_NULL_PAIR_KEY_RE = re.compile(r"^null_pair_seed(\d+)_seed(\d+)_states$")
 
 
 @dataclass
 class NullPairArrays:
-    seed: int
+    seed_a: int
+    seed_b: int
     states: np.ndarray
     actions: np.ndarray
     grad_aq_a_at_a: np.ndarray
@@ -61,9 +66,11 @@ class Angle2BArtifacts:
     g_r_given_r: np.ndarray
     g_r_given_d: np.ndarray
 
-    # Null A/B pairs, keyed by seed - one per available Angle 2A
-    # null-baseline seed (see experiments/angle_2b/null_baseline.py).
-    null_pairs: Dict[int, NullPairArrays]
+    # Null A/B pairs, keyed by (seed_a, seed_b) - one per unique pair drawn
+    # from the shared baseline-calibration pool (see
+    # experiments/angle_2b/null_baseline.py and
+    # analysis/baseline_calibration_pool.py).
+    null_pairs: Dict[Tuple[int, int], NullPairArrays]
 
 
 def _require_exists(path: Path, what: str) -> Path:
@@ -108,31 +115,33 @@ def load_angle_2b_artifacts(
                 f"the (s,a)/nabla_a Q/Q fields Angle 2C needs."
             )
 
-        null_seeds = sorted(
-            int(m.group(1))
+        null_pair_seeds = sorted(
+            (int(m.group(1)), int(m.group(2)))
             for key in npz.files
-            for m in [_NULL_SEED_KEY_RE.match(key)]
+            for m in [_NULL_PAIR_KEY_RE.match(key)]
             if m is not None
         )
-        if not null_seeds:
+        if not null_pair_seeds:
             raise Angle2CDataError(
                 f"Angle 2B gradients.npz at '{gradients_path}' contains no "
-                f"null_seed*_states keys - Angle 2C requires at least one "
-                f"persisted null pair to build its own null distributions "
-                f"(reusing Angle 2B's null infrastructure directly)."
+                f"null_pair_seed*_seed*_states keys - Angle 2C requires at "
+                f"least one persisted null pair to build its own null "
+                f"distributions (reusing Angle 2B's null infrastructure "
+                f"directly)."
             )
 
         null_pairs = {
-            ns: NullPairArrays(
-                seed=ns,
-                states=np.asarray(npz[f"null_seed{ns}_states"]),
-                actions=np.asarray(npz[f"null_seed{ns}_actions"]),
-                grad_aq_a_at_a=np.asarray(npz[f"null_seed{ns}_grad_aq_a_at_a"]),
-                grad_aq_b_at_a=np.asarray(npz[f"null_seed{ns}_grad_aq_b_at_a"]),
-                q_a_at_a=np.asarray(npz[f"null_seed{ns}_q_a_at_a"]),
-                q_b_at_a=np.asarray(npz[f"null_seed{ns}_q_b_at_a"]),
+            (seed_a, seed_b): NullPairArrays(
+                seed_a=seed_a,
+                seed_b=seed_b,
+                states=np.asarray(npz[f"null_pair_seed{seed_a}_seed{seed_b}_states"]),
+                actions=np.asarray(npz[f"null_pair_seed{seed_a}_seed{seed_b}_actions"]),
+                grad_aq_a_at_a=np.asarray(npz[f"null_pair_seed{seed_a}_seed{seed_b}_grad_aq_a_at_a"]),
+                grad_aq_b_at_a=np.asarray(npz[f"null_pair_seed{seed_a}_seed{seed_b}_grad_aq_b_at_a"]),
+                q_a_at_a=np.asarray(npz[f"null_pair_seed{seed_a}_seed{seed_b}_q_a_at_a"]),
+                q_b_at_a=np.asarray(npz[f"null_pair_seed{seed_a}_seed{seed_b}_q_b_at_a"]),
             )
-            for ns in null_seeds
+            for seed_a, seed_b in null_pair_seeds
         }
 
         return Angle2BArtifacts(

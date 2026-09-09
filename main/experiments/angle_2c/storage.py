@@ -24,7 +24,7 @@ from utils.atomic_io import atomic_write_text
 DEFAULT_OUTPUT_ROOT = "results/angle_2c"
 
 NULL_PAIR_COLUMNS = [
-    "environment", "seed", "null_matchup_name",
+    "environment", "seed_a", "seed_b",
     "direction_for_null", "magnitude_for_null", "raw_offset", "instability_ratio",
 ]
 

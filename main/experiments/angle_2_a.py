@@ -46,12 +46,13 @@ train_reference_agent_with_snapshots()/ReferenceTrajectory/
 ProbeCapture.snapshot() supported only that removed design and were deleted
 as dead code alongside it.)
 
-An optional healthy-vs-healthy null baseline reuses each matchup's
-already-looked-up onset step (a real Angle-1-derived number, not invented)
-and, as always, requires fresh, independent training for BOTH sides, since
-Angle 1 does not persist checkpoints/replay buffers in a form Angle 2A could
-probe directly - see the "null baseline" note in the Angle 2A deliverables
-for why.
+An optional healthy-vs-healthy null baseline (refactored 2026-09-08) draws
+from the shared baseline-calibration pool instead of training fresh pairs
+itself - see experiments/angle_2a/pool_null_baseline.py's module docstring.
+This eliminated the earlier per-seed fresh-training design, which existed
+only because Angle 1 did not previously persist checkpoints/probe-capture
+data in a form Angle 2A could evaluate directly; Angle 1's
+save_probe_capture_snapshot opt-in flag now provides that.
 """
 
 import os
@@ -74,6 +75,7 @@ from experiments.angle_2a.config import architecture_label, validate_angle2a_con
 from experiments.angle_2a.errors import Angle2AOnsetLookupError
 from experiments.angle_2a.matchup import run_matchup
 from experiments.angle_2a.onset_lookup import lookup_critic_degradation_onset
+from experiments.angle_2a.pool_null_baseline import load_or_compute_pool_null_distribution
 from experiments.angle_2a.prereq_check import run_prereq_check
 from experiments.angle_2a.r_calibration import load_or_calibrate_r
 from experiments.registry import register_experiment
@@ -240,37 +242,28 @@ def run(args: dict) -> None:
             checkpoint_interval=checkpoint_interval,
         )
 
-    # Phase 3: null baseline - unchanged: healthy-vs-healthy, both sides
-    # freshly trained per matchup, independent of the real matchups above.
+    # Phase 3: null baseline - refactored 2026-09-08 to draw from the shared
+    # baseline-calibration pool (analysis/baseline_calibration_pool.py)
+    # instead of training fresh healthy-vs-healthy pairs per seed - see
+    # experiments/angle_2a/pool_null_baseline.py's module docstring for the
+    # full rationale. Computed once per environment (cached), not once per
+    # seed - every Angle 2A seed for a given environment shares the same
+    # pool null distribution, since the pool itself is seed-independent
+    # shared infrastructure, not part of any one seed's own comparison.
     if run_null_baseline:
-        for matchup_name, _scaled_architecture in matchup_specs:
-            onset = onsets[matchup_name]
-            null_matchup_name = f"null_{matchup_name}"
-            print(
-                f"[angle_2_a] {null_matchup_name}: healthy-vs-healthy null "
-                f"baseline at the same onset_step={onset.onset_step} "
-                f"(reference architecture {reference_label} on both sides, "
-                f"two freshly trained agents - see module docstring for why "
-                f"this can't reuse the original Angle 1 checkpoints)."
-            )
-            run_matchup(
-                matchup_name=null_matchup_name,
-                scaled_architecture=reference,
-                scaled_architecture_label=f"null_{reference_label}",
-                reference_architecture=reference,
-                reference_architecture_label=reference_label,
-                onset_step=onset.onset_step,
-                onset_source_run_key=onset.run_key,
-                base_cfg=cfg,
-                seed=seed,
-                environment=environment,
-                experiment_name="angle_2_a",
-                num_probes_per_source=num_probes_per_source,
-                num_mc_rollouts=num_mc_rollouts,
-                output_root="results/angle_2a",
-                wandb_project=str(cfg.project_name),
-                checkpoint_dir=f"{checkpoint_root}/{null_matchup_name}" if checkpoint_root else None,
-                checkpoint_interval=checkpoint_interval,
-            )
+        pool_null = load_or_compute_pool_null_distribution(
+            environment=environment,
+            base_cfg=cfg,
+            num_probes_per_source=num_probes_per_source,
+            num_mc_rollouts=num_mc_rollouts,
+            analysis_seed=seed,
+        )
+        print(
+            f"[angle_2_a] pool null baseline for env={environment}: "
+            f"{len(pool_null.pairs)} pairs, null_n={pool_null.null_n} "
+            f"null_mean={pool_null.null_mean:.4f} null_std={pool_null.null_std:.4f} "
+            f"- interpret this matchup's E_D/E_R against this distribution "
+            f"(see research-methodology.md's Null Baseline section)."
+        )
 
     print(f"[angle_2_a] done. seed={seed} environment={environment}")

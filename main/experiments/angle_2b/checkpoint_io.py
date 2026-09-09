@@ -61,8 +61,8 @@ def load_frozen_agent_snapshot(
     role: str,
     root: str = DEFAULT_ANGLE_2A_ROOT,
 ) -> FrozenAgentSnapshot:
-    if role not in ("D", "R"):
-        raise ValueError(f"role must be 'D' or 'R', got {role!r}")
+    if role not in ("D", "R", "pool"):
+        raise ValueError(f"role must be 'D', 'R', or 'pool', got {role!r}")
 
     out_dir = matchup_dir(environment, seed, matchup_name, root=root)
 

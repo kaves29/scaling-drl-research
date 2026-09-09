@@ -26,14 +26,6 @@ angle_2_b:
   # matchup_2 = scaled_b vs reference.
   matchup_names: ???
 
-  # Which seeds' Angle 2A null-baseline snapshots (null_matchup_1 /
-  # null_matchup_2, matched to whichever matchup_name is being analyzed) to
-  # pool into the empirical healthy-critic null distribution. Must be
-  # explicit - see experiments/angle_2b/null_baseline.py's module docstring
-  # for why this can only include seeds with an actually-available
-  # matched-timestep pair, not an arbitrary requested count.
-  null_seeds: ???
-
   # RNG seed for Angle 2B's own state-batch sampling (see
   # experiments/angle_2b/sampling.py). Defaults to `seed` above when null -
   # kept separate so re-running the analysis with a different batch draw

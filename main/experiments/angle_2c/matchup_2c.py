@@ -45,6 +45,7 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 
+from analysis.baseline_calibration_pool import POOL_MATCHUP_NAME, POOL_ROLE, POOL_STORAGE_ROOT
 from experiments.angle_2a.storage import DEFAULT_OUTPUT_ROOT as ANGLE_2A_ROOT
 from experiments.angle_2b.checkpoint_io import load_frozen_agent_snapshot
 from experiments.angle_2b.gradients import compute_action_gradient
@@ -137,6 +138,7 @@ def run_angle_2c_analysis(
     onset_ledger_root: str,
     angle_2a_root: str = ANGLE_2A_ROOT,
     angle_2b_root: str = "results/angle_2b",
+    pool_root: str = POOL_STORAGE_ROOT,
     output_root: str = ANGLE_2C_ROOT,
 ) -> Angle2CResult:
     artifacts: Angle2BArtifacts = load_angle_2b_artifacts(environment, seed, matchup_name, root=angle_2b_root)
@@ -175,13 +177,14 @@ def run_angle_2c_analysis(
     )
     secondary_properties = {k: float(np.mean(v)) for k, v in secondary_arrays.items()}
 
-    # --- Null: every available A/B pair, at A's own point ---
-    null_matchup_name = f"null_{matchup_name}"
+    # --- Null: every available A/B pair (shared baseline-calibration pool,
+    # 2026-09-08 - see analysis/baseline_calibration_pool.py), at A's own
+    # point ---
     null_pair_rows = []
     null_direction, null_magnitude, null_offset, null_instability = [], [], [], []
-    for ns, pair in sorted(artifacts.null_pairs.items()):
-        snap_a = load_frozen_agent_snapshot(environment, ns, null_matchup_name, "D", root=angle_2a_root)
-        snap_b = load_frozen_agent_snapshot(environment, ns, null_matchup_name, "R", root=angle_2a_root)
+    for (seed_a, seed_b), pair in sorted(artifacts.null_pairs.items()):
+        snap_a = load_frozen_agent_snapshot(environment, seed_a, POOL_MATCHUP_NAME, POOL_ROLE, root=pool_root)
+        snap_b = load_frozen_agent_snapshot(environment, seed_b, POOL_MATCHUP_NAME, POOL_ROLE, root=pool_root)
         perturbed_null = perturb_actions(pair.actions, num_perturbations, perturbation_sigma, seed=analysis_seed)
         var_a = local_instability_variance(
             _make_grad_aq_evaluator(snap_a.agent.critic, pair.states, critic_use_cdq), perturbed_null,
@@ -198,7 +201,7 @@ def run_angle_2c_analysis(
         null_offset.append(pair_means["raw_offset"])
         null_instability.append(pair_means["instability_ratio"])
         null_pair_rows.append({
-            "environment": environment, "seed": ns, "null_matchup_name": null_matchup_name,
+            "environment": environment, "seed_a": seed_a, "seed_b": seed_b,
             "direction_for_null": pair_means["direction_for_null"],
             "magnitude_for_null": pair_means["magnitude_for_null"],
             "raw_offset": pair_means["raw_offset"],
@@ -270,7 +273,6 @@ def run_angle_2c_analysis(
 
     run_metadata = {
         "matchup_name": matchup_name,
-        "null_matchup_name": null_matchup_name,
         "num_perturbations": num_perturbations,
         "perturbation_sigma": perturbation_sigma,
         "analysis_seed": analysis_seed,
@@ -281,6 +283,7 @@ def run_angle_2c_analysis(
             name: {
                 "observed_value": r.observed_value, "null_mean": r.null_mean, "null_std": r.null_std,
                 "null_n": r.null_n, "threshold": r.threshold, "exceeds_null": r.exceeds_null,
+                "is_marginal": r.is_marginal,
             }
             for name, r in null_comparison.items()
         },

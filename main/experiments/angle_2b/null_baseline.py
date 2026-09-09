@@ -13,28 +13,16 @@ primary analysis (see gradients.py) - not a raw comparison of the two
 critics' outputs. Repeat across multiple independent A/B pairs to build a
 real distribution, not a single point estimate.
 
-Source of A/B pairs: Angle 2A's own null-baseline matchups
-(null_matchup_1 / null_matchup_2), one independent pair per seed, each
-already matched-timestep to that seed's own scaled-architecture onset (see
-experiments/angle_2a/matchup.py and experiments/angle_2_a.py). Angle 2A
-already trains these agents for its own null baseline; the only change this
-project made was to persist their checkpoints (see
-experiments/angle_2a/storage.py:save_frozen_agent_snapshot), so Angle 2B
-performs zero additional training or environment interaction to obtain
-them. The "D"/"R" role labels on a null_matchup are just Angle 2A's
-matchup-role bookkeeping - both are equally healthy default-architecture
-agents here, relabeled A/B.
-
-LIMITATION - see the End-of-Task Summary for full discussion: this gives at
-most one independent A/B pair per seed (up to 5 pairs total per
-environment+matchup_name), not exhaustive pairwise combinations across
-seeds. Cross-seed pairing was not used because Angle 1's baseline seeds are
-each trained to a fixed full-length step budget with no intermediate
-snapshots, so two different seeds' agents cannot currently be paired at the
-SAME t* without either breaking the matched-timestep requirement this null
-exists to enforce, or extending Angle 1's own checkpointing infrastructure -
-which was out of the scope authorized for this change (only Angle 2A's
-checkpoint-persistence gap was authorized to be closed).
+Source of A/B pairs (refactored 2026-09-08): the shared baseline-calibration
+pool (see analysis/baseline_calibration_pool.py) - 10 independent default-
+architecture agents per environment (Angle 1's own 5 locked baseline seeds
+plus 5 dedicated calibration-pool seeds), all C(10,2)=45 unique pairs used,
+not just a disjoint subset. This replaces the previous design, which sourced
+A/B pairs from Angle 2A's own null_matchup snapshots (at most one pair per
+Angle 2A seed, <=5 total) - Angle 2A no longer trains its own null_matchup
+pairs at all (see experiments/angle_2a/pool_null_baseline.py), so this
+module now depends on the shared pool directly, not on Angle 2A's null-
+baseline output.
 """
 
 from dataclasses import dataclass, field
@@ -44,7 +32,12 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 
-from experiments.angle_2a.storage import DEFAULT_OUTPUT_ROOT, matchup_dir
+from analysis.baseline_calibration_pool import (
+    POOL_MATCHUP_NAME,
+    POOL_ROLE,
+    all_unique_pairs,
+    get_baseline_calibration_pool,
+)
 from experiments.angle_2b.checkpoint_io import apply_agent_normalization, load_frozen_agent_snapshot
 from experiments.angle_2b.errors import Angle2BSnapshotError
 from experiments.angle_2b.gradients import (
@@ -60,8 +53,8 @@ from experiments.angle_2b.sampling import NUM_STATES_PER_SOURCE, sample_state_ba
 @dataclass
 class NullPairResult:
     environment: str
-    seed: int
-    null_matchup_name: str
+    seed_a: int
+    seed_b: int
     d_dir: float
     d_mag: float
     d_grad: float
@@ -79,44 +72,27 @@ class NullPairResult:
     q_b_at_a: np.ndarray = field(default=None, repr=False)
 
 
-def discover_null_seeds(
-    environment: str,
-    null_matchup_name: str,
-    seeds: List[int],
-    root: str = DEFAULT_OUTPUT_ROOT,
-) -> List[int]:
-    """Returns the subset of `seeds` that have a complete, persisted
-    null-baseline snapshot (both roles) for (environment, null_matchup_name)."""
-    available = []
-    for seed in seeds:
-        out_dir = matchup_dir(environment, seed, null_matchup_name, root=root)
-        has_role = lambda role: (out_dir / "checkpoints" / role).exists() and (
-            out_dir / f"agent_cfg_{role}.json"
-        ).exists()
-        if has_role("D") and has_role("R"):
-            available.append(seed)
-    return available
-
-
 def compute_null_pair_distortion(
     environment: str,
-    seed: int,
-    null_matchup_name: str,
+    seed_a: int,
+    seed_b: int,
     analysis_seed: int,
-    root: str = DEFAULT_OUTPUT_ROOT,
+    root: str,
     num_states_per_source: int = NUM_STATES_PER_SOURCE,
 ) -> NullPairResult:
-    """One null A/B pair's g_{A|A} vs g_{A|B} distortion."""
-    snap_a = load_frozen_agent_snapshot(environment, seed, null_matchup_name, "D", root=root)
-    snap_b = load_frozen_agent_snapshot(environment, seed, null_matchup_name, "R", root=root)
+    """One null A/B pair's g_{A|A} vs g_{A|B} distortion, both drawn from
+    the shared calibration pool (role="pool", matchup_name="baseline_pool" -
+    see analysis/baseline_calibration_pool.py and
+    experiments/angle_2a/pool_null_baseline.py)."""
+    snap_a = load_frozen_agent_snapshot(environment, seed_a, POOL_MATCHUP_NAME, POOL_ROLE, root=root)
+    snap_b = load_frozen_agent_snapshot(environment, seed_b, POOL_MATCHUP_NAME, POOL_ROLE, root=root)
 
     if snap_a.critic_use_cdq != snap_b.critic_use_cdq:
         raise Angle2BSnapshotError(
-            f"Null pair (environment='{environment}', seed={seed}, "
-            f"null_matchup_name='{null_matchup_name}') has mismatched "
-            f"critic_use_cdq between A and B ({snap_a.critic_use_cdq} vs "
-            f"{snap_b.critic_use_cdq}); both should be the same default "
-            f"architecture in the same environment."
+            f"Pool pair (environment='{environment}', seed_a={seed_a}, "
+            f"seed_b={seed_b}) has mismatched critic_use_cdq between A and B "
+            f"({snap_a.critic_use_cdq} vs {snap_b.critic_use_cdq}); both "
+            f"should be the same default architecture in the same environment."
         )
 
     # Own-buffer-only sourcing (see sampling.py): pi_A is the fixed actor
@@ -128,7 +104,7 @@ def compute_null_pair_distortion(
     raw_batch = sample_state_batch(
         snap_a.states,
         seed=analysis_seed,
-        context=f"null:{environment}:seed{seed}:{null_matchup_name}",
+        context=f"null:{environment}:seed{seed_a}_seed{seed_b}",
         num_states_per_source=num_states_per_source,
     )
     batch = jnp.asarray(apply_agent_normalization(snap_a.agent, raw_batch))
@@ -156,8 +132,8 @@ def compute_null_pair_distortion(
 
     return NullPairResult(
         environment=environment,
-        seed=seed,
-        null_matchup_name=null_matchup_name,
+        seed_a=seed_a,
+        seed_b=seed_b,
         d_dir=float(metrics["d_dir"]),
         d_mag=float(metrics["d_mag"]),
         d_grad=float(metrics["d_grad"]),
@@ -172,25 +148,25 @@ def compute_null_pair_distortion(
 
 def build_null_distribution(
     environment: str,
-    null_matchup_name: str,
-    seeds: List[int],
     analysis_seed: int,
-    root: str = DEFAULT_OUTPUT_ROOT,
+    root: str,
     num_states_per_source: int = NUM_STATES_PER_SOURCE,
 ) -> List[NullPairResult]:
-    available_seeds = discover_null_seeds(environment, null_matchup_name, seeds, root=root)
-    if not available_seeds:
+    """All C(10,2)=45 unique pairs among the shared pool's 10 agents for
+    `environment` (see module docstring). Unlike the pre-2026-09-08 design,
+    this no longer takes a null_matchup_name or a caller-supplied seed list -
+    the pool composition is fixed, shared infrastructure (see
+    analysis/baseline_calibration_pool.get_baseline_calibration_pool)."""
+    identities = get_baseline_calibration_pool(environment)
+    seed_pairs = all_unique_pairs(sorted(ident.seed for ident in identities))
+    if not seed_pairs:
         raise Angle2BSnapshotError(
-            f"No persisted null-baseline snapshots found for environment="
-            f"'{environment}', null_matchup_name='{null_matchup_name}' among "
-            f"seeds={seeds}. Angle 2B requires at least one completed Angle "
-            f"2A run with run_null_baseline=true for this environment before "
-            f"a null distribution can be built; it never trains one itself."
+            f"No baseline-calibration-pool seeds configured for environment="
+            f"'{environment}'; cannot build a null distribution."
         )
     return [
         compute_null_pair_distortion(
-            environment, seed, null_matchup_name, analysis_seed,
-            root=root, num_states_per_source=num_states_per_source,
+            environment, seed_a, seed_b, analysis_seed, root=root, num_states_per_source=num_states_per_source,
         )
-        for seed in available_seeds
+        for seed_a, seed_b in seed_pairs
     ]

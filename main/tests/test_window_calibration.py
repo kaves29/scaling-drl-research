@@ -151,6 +151,31 @@ class TestWindowCalibration(unittest.TestCase):
         # max_lag = len(segment)-1 = 44.
         self.assertEqual(dc_time, 44.0)
 
+    def test_accepts_the_expanded_10_seed_pool_and_calibrates_correctly(self):
+        """analysis/baseline_calibration_pool.py's expanded shared pool
+        (2026-09-08): 10 baseline seeds must be accepted, not just the
+        original 5 - and must still produce a real, correct calibration
+        (not merely pass the entry-count check)."""
+        n_points = 400
+        ids = self._identities("ten-seed-env", n_seeds=10)
+        for i, ident in enumerate(ids):
+            td = self._ar1(0.5, n_points, seed=500 + i)
+            self._write(ident, td, np.random.default_rng(i).normal(0, 0.01, size=n_points))
+
+        result = calibrate_window_parameters(ids, logging_per_interaction_step=LOGGING_INTERVAL, metrics_root=self.metrics_root)
+
+        self.assertEqual(len(result.per_seed_decorrelation_points), 10)
+        self.assertGreater(result.n_sustain_window_points, 0)
+
+    def test_rejects_a_seed_count_that_is_neither_5_nor_10(self):
+        ids = self._identities("bad-count-env", n_seeds=7)
+        for i, ident in enumerate(ids):
+            self._write(ident, self._ar1(0.5, 100, seed=1), np.zeros(100))
+        with self.assertRaises(ValueError) as ctx:
+            calibrate_window_parameters(ids, logging_per_interaction_step=LOGGING_INTERVAL, metrics_root=self.metrics_root)
+        self.assertIn("5", str(ctx.exception))
+        self.assertIn("10", str(ctx.exception))
+
     def test_calibrate_rejects_mixed_environments(self):
         mixed = self._identities("env-a")[:4] + [
             RunIdentity(experiment="angle_1", architecture="D2W512", environment="env-b", seed=5)

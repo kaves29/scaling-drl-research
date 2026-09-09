@@ -42,6 +42,7 @@ from typing import Any, Dict, List
 import jax
 import jax.numpy as jnp
 
+from analysis.baseline_calibration_pool import POOL_STORAGE_ROOT
 from experiments.angle_2a.storage import DEFAULT_OUTPUT_ROOT as ANGLE_2A_ROOT
 from experiments.angle_2b.checkpoint_io import apply_agent_normalization, load_frozen_agent_snapshot
 from experiments.angle_2b.gradients import (
@@ -65,7 +66,6 @@ class Angle2BResult:
     environment: str
     seed: int
     matchup_name: str
-    null_matchup_name: str
     primary: Dict[str, float]
     secondary: Dict[str, float]
     null_pairs: List[NullPairResult]
@@ -82,14 +82,12 @@ def run_angle_2b_analysis(
     environment: str,
     seed: int,
     matchup_name: str,
-    null_seeds: List[int],
     analysis_seed: int,
     num_states_per_source: int = NUM_STATES_PER_SOURCE,
     angle_2a_root: str = ANGLE_2A_ROOT,
+    pool_root: str = POOL_STORAGE_ROOT,
     output_root: str = ANGLE_2B_ROOT,
 ) -> Angle2BResult:
-    null_matchup_name = f"null_{matchup_name}"
-
     snap_d = load_frozen_agent_snapshot(environment, seed, matchup_name, "D", root=angle_2a_root)
     snap_r = load_frozen_agent_snapshot(environment, seed, matchup_name, "R", root=angle_2a_root)
 
@@ -165,8 +163,7 @@ def run_angle_2b_analysis(
     q_d_at_r = compute_q_value(snap_d.agent.critic, batch_r, actions_r, critic_use_cdq)
 
     null_pairs = build_null_distribution(
-        environment, null_matchup_name, null_seeds, analysis_seed,
-        root=angle_2a_root, num_states_per_source=num_states_per_source,
+        environment, analysis_seed, root=pool_root, num_states_per_source=num_states_per_source,
     )
 
     null_comparison = {
@@ -176,11 +173,9 @@ def run_angle_2b_analysis(
 
     run_metadata = {
         "matchup_name": matchup_name,
-        "null_matchup_name": null_matchup_name,
         "num_states_per_source": num_states_per_source,
         "analysis_seed": analysis_seed,
-        "null_seeds_requested": null_seeds,
-        "null_seeds_used": [p.seed for p in null_pairs],
+        "null_pool_pairs_used": [[p.seed_a, p.seed_b] for p in null_pairs],
         "critic_use_cdq": critic_use_cdq,
         "primary": primary,
         "secondary": secondary,
@@ -192,6 +187,7 @@ def run_angle_2b_analysis(
                 "null_n": r.null_n,
                 "threshold": r.threshold,
                 "exceeds_null": r.exceeds_null,
+                "is_marginal": r.is_marginal,
             }
             for metric, r in null_comparison.items()
         },
@@ -241,12 +237,13 @@ def run_angle_2b_analysis(
     # dict/gradients.npz rather than a new file, so storage.py needs no
     # changes at all (it already saves whatever keys this dict contains).
     for p in null_pairs:
-        gradients[f"null_seed{p.seed}_states"] = p.states
-        gradients[f"null_seed{p.seed}_actions"] = p.actions
-        gradients[f"null_seed{p.seed}_grad_aq_a_at_a"] = p.grad_aq_a_at_a
-        gradients[f"null_seed{p.seed}_grad_aq_b_at_a"] = p.grad_aq_b_at_a
-        gradients[f"null_seed{p.seed}_q_a_at_a"] = p.q_a_at_a
-        gradients[f"null_seed{p.seed}_q_b_at_a"] = p.q_b_at_a
+        pair_key = f"null_pair_seed{p.seed_a}_seed{p.seed_b}"
+        gradients[f"{pair_key}_states"] = p.states
+        gradients[f"{pair_key}_actions"] = p.actions
+        gradients[f"{pair_key}_grad_aq_a_at_a"] = p.grad_aq_a_at_a
+        gradients[f"{pair_key}_grad_aq_b_at_a"] = p.grad_aq_b_at_a
+        gradients[f"{pair_key}_q_a_at_a"] = p.q_a_at_a
+        gradients[f"{pair_key}_q_b_at_a"] = p.q_b_at_a
 
     output_paths = save_angle_2b_result(
         environment, seed, matchup_name, run_metadata, null_pairs, gradients, root=output_root,
@@ -256,7 +253,6 @@ def run_angle_2b_analysis(
         environment=environment,
         seed=seed,
         matchup_name=matchup_name,
-        null_matchup_name=null_matchup_name,
         primary=primary,
         secondary=secondary,
         null_pairs=null_pairs,

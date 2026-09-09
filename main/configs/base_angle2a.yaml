@@ -71,9 +71,11 @@ angle_2_a:
   # r_calibration.py - see research-methodology.md's Angle 2A section.
   num_mc_rollouts: 15
 
-  # Whether to also run the healthy-vs-healthy null baseline for this seed
-  # (see experiments/angle_2a/matchup.py for why it requires fresh training
-  # rather than reusing raw Angle 1 artifacts).
+  # Whether to also compute/load the healthy-vs-healthy null-baseline
+  # distribution for this environment (see
+  # experiments/angle_2a/pool_null_baseline.py - drawn from the shared
+  # baseline-calibration pool, computed once per environment and cached,
+  # not trained fresh per seed).
   run_null_baseline: true
 
   # Construct-validity prerequisite check (see experiments/angle_2a/prereq_check.py

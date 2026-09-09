@@ -46,8 +46,12 @@ import tqdm
 import wandb
 from dotmap import DotMap
 
+from analysis.baseline_calibration_pool import POOL_STORAGE_ROOT
 from analysis.metrics_store import MetricsRecorder, RunIdentity
 from analysis.pipeline import run_post_hoc_onset_analysis
+from experiments.angle_2a.agent_runner import ProbeCapture
+from experiments.angle_2a.env_state import capture_env_state
+from experiments.angle_2a.storage import save_frozen_agent_snapshot
 from experiments.registry import register_experiment
 from scale_rl.agents import create_agent
 from scale_rl.buffers import create_buffer
@@ -98,12 +102,40 @@ def run(args: dict) -> None:
         else {}
     )
 
+    # Opt-in, added 2026-09-08 for the shared baseline-calibration pool (see
+    # analysis/baseline_calibration_pool.py) only - defaults to False/absent,
+    # so every existing invocation (including all of Angle 1's 150 locked
+    # runs) is completely unaffected. When true, this run ALSO records
+    # per-transition (observation, action, env_state) via Angle 2A's own
+    # ProbeCapture/env_state.py machinery alongside normal training, and
+    # persists a frozen-agent snapshot at the end - giving this baseline
+    # agent everything Angle 2A's refactored null-baseline (exact-state MC
+    # rollouts) and Angle 2B/2C's null distribution (probe-capture states/
+    # actions) need, without a second, separate training pass.
+    save_probe_capture_snapshot = bool(cfg.get("save_probe_capture_snapshot", False))
+    probe_capture_snapshot_root = str(cfg.get("probe_capture_snapshot_root", POOL_STORAGE_ROOT))
+
     #############################
     # envs
     #############################
     train_env, eval_env = create_envs(**cfg.env)
     observation_space = train_env.observation_space
     action_space = train_env.action_space
+
+    if save_probe_capture_snapshot:
+        if int(cfg.env.num_train_envs) != 1:
+            raise ValueError(
+                f"save_probe_capture_snapshot=true requires env.num_train_envs "
+                f"== 1 (got {cfg.env.num_train_envs}), matching Angle 2A's own "
+                f"exact-state-capture requirement (experiments/angle_2a/"
+                f"agent_runner.py's check_single_env_type)."
+            )
+        single_env = train_env.envs[0]
+        probe_capture = ProbeCapture(
+            capacity=min(int(cfg.buffer.max_length), int(cfg.num_interaction_steps)),
+            observation_shape=observation_space.shape[-1:],
+            action_shape=action_space.shape[-1:],
+        )
 
     #############################
     # buffer
@@ -211,6 +243,8 @@ def run(args: dict) -> None:
     for interaction_step in tqdm.tqdm(
         range(start_step, int(cfg.num_interaction_steps + 1)), smoothing=0.1
     ):
+        if save_probe_capture_snapshot:
+            env_state = capture_env_state(single_env, cfg.env.env_type)
         if timestep:
             actions = agent.sample_actions(
                 interaction_step, prev_timestep=timestep, training=True
@@ -219,6 +253,8 @@ def run(args: dict) -> None:
             actions = train_env.action_space.sample()
         else:
             actions = train_env.action_space.sample()
+        if save_probe_capture_snapshot:
+            probe_capture.add(interaction_step - 1, observations[0], actions[0], env_state)
         next_observations, rewards, terminateds, truncateds, env_infos = train_env.step(
             actions
         )
@@ -305,6 +341,15 @@ def run(args: dict) -> None:
 
     if metrics_recorder is not None:
         metrics_recorder.flush()
+
+    if save_probe_capture_snapshot:
+        agent_cfg_dict = omegaconf.OmegaConf.to_container(cfg.agent, resolve=True)
+        snapshot_paths = save_frozen_agent_snapshot(
+            cfg.env_name, cfg.seed, "baseline_pool", "pool", agent, probe_capture,
+            agent_cfg=agent_cfg_dict, root=probe_capture_snapshot_root,
+        )
+        probe_capture.save(str(snapshot_paths["checkpoint_dir"]))
+        print(f"[angle_1] probe-capture snapshot saved -> {snapshot_paths['checkpoint_dir']}")
 
     train_env.close()
     eval_env.close()

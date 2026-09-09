@@ -6,8 +6,9 @@ tests/test_angle_2b_smoke.py's convention for the same reason), matching
 testing-and-verification.md's requirement that changes get a real
 execution-path smoke test, not just a clean exit code:
 
-  1. builds tiny synthetic SAC agents (D/R for matchup_1, two null pairs for
-     null_matchup_1) and trains each briefly so critics actually diverge
+  1. builds tiny synthetic SAC agents (D/R for matchup_1, 4 standalone
+     shared-baseline-calibration-pool agents forming C(4,2)=6 null pairs)
+     and trains each briefly so critics actually diverge
   2. persists them via experiments.angle_2a.storage.save_frozen_agent_snapshot
      (exactly as Angle 2A would) PLUS a synthetic Angle 2A run_metadata.json
      (scaled_architecture/scaled_onset_step - the two fields Angle 2C's
@@ -33,6 +34,7 @@ import shutil
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 import jax
 import jax.numpy as jnp
@@ -41,6 +43,7 @@ from omegaconf import OmegaConf
 
 from experiments.angle_2a.agent_runner import ProbeCapture
 from experiments.angle_2a.storage import save_frozen_agent_snapshot
+from experiments.angle_2b import null_baseline
 from experiments.angle_2b.matchup_2b import run_angle_2b_analysis
 from experiments.angle_2c.matchup_2c import run_angle_2c_analysis
 from experiments.angle_2c.reconstruction import run_reconstruction_test
@@ -206,25 +209,33 @@ class Angle2CSmokeTest(unittest.TestCase):
 
         self._persist(self.environment, seed, "matchup_1", "D", seed_for_agent=101, critic_num_blocks=3, critic_hidden_dim=16)
         self._persist(self.environment, seed, "matchup_1", "R", seed_for_agent=102, critic_num_blocks=1, critic_hidden_dim=8)
-        for null_seed, (a_init, b_init) in {1: (201, 202), 2: (203, 204)}.items():
-            self._persist(self.environment, null_seed, "null_matchup_1", "D", seed_for_agent=a_init, critic_num_blocks=1, critic_hidden_dim=8)
-            self._persist(self.environment, null_seed, "null_matchup_1", "R", seed_for_agent=b_init, critic_num_blocks=1, critic_hidden_dim=8)
+        # Shared baseline-calibration pool (2026-09-08): 4 independent
+        # standalone agents, forming C(4,2)=6 pairs.
+        pool_seeds_and_inits = {1: 201, 2: 202, 3: 203, 4: 204}
+        for pool_seed, agent_init in pool_seeds_and_inits.items():
+            self._persist(
+                self.environment, pool_seed, "baseline_pool", "pool",
+                seed_for_agent=agent_init, critic_num_blocks=1, critic_hidden_dim=8,
+            )
+        fake_identities = [type("Ident", (), {"seed": s})() for s in pool_seeds_and_inits]
 
         self._write_angle_2a_run_metadata(self.environment, seed, "matchup_1", scaled_architecture="D3W16", scaled_onset_step=onset_step)
         self._write_angle_1_ledger_entry(self.environment, seed, architecture="D3W16", onset_step=onset_step)
 
-        run_angle_2b_analysis(
-            environment=self.environment, seed=seed, matchup_name="matchup_1",
-            null_seeds=[1, 2], analysis_seed=42, num_states_per_source=NUM_STATES_PER_SOURCE,
-            angle_2a_root=str(self.angle_2a_root), output_root=str(self.angle_2b_root),
-        )
+        with mock.patch.object(null_baseline, "get_baseline_calibration_pool", return_value=fake_identities):
+            run_angle_2b_analysis(
+                environment=self.environment, seed=seed, matchup_name="matchup_1",
+                analysis_seed=42, num_states_per_source=NUM_STATES_PER_SOURCE,
+                angle_2a_root=str(self.angle_2a_root), pool_root=str(self.angle_2a_root),
+                output_root=str(self.angle_2b_root),
+            )
 
         result = run_angle_2c_analysis(
             environment=self.environment, seed=seed, matchup_name="matchup_1",
             num_perturbations=NUM_PERTURBATIONS, perturbation_sigma=0.01, analysis_seed=42,
             onset_source_experiment="angle_1", onset_ledger_root=str(self.ledger_root),
             angle_2a_root=str(self.angle_2a_root), angle_2b_root=str(self.angle_2b_root),
-            output_root=str(self.angle_2c_root),
+            pool_root=str(self.angle_2a_root), output_root=str(self.angle_2c_root),
         )
 
         # --- primary / secondary: finite, sane ---
@@ -237,7 +248,7 @@ class Angle2CSmokeTest(unittest.TestCase):
             comparison = result.null_comparison[name]
             self.assertTrue(np.isfinite(comparison.null_mean))
             self.assertTrue(np.isfinite(comparison.threshold))
-            self.assertEqual(comparison.null_n, 2)
+            self.assertEqual(comparison.null_n, 6)
             self.assertIsInstance(comparison.exceeds_null, bool)
 
         # --- non-result handling: exactly one of these two states holds ---
