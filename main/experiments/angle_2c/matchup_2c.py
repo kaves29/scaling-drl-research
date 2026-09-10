@@ -283,7 +283,6 @@ def run_angle_2c_analysis(
             name: {
                 "observed_value": r.observed_value, "null_mean": r.null_mean, "null_std": r.null_std,
                 "null_n": r.null_n, "threshold": r.threshold, "exceeds_null": r.exceeds_null,
-                "is_marginal": r.is_marginal,
             }
             for name, r in null_comparison.items()
         },

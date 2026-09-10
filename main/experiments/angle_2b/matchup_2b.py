@@ -187,7 +187,6 @@ def run_angle_2b_analysis(
                 "null_n": r.null_n,
                 "threshold": r.threshold,
                 "exceeds_null": r.exceeds_null,
-                "is_marginal": r.is_marginal,
             }
             for metric, r in null_comparison.items()
         },

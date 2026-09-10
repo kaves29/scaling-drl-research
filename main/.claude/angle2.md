@@ -149,18 +149,22 @@ g_{A|B} = ∇_θJ(π_A; Q_B)   ← foreign healthy critic
 Same three metrics, same procedure. Isolates ordinary foreign-critic
 unfamiliarity — zero pathology involved on either side.
 
-Multiple independent A/B pairs required (reuse Angle 1 baseline seeds where
-possible) — build a distribution, not a point estimate.
+Multiple independent A/B pairs required — build a distribution, not a point
+estimate. As of 2026-09-08: all C(10,2)=45 unique pairs from the shared
+baseline-calibration pool (Angle 1's 5 locked seeds + 5 dedicated pool
+agents — see analysis/baseline_calibration_pool.py), not a caller-selected
+seed subset. Replaces the earlier "reuse Angle 1 baseline seeds where
+possible, ≤5 total" design.
 
 Threshold rule: (mean + 2σ), not Angle 1's 95th percentile.
 
 CORRECTION (2026-08-28 audit): this is intentionally a DIFFERENT rule from
-Angle 1's onset/propagation threshold. Angle 2B's null has very few points
-(≤5, one per baseline seed) — a percentile is unstable/poorly-defined at
-that sample size. Angle 1's baseline curves pool many logged timesteps
-across all 5 seeds, where a percentile is well-defined. Do not make these
-two rules match each other. This divergence has been reviewed and kept
-deliberately — see research-methodology.md's Onset Definitions section.
+Angle 1's onset/propagation threshold. Do not make these two rules match
+each other without an explicit decision — see research-methodology.md's
+Onset Definitions section. Whether the rule should change now that the null
+has grown to 45 (pairwise-pseudo-replicated) points instead of ≤5 is an
+explicitly deferred, pending decision (2026-09-08) — not resolved, not an
+invitation to switch it unilaterally.
 
 Limitation to state explicitly: assumes foreign-critic-unfamiliarity
 magnitude is comparable between a healthy-healthy pairing and the real
