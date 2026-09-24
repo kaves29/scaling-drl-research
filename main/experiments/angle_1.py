@@ -65,6 +65,35 @@ jax.config.update("jax_enable_x64", False)
 
 validate_rocm_jax_available(_GPU_VENDOR)
 
+ACTOR_GRAD_COSINE_KEY = "train/actor_grad_cosine"
+
+
+class PendingUpdateMetrics:
+    """Holds update metrics on device until the logger actually needs them.
+
+    flush() replays them into the logger in the original per-update order, so
+    window averages are bit-identical to materializing after every update.
+    actor_grad_cosine is replayed only for update steps where it was computed.
+    """
+
+    def __init__(self, logger: WandbTrainerLogger, actor_grad_cosine_every: int):
+        self._logger = logger
+        self._actor_grad_cosine_every = actor_grad_cosine_every
+        self._pending = []
+
+    def add(self, first_update_step: int, update_info: dict) -> None:
+        self._pending.append((first_update_step, update_info))
+
+    def flush(self) -> None:
+        host_infos = jax.device_get([info for _, info in self._pending])
+        for (first_update_step, _), info in zip(self._pending, host_infos):
+            for i in range(len(info[ACTOR_GRAD_COSINE_KEY])):
+                row = {key: float(values[i]) for key, values in info.items()}
+                if (first_update_step + i) % self._actor_grad_cosine_every != 0:
+                    del row[ACTOR_GRAD_COSINE_KEY]
+                self._logger.update_metric(**row)
+        self._pending = []
+
 
 @register_experiment("angle_1")
 def run(args: dict) -> None:
@@ -238,6 +267,7 @@ def run(args: dict) -> None:
     timestep = None
     checkpoint_start_step = int(args.checkpoint_start_frac * cfg.num_interaction_steps)
     actor_grad_cosine_every = int(cfg.actor_grad_cosine_every)
+    pending_update_metrics = PendingUpdateMetrics(logger, actor_grad_cosine_every)
 
     for interaction_step in tqdm.tqdm(
         range(start_step, int(cfg.num_interaction_steps + 1)), smoothing=0.1
@@ -277,19 +307,20 @@ def run(args: dict) -> None:
 
         if buffer.can_sample():
             update_counter += cfg.updates_per_interaction_step
+            num_updates = 0
             while update_counter >= 1:
-                batch = buffer.sample()
-                update_info = agent.update(
-                    update_step,
-                    batch,
-                    compute_actor_grad_cosine=update_step % actor_grad_cosine_every == 0,
-                )
-                logger.update_metric(**update_info)
                 update_counter -= 1
-                update_step += 1
+                num_updates += 1
+            if num_updates:
+                batches = [buffer.sample() for _ in range(num_updates)]
+                batches = {key: np.stack([b[key] for b in batches]) for key in batches[0]}
+                update_info = agent.update_many(update_step, batches, actor_grad_cosine_every)
+                pending_update_metrics.add(update_step, update_info)
+                update_step += num_updates
 
         # log metrics
         if interaction_step % cfg.logging_per_interaction_step == 0:
+            pending_update_metrics.flush()
             log_metrics_batch = buffer.sample()
             metrics_info = agent.get_metrics(update_step, log_metrics_batch)
             logger.update_metric(**metrics_info)
@@ -317,6 +348,7 @@ def run(args: dict) -> None:
 
         # evaluation
         if interaction_step % cfg.evaluation_per_interaction_step == 0:
+            pending_update_metrics.flush()
             if interaction_step + cfg.evaluation_per_interaction_step > cfg.num_interaction_steps:
                 eval_info = evaluate(agent, eval_env, cfg.num_eval_episodes*10)
                 logger.update_metric(**eval_info)

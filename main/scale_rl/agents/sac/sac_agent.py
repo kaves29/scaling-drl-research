@@ -382,6 +382,34 @@ class SACAgent(BaseAgent):
         batch: Dict[str, np.ndarray],
         compute_actor_grad_cosine: bool = True,
     ) -> Dict:
+        update_info = self._update_on_device(batch, compute_actor_grad_cosine)
+        for key, value in update_info.items():
+            update_info[key] = float(value)
+
+        return update_info
+
+    def update_many(
+        self,
+        update_step: int,
+        batches: Dict[str, np.ndarray],
+        actor_grad_cosine_every: int,
+    ) -> Dict[str, jnp.ndarray]:
+        """Runs one update per leading-axis slice of `batches`, starting at
+        `update_step`. Returns per-update device arrays of shape (n,), with
+        train/actor_grad_cosine NaN on steps where it was not computed."""
+        infos = []
+        for i in range(len(batches["observation"])):
+            batch = {key: value[i] for key, value in batches.items()}
+            compute = (update_step + i) % actor_grad_cosine_every == 0
+            info = self._update_on_device(batch, compute)
+            if not compute:
+                info["train/actor_grad_cosine"] = jnp.float32(jnp.nan)
+            infos.append(info)
+        return {key: jnp.stack([info[key] for info in infos]) for key in sorted(infos[0])}
+
+    def _update_on_device(
+        self, batch: Dict[str, np.ndarray], compute_actor_grad_cosine: bool
+    ) -> Dict[str, jnp.ndarray]:
         for key, value in batch.items():
             batch[key] = jnp.asarray(value)
 
@@ -413,9 +441,6 @@ class SACAgent(BaseAgent):
         self.actor_entropy_buffer.append(update_info["train/entropy"])
         self.churn_buffer.append(update_info["train/policy_churn"])
         self.actor_loss_buffer.append(update_info["train/actor_loss"])
-
-        for key, value in update_info.items():
-            update_info[key] = float(value)
 
         return update_info
 

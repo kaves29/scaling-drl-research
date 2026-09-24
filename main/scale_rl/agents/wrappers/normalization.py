@@ -69,6 +69,20 @@ class ObservationNormalizer(AgentWrapper):
             batch=batch,
             compute_actor_grad_cosine=compute_actor_grad_cosine,
         )
+
+    def update_many(
+        self,
+        update_step: int,
+        batches: Dict[str, np.ndarray],
+        actor_grad_cosine_every: int,
+    ):
+        batches["observation"] = self._normalize(batches["observation"])
+        batches["next_observation"] = self._normalize(batches["next_observation"])
+        return self.agent.update_many(
+            update_step=update_step,
+            batches=batches,
+            actor_grad_cosine_every=actor_grad_cosine_every,
+        )
     def get_metrics(self, update_step: int, batch: Dict[str, np.ndarray]):
         batch["observation"] = self._normalize(batch["observation"])
         batch["next_observation"] = self._normalize(batch["next_observation"])

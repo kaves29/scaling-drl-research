@@ -166,6 +166,45 @@ class Angle1RealEntryPointTest(unittest.TestCase):
         GlobalHydra.instance().clear()
         run(self._run_args(_fast_overrides(seed=2), checkpoint_interval=10))
 
+    def _logged_windows(self, overrides):
+        from experiments.angle_1 import run
+
+        GlobalHydra.instance().clear()
+        wandb.log.reset_mock()
+        run(self._run_args(overrides))
+        return [(c.kwargs["step"], list(c.args[0].items())) for c in wandb.log.call_args_list]
+
+    def test_deferred_update_metrics_are_bit_identical_to_eager(self):
+        """Materializing update metrics only at logging time must be a pure
+        timing change: identical logged averages, key order, and types."""
+        from experiments import angle_1
+
+        class EagerUpdateMetrics(angle_1.PendingUpdateMetrics):
+            def add(self, first_update_step, update_info):
+                super().add(first_update_step, update_info)
+                self.flush()
+
+        overrides = _fast_overrides(seed=4, extra=[
+            "env.num_env_steps=60", "logging_per_interaction_step=10",
+            "evaluation_per_interaction_step=15", "actor_grad_cosine_every=4",
+        ])
+        deferred = self._logged_windows(overrides)
+        with mock.patch.object(angle_1, "PendingUpdateMetrics", EagerUpdateMetrics):
+            eager = self._logged_windows(overrides)
+
+        self.assertGreaterEqual(len([w for w in deferred if w[0] > 0]), 2)
+        self.assertTrue(any("train/actor_loss" in dict(items) for _, items in deferred))
+        self.assertEqual(len(deferred), len(eager))
+        for (step_d, items_d), (step_e, items_e) in zip(deferred, eager):
+            self.assertEqual(step_d, step_e)
+            self.assertEqual([k for k, _ in items_d], [k for k, _ in items_e])
+            for (key, v_d), (_, v_e) in zip(items_d, items_e):
+                self.assertIs(type(v_d), type(v_e), key)
+                if isinstance(v_d, float):
+                    self.assertEqual(v_d.hex(), v_e.hex(), f"{key} at step {step_d}")
+                else:
+                    self.assertEqual(v_d, v_e, key)
+
     def test_save_probe_capture_snapshot_produces_a_loadable_pool_snapshot(self):
         from experiments.angle_1 import run
 
