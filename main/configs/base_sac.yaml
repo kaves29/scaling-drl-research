@@ -32,6 +32,7 @@ updates_per_interaction_step: 5           # number of updates per interaction st
 evaluation_per_interaction_step: 50_000   # evaluation frequency per interaction step.
 recording_per_interaction_step: ${num_interaction_steps}   # video recording frequency per interaction step.
 logging_per_interaction_step: 3_000       # logging frequency per interaction step.
+actor_grad_cosine_every: 30              # compute train/actor_grad_cosine only on update steps divisible by this.
 num_eval_episodes: 5
 num_record_episodes: 0
 

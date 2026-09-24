@@ -28,11 +28,16 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
+import gymnasium as gym
+import numpy as np
 import wandb
 from hydra.core.global_hydra import GlobalHydra
+from omegaconf import OmegaConf
 
 from experiments.angle_2a.agent_runner import ProbeCapture
 from experiments.angle_2b.checkpoint_io import load_frozen_agent_snapshot
+from scale_rl.agents import create_agent
+from scale_rl.common.logger import WandbTrainerLogger
 
 CONFIG_PATH = str(Path(__file__).resolve().parents[1] / "configs")
 
@@ -68,6 +73,49 @@ def _fast_overrides(env_name="cheetah-run", seed=1, extra=()):
         "num_eval_episodes=1",
         *extra,
     ]
+
+
+OBS_DIM = 4
+ACT_DIM = 2
+COSINE_KEY = "train/actor_grad_cosine"
+
+
+def _make_agent(seed=0):
+    cfg = OmegaConf.create({
+        "agent_type": "sac", "seed": seed, "num_train_envs": 1, "max_episode_steps": 100,
+        "normalize_observation": True, "actor_block_type": "residual", "actor_num_blocks": 1,
+        "actor_hidden_dim": 8, "actor_learning_rate": 1e-4, "actor_weight_decay": 1e-2,
+        "critic_block_type": "residual", "critic_num_blocks": 1, "critic_hidden_dim": 8,
+        "critic_learning_rate": 1e-4, "critic_weight_decay": 1e-2, "critic_use_cdq": False,
+        "temp_target_entropy": None, "temp_target_entropy_coef": -0.5, "temp_initial_value": 0.01,
+        "temp_learning_rate": 1e-4, "temp_weight_decay": 0.0, "target_tau": 0.005, "gamma": 0.99,
+        "n_step": 1, "mixed_precision": False, "actor_sparsity": 0.0, "critic_sparsity": 0.0,
+    })
+    observation_space = gym.spaces.Box(low=-1.0, high=1.0, shape=(OBS_DIM,), dtype=np.float32)
+    action_space = gym.spaces.Box(low=-1.0, high=1.0, shape=(ACT_DIM,), dtype=np.float32)
+    return create_agent(observation_space=observation_space, action_space=action_space, cfg=cfg)
+
+
+def _make_batches(num_updates, batch_size=8, seed=0):
+    rng = np.random.default_rng(seed)
+    return [
+        {
+            "observation": rng.standard_normal((batch_size, OBS_DIM)).astype(np.float32),
+            "action": rng.uniform(-1, 1, size=(batch_size, ACT_DIM)).astype(np.float32),
+            "reward": rng.standard_normal(batch_size).astype(np.float32),
+            "terminated": np.zeros(batch_size, dtype=np.float32),
+            "truncated": np.zeros(batch_size, dtype=np.float32),
+            "next_observation": rng.standard_normal((batch_size, OBS_DIM)).astype(np.float32),
+        }
+        for _ in range(num_updates)
+    ]
+
+
+def _bare_logger():
+    """The real WandbTrainerLogger averaging path, without wandb.init()."""
+    logger = object.__new__(WandbTrainerLogger)
+    logger.reset()
+    return logger
 
 
 class Angle1RealEntryPointTest(unittest.TestCase):
@@ -179,6 +227,9 @@ class Angle1RealEntryPointTest(unittest.TestCase):
             "actor_num_blocks=1", "actor_hidden_dim=8",
             "critic_degradation=true",
             "onset_detection.default_architecture=D1W8",
+            # ~10 updates per logging window here, so the default cadence
+            # (30) would leave most windows with no actor_grad_cosine sample.
+            "actor_grad_cosine_every=1",
         ]
         for seed in range(1, 6):
             GlobalHydra.instance().clear()
@@ -211,6 +262,51 @@ class Angle1RealEntryPointTest(unittest.TestCase):
             ledger_df.iloc[0]["status"], ("success", "no_onset_detected"),
             f"expected a clean pipeline run, got notes: {ledger_df.iloc[0].get('detection_notes')}",
         )
+
+
+class ActorGradCosineCadenceTest(unittest.TestCase):
+    """actor_grad_cosine_every: computed only on update steps divisible by it,
+    and the logged window average is a mean over computed samples only."""
+
+    NUM_UPDATES = 90
+
+    def _run(self, every):
+        agent = _make_agent()
+        logger = _bare_logger()
+        infos = []
+        for update_step, batch in enumerate(_make_batches(self.NUM_UPDATES)):
+            info = agent.update(
+                update_step, batch, compute_actor_grad_cosine=update_step % every == 0
+            )
+            logger.update_metric(**info)
+            infos.append(info)
+        return infos, logger.average_meter_dict
+
+    def test_cadence_and_window_average(self):
+        infos_1, meters_1 = self._run(every=1)
+        infos_30, meters_30 = self._run(every=30)
+
+        self.assertTrue(all(COSINE_KEY in info for info in infos_1))
+        computed_30 = [step for step, info in enumerate(infos_30) if COSINE_KEY in info]
+        self.assertEqual(computed_30, [0, 30, 60])
+
+        # Diagnostic only: skipping it must not perturb training.
+        for info_1, info_30 in zip(infos_1, infos_30):
+            for key in ("train/actor_loss", "train/critic_loss", "train/td_error_var"):
+                self.assertEqual(info_1[key], info_30[key])
+        for step in computed_30:
+            self.assertEqual(infos_30[step][COSINE_KEY], infos_1[step][COSINE_KEY])
+
+        samples_1 = [info[COSINE_KEY] for info in infos_1]
+        samples_30 = [infos_30[step][COSINE_KEY] for step in computed_30]
+        self.assertEqual(meters_1[COSINE_KEY].count, self.NUM_UPDATES)
+        self.assertEqual(meters_30[COSINE_KEY].count, len(samples_30))
+        self.assertAlmostEqual(meters_1[COSINE_KEY].avg, float(np.mean(samples_1)), places=6)
+        self.assertAlmostEqual(meters_30[COSINE_KEY].avg, float(np.mean(samples_30)), places=6)
+        self.assertNotAlmostEqual(
+            meters_30[COSINE_KEY].avg, sum(samples_30) / self.NUM_UPDATES, places=3
+        )
+        self.assertEqual(meters_30["train/actor_loss"].count, self.NUM_UPDATES)
 
 
 if __name__ == "__main__":

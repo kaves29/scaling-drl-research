@@ -16,13 +16,11 @@ handling). The only additions, and they only activate when
      baseline, and upserts a row into the canonical CSV ledger
      (utils/onset_ledger.py), mirroring onto the WandB run summary last.
 
-`train/td_error_var` and `train/actor_grad_cosine` are already computed
-unconditionally by the existing SAC update step (see
-scale_rl/agents/sac/sac_update.py); the flags below control whether that
-already-computed data is *persisted for onset analysis*, not whether it's
-computed. Making the computation itself conditional would mean touching the
-jitted `_update_sac_networks` function, which is out of scope for a minimal,
-low-risk integration (see README-equivalent notes in the project deliverables).
+`train/td_error_var` is computed on every update and `train/actor_grad_cosine`
+on every update step divisible by `actor_grad_cosine_every` (configs/
+base_sac.yaml); each window's logged `train/actor_grad_cosine` is the mean over
+only the steps where it was computed. The flags below control whether that
+data is *persisted for onset analysis*, not whether it's computed.
 """
 
 import os
@@ -239,6 +237,7 @@ def run(args: dict) -> None:
     observations, env_infos = train_env.reset()
     timestep = None
     checkpoint_start_step = int(args.checkpoint_start_frac * cfg.num_interaction_steps)
+    actor_grad_cosine_every = int(cfg.actor_grad_cosine_every)
 
     for interaction_step in tqdm.tqdm(
         range(start_step, int(cfg.num_interaction_steps + 1)), smoothing=0.1
@@ -280,7 +279,11 @@ def run(args: dict) -> None:
             update_counter += cfg.updates_per_interaction_step
             while update_counter >= 1:
                 batch = buffer.sample()
-                update_info = agent.update(update_step, batch)
+                update_info = agent.update(
+                    update_step,
+                    batch,
+                    compute_actor_grad_cosine=update_step % actor_grad_cosine_every == 0,
+                )
                 logger.update_metric(**update_info)
                 update_counter -= 1
                 update_step += 1

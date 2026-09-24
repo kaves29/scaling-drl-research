@@ -232,6 +232,7 @@ def _sample_sac_actions(
         "critic_use_cdq",
         "target_tau",
         "temp_target_entropy",
+        "compute_actor_grad_cosine",
     ),
 )
 def _update_sac_networks(
@@ -247,6 +248,7 @@ def _update_sac_networks(
     target_tau: float,
     temp_target_entropy: float,
     churn_ref_batch: dict,
+    compute_actor_grad_cosine: bool = True,
 ) -> Tuple[PRNGKey, Trainer, Trainer, Trainer, Trainer, Dict[str, float]]:
     rng, actor_key, critic_key = jax.random.split(rng, 3)
 
@@ -291,23 +293,22 @@ def _update_sac_networks(
         target_tau=target_tau,
     )
 
-    actor_grad_cosine = compute_actor_gradient_cosine(
-        key=actor_key,
-        actor=actor,
-        critic=critic,
-        temperature=temperature,
-        batch=batch,
-        critic_use_cdq=critic_use_cdq,
-    )
-
     info = {
         **actor_info,
         **critic_info,
         **target_critic_info,
         **temperature_info,
         "train/policy_churn": churn,
-        "train/actor_grad_cosine": actor_grad_cosine
     }
+    if compute_actor_grad_cosine:
+        info["train/actor_grad_cosine"] = compute_actor_gradient_cosine(
+            key=actor_key,
+            actor=actor,
+            critic=critic,
+            temperature=temperature,
+            batch=batch,
+            critic_use_cdq=critic_use_cdq,
+        )
 
     return (rng, new_actor, new_critic, new_target_critic, new_temperature, info)
 
@@ -375,7 +376,12 @@ class SACAgent(BaseAgent):
 
         return actions
     
-    def update(self, update_step: int, batch: Dict[str, np.ndarray]) -> Dict:
+    def update(
+        self,
+        update_step: int,
+        batch: Dict[str, np.ndarray],
+        compute_actor_grad_cosine: bool = True,
+    ) -> Dict:
         for key, value in batch.items():
             batch[key] = jnp.asarray(value)
 
@@ -401,6 +407,7 @@ class SACAgent(BaseAgent):
             target_tau=self._cfg.target_tau,
             temp_target_entropy=self._cfg.temp_target_entropy,
             churn_ref_batch=self.churn_ref_batch,
+            compute_actor_grad_cosine=compute_actor_grad_cosine,
         )
 
         self.actor_entropy_buffer.append(update_info["train/entropy"])

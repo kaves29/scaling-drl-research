@@ -56,12 +56,18 @@ class ObservationNormalizer(AgentWrapper):
             training=training,
         )
 
-    def update(self, update_step: int, batch: Dict[str, np.ndarray]):
+    def update(
+        self,
+        update_step: int,
+        batch: Dict[str, np.ndarray],
+        compute_actor_grad_cosine: bool = True,
+    ):
         batch["observation"] = self._normalize(batch["observation"])
         batch["next_observation"] = self._normalize(batch["next_observation"])
         return self.agent.update(
             update_step=update_step,
             batch=batch,
+            compute_actor_grad_cosine=compute_actor_grad_cosine,
         )
     def get_metrics(self, update_step: int, batch: Dict[str, np.ndarray]):
         batch["observation"] = self._normalize(batch["observation"])
