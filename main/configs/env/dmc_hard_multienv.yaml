@@ -1,0 +1,40 @@
+# @package _global_
+##################################################################################
+# OPT-IN THROUGHPUT VARIANT - NOT PART OF THE ANGLE 1 GRID.
+# Deepmind Control Suite hard tasks with 4 parallel train envs. Select only
+# explicitly via `env=dmc_hard_multienv`; dmc_hard.yaml stays the default.
+#
+# UTD is preserved: each interaction step adds num_train_envs transitions, so
+#   1 env  x  5 updates / interaction step ->  5 / 1  = 5 updates per transition
+#   4 envs x 20 updates / interaction step -> 20 / 4  = 5 updates per transition
+# Total updates are also unchanged: num_interaction_steps = num_env_steps /
+# (num_train_envs * action_repeat) = 2.5M / (4 * 2) = 312,500, x 20 = 6.25M,
+# matching 1,250,000 x 5 = 6.25M for the single-env config.
+#
+# Not comparable with 1-env runs as-is: logging_per_interaction_step and
+# evaluation_per_interaction_step are in interaction steps, so logging and
+# evaluation happen 4x less often in env steps. Incompatible with
+# save_probe_capture_snapshot=true (requires num_train_envs == 1).
+#
+# KNOWN BLOCKER (pre-existing, also on 101ff60): ObservationNormalizer sizes
+# obs_rms from the vectorized observation space, (num_train_envs, obs_dim),
+# which fails to broadcast against (batch, obs_dim) replay batches whenever
+# num_train_envs > 1. This variant cannot train until that is fixed.
+##################################################################################
+
+updates_per_interaction_step: 20
+
+env:
+  env_type: 'dmc'
+  env_name: ${env_name}
+  num_env_steps: 2_500_000
+  episodic: false
+
+  seed: ${seed}
+  num_train_envs: 4
+  num_eval_envs: 1
+  no_termination: false
+  action_repeat: 2
+  rescale_action: true
+  reward_scale: 1
+  max_episode_steps: 1000

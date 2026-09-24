@@ -235,6 +235,43 @@ class Angle1RealEntryPointTest(unittest.TestCase):
         reloaded_capture = ProbeCapture.load_fresh(str(checkpoint_dir))
         self.assertGreater(len(reloaded_capture), 0)
 
+    def _compose(self, overrides):
+        from hydra import compose, initialize_config_dir
+
+        GlobalHydra.instance().clear()
+        with initialize_config_dir(version_base=None, config_dir=CONFIG_PATH):
+            cfg = compose(config_name="base_sac", overrides=overrides)
+        return OmegaConf.to_container(cfg)
+
+    def test_multienv_variant_preserves_utd_and_leaves_defaults_alone(self):
+        variant = self._compose(["env=dmc_hard_multienv"])
+        self.assertEqual(variant["env"]["num_train_envs"], 4)
+        self.assertEqual(variant["updates_per_interaction_step"], 20)
+
+        for env in ("dmc_hard", "dmc_medium", "myosuite_hard", "myosuite_medium"):
+            default = self._compose([f"env={env}"])
+            self.assertEqual(default["env"]["num_train_envs"], 1, env)
+            self.assertEqual(default["updates_per_interaction_step"], 5, env)
+            self.assertEqual(
+                variant["updates_per_interaction_step"] / variant["env"]["num_train_envs"],
+                default["updates_per_interaction_step"] / default["env"]["num_train_envs"],
+            )
+        hard = self._compose(["env=dmc_hard"])["env"]
+        self.assertEqual(
+            {k: v for k, v in variant["env"].items() if k != "num_train_envs"},
+            {k: v for k, v in hard.items() if k != "num_train_envs"},
+        )
+
+    def test_multienv_variant_rejects_save_probe_capture_snapshot(self):
+        from experiments.angle_1 import run
+
+        with self.assertRaisesRegex(ValueError, r"num_train_envs\s+== 1 \(got 4\)"):
+            run(self._run_args(_fast_overrides(extra=[
+                "env=dmc_hard_multienv",
+                "+save_probe_capture_snapshot=true",
+                f"+probe_capture_snapshot_root={Path(self.tmpdir) / 'pool'}",
+            ])))
+
     def test_critic_degradation_onset_detection_writes_a_real_ledger_row(self):
         """The one remaining piece of Angle 1's real entry point never
         exercised via run() itself: critic_degradation=true's post-hoc
