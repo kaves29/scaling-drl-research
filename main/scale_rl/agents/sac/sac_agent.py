@@ -224,19 +224,9 @@ def _sample_sac_actions(
     return rng, actions
 
 
-@functools.partial(
-    jax.jit,
-    static_argnames=(
-        "gamma",
-        "n_step",
-        "critic_use_cdq",
-        "target_tau",
-        "temp_target_entropy",
-        "compute_actor_grad_cosine",
-    ),
-)
-def _update_sac_networks(
-    rng: PRNGKey,
+def _sac_update(
+    actor_key: PRNGKey,
+    critic_key: PRNGKey,
     actor: Trainer,
     critic: Trainer,
     target_critic: Trainer,
@@ -248,10 +238,7 @@ def _update_sac_networks(
     target_tau: float,
     temp_target_entropy: float,
     churn_ref_batch: dict,
-    compute_actor_grad_cosine: bool = True,
-) -> Tuple[PRNGKey, Trainer, Trainer, Trainer, Trainer, Dict[str, float]]:
-    rng, actor_key, critic_key = jax.random.split(rng, 3)
-
+) -> Tuple[Trainer, Trainer, Trainer, Trainer, Dict[str, float]]:
     def get_deterministic_actions(actor_params, actor, observations):
         dist = actor.apply(variables={"params": actor_params}, observations=observations)
         pre_squash_mean = dist.distribution.mean()
@@ -300,6 +287,41 @@ def _update_sac_networks(
         **temperature_info,
         "train/policy_churn": churn,
     }
+
+    return new_actor, new_critic, new_target_critic, new_temperature, info
+
+
+@functools.partial(
+    jax.jit,
+    static_argnames=(
+        "gamma",
+        "n_step",
+        "critic_use_cdq",
+        "target_tau",
+        "temp_target_entropy",
+        "compute_actor_grad_cosine",
+    ),
+)
+def _update_sac_networks(
+    rng: PRNGKey,
+    actor: Trainer,
+    critic: Trainer,
+    target_critic: Trainer,
+    temperature: Trainer,
+    batch: Batch,
+    gamma: float,
+    n_step: int,
+    critic_use_cdq: bool,
+    target_tau: float,
+    temp_target_entropy: float,
+    churn_ref_batch: dict,
+    compute_actor_grad_cosine: bool = True,
+) -> Tuple[PRNGKey, Trainer, Trainer, Trainer, Trainer, Dict[str, float]]:
+    rng, actor_key, critic_key = jax.random.split(rng, 3)
+    new_actor, new_critic, new_target_critic, new_temperature, info = _sac_update(
+        actor_key, critic_key, actor, critic, target_critic, temperature, batch,
+        gamma, n_step, critic_use_cdq, target_tau, temp_target_entropy, churn_ref_batch,
+    )
     if compute_actor_grad_cosine:
         info["train/actor_grad_cosine"] = compute_actor_gradient_cosine(
             key=actor_key,
@@ -312,6 +334,70 @@ def _update_sac_networks(
 
     return (rng, new_actor, new_critic, new_target_critic, new_temperature, info)
 
+
+@functools.partial(
+    jax.jit,
+    static_argnames=(
+        "gamma",
+        "n_step",
+        "critic_use_cdq",
+        "target_tau",
+        "temp_target_entropy",
+        "actor_grad_cosine_every",
+    ),
+)
+def _update_sac_networks_scan(
+    rng: PRNGKey,
+    actor: Trainer,
+    critic: Trainer,
+    target_critic: Trainer,
+    temperature: Trainer,
+    batches: Batch,
+    first_update_step: int,
+    gamma: float,
+    n_step: int,
+    critic_use_cdq: bool,
+    target_tau: float,
+    temp_target_entropy: float,
+    churn_ref_batch: dict,
+    actor_grad_cosine_every: int,
+) -> Tuple[PRNGKey, Trainer, Trainer, Trainer, Trainer, Dict[str, jnp.ndarray]]:
+    """_update_sac_networks scanned over the leading axis of `batches`."""
+
+    def body(carry, xs):
+        rng, actor, critic, target_critic, temperature = carry
+        batch, update_step = xs
+        rng, actor_key, critic_key = jax.random.split(rng, 3)
+        new_actor, new_critic, new_target_critic, new_temperature, info = _sac_update(
+            actor_key, critic_key, actor, critic, target_critic, temperature, batch,
+            gamma, n_step, critic_use_cdq, target_tau, temp_target_entropy, churn_ref_batch,
+        )
+        info["train/actor_grad_cosine"] = jax.lax.cond(
+            update_step % actor_grad_cosine_every == 0,
+            lambda: compute_actor_gradient_cosine(
+                key=actor_key,
+                actor=actor,
+                critic=critic,
+                temperature=temperature,
+                batch=batch,
+                critic_use_cdq=critic_use_cdq,
+            ),
+            lambda: jnp.float32(jnp.nan),
+        )
+        return (rng, new_actor, new_critic, new_target_critic, new_temperature), info
+
+    num_updates = batches["observation"].shape[0]
+    update_steps = first_update_step + jnp.arange(num_updates)
+    carry, info = jax.lax.scan(
+        body, (rng, actor, critic, target_critic, temperature), (batches, update_steps)
+    )
+
+    return (*carry, info)
+
+
+def _concat_scalars_or_vectors(values: List[jnp.ndarray]) -> jnp.ndarray:
+    """update() appends scalars, update_many() appends (n,) arrays."""
+    return jnp.concatenate([jnp.ravel(v) for v in values])
 
 
 class SACAgent(BaseAgent):
@@ -394,18 +480,43 @@ class SACAgent(BaseAgent):
         batches: Dict[str, np.ndarray],
         actor_grad_cosine_every: int,
     ) -> Dict[str, jnp.ndarray]:
-        """Runs one update per leading-axis slice of `batches`, starting at
-        `update_step`. Returns per-update device arrays of shape (n,), with
-        train/actor_grad_cosine NaN on steps where it was not computed."""
-        infos = []
-        for i in range(len(batches["observation"])):
-            batch = {key: value[i] for key, value in batches.items()}
-            compute = (update_step + i) % actor_grad_cosine_every == 0
-            info = self._update_on_device(batch, compute)
-            if not compute:
-                info["train/actor_grad_cosine"] = jnp.float32(jnp.nan)
-            infos.append(info)
-        return {key: jnp.stack([info[key] for info in infos]) for key in sorted(infos[0])}
+        """Runs one update per leading-axis slice of `batches` in a single
+        compiled call, starting at `update_step`. Returns per-update device
+        arrays of shape (n,), with train/actor_grad_cosine NaN on steps where
+        it was not computed."""
+        batches = {key: jnp.asarray(value) for key, value in batches.items()}
+
+        if self.churn_ref_batch is None:
+            self.churn_ref_batch = {k: jnp.array(v[0]) for k, v in batches.items()}
+        (
+            self._rng,
+            self._actor,
+            self._critic,
+            self._target_critic,
+            self._temperature,
+            update_info,
+        ) = _update_sac_networks_scan(
+            rng=self._rng,
+            actor=self._actor,
+            critic=self._critic,
+            target_critic=self._target_critic,
+            temperature=self._temperature,
+            batches=batches,
+            first_update_step=update_step,
+            gamma=self._cfg.gamma,
+            n_step=self._cfg.n_step,
+            critic_use_cdq=self._cfg.critic_use_cdq,
+            target_tau=self._cfg.target_tau,
+            temp_target_entropy=self._cfg.temp_target_entropy,
+            churn_ref_batch=self.churn_ref_batch,
+            actor_grad_cosine_every=actor_grad_cosine_every,
+        )
+
+        self.actor_entropy_buffer.append(update_info["train/entropy"])
+        self.churn_buffer.append(update_info["train/policy_churn"])
+        self.actor_loss_buffer.append(update_info["train/actor_loss"])
+
+        return update_info
 
     def _update_on_device(
         self, batch: Dict[str, np.ndarray], compute_actor_grad_cosine: bool
@@ -447,7 +558,7 @@ class SACAgent(BaseAgent):
     def flush_actor_loss_var(self):
         if len(self.actor_loss_buffer) == 0:
             return None
-        losses = jnp.stack(self.actor_loss_buffer)
+        losses = _concat_scalars_or_vectors(self.actor_loss_buffer)
         var = float(jnp.var(losses))
         self.actor_loss_buffer = []
         return var
@@ -455,14 +566,14 @@ class SACAgent(BaseAgent):
     def flush_policy_churn(self):
         if len(self.churn_buffer) == 0:
             return None
-        val = float(jnp.mean(jnp.stack(self.churn_buffer)))
+        val = float(jnp.mean(_concat_scalars_or_vectors(self.churn_buffer)))
         self.churn_buffer = []
         return val
 
     def mean_entropy(self):
         if len(self.actor_entropy_buffer) == 0:
             return None
-        entropy = jnp.stack(self.actor_entropy_buffer)
+        entropy = _concat_scalars_or_vectors(self.actor_entropy_buffer)
         mean = float(jnp.mean(entropy))
         self.actor_entropy_buffer = []
         return mean

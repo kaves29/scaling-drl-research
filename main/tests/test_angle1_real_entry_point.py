@@ -29,6 +29,7 @@ from pathlib import Path
 from unittest import mock
 
 import gymnasium as gym
+import jax
 import numpy as np
 import wandb
 from hydra.core.global_hydra import GlobalHydra
@@ -307,45 +308,139 @@ class ActorGradCosineCadenceTest(unittest.TestCase):
     """actor_grad_cosine_every: computed only on update steps divisible by it,
     and the logged window average is a mean over computed samples only."""
 
+    UPDATES_PER_CALL = 5
     NUM_UPDATES = 90
 
     def _run(self, every):
+        from experiments.angle_1 import PendingUpdateMetrics
+
         agent = _make_agent()
         logger = _bare_logger()
+        pending = PendingUpdateMetrics(logger, every)
+        batches = _make_batches(self.NUM_UPDATES)
         infos = []
-        for update_step, batch in enumerate(_make_batches(self.NUM_UPDATES)):
-            info = agent.update(
-                update_step, batch, compute_actor_grad_cosine=update_step % every == 0
-            )
-            logger.update_metric(**info)
-            infos.append(info)
-        return infos, logger.average_meter_dict
+        for first in range(0, self.NUM_UPDATES, self.UPDATES_PER_CALL):
+            chunk = batches[first:first + self.UPDATES_PER_CALL]
+            stacked = {key: np.stack([b[key] for b in chunk]) for key in chunk[0]}
+            info = agent.update_many(first, stacked, every)
+            pending.add(first, info)
+            infos.append(jax.device_get(info))
+        pending.flush()
+        per_update = {key: np.concatenate([info[key] for info in infos]) for key in infos[0]}
+        return per_update, logger.average_meter_dict
 
     def test_cadence_and_window_average(self):
-        infos_1, meters_1 = self._run(every=1)
-        infos_30, meters_30 = self._run(every=30)
+        per_update_1, meters_1 = self._run(every=1)
+        per_update_30, meters_30 = self._run(every=30)
 
-        self.assertTrue(all(COSINE_KEY in info for info in infos_1))
-        computed_30 = [step for step, info in enumerate(infos_30) if COSINE_KEY in info]
+        self.assertTrue(np.all(np.isfinite(per_update_1[COSINE_KEY])))
+        computed_30 = np.flatnonzero(~np.isnan(per_update_30[COSINE_KEY])).tolist()
         self.assertEqual(computed_30, [0, 30, 60])
 
         # Diagnostic only: skipping it must not perturb training.
-        for info_1, info_30 in zip(infos_1, infos_30):
-            for key in ("train/actor_loss", "train/critic_loss", "train/td_error_var"):
-                self.assertEqual(info_1[key], info_30[key])
-        for step in computed_30:
-            self.assertEqual(infos_30[step][COSINE_KEY], infos_1[step][COSINE_KEY])
+        for key in ("train/actor_loss", "train/critic_loss", "train/td_error_var"):
+            np.testing.assert_allclose(per_update_30[key], per_update_1[key], rtol=1e-4, err_msg=key)
+        np.testing.assert_allclose(
+            per_update_30[COSINE_KEY][computed_30], per_update_1[COSINE_KEY][computed_30], rtol=1e-4
+        )
 
-        samples_1 = [info[COSINE_KEY] for info in infos_1]
-        samples_30 = [infos_30[step][COSINE_KEY] for step in computed_30]
+        samples_1 = [float(v) for v in per_update_1[COSINE_KEY]]
+        samples_30 = [float(per_update_30[COSINE_KEY][step]) for step in computed_30]
         self.assertEqual(meters_1[COSINE_KEY].count, self.NUM_UPDATES)
         self.assertEqual(meters_30[COSINE_KEY].count, len(samples_30))
-        self.assertAlmostEqual(meters_1[COSINE_KEY].avg, float(np.mean(samples_1)), places=6)
-        self.assertAlmostEqual(meters_30[COSINE_KEY].avg, float(np.mean(samples_30)), places=6)
+        self.assertEqual(meters_1[COSINE_KEY].avg, sum(samples_1) / len(samples_1))
+        self.assertEqual(meters_30[COSINE_KEY].avg, sum(samples_30) / len(samples_30))
         self.assertNotAlmostEqual(
             meters_30[COSINE_KEY].avg, sum(samples_30) / self.NUM_UPDATES, places=3
         )
         self.assertEqual(meters_30["train/actor_loss"].count, self.NUM_UPDATES)
+
+    def test_cosine_branch_executes_only_on_cadence_steps(self):
+        """Counts real executions of the gated branch (debug callbacks are
+        unsupported on METAL, so this runs on CPU)."""
+        from scale_rl.agents.sac import sac_agent
+
+        executed = []
+        real_fn = sac_agent.compute_actor_gradient_cosine
+
+        def counted(**kwargs):
+            jax.debug.callback(lambda key: executed.append(1), kwargs["key"])
+            return real_fn(**kwargs)
+
+        self.addCleanup(jax.clear_caches)
+        for every, first_update_step, expected in ((30, 0, 3), (1, 0, 90), (4, 1, 22)):
+            executed.clear()
+            jax.clear_caches()
+            with self.subTest(every=every), jax.default_device(jax.devices("cpu")[0]), \
+                    mock.patch.object(sac_agent, "compute_actor_gradient_cosine", counted):
+                agent = _make_agent()
+                batches = _make_batches(self.NUM_UPDATES)
+                stacked = {key: np.stack([b[key] for b in batches]) for key in batches[0]}
+                info = agent.update_many(first_update_step, stacked, every)
+                cosine = np.asarray(info[COSINE_KEY])
+                self.assertEqual(len(executed), expected)
+                steps = first_update_step + np.arange(self.NUM_UPDATES)
+                np.testing.assert_array_equal(~np.isnan(cosine), steps % every == 0)
+
+
+class ScanFusionEquivalenceTest(unittest.TestCase):
+    """update_many (one lax.scan call) vs. sequential update() calls.
+
+    Compared per call from an identical starting state, so differences can
+    only come from float reassociation within one fused call. Over a long
+    free-running trajectory those differences compound into slow, persistent
+    drift between the two runs, which a sign test cannot tell apart from a
+    real behavioral change - so that comparison is not asserted here.
+    """
+
+    NUM_CALLS = 600
+    UPDATES_PER_CALL = 5
+    REL_TOL = 1e-5
+    KEYS = (
+        "train/actor_loss", "train/critic_loss", "train/td_error_var",
+        "train/q1_mean", "train/entropy", "train/actor_grad_cosine",
+    )
+
+    def _max_rel_and_sign_balance(self, device):
+        with jax.default_device(device):
+            sequential, fused = _make_agent(), _make_agent()
+            rng = np.random.default_rng(0)
+            diffs = {key: [] for key in self.KEYS}
+            refs = {key: [] for key in self.KEYS}
+            for call in range(self.NUM_CALLS):
+                for attr in ("_rng", "_actor", "_critic", "_target_critic", "_temperature"):
+                    setattr(fused.agent, attr, getattr(sequential.agent, attr))
+                fused.agent.churn_ref_batch = sequential.agent.churn_ref_batch
+                chunk = _make_batches(self.UPDATES_PER_CALL, batch_size=32, seed=int(rng.integers(1 << 31)))
+                first = call * self.UPDATES_PER_CALL
+                stacked = {key: np.stack([b[key] for b in chunk]) for key in chunk[0]}
+                ref = [
+                    sequential.update(first + i, {k: v.copy() for k, v in b.items()})
+                    for i, b in enumerate(chunk)
+                ]
+                out = jax.device_get(fused.update_many(first, stacked, 1))
+                for key in self.KEYS:
+                    for i in range(self.UPDATES_PER_CALL):
+                        diffs[key].append(float(out[key][i]) - ref[i][key])
+                        refs[key].append(ref[i][key])
+        return {key: (np.array(diffs[key]), np.array(refs[key])) for key in self.KEYS}
+
+    def test_fused_update_matches_sequential_per_call(self):
+        devices = {jax.devices()[0].platform: jax.devices()[0], "cpu": jax.devices("cpu")[0]}
+        for platform, device in devices.items():
+            for key, (diff, ref) in self._max_rel_and_sign_balance(device).items():
+                with self.subTest(platform=platform, key=key):
+                    self.assertTrue(np.all(np.isfinite(diff)))
+                    rel = np.max(np.abs(diff)) / np.max(np.abs(ref))
+                    self.assertLessEqual(rel, self.REL_TOL, f"max relative deviation {rel:.3e}")
+                    nonzero = diff[diff != 0]
+                    if len(nonzero) >= 100:
+                        positive_frac = float(np.mean(nonzero > 0))
+                        self.assertTrue(
+                            0.35 <= positive_frac <= 0.65,
+                            f"systematic deviation: {positive_frac:.2f} of {len(nonzero)} nonzero "
+                            f"differences are positive",
+                        )
 
 
 if __name__ == "__main__":
