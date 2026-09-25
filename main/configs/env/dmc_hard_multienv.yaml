@@ -8,8 +8,8 @@
 #   1 env  x  5 updates / interaction step ->  5 / 1  = 5 updates per transition
 #   4 envs x 20 updates / interaction step -> 20 / 4  = 5 updates per transition
 # Total updates are also unchanged: num_interaction_steps = num_env_steps /
-# (num_train_envs * action_repeat) = 2.5M / (4 * 2) = 312,500, x 20 = 6.25M,
-# matching 1,250,000 x 5 = 6.25M for the single-env config.
+# (num_train_envs * action_repeat) = 1M / (4 * 2) = 125,000, x 20 = 2.5M,
+# matching 500,000 x 5 = 2.5M for the single-env config.
 #
 # Not comparable with 1-env runs as-is: logging_per_interaction_step and
 # evaluation_per_interaction_step are in interaction steps, so logging and
@@ -27,7 +27,7 @@ updates_per_interaction_step: 20
 env:
   env_type: 'dmc'
   env_name: ${env_name}
-  num_env_steps: 2_500_000
+  num_env_steps: 1_000_000
   episodic: false
 
   seed: ${seed}

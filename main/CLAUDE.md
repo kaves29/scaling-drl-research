@@ -35,13 +35,14 @@ If these conflict, do not silently reconcile them. Surface the conflict.
 - Default critic: depth 2 / width 512
 - Scaled critics: depth 5 / width 768 and depth 7 / width 1024
 - UTD = 5
+- Step budgets (raw env steps) match the original SimBa paper; action_repeat = 2 everywhere; logging_per_interaction_step = 2,000. See research-methodology.md's "Step budgets and logging cadence".
 - Angle 1 = 5 seeds
 - Angle 2A = 5 seeds
 - Current experiment environments (confirmed 2026-09-05 audit, DMC held-out gap closed 2026-09-05; see research-methodology.md for the full table): 10 core (Angle 1/2) + 4 held-out (Angle 3 only) = 14 total.
-  - DMC core-6, Angle 1/2 (see scale_rl/envs/dmc.py's `DMC_MED`/`DMC_HARD`): Dog-run (Hard, 2,500,000), Dog-trot (Hard, 2,500,000), Humanoid-run (Hard, 2,500,000), Cheetah-run (Medium, 1,250,000), Quadruped-run (Medium, 1,250,000), Manipulator-bring_ball (Medium, 1,250,000)
-  - DMC held-out-2, Angle 3 only (see `DMC_HELDOUT2`): Hopper-hop (Medium, 1,250,000), Fish-swim (Medium, 1,250,000)
-  - MyoSuite core-4, Angle 1/2 only (see scale_rl/envs/myosuite.py's `MYOSUITE_CORE4`): MyoElbowPose1D6MRandom (Medium, 1,250,000), MyoHandReachFixed (Hard, 2,500,000), MyoHandKeyTurnFixed (Hard, 2,500,000), MyoLegWalk (Hard, 2,500,000)
-  - MyoSuite held-out-2, Angle 3 only (see `MYOSUITE_HELDOUT2`): MyoHandPenTwirlFixed (Hard, 2,500,000), MyoHandBaodingBallsP1 (Hard, 2,500,000)
+  - DMC core-6, Angle 1/2 (see scale_rl/envs/dmc.py's `DMC_MED`/`DMC_HARD`): Dog-run (Hard, 1,000,000), Dog-trot (Hard, 1,000,000), Humanoid-run (Hard, 1,000,000), Cheetah-run (Medium, 500,000), Quadruped-run (Medium, 500,000), Manipulator-bring_ball (Medium, 500,000)
+  - DMC held-out-2, Angle 3 only (see `DMC_HELDOUT2`): Hopper-hop (Medium, 500,000), Fish-swim (Medium, 500,000)
+  - MyoSuite core-4, Angle 1/2 only (see scale_rl/envs/myosuite.py's `MYOSUITE_CORE4`): MyoElbowPose1D6MRandom (Medium, 1,000,000), MyoHandReachFixed (Hard, 1,000,000), MyoHandKeyTurnFixed (Hard, 1,000,000), MyoLegWalk (Hard, 1,000,000)
+  - MyoSuite held-out-2, Angle 3 only (see `MYOSUITE_HELDOUT2`): MyoHandPenTwirlFixed (Hard, 1,000,000), MyoHandBaodingBallsP1 (Hard, 1,000,000)
 
 ## Required Working Behavior
 - Do not hardcode experimental parameters that belong in configuration.

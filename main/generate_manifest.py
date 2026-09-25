@@ -42,8 +42,11 @@ MYO_HARD = [("myo-reach", "myosuite_hard"), ("myo-key-turn", "myosuite_hard"), (
 MYO_MEDIUM = [("myo-elbow-pose-random", "myosuite_medium")]
 
 SEEDS = [1, 2, 3, 4, 5]
-HARD_STEPS = 2_500_000
-MED_STEPS = 1_250_000
+# Raw env steps, matching the original SimBa paper's benchmarks (see
+# research-methodology.md). All MyoSuite tasks share one budget.
+HARD_STEPS = 1_000_000
+MED_STEPS = 500_000
+MYO_STEPS = 1_000_000
 
 jobs, skipped_done, skipped_review = [], [], []
 
@@ -82,9 +85,9 @@ def add_jobs(env_list, steps):
                 jobs.append(cmd)
 
 add_jobs(DMC_HARD, HARD_STEPS)
-add_jobs(MYO_HARD, HARD_STEPS)
+add_jobs(MYO_HARD, MYO_STEPS)
 add_jobs(DMC_MEDIUM, MED_STEPS)
-add_jobs(MYO_MEDIUM, MED_STEPS)
+add_jobs(MYO_MEDIUM, MYO_STEPS)
 
 with open("job_list.txt", "w") as f:
     f.write("\n".join(jobs) + "\n")
