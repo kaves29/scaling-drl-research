@@ -78,8 +78,8 @@ def add_jobs(env_list, steps):
                     f"--overrides pathology_prop=true "
                     f"--overrides project_name=EchoCritic-angle_1 "
                     f"--checkpoint_dir {ckpt_dir} "
-                    f"--checkpoint_interval 100000 "
-                    f"--checkpoint_start_frac 0.2 "
+                    f"--checkpoint_interval 12501 "
+                    f"--checkpoint_start_frac 0.15 "
                     f"> {log_path} 2>&1"
                 )
                 jobs.append(cmd)

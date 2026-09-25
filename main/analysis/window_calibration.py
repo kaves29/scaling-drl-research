@@ -4,8 +4,9 @@ research-methodology.md's Onset Definitions for the full procedure.
 Companion to analysis/baseline_calibration.py (percentile threshold) - that
 module's onset/propagation percentile threshold is intentionally NOT
 expanded by the 2026-09-08 shared-pool change (see
-analysis/baseline_calibration_pool.py): Angle 1's 150 already-completed runs'
-onset-detection results must never be silently re-thresholded (see
+analysis/baseline_calibration_pool.py): the onset threshold for Angle 1's 150
+planned runs (none completed as of the 2026-09-25 correction; this previously
+said "already-completed") must never be silently re-thresholded (see
 research-methodology.md's "Things Claude Must Never Change Silently"), so
 baseline_calibration.py keeps its original, unchanged 5-seed-only input.
 Window calibration is not a "must never change silently" threshold in that
