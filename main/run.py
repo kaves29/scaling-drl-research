@@ -1,4 +1,5 @@
 import argparse
+import os
 
 # Must run before anything below - `import experiments` (next block) has the
 # side effect of importing experiments.angle_1, which does `import jax`, and
@@ -37,6 +38,12 @@ def build_parser() -> argparse.ArgumentParser:
 if __name__ == "__main__":
     parser = build_parser()
     args = parser.parse_args()
+
+    if args.checkpoint_dir is not None and not os.path.isabs(args.checkpoint_dir):
+        raise ValueError(
+            f"checkpoint_dir must be an absolute path, got: {args.checkpoint_dir!r}. "
+            "Orbax requires absolute paths."
+        )
 
     try:
         experiment_fn = get_experiment(args.experiment)

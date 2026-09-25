@@ -82,7 +82,13 @@ def load_frozen_agent_snapshot(
             f"least one transition before this snapshot was taken."
         )
 
-    checkpoint_dir = _require_exists(out_dir / "checkpoints" / role, "agent checkpoint")
+    # .resolve() (fixed 2026-09-23, new finding): agent.load_checkpoint() ->
+    # Orbax's restore() requires an absolute path just like save() does
+    # (same underlying get_tensorstore_spec call). `root` defaults to
+    # DEFAULT_ANGLE_2A_ROOT / POOL_STORAGE_ROOT, both relative. Existence is
+    # checked (_require_exists) before resolving, so the error message still
+    # shows a path relative to how the caller specified `root`.
+    checkpoint_dir = _require_exists(out_dir / "checkpoints" / role, "agent checkpoint").resolve()
 
     obs_dim = int(states.shape[-1])
     act_dim = int(actions.shape[-1])

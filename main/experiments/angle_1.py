@@ -25,7 +25,11 @@ data is *persisted for onset analysis*, not whether it's computed.
 
 import os
 
-from utils.hardware import configure_hardware_env, validate_rocm_jax_available
+from utils.hardware import (
+    configure_hardware_env,
+    validate_nvidia_jax_available,
+    validate_rocm_jax_available,
+)
 
 # Idempotent (see configure_hardware_env) - covers importers that bypass
 # run.py's own call to this, e.g. the test suite. Must precede `import jax`.
@@ -64,6 +68,7 @@ from utils.onset_ledger import WandbIdentity
 jax.config.update("jax_enable_x64", False)
 
 validate_rocm_jax_available(_GPU_VENDOR)
+validate_nvidia_jax_available(_GPU_VENDOR)
 
 ACTOR_GRAD_COSINE_KEY = "train/actor_grad_cosine"
 

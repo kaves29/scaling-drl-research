@@ -13,7 +13,13 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from utils.hardware import _VENDOR_SENTINEL_ENV_VAR, configure_hardware_env, detect_gpu_vendor
+from utils.hardware import (
+    _VENDOR_SENTINEL_ENV_VAR,
+    configure_hardware_env,
+    detect_gpu_vendor,
+    validate_nvidia_jax_available,
+    validate_rocm_jax_available,
+)
 
 
 def _make_stub(dir_path: Path, name: str, exit_code: int) -> None:
@@ -170,6 +176,80 @@ class ConfigureHardwareEnvTest(unittest.TestCase):
 
         self.assertEqual(second, "amd")
         self.assertIn(_VENDOR_SENTINEL_ENV_VAR, os.environ)
+
+
+class _FakeDevice:
+    def __init__(self, platform):
+        self.platform = platform
+
+
+class ValidateRocmJaxAvailableTest(unittest.TestCase):
+    """Neither validate_rocm_jax_available nor (before 2026-09-24) its
+    NVIDIA counterpart had any test coverage at all - added alongside
+    validate_nvidia_jax_available below. jax.devices() is mocked (real
+    hardware isn't available here), matching this file's existing pattern
+    of exercising the real logic around a stubbed boundary rather than
+    mocking the function under test itself.
+    """
+
+    def test_non_amd_vendor_is_a_no_op(self):
+        with mock.patch("jax.devices") as mock_devices:
+            validate_rocm_jax_available("nvidia")
+            validate_rocm_jax_available(None)
+            mock_devices.assert_not_called()
+
+    def test_amd_with_rocm_device_prints_nothing(self):
+        with mock.patch("jax.devices", return_value=[_FakeDevice("rocm")]):
+            with mock.patch("builtins.print") as mock_print:
+                validate_rocm_jax_available("amd")
+                mock_print.assert_not_called()
+
+    def test_amd_with_only_cpu_device_warns(self):
+        with mock.patch("jax.devices", return_value=[_FakeDevice("cpu")]):
+            with mock.patch("builtins.print") as mock_print:
+                validate_rocm_jax_available("amd")
+                mock_print.assert_called_once()
+                self.assertIn("WARNING", mock_print.call_args[0][0])
+                self.assertIn("ROCm", mock_print.call_args[0][0])
+
+
+class ValidateNvidiaJaxAvailableTest(unittest.TestCase):
+    """Regression coverage for the NVIDIA counterpart to
+    validate_rocm_jax_available (added 2026-09-24): before this, JAX
+    silently falling back to CPU on the NVIDIA branch - the branch every
+    real production run on Delta actually uses - had no detection at all,
+    unlike the (also newly-tested-here) AMD branch."""
+
+    def test_non_nvidia_vendor_is_a_no_op(self):
+        with mock.patch("jax.devices") as mock_devices:
+            validate_nvidia_jax_available("amd")
+            validate_nvidia_jax_available(None)
+            mock_devices.assert_not_called()
+
+    def test_nvidia_with_cuda_device_prints_nothing(self):
+        with mock.patch("jax.devices", return_value=[_FakeDevice("cuda")]):
+            with mock.patch("builtins.print") as mock_print:
+                validate_nvidia_jax_available("nvidia")
+                mock_print.assert_not_called()
+
+    def test_nvidia_with_gpu_platform_device_prints_nothing(self):
+        # 'gpu' is accepted defensively alongside 'cuda' - see the
+        # function's own docstring for why.
+        with mock.patch("jax.devices", return_value=[_FakeDevice("gpu")]):
+            with mock.patch("builtins.print") as mock_print:
+                validate_nvidia_jax_available("nvidia")
+                mock_print.assert_not_called()
+
+    def test_nvidia_with_only_cpu_device_warns(self):
+        # This is the exact scenario observed live on Delta's login node
+        # (no GPU visible to JAX there) during the 2026-09-24 pre-flight
+        # review: jax.devices() == [CpuDevice(id=0)].
+        with mock.patch("jax.devices", return_value=[_FakeDevice("cpu")]):
+            with mock.patch("builtins.print") as mock_print:
+                validate_nvidia_jax_available("nvidia")
+                mock_print.assert_called_once()
+                self.assertIn("WARNING", mock_print.call_args[0][0])
+                self.assertIn("CUDA", mock_print.call_args[0][0])
 
 
 if __name__ == "__main__":

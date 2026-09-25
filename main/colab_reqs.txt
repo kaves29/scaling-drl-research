@@ -35,7 +35,7 @@ idna==3.18
 imageio==2.33.1
 imageio-ffmpeg==0.6.0
 jax==0.4.34
-jax-metal==0.1.1
+jax-metal==0.1.1; sys_platform == "darwin"
 jaxlib==0.4.34
 jaxopt==0.8.3
 kiwisolver==1.5.0
