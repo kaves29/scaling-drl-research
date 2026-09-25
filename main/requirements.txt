@@ -36,7 +36,7 @@ hydra-core==1.3.2
 idna==3.18
 imageio-ffmpeg==0.6.0
 imageio==2.33.1
-jax-metal==0.1.1
+jax-metal==0.1.1; sys_platform == "darwin"
 jax==0.4.34
 jaxlib==0.4.34
 jaxopt==0.8.3
