@@ -148,3 +148,37 @@ def validate_rocm_jax_available(vendor: Optional[str]) -> None:
             "device - training will silently run on CPU. Verify a "
             "ROCm-matched jax/jaxlib build is installed in this environment."
         )
+
+
+def validate_nvidia_jax_available(vendor: Optional[str]) -> None:
+    """Post-`import jax` sanity check, NVIDIA counterpart to
+    validate_rocm_jax_available() above (added 2026-09-24 - see that
+    function's docstring for the general rationale, which applies
+    identically here).
+
+    Before this, the "discovered three hours later" silent-CPU-fallback
+    failure mode was only guarded against on the AMD branch, even though
+    every real production run in this project (Delta, NVIDIA A100s) uses
+    the NVIDIA branch. nvidia-smi finding a GPU doesn't guarantee the
+    installed jax/jaxlib build actually has a working CUDA plugin - if it
+    doesn't, JAX silently runs on CPU instead of erroring, exactly as the
+    ROCm case already describes.
+
+    Must be called AFTER the caller's own `import jax`, same as
+    validate_rocm_jax_available.
+    """
+    if vendor != "nvidia":
+        return
+    import jax  # local import: only reached post-jax-import by the caller
+
+    jax_devices = jax.devices()
+    # 'cuda' is the documented JAX/PJRT platform name; 'gpu' included
+    # defensively for the same cross-jax-version naming-stability reason as
+    # validate_rocm_jax_available above.
+    if not any(d.platform in ("cuda", "gpu") for d in jax_devices):
+        print(
+            "[hardware] WARNING: nvidia-smi detected an NVIDIA GPU, but "
+            f"jax.devices() = {jax_devices} contains no cuda/gpu-platform "
+            "device - training will silently run on CPU. Verify a "
+            "CUDA-matched jax/jaxlib build is installed in this environment."
+        )

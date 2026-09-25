@@ -74,14 +74,34 @@ class WandbTrainerLogger(object):
 
     def update_metric(self, **kwargs) -> None:
         for k, v in kwargs.items():
-            if isinstance(v, float) or isinstance(v, int):
+            # Throughput Step 2 (2026-09-24): accepts scalar-shaped device
+            # arrays (JAX/numpy) here too, not just Python float/int -
+            # SACAgent.update() no longer materializes its update_info
+            # values before returning them (see its own docstring note), so
+            # this is what those device-array values hit first. Accepting
+            # them here (instead of misrouting them into media_dict, which
+            # would silently break averaging) lets AverageMeter accumulate
+            # sum/count entirely on-device; the only float() conversion
+            # happens once per logging window, in log_metric() below.
+            is_scalar_array = hasattr(v, "shape") and v.shape == ()
+            if isinstance(v, (float, int)) or is_scalar_array:
                 self.average_meter_dict.update(k, v)
             else:
                 self.media_dict[k] = v
 
+    def averages(self) -> Dict:
+        """Materialized (Python float) running averages - throughput Step 2
+        (2026-09-24)'s single float() point. Call this instead of touching
+        self.average_meter_dict.averages() directly anywhere host-side code
+        needs real numbers (CSV caching, the onset-detection metrics
+        recorder, wandb.log) - self.average_meter_dict.averages() itself
+        may now hold un-materialized device arrays (see update_metric()),
+        accumulated without forcing a device->host sync on every update."""
+        return {k: float(v) for k, v in self.average_meter_dict.averages().items()}
+
     def log_metric(self, step: int) -> Dict:
         log_data = {}
-        log_data.update(self.average_meter_dict.averages())
+        log_data.update(self.averages())
         log_data.update(self.media_dict)
         wandb.log(log_data, step=step)
 

@@ -27,7 +27,11 @@ low-risk integration (see README-equivalent notes in the project deliverables).
 
 import os
 
-from utils.hardware import configure_hardware_env, validate_rocm_jax_available
+from utils.hardware import (
+    configure_hardware_env,
+    validate_nvidia_jax_available,
+    validate_rocm_jax_available,
+)
 
 # Idempotent (see configure_hardware_env) - covers importers that bypass
 # run.py's own call to this, e.g. the test suite. Must precede `import jax`.
@@ -66,6 +70,7 @@ from utils.onset_ledger import WandbIdentity
 jax.config.update("jax_enable_x64", False)
 
 validate_rocm_jax_available(_GPU_VENDOR)
+validate_nvidia_jax_available(_GPU_VENDOR)
 
 
 @register_experiment("angle_1")
@@ -229,7 +234,7 @@ def run(args: dict) -> None:
         logger.update_metric(**eval_info)
         logger.log_metric(step=0)
         step_snapshot = {"interaction_step": 0, "env_step": 0}
-        step_snapshot.update(logger.average_meter_dict.averages())
+        step_snapshot.update(logger.averages())  # throughput Step 2 (2026-09-24): materialized
         local_metrics_cache.append(step_snapshot)
         logger.reset()
 
@@ -278,12 +283,28 @@ def run(args: dict) -> None:
 
         if buffer.can_sample():
             update_counter += cfg.updates_per_interaction_step
-            while update_counter >= 1:
-                batch = buffer.sample()
-                update_info = agent.update(update_step, batch)
-                logger.update_metric(**update_info)
-                update_counter -= 1
-                update_step += 1
+            # Step 3 (throughput, 2026-09-24): sample all due batches
+            # upfront, stack them, and fuse into one jax.lax.scan call
+            # (SACAgent.update_scanned()) instead of num_scanned_updates
+            # separate buffer.sample() + host->device transfer + jitted-
+            # call cycles. int(update_counter) preserves the original
+            # while-loop's exact fractional-remainder semantics (only ever
+            # non-integer for a hypothetical non-whole
+            # updates_per_interaction_step - this study's is locked at a
+            # whole 5, so num_scanned_updates is the same every call and
+            # this compiles once, not once per distinct value).
+            num_scanned_updates = int(update_counter)
+            if num_scanned_updates >= 1:
+                sampled_batches = [buffer.sample() for _ in range(num_scanned_updates)]
+                batch_sequence = {
+                    key: np.stack([b[key] for b in sampled_batches])
+                    for key in sampled_batches[0].keys()
+                }
+                per_update_infos = agent.update_scanned(update_step, batch_sequence, num_scanned_updates)
+                for update_info in per_update_infos:
+                    logger.update_metric(**update_info)
+                update_counter -= num_scanned_updates
+                update_step += num_scanned_updates
 
         # log metrics
         if interaction_step % cfg.logging_per_interaction_step == 0:
@@ -326,7 +347,13 @@ def run(args: dict) -> None:
             env_step = interaction_step * cfg.action_repeat * cfg.num_train_envs
 
             step_snapshot = {"env_step": env_step}
-            step_snapshot.update(logger.average_meter_dict.averages())
+            # throughput Step 2 (2026-09-24): logger.averages() materializes
+            # (float()) here - average_meter_dict may hold un-materialized
+            # device arrays accumulated across up to updates_per_interaction_step
+            # * logging_per_interaction_step update() calls; metrics_recorder
+            # (onset-detection ledger, below) and the CSV cache both need
+            # real floats, not device arrays.
+            step_snapshot.update(logger.averages())
             step_snapshot.update(logger.media_dict)
             local_metrics_cache.append(step_snapshot)
 

@@ -36,3 +36,10 @@ mixed_precision: false
 
 actor_sparsity: ${actor_sparsity}
 critic_sparsity: ${critic_sparsity}
+
+# Cadence for the expensive actor_grad_cosine diagnostic (throughput Step 1,
+# 2026-09-24, decided value - not a placeholder): only computed every
+# actor_grad_cosine_every updates instead of on every one of the 5
+# updates_per_interaction_step calls. See scale_rl/agents/sac/sac_agent.py's
+# SACAgent.update().
+actor_grad_cosine_every: 30

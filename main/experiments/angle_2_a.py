@@ -57,7 +57,11 @@ save_probe_capture_snapshot opt-in flag now provides that.
 
 import os
 
-from utils.hardware import configure_hardware_env, validate_rocm_jax_available
+from utils.hardware import (
+    configure_hardware_env,
+    validate_nvidia_jax_available,
+    validate_rocm_jax_available,
+)
 
 # Defense-in-depth, mirroring experiments/angle_1.py: run.py's true entry
 # point already calls this before `import experiments`, so in the normal
@@ -84,6 +88,7 @@ import hydra
 import jax
 
 validate_rocm_jax_available(_GPU_VENDOR)
+validate_nvidia_jax_available(_GPU_VENDOR)
 
 
 @register_experiment("angle_2_a")
@@ -129,6 +134,18 @@ def run(args: dict) -> None:
     # any later step).
     checkpoint_root = args.checkpoint_dir or None
     checkpoint_interval = int(args.checkpoint_interval) if args.checkpoint_interval else None
+
+    # Fixed 2026-09-23: this was a relative path ("results/angle_2a"),
+    # which crashes agent.save_checkpoint() (Orbax requires absolute paths -
+    # see run.py's --checkpoint_dir fix, .claude/research-methodology.md's
+    # 2026-09-21 incident update, and the same class of bug found here via
+    # experiments/angle_2a/storage.py's save_frozen_agent_snapshot).
+    output_root = os.path.abspath("results/angle_2a")
+    if not os.path.isabs(output_root):
+        raise ValueError(
+            f"angle_2_a's output_root must be an absolute path, got: {output_root!r}. "
+            "Orbax requires absolute paths."
+        )
 
     reference = architectures["reference"]
     reference_label = architecture_label(reference)
@@ -236,7 +253,7 @@ def run(args: dict) -> None:
             experiment_name="angle_2_a",
             num_probes_per_source=num_probes_per_source,
             num_mc_rollouts=num_mc_rollouts,
-            output_root="results/angle_2a",
+            output_root=output_root,
             wandb_project=str(cfg.project_name),
             checkpoint_dir=f"{checkpoint_root}/{matchup_name}" if checkpoint_root else None,
             checkpoint_interval=checkpoint_interval,

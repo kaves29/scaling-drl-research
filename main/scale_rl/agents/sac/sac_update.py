@@ -1,3 +1,4 @@
+import functools
 from typing import Any, Dict, Tuple
 
 import flax
@@ -260,6 +261,15 @@ def get_critic_with_metrics(
         }
     return critic_info
 
+# Own jit (2026-09-24, throughput Step 1): previously computed
+# unconditionally inline inside _update_sac_networks (sac_agent.py) on
+# every one of the 5 updates-per-interaction-step, each a 256-sample vmap'd
+# per-sample gradient through the full critic. Pulling it out into its own
+# jitted function lets the caller (SACAgent.update()) skip calling it
+# entirely on most steps (see actor_grad_cosine_every) with zero compute
+# cost on skipped steps, rather than computing-and-discarding it every
+# time. static_argnames mirrors _update_sac_networks' own convention.
+@functools.partial(jax.jit, static_argnames=("critic_use_cdq",))
 def compute_actor_gradient_cosine(
     key: PRNGKey,
     actor,

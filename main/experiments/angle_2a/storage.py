@@ -173,7 +173,14 @@ def save_frozen_agent_snapshot(
         raise ValueError(f"role must be 'D', 'R', or 'pool', got {role!r}")
 
     out_dir = matchup_dir(environment, seed, matchup_name, root=root)
-    checkpoint_dir = out_dir / "checkpoints" / role
+    # .resolve() (fixed 2026-09-23): agent.save_checkpoint() -> Orbax
+    # requires an absolute path regardless of what `root` the caller passed
+    # (every current caller - angle_2_a.py's Phase 2, and angle_1.py's
+    # save_probe_capture_snapshot pool-building path - happened to pass a
+    # relative one). Fixing it here, at the shared point of use, protects
+    # every caller rather than requiring each one to remember to abspath
+    # its own root.
+    checkpoint_dir = (out_dir / "checkpoints" / role).resolve()
     checkpoint_dir.mkdir(parents=True, exist_ok=True)
     agent.save_checkpoint(str(checkpoint_dir))
 

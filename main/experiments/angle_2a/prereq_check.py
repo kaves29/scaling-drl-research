@@ -140,8 +140,15 @@ def run_one_prereq_seed(
         )
 
     out_dir = prereq_seed_dir(environment, seed, architecture_label, root=output_root)
-    pre_checkpoint_dir = out_dir / "checkpoints" / "pre"
-    post_checkpoint_dir = out_dir / "checkpoints" / "post"
+    # .resolve() (fixed 2026-09-23, new finding - not previously documented):
+    # agent.save_checkpoint()/load_checkpoint() -> Orbax requires an
+    # absolute path. output_root defaults to prereq_storage.DEFAULT_OUTPUT_ROOT
+    # ("results/angle_2a_prereq"), relative, and angle_2_a.py's run() never
+    # overrides it. Only the two checkpoint dirs need this - out_dir itself
+    # stays relative, since save_prereq_seed_result's plain JSON/CSV writes
+    # (via utils/atomic_io.py) don't require absolute paths.
+    pre_checkpoint_dir = (out_dir / "checkpoints" / "pre").resolve()
+    post_checkpoint_dir = (out_dir / "checkpoints" / "post").resolve()
 
     train_env, eval_env, single_env, buffer, agent, obs_space, act_space = build_agent_and_env(
         architecture, prereq_cfg

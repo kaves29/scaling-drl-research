@@ -73,6 +73,13 @@ class SACConfig:
     actor_sparsity: float
     critic_sparsity: float
 
+    # Cadence for the expensive actor_grad_cosine diagnostic (2026-09-24,
+    # throughput Step 1) - default has a default (unlike every field above)
+    # so existing configs/tests that construct SACConfig without it (e.g.
+    # tests/test_sac_agent_checkpoint.py's _make_cfg()) keep working
+    # unchanged. See SACAgent.update() for how it's used.
+    actor_grad_cosine_every: int = 30
+
 
 # @functools.partial(
 #     jax.jit,
@@ -291,14 +298,16 @@ def _update_sac_networks(
         target_tau=target_tau,
     )
 
-    actor_grad_cosine = compute_actor_gradient_cosine(
-        key=actor_key,
-        actor=actor,
-        critic=critic,
-        temperature=temperature,
-        batch=batch,
-        critic_use_cdq=critic_use_cdq,
-    )
+    # actor_grad_cosine (2026-09-24, throughput Step 1): no longer computed
+    # here. It's expensive (256-sample vmap'd gradient through the full
+    # critic) and was previously computed unconditionally on every call -
+    # i.e. 5x per interaction step. compute_actor_gradient_cosine is now
+    # its own separately-jitted function (see sac_update.py), called
+    # conditionally from SACAgent.update() every actor_grad_cosine_every
+    # steps instead, using this same actor_key's sibling split there (see
+    # update()'s own docstring note) - it never fed back into new_actor/
+    # new_critic/new_target_critic/new_temperature, so removing it from
+    # this jitted graph changes nothing about the actual training update.
 
     info = {
         **actor_info,
@@ -306,11 +315,90 @@ def _update_sac_networks(
         **target_critic_info,
         **temperature_info,
         "train/policy_churn": churn,
-        "train/actor_grad_cosine": actor_grad_cosine
     }
 
     return (rng, new_actor, new_critic, new_target_critic, new_temperature, info)
 
+
+@functools.partial(
+    jax.jit,
+    static_argnames=(
+        "gamma",
+        "n_step",
+        "critic_use_cdq",
+        "target_tau",
+        "temp_target_entropy",
+        "num_updates",
+    ),
+)
+def _scan_update_sac_networks(
+    rng: PRNGKey,
+    actor: Trainer,
+    critic: Trainer,
+    target_critic: Trainer,
+    temperature: Trainer,
+    batch_sequence: Batch,
+    gamma: float,
+    n_step: int,
+    critic_use_cdq: bool,
+    target_tau: float,
+    temp_target_entropy: float,
+    churn_ref_batch: dict,
+    num_updates: int,
+) -> Tuple[PRNGKey, Trainer, Trainer, Trainer, Trainer, Dict[str, float]]:
+    """Throughput Step 3 (2026-09-24): fuses `num_updates` calls to
+    _update_sac_networks into a single jax.lax.scan, so the caller
+    (SACAgent.update_scanned()) does one host->device transfer and one
+    compiled dispatch for the whole updates_per_interaction_step batch,
+    instead of updates_per_interaction_step separate ones.
+
+    `batch_sequence` is a pytree whose leaves each have a leading axis of
+    length num_updates (e.g. observation: [num_updates, batch_size,
+    obs_dim]) - lax.scan slices along that axis automatically, feeding one
+    per-update batch to _update_sac_networks each iteration, threading
+    (rng, actor, critic, target_critic, temperature) through as the scan
+    carry exactly as SACAgent.update()'s Python loop did before. Does NOT
+    change what any individual update computes - only that all
+    num_updates of them are dispatched to the device as one compiled
+    program rather than num_updates separate ones.
+
+    churn_ref_batch is intentionally NOT scanned-over (same fixed batch,
+    closed over each iteration) - it's a fixed diagnostic reference batch
+    (see SACAgent.__init__), not part of the per-update training data.
+    """
+
+    def scan_body(carry, batch_i):
+        rng, actor, critic, target_critic, temperature = carry
+        (
+            new_rng,
+            new_actor,
+            new_critic,
+            new_target_critic,
+            new_temperature,
+            info,
+        ) = _update_sac_networks(
+            rng=rng,
+            actor=actor,
+            critic=critic,
+            target_critic=target_critic,
+            temperature=temperature,
+            batch=batch_i,
+            gamma=gamma,
+            n_step=n_step,
+            critic_use_cdq=critic_use_cdq,
+            target_tau=target_tau,
+            temp_target_entropy=temp_target_entropy,
+            churn_ref_batch=churn_ref_batch,
+        )
+        new_carry = (new_rng, new_actor, new_critic, new_target_critic, new_temperature)
+        return new_carry, info
+
+    init_carry = (rng, actor, critic, target_critic, temperature)
+    final_carry, stacked_info = jax.lax.scan(
+        scan_body, init_carry, batch_sequence, length=num_updates,
+    )
+    final_rng, final_actor, final_critic, final_target_critic, final_temperature = final_carry
+    return final_rng, final_actor, final_critic, final_target_critic, final_temperature, stacked_info
 
 
 class SACAgent(BaseAgent):
@@ -381,6 +469,14 @@ class SACAgent(BaseAgent):
 
         if self.churn_ref_batch is None:
             self.churn_ref_batch = {k: jnp.array(v) for k, v in batch.items()}
+
+        # Captured before reassignment below (Step 1): compute_actor_gradient_cosine
+        # uses the PRE-update actor/critic/temperature - exactly what the
+        # old inline call inside _update_sac_networks received.
+        pre_update_actor = self._actor
+        pre_update_critic = self._critic
+        pre_update_temperature = self._temperature
+
         (
             self._rng,
             self._actor,
@@ -403,14 +499,136 @@ class SACAgent(BaseAgent):
             churn_ref_batch=self.churn_ref_batch,
         )
 
+        # Step 1 (throughput, 2026-09-24): actor_grad_cosine is expensive
+        # (256-sample vmap'd gradient through the full critic) and is only
+        # needed as an infrequent diagnostic. Only split self._rng
+        # (consuming one extra key) on the steps where it's actually
+        # computed, so every other step's rng trajectory is unchanged from
+        # before this change.
+        if update_step % self._cfg.actor_grad_cosine_every == 0:
+            self._rng, grad_cosine_key = jax.random.split(self._rng)
+            update_info["train/actor_grad_cosine"] = compute_actor_gradient_cosine(
+                key=grad_cosine_key,
+                actor=pre_update_actor,
+                critic=pre_update_critic,
+                temperature=pre_update_temperature,
+                batch=batch,
+                critic_use_cdq=self._cfg.critic_use_cdq,
+            )
+
         self.actor_entropy_buffer.append(update_info["train/entropy"])
         self.churn_buffer.append(update_info["train/policy_churn"])
         self.actor_loss_buffer.append(update_info["train/actor_loss"])
 
-        for key, value in update_info.items():
-            update_info[key] = float(value)
-
+        # Step 2 (throughput, 2026-09-24): float() removed here - it forced
+        # a device->host sync on every one of updates_per_interaction_step
+        # calls (blocking async dispatch), most of which exist only to feed
+        # a long-window running average that isn't read until the next
+        # logging boundary. update_info now stays device arrays; the
+        # caller's WandbTrainerLogger.update_metric()/log_metric() (see
+        # scale_rl/common/logger.py) materialize exactly once per logging
+        # window instead. This changes WHEN materialization happens, not
+        # what is computed.
         return update_info
+
+    def update_scanned(
+        self, update_step_start: int, batch_sequence: Dict[str, np.ndarray], num_updates: int
+    ) -> List[Dict]:
+        """Throughput Step 3 (2026-09-24): fused equivalent of calling
+        update(update_step_start + i, {k: v[i] for k, v in
+        batch_sequence.items()}) num_updates times in a Python loop - one
+        host->device transfer and one compiled jax.lax.scan dispatch
+        instead of num_updates separate ones. See _scan_update_sac_networks
+        (module level, above) for the actual scan.
+
+        `batch_sequence[key]` must have leading shape [num_updates, ...]
+        (the caller stacks num_updates individually-buffer.sample()'d
+        batches before calling this - see experiments/angle_1.py).
+
+        Returns a list of num_updates per-update info dicts, in the same
+        order/content update() would have returned them individually, so
+        callers don't need any special-casing (each is passed to
+        logger.update_metric() exactly as before).
+
+        actor_grad_cosine cadence (Step 1, combined with this fusion):
+        checked once, against update_step_start only, using the
+        PRE-scan actor/critic/temperature and the FIRST batch in the
+        sequence. This is exactly equivalent to checking every individual
+        update_step_start+i inside the scan (which would need
+        jax.lax.cond + a NaN-sentinel to keep the scan's per-iteration
+        output pytree shape static, adding real complexity) precisely
+        because actor_grad_cosine_every (default 30) is always configured
+        as a whole multiple of updates_per_interaction_step (locked at 5 -
+        see research-methodology.md) - so at most one of
+        [update_step_start, ..., update_step_start+num_updates-1] can ever
+        satisfy `% actor_grad_cosine_every == 0`, and when one does, it is
+        always update_step_start itself (0 mod K implies the next K-1
+        consecutive integers are not, and num_updates <= K for every
+        config this study uses). If a future config ever set
+        actor_grad_cosine_every to something NOT a whole multiple of
+        updates_per_interaction_step, this would silently under-sample
+        relative to the naive per-update check - not this study's
+        configuration, but worth knowing if either value is ever changed
+        independently.
+        """
+        for key, value in batch_sequence.items():
+            batch_sequence[key] = jnp.asarray(value)
+
+        if self.churn_ref_batch is None:
+            self.churn_ref_batch = {k: jnp.array(v[0]) for k, v in batch_sequence.items()}
+
+        pre_update_actor = self._actor
+        pre_update_critic = self._critic
+        pre_update_temperature = self._temperature
+
+        (
+            self._rng,
+            self._actor,
+            self._critic,
+            self._target_critic,
+            self._temperature,
+            stacked_info,
+        ) = _scan_update_sac_networks(
+            rng=self._rng,
+            actor=self._actor,
+            critic=self._critic,
+            target_critic=self._target_critic,
+            temperature=self._temperature,
+            batch_sequence=batch_sequence,
+            gamma=self._cfg.gamma,
+            n_step=self._cfg.n_step,
+            critic_use_cdq=self._cfg.critic_use_cdq,
+            target_tau=self._cfg.target_tau,
+            temp_target_entropy=self._cfg.temp_target_entropy,
+            churn_ref_batch=self.churn_ref_batch,
+            num_updates=num_updates,
+        )
+
+        self.actor_entropy_buffer.append(stacked_info["train/entropy"][-1])
+        self.churn_buffer.append(stacked_info["train/policy_churn"][-1])
+        self.actor_loss_buffer.append(stacked_info["train/actor_loss"][-1])
+
+        grad_cosine = None
+        if update_step_start % self._cfg.actor_grad_cosine_every == 0:
+            self._rng, grad_cosine_key = jax.random.split(self._rng)
+            first_batch = {k: v[0] for k, v in batch_sequence.items()}
+            grad_cosine = compute_actor_gradient_cosine(
+                key=grad_cosine_key,
+                actor=pre_update_actor,
+                critic=pre_update_critic,
+                temperature=pre_update_temperature,
+                batch=first_batch,
+                critic_use_cdq=self._cfg.critic_use_cdq,
+            )
+
+        per_update_infos = []
+        for i in range(num_updates):
+            info_i = {k: v[i] for k, v in stacked_info.items()}
+            if grad_cosine is not None and i == 0:
+                info_i["train/actor_grad_cosine"] = grad_cosine
+            per_update_infos.append(info_i)
+
+        return per_update_infos
 
     def flush_actor_loss_var(self):
         if len(self.actor_loss_buffer) == 0:
