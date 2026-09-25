@@ -111,10 +111,10 @@ def make_random_batch(rng: np.random.Generator, batch_size: int = 16) -> dict:
 
 
 def make_trained_agent(seed: int, critic_num_blocks: int, critic_hidden_dim: int, num_updates: int = 3):
-    """A few real .update() calls before returning - an immediately-saved,
-    freshly-initialized agent was observed (see the Angle 2B sourcing
-    End-of-Task Summary) to reliably trigger a pre-existing orbax/jax-metal
-    checkpoint-restore quirk on this machine, unrelated to Angle 2C."""
+    """A few real .update() calls before returning. Originally a workaround:
+    saving a freshly-initialized agent failed to restore on any GPU/METAL
+    host because Trainer.create left its parameters on CPU (a real bug, not
+    a jax-metal quirk; fixed 2026-09-25 in scale_rl/networks/trainer.py)."""
     observation_space, action_space = make_spaces()
     agent_cfg_dict = make_agent_cfg(seed, critic_num_blocks, critic_hidden_dim)
     agent = create_agent(observation_space, action_space, OmegaConf.create(agent_cfg_dict))

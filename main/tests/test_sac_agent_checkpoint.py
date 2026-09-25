@@ -2,9 +2,16 @@
 (see sac_agent.py's load_checkpoint for the bug: a None-shaped restore
 target silently discarded a real saved churn_ref_batch on every resume).
 Tests the realistic case through the full SACAgent, and the
-before-first-update (None) case directly against orbax - the latter would
-hit an unrelated, pre-existing orbax/jax-Metal sharding bug through the full
-class (same one in test_angle_2b_smoke's normalizer round-trip test).
+before-first-update (None) case directly against orbax. The latter was
+isolated from the full class because saving a never-updated agent used to
+fail on restore with "SingleDeviceSharding with Device=TFRT_CPU_0 was not
+found in jax.local_devices()". That was a real bug, not a jax-metal quirk:
+it reproduced identically on Linux+CUDA (NVIDIA L4, 2026-09-25). Root cause:
+Trainer.create initialized parameters on CPU and its jax.device_put(x) (no
+target device) left them there, so a checkpoint saved before the first
+update recorded CPU sharding, which Orbax rejects on any GPU/METAL host.
+Fixed in scale_rl/networks/trainer.py (parameters now move to the default
+device at creation).
 """
 
 import shutil

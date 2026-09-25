@@ -156,12 +156,12 @@ class EndToEndSourcingTest(unittest.TestCase):
         cfg = _agent_cfg(agent_seed, num_blocks, hidden_dim)
         agent = create_agent(observation_space, action_space, OmegaConf.create(cfg))
         # A few real .update() calls before saving (mirroring
-        # test_angle_2b_smoke.py's make_trained_agent) - an
-        # immediately-saved, freshly-initialized agent's params were
-        # observed to reliably trigger a pre-existing orbax/jax-metal
-        # checkpoint-restore quirk on this machine, unrelated to sourcing
-        # (see End-of-Task Summary); at least one jitted update forces real
-        # device materialization first.
+        # test_angle_2b_smoke.py's make_trained_agent). Originally a
+        # workaround: a freshly-initialized agent's params sat on CPU
+        # (Trainer.create bug, fixed 2026-09-25 in
+        # scale_rl/networks/trainer.py), so saving before the first jitted
+        # update recorded CPU sharding that Orbax could not restore on a
+        # GPU/METAL host.
         rng = np.random.default_rng(agent_seed)
         for step in range(3):
             agent.update(step, _random_update_batch(rng))

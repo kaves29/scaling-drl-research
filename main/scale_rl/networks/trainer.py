@@ -50,7 +50,11 @@ class Trainer:
     ) -> "Trainer":
         with jax.default_device(jax.local_devices(backend="cpu")[0]):
             variables = network_def.init(**network_inputs)
-        variables = jax.device_put(variables)
+        # jax.device_put(x) with no device leaves a CPU array on CPU, so an
+        # agent checkpointed before its first update recorded CPU sharding,
+        # which Orbax cannot restore on a GPU/METAL host. jnp.array moves each
+        # leaf to the current default device (uncommitted, values unchanged).
+        variables = jax.tree_util.tree_map(jnp.array, variables)
         params = variables.pop("params")
         if sparse:
             params_unfrozen = unfreeze(params)
