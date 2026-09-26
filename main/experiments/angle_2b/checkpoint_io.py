@@ -18,13 +18,13 @@ with the right shape is sufficient and exact, not an approximation).
 import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 import gymnasium as gym
 import numpy as np
 from omegaconf import OmegaConf
 
-from experiments.angle_2a.storage import matchup_dir
+from experiments.angle_2a.storage import check_snapshot_architecture, matchup_dir
 from experiments.angle_2b.errors import Angle2BSnapshotError
 from scale_rl.agents import create_agent
 
@@ -60,11 +60,11 @@ def load_frozen_agent_snapshot(
     matchup_name: str,
     role: str,
     root: str = DEFAULT_ANGLE_2A_ROOT,
+    architecture: Optional[str] = None,
 ) -> FrozenAgentSnapshot:
-    if role not in ("D", "R", "pool"):
-        raise ValueError(f"role must be 'D', 'R', or 'pool', got {role!r}")
+    check_snapshot_architecture(role, architecture)
 
-    out_dir = matchup_dir(environment, seed, matchup_name, root=root)
+    out_dir = matchup_dir(environment, seed, matchup_name, root=root, architecture=architecture)
 
     agent_cfg_path = _require_exists(out_dir / f"agent_cfg_{role}.json", "agent config snapshot")
     with open(agent_cfg_path) as f:

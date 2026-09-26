@@ -95,12 +95,14 @@ class TestProbeCaptureSnapshotMechanism(unittest.TestCase):
 
             snapshot_paths = save_frozen_agent_snapshot(
                 "cheetah-run", 6, "baseline_pool", "pool", agent, probe_capture,
-                agent_cfg=AGENT_CFG, root=self.tmpdir,
+                agent_cfg=AGENT_CFG, root=self.tmpdir, architecture="D2W512",
             )
             probe_capture.save(str(snapshot_paths["checkpoint_dir"]))
 
             # Angle 2B's own loader must accept role="pool".
-            loaded = load_frozen_agent_snapshot("cheetah-run", 6, "baseline_pool", "pool", root=self.tmpdir)
+            loaded = load_frozen_agent_snapshot(
+                "cheetah-run", 6, "baseline_pool", "pool", root=self.tmpdir, architecture="D2W512",
+            )
             self.assertEqual(loaded.states.shape[0], num_steps)
             self.assertEqual(loaded.actions.shape[0], num_steps)
 

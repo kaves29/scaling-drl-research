@@ -205,6 +205,18 @@ def run(args: dict) -> None:
         resumed_update_counter = meta["update_counter"]
         # .get(): older checkpoints predate this field.
         resumed_wandb_run_id = meta.get("wandb_run_id")
+        if save_probe_capture_snapshot:
+            probe_capture.load(checkpoint_dir)
+            # One add per interaction step, so the restored count must match
+            # the checkpointed step exactly; anything else is a torn checkpoint.
+            expected = min(meta["interaction_step"], probe_capture.capacity)
+            if len(probe_capture) != expected:
+                raise ValueError(
+                    f"ProbeCapture checkpoint holds {len(probe_capture)} transitions but "
+                    f"meta.pkl is at interaction_step {meta['interaction_step']} "
+                    f"(expected {expected}); refusing to resume a snapshot run from a "
+                    f"mismatched checkpoint."
+                )
         print(f"Resumed from interaction_step {start_step}")
     #############################
     # train
@@ -338,6 +350,9 @@ def run(args: dict) -> None:
         ):
             agent.save_checkpoint(checkpoint_dir)
             buffer.save(checkpoint_dir)
+            # Before meta.pkl, whose presence marks the checkpoint complete.
+            if save_probe_capture_snapshot:
+                probe_capture.save(checkpoint_dir)
             with open(Path(checkpoint_dir) / "meta.pkl", "wb") as f:
                 pickle.dump({
                     "interaction_step": interaction_step,
@@ -386,7 +401,7 @@ def run(args: dict) -> None:
         agent_cfg_dict = omegaconf.OmegaConf.to_container(cfg.agent, resolve=True)
         snapshot_paths = save_frozen_agent_snapshot(
             cfg.env_name, cfg.seed, "baseline_pool", "pool", agent, probe_capture,
-            agent_cfg=agent_cfg_dict, root=probe_capture_snapshot_root,
+            agent_cfg=agent_cfg_dict, root=probe_capture_snapshot_root, architecture=architecture,
         )
         probe_capture.save(str(snapshot_paths["checkpoint_dir"]))
         print(f"[angle_1] probe-capture snapshot saved -> {snapshot_paths['checkpoint_dir']}")

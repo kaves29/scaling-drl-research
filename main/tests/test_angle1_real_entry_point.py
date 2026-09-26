@@ -22,6 +22,7 @@ initialized".
 """
 
 import os
+import pickle
 import shutil
 import tempfile
 import unittest
@@ -227,13 +228,116 @@ class Angle1RealEntryPointTest(unittest.TestCase):
             ],
         )))
 
-        loaded = load_frozen_agent_snapshot(environment, seed, "baseline_pool", "pool", root=pool_root)
+        # _fast_overrides' 1x8 critic -> architecture id D1W8.
+        loaded = load_frozen_agent_snapshot(
+            environment, seed, "baseline_pool", "pool", root=pool_root, architecture="D1W8",
+        )
         self.assertGreater(loaded.states.shape[0], 0)
         self.assertEqual(loaded.states.shape[0], loaded.actions.shape[0])
 
-        checkpoint_dir = Path(pool_root) / environment / f"seed{seed}" / "baseline_pool" / "checkpoints" / "pool"
+        checkpoint_dir = Path(pool_root) / environment / "D1W8" / f"seed{seed}" / "baseline_pool" / "checkpoints" / "pool"
         reloaded_capture = ProbeCapture.load_fresh(str(checkpoint_dir))
         self.assertGreater(len(reloaded_capture), 0)
+
+    def test_snapshot_run_killed_and_resumed_keeps_the_whole_runs_probe_data(self):
+        """A snapshot run killed between checkpoints and resumed must end with
+        a ProbeCapture holding every step's real transition: pre-checkpoint
+        steps from the first process, the rest from the resumed one."""
+        from experiments import angle_1
+
+        environment, seed = "cheetah-run", 5
+        pool_root = str(Path(self.tmpdir) / "pool")
+        # 40 env steps / action_repeat 2 = 20 interaction steps; checkpoint at
+        # step 10, killed at step 15 so steps 11-14 are lost and redone.
+        args = self._run_args(_fast_overrides(
+            env_name=environment, seed=seed,
+            extra=["+save_probe_capture_snapshot=true", f"+probe_capture_snapshot_root={pool_root}"],
+        ), checkpoint_interval=10)
+        num_steps, kill_step = 20, 15
+
+        class Killed(Exception):
+            pass
+
+        adds = []
+        real_add = ProbeCapture.add
+
+        def recording_add(capture, idx, observation, action, env_state):
+            # float32, as ProbeCapture stores it (the env returns float64).
+            adds.append((idx, np.float32(observation), np.float32(action), env_state))
+            real_add(capture, idx, observation, action, env_state)
+
+        real_capture_env_state = angle_1.capture_env_state
+        calls = []
+
+        def killing_capture_env_state(*a, **kw):
+            calls.append(None)
+            if len(calls) == kill_step:
+                raise Killed
+            return real_capture_env_state(*a, **kw)
+
+        with mock.patch.object(ProbeCapture, "add", recording_add):
+            with mock.patch.object(angle_1, "capture_env_state", killing_capture_env_state):
+                with self.assertRaises(Killed):
+                    angle_1.run(args)
+            first_adds = list(adds)
+            with open(Path(self.tmpdir) / "meta.pkl", "rb") as f:
+                self.assertEqual(pickle.load(f)["interaction_step"], 10)
+            checkpointed = ProbeCapture.load_fresh(self.tmpdir)
+            self.assertEqual(len(checkpointed), 10)
+
+            adds.clear()
+            GlobalHydra.instance().clear()
+            angle_1.run(args)
+            resumed_adds = list(adds)
+
+        self.assertEqual([a[0] for a in first_adds], list(range(kill_step - 1)))
+        self.assertEqual([a[0] for a in resumed_adds], list(range(10, num_steps)))
+
+        # Last write per slot, across both processes, is what the run saw.
+        expected = {idx: (obs, act, state) for idx, obs, act, state in first_adds[:10] + resumed_adds}
+        snapshot_dir = Path(pool_root) / environment / "D1W8" / f"seed{seed}" / "baseline_pool"
+        final = ProbeCapture.load_fresh(str(snapshot_dir / "checkpoints" / "pool"))
+        self.assertEqual(len(final), num_steps)
+        for idx in range(num_steps):
+            obs, act, state = expected[idx]
+            np.testing.assert_array_equal(final._observations[idx], obs, err_msg=f"slot {idx}")
+            np.testing.assert_array_equal(final._actions[idx], act, err_msg=f"slot {idx}")
+            self.assertIsNotNone(final._env_states[idx], f"slot {idx}")
+            self.assertEqual(pickle.dumps(final._env_states[idx]), pickle.dumps(state), f"slot {idx}")
+        for idx in range(10):
+            np.testing.assert_array_equal(final._observations[idx], checkpointed._observations[idx])
+
+        # The pool NPZ Angle 2B reads is a permutation of all 20 real observations.
+        loaded = load_frozen_agent_snapshot(
+            environment, seed, "baseline_pool", "pool", root=pool_root, architecture="D1W8",
+        )
+        all_obs = np.stack([expected[i][0] for i in range(num_steps)])
+        self.assertEqual(loaded.states.shape, all_obs.shape)
+        np.testing.assert_array_equal(np.sort(loaded.states, axis=0), np.sort(all_obs, axis=0))
+
+    def test_snapshot_run_refuses_to_resume_a_checkpoint_without_probe_data(self):
+        from experiments.angle_1 import run
+
+        overrides = _fast_overrides(seed=6)
+        run(self._run_args(overrides, checkpoint_interval=10))
+        GlobalHydra.instance().clear()
+        with self.assertRaisesRegex(FileNotFoundError, "No ProbeCapture checkpoint"):
+            run(self._run_args(overrides + [
+                "+save_probe_capture_snapshot=true",
+                f"+probe_capture_snapshot_root={Path(self.tmpdir) / 'pool'}",
+            ], checkpoint_interval=10))
+
+    def test_pool_snapshots_are_keyed_by_architecture(self):
+        from experiments.angle_2a.storage import check_snapshot_architecture, matchup_dir
+
+        default = matchup_dir("dog-run", 1, "baseline_pool", root="r", architecture="D2W512")
+        scaled = matchup_dir("dog-run", 1, "baseline_pool", root="r", architecture="D7W1024")
+        self.assertEqual(default, Path("r/dog-run/D2W512/seed1/baseline_pool"))
+        self.assertNotEqual(default, scaled)
+        with self.assertRaisesRegex(ValueError, "require an architecture"):
+            check_snapshot_architecture("pool", None)
+        with self.assertRaisesRegex(ValueError, "only used for role='pool'"):
+            check_snapshot_architecture("D", "D2W512")
 
     def _compose(self, overrides):
         from hydra import compose, initialize_config_dir

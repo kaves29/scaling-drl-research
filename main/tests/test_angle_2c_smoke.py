@@ -153,6 +153,7 @@ class Angle2CSmokeTest(unittest.TestCase):
         save_frozen_agent_snapshot(
             environment, seed, matchup_name, role, agent, probe_capture,
             agent_cfg=agent_cfg_dict, root=str(self.angle_2a_root),
+            architecture="D2W512" if role == "pool" else None,
         )
 
     def _write_angle_2a_run_metadata(self, environment, seed, matchup_name, scaled_architecture, scaled_onset_step):

@@ -169,6 +169,7 @@ class EndToEndSourcingTest(unittest.TestCase):
         save_frozen_agent_snapshot(
             self.environment, seed, matchup_name, role, agent, probe_capture,
             agent_cfg=cfg, root=str(self.angle_2a_root),
+            architecture="D2W512" if role == "pool" else None,
         )
 
     def test_primary_and_secondary_each_use_only_their_own_actors_buffer(self):

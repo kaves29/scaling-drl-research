@@ -106,7 +106,10 @@ def _persist(environment, seed, matchup_name, role, root, agent_seed, critic_num
             i, rng.normal(size=(OBS_DIM,)).astype(np.float32), rng.uniform(-1, 1, size=(ACT_DIM,)).astype(np.float32),
             env_state=None,
         )
-    save_frozen_agent_snapshot(environment, seed, matchup_name, role, agent, probe_capture, agent_cfg=agent_cfg, root=root)
+    save_frozen_agent_snapshot(
+        environment, seed, matchup_name, role, agent, probe_capture, agent_cfg=agent_cfg, root=root,
+        architecture="D2W512" if role == "pool" else None,
+    )
 
 
 class Angle2BRealEntryPointTest(unittest.TestCase):

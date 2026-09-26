@@ -197,7 +197,7 @@ class Angle2ARealEntryPointTest(unittest.TestCase):
 
                 snapshot_paths = save_frozen_agent_snapshot(
                     ENVIRONMENT, seed, "baseline_pool", "pool", agent, probe_capture,
-                    agent_cfg=agent_cfg, root=pool_root,
+                    agent_cfg=agent_cfg, root=pool_root, architecture="D2W512",
                 )
                 probe_capture.save(str(snapshot_paths["checkpoint_dir"]))
             finally:
@@ -220,7 +220,7 @@ class Angle2ARealEntryPointTest(unittest.TestCase):
         # lookup to a matching 4-seed subset, exactly like
         # tests/test_angle2a_pool_null_baseline.py already does.
         self._seed_pool(pool_root, num_agents=4)
-        fake_identities = [type("Ident", (), {"seed": s})() for s in range(1, 5)]
+        fake_identities = [type("Ident", (), {"seed": s, "architecture": "D2W512"})() for s in range(1, 5)]
 
         with mock.patch(
             "experiments.angle_2a.pool_null_baseline.get_baseline_calibration_pool",

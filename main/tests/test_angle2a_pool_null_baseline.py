@@ -96,7 +96,7 @@ class TestPoolNullBaseline(unittest.TestCase):
 
             snapshot_paths = save_frozen_agent_snapshot(
                 ENVIRONMENT, seed, "baseline_pool", "pool", agent, probe_capture,
-                agent_cfg=agent_cfg, root=self.tmpdir,
+                agent_cfg=agent_cfg, root=self.tmpdir, architecture="D2W512",
             )
             probe_capture.save(str(snapshot_paths["checkpoint_dir"]))
         finally:
@@ -108,7 +108,7 @@ class TestPoolNullBaseline(unittest.TestCase):
             self._train_and_persist_pool_agent(seed)
 
         fake_identities = [
-            type("Ident", (), {"seed": s})() for s in TEST_SEEDS
+            type("Ident", (), {"seed": s, "architecture": "D2W512"})() for s in TEST_SEEDS
         ]
         with mock.patch(
             "experiments.angle_2a.pool_null_baseline.get_baseline_calibration_pool",
@@ -138,7 +138,7 @@ class TestPoolNullBaseline(unittest.TestCase):
         for seed in TEST_SEEDS:
             self._train_and_persist_pool_agent(seed)
 
-        fake_identities = [type("Ident", (), {"seed": s})() for s in TEST_SEEDS]
+        fake_identities = [type("Ident", (), {"seed": s, "architecture": "D2W512"})() for s in TEST_SEEDS]
         cache_root = tempfile.mkdtemp(dir=self.tmpdir)
         call_count = {"n": 0}
         real_compute = compute_pool_null_distribution

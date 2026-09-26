@@ -154,6 +154,7 @@ class Angle2BSmokeTest(unittest.TestCase):
         save_frozen_agent_snapshot(
             environment, seed, matchup_name, role, agent, probe_capture,
             agent_cfg=agent_cfg_dict, root=str(self.angle_2a_root),
+            architecture="D2W512" if role == "pool" else None,
         )
         return agent
 

@@ -79,9 +79,14 @@ class PoolNullDistribution:
         return pool_null_values(self.pairs)
 
 
-def _load_pool_handle(environment: str, seed: int, single_env, root: str) -> TrainedAgentHandle:
-    snapshot = load_frozen_agent_snapshot(environment, seed, POOL_MATCHUP_NAME, POOL_ROLE, root=root)
-    checkpoint_dir = matchup_dir(environment, seed, POOL_MATCHUP_NAME, root=root) / "checkpoints" / POOL_ROLE
+def _load_pool_handle(environment: str, seed: int, architecture: str, single_env, root: str) -> TrainedAgentHandle:
+    snapshot = load_frozen_agent_snapshot(
+        environment, seed, POOL_MATCHUP_NAME, POOL_ROLE, root=root, architecture=architecture,
+    )
+    checkpoint_dir = (
+        matchup_dir(environment, seed, POOL_MATCHUP_NAME, root=root, architecture=architecture)
+        / "checkpoints" / POOL_ROLE
+    )
     probe_capture = ProbeCapture.load_fresh(str(checkpoint_dir))
     return TrainedAgentHandle(
         role=POOL_ROLE,
@@ -114,7 +119,7 @@ def compute_pool_null_distribution(
     try:
         single_env = train_env.envs[0]
         handles = {
-            ident.seed: _load_pool_handle(environment, ident.seed, single_env, angle_2a_root)
+            ident.seed: _load_pool_handle(environment, ident.seed, ident.architecture, single_env, angle_2a_root)
             for ident in identities
         }
 

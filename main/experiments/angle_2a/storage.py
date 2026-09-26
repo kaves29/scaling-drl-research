@@ -41,7 +41,7 @@ import io
 import json
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -64,8 +64,24 @@ PROBE_SCALAR_COLUMNS = [
 ]
 
 
-def matchup_dir(environment: str, seed: int, matchup_name: str, root: str = DEFAULT_OUTPUT_ROOT) -> Path:
-    return Path(root) / environment / f"seed{seed}" / matchup_name
+def matchup_dir(
+    environment: str, seed: int, matchup_name: str, root: str = DEFAULT_OUTPUT_ROOT, architecture: Optional[str] = None,
+) -> Path:
+    env_dir = Path(root) / environment
+    if architecture is not None:
+        env_dir = env_dir / architecture
+    return env_dir / f"seed{seed}" / matchup_name
+
+
+def check_snapshot_architecture(role: str, architecture: Optional[str]) -> None:
+    """Pool snapshots are keyed by architecture so a non-default run can never
+    overwrite a default-architecture one; D/R keep the matchup layout."""
+    if role not in ("D", "R", "pool"):
+        raise ValueError(f"role must be 'D', 'R', or 'pool', got {role!r}")
+    if role == "pool" and not architecture:
+        raise ValueError("role='pool' snapshots require an architecture (e.g. 'D2W512').")
+    if role != "pool" and architecture is not None:
+        raise ValueError(f"architecture is only used for role='pool' snapshots, got role={role!r}.")
 
 
 def save_matchup_result(
@@ -138,6 +154,7 @@ def save_frozen_agent_snapshot(
     probe_capture: Any,
     agent_cfg: Dict[str, Any],
     root: str = DEFAULT_OUTPUT_ROOT,
+    architecture: Optional[str] = None,
 ) -> Dict[str, Path]:
     """Persists one role's ("D" or "R") frozen agent + full probe-capture
     data for a matchup, so it can be reloaded later (by Angle 2B or anyone
@@ -167,12 +184,14 @@ def save_frozen_agent_snapshot(
     D-vs-R matchup at all. Reuses this same function/format (with a distinct
     `root`, e.g. "results/baseline_calibration_pool") rather than a separate
     storage module, per the project decision not to duplicate infrastructure
-    per consumer.
+    per consumer. Pool snapshots are stored under
+    {root}/{environment}/{architecture}/seed{seed}/{matchup_name}/ (architecture
+    required, added 2026-09-25), so a pool flag accidentally set on a scaled
+    run can never overwrite the default architecture's snapshot.
     """
-    if role not in ("D", "R", "pool"):
-        raise ValueError(f"role must be 'D', 'R', or 'pool', got {role!r}")
+    check_snapshot_architecture(role, architecture)
 
-    out_dir = matchup_dir(environment, seed, matchup_name, root=root)
+    out_dir = matchup_dir(environment, seed, matchup_name, root=root, architecture=architecture)
     # .resolve() (fixed 2026-09-23): agent.save_checkpoint() -> Orbax
     # requires an absolute path regardless of what `root` the caller passed
     # (every current caller - angle_2_a.py's Phase 2, and angle_1.py's

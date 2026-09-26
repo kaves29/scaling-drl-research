@@ -33,6 +33,7 @@ import jax.numpy as jnp
 import numpy as np
 
 from analysis.baseline_calibration_pool import (
+    BASELINE_ARCHITECTURE,
     POOL_MATCHUP_NAME,
     POOL_ROLE,
     all_unique_pairs,
@@ -84,8 +85,12 @@ def compute_null_pair_distortion(
     the shared calibration pool (role="pool", matchup_name="baseline_pool" -
     see analysis/baseline_calibration_pool.py and
     experiments/angle_2a/pool_null_baseline.py)."""
-    snap_a = load_frozen_agent_snapshot(environment, seed_a, POOL_MATCHUP_NAME, POOL_ROLE, root=root)
-    snap_b = load_frozen_agent_snapshot(environment, seed_b, POOL_MATCHUP_NAME, POOL_ROLE, root=root)
+    snap_a = load_frozen_agent_snapshot(
+        environment, seed_a, POOL_MATCHUP_NAME, POOL_ROLE, root=root, architecture=BASELINE_ARCHITECTURE,
+    )
+    snap_b = load_frozen_agent_snapshot(
+        environment, seed_b, POOL_MATCHUP_NAME, POOL_ROLE, root=root, architecture=BASELINE_ARCHITECTURE,
+    )
 
     if snap_a.critic_use_cdq != snap_b.critic_use_cdq:
         raise Angle2BSnapshotError(

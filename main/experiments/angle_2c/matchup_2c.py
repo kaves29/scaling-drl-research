@@ -45,7 +45,7 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 
-from analysis.baseline_calibration_pool import POOL_MATCHUP_NAME, POOL_ROLE, POOL_STORAGE_ROOT
+from analysis.baseline_calibration_pool import BASELINE_ARCHITECTURE, POOL_MATCHUP_NAME, POOL_ROLE, POOL_STORAGE_ROOT
 from experiments.angle_2a.storage import DEFAULT_OUTPUT_ROOT as ANGLE_2A_ROOT
 from experiments.angle_2b.checkpoint_io import load_frozen_agent_snapshot
 from experiments.angle_2b.gradients import compute_action_gradient
@@ -183,8 +183,12 @@ def run_angle_2c_analysis(
     null_pair_rows = []
     null_direction, null_magnitude, null_offset, null_instability = [], [], [], []
     for (seed_a, seed_b), pair in sorted(artifacts.null_pairs.items()):
-        snap_a = load_frozen_agent_snapshot(environment, seed_a, POOL_MATCHUP_NAME, POOL_ROLE, root=pool_root)
-        snap_b = load_frozen_agent_snapshot(environment, seed_b, POOL_MATCHUP_NAME, POOL_ROLE, root=pool_root)
+        snap_a = load_frozen_agent_snapshot(
+            environment, seed_a, POOL_MATCHUP_NAME, POOL_ROLE, root=pool_root, architecture=BASELINE_ARCHITECTURE,
+        )
+        snap_b = load_frozen_agent_snapshot(
+            environment, seed_b, POOL_MATCHUP_NAME, POOL_ROLE, root=pool_root, architecture=BASELINE_ARCHITECTURE,
+        )
         perturbed_null = perturb_actions(pair.actions, num_perturbations, perturbation_sigma, seed=analysis_seed)
         var_a = local_instability_variance(
             _make_grad_aq_evaluator(snap_a.agent.critic, pair.states, critic_use_cdq), perturbed_null,
