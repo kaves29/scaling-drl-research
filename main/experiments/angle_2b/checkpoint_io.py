@@ -85,7 +85,8 @@ def load_frozen_agent_snapshot(
     # .resolve() (fixed 2026-09-23, new finding): agent.load_checkpoint() ->
     # Orbax's restore() requires an absolute path just like save() does
     # (same underlying get_tensorstore_spec call). `root` defaults to
-    # DEFAULT_ANGLE_2A_ROOT / POOL_STORAGE_ROOT, both relative. Existence is
+    # DEFAULT_ANGLE_2A_ROOT (relative) or POOL_STORAGE_ROOT (absolute since
+    # 2026-09-25). Existence is
     # checked (_require_exists) before resolving, so the error message still
     # shows a path relative to how the caller specified `root`.
     checkpoint_dir = _require_exists(out_dir / "checkpoints" / role, "agent checkpoint").resolve()

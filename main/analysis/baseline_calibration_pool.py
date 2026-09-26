@@ -31,6 +31,7 @@ get_baseline_calibration_pool's docstring for why it uses all 10 seeds
 directly instead of a pairing scheme.
 """
 
+import os
 from dataclasses import dataclass
 from itertools import combinations
 from typing import List, Tuple, TypeVar
@@ -51,7 +52,12 @@ BASELINE_ARCHITECTURE = "D2W512"  # matches configs/base_sac.yaml's onset_detect
 # with root=POOL_STORAGE_ROOT) - a distinct root from both results/angle_1
 # (raw per-run logs/checkpoints, untouched by this pool) and results/angle_2a
 # (real matchup outputs), so the pool is never confused with either.
-POOL_STORAGE_ROOT = "results/baseline_calibration_pool"
+# Absolute and anchored to the repo root (2026-09-25), not the launching
+# shell's cwd, so the Angle 1 writer and the Angle 2A/2B/2C readers always
+# agree on one location.
+POOL_STORAGE_ROOT = os.path.abspath(
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "results", "baseline_calibration_pool")
+)
 
 # matchup_name/role used with experiments/angle_2a/storage.py's
 # save_frozen_agent_snapshot/load_frozen_agent_snapshot for every pool

@@ -13,13 +13,16 @@ reasons (see that file's class docstring for the full orbax finding):
      override the pool root at all (confirmed by inspection: run_cfg has no
      pool_root, and angle_2_b.py's run_angle_2b_analysis call doesn't pass
      one either, so a real invocation would always fall back to
-     analysis.baseline_calibration_pool.POOL_STORAGE_ROOT's relative
-     default) - a second, independent gap from the orbax path issue.
+     analysis.baseline_calibration_pool.POOL_STORAGE_ROOT's default) - a
+     second, independent gap from the orbax path issue. That default is
+     absolute and anchored to the repo (2026-09-25), so the test wraps
+     run_angle_2b_analysis to point it at this tmpdir's pool instead.
 
-Also chdirs into a tmpdir (restored in tearDown), since the pool root has no
-override and must be reached via its real relative default.
+Also chdirs into a tmpdir (restored in tearDown) for the relative Angle
+2A/2B result roots.
 """
 
+import functools
 import os
 import shutil
 import tempfile
@@ -145,7 +148,9 @@ class Angle2BRealEntryPointTest(unittest.TestCase):
         from experiments.angle_2_b import run
 
         angle_2a_root = "results/angle_2a"
-        pool_root = "results/baseline_calibration_pool"  # real default, unconfigurable - see class docstring
+        # POOL_STORAGE_ROOT is anchored to the real repo (2026-09-25), so the
+        # reader is pointed at this tmpdir's pool explicitly.
+        pool_root = "results/baseline_calibration_pool"
 
         _persist(ENVIRONMENT, 1, "matchup_1", "D", angle_2a_root, agent_seed=11, critic_num_blocks=2, critic_hidden_dim=16)
         _persist(ENVIRONMENT, 1, "matchup_1", "R", angle_2a_root, agent_seed=12, critic_num_blocks=1, critic_hidden_dim=8)
@@ -153,9 +158,14 @@ class Angle2BRealEntryPointTest(unittest.TestCase):
             _persist(ENVIRONMENT, seed, "baseline_pool", "pool", pool_root, agent_seed=100 + seed)
 
         fake_identities = [type("Ident", (), {"seed": s})() for s in range(1, 5)]
+        from experiments.angle_2b.matchup_2b import run_angle_2b_analysis
+
         with mock.patch(
             "experiments.angle_2b.null_baseline.get_baseline_calibration_pool",
             return_value=fake_identities,
+        ), mock.patch(
+            "experiments.angle_2_b.run_angle_2b_analysis",
+            functools.partial(run_angle_2b_analysis, pool_root=os.path.abspath(pool_root)),
         ):
             run({
                 "config_path": CONFIG_PATH,

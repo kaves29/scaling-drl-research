@@ -327,6 +327,17 @@ class Angle1RealEntryPointTest(unittest.TestCase):
                 f"+probe_capture_snapshot_root={Path(self.tmpdir) / 'pool'}",
             ], checkpoint_interval=10))
 
+    def test_pool_root_is_absolute_and_repo_anchored(self):
+        from analysis.baseline_calibration_pool import POOL_STORAGE_ROOT
+        from experiments.angle_1 import run
+
+        repo_root = Path(__file__).resolve().parents[1]
+        self.assertEqual(Path(POOL_STORAGE_ROOT), repo_root / "results" / "baseline_calibration_pool")
+        with self.assertRaisesRegex(ValueError, "probe_capture_snapshot_root must be an absolute path"):
+            run(self._run_args(_fast_overrides(extra=[
+                "+save_probe_capture_snapshot=true", "+probe_capture_snapshot_root=relative/pool",
+            ])))
+
     def test_pool_snapshots_are_keyed_by_architecture(self):
         from experiments.angle_2a.storage import check_snapshot_architecture, matchup_dir
 

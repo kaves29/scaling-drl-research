@@ -146,6 +146,12 @@ def run(args: dict) -> None:
     # actions) need, without a second, separate training pass.
     save_probe_capture_snapshot = bool(cfg.get("save_probe_capture_snapshot", False))
     probe_capture_snapshot_root = str(cfg.get("probe_capture_snapshot_root", POOL_STORAGE_ROOT))
+    if save_probe_capture_snapshot and not os.path.isabs(probe_capture_snapshot_root):
+        raise ValueError(
+            f"probe_capture_snapshot_root must be an absolute path, got: "
+            f"{probe_capture_snapshot_root!r}. Pool readers resolve it independently "
+            f"of this run's cwd."
+        )
 
     #############################
     # envs

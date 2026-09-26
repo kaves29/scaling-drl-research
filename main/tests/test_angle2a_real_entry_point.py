@@ -23,6 +23,7 @@ changed recently; enabling them here would only add runtime and setup
 complexity without additional coverage of the actual change being tested.
 """
 
+import functools
 import os
 import shutil
 import tempfile
@@ -222,9 +223,16 @@ class Angle2ARealEntryPointTest(unittest.TestCase):
         self._seed_pool(pool_root, num_agents=4)
         fake_identities = [type("Ident", (), {"seed": s, "architecture": "D2W512"})() for s in range(1, 5)]
 
+        # POOL_STORAGE_ROOT is anchored to the real repo (2026-09-25), so the
+        # reader is pointed at this tmpdir's pool explicitly.
+        from experiments.angle_2a.pool_null_baseline import load_or_compute_pool_null_distribution
+
         with mock.patch(
             "experiments.angle_2a.pool_null_baseline.get_baseline_calibration_pool",
             return_value=fake_identities,
+        ), mock.patch(
+            "experiments.angle_2_a.load_or_compute_pool_null_distribution",
+            functools.partial(load_or_compute_pool_null_distribution, angle_2a_root=os.path.abspath(pool_root)),
         ):
             run({
                 "config_path": CONFIG_PATH,

@@ -72,6 +72,8 @@ def add_jobs(env_list, steps):
                 )
                 if env_type:
                     cmd += f"--overrides env={env_type} "
+                if arch_name == "D2W512" and seed in (1, 2, 3, 4, 5):
+                    cmd += "--overrides +save_probe_capture_snapshot=true "
                 cmd += (
                     f"--overrides seed={seed} "
                     f"--overrides critic_degradation=true "
