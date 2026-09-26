@@ -166,6 +166,9 @@ check_points/
 /angle1_logs/
 /job_list.txt
 /job_list_pool.txt
+/phase1_jobs.txt
+/phase2_jobs.txt
+/phase3_jobs.txt
 
 # cache
 *.ipynb_checkpoints
