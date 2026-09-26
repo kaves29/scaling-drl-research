@@ -160,6 +160,12 @@ tmp/**
 # committed (a stale checkpoint here could get silently resumed-from on
 # another machine, and these are large binary blobs)
 check_points/
+# Angle 1 grid: checkpoints, results, and generate_manifest.py outputs
+/angle1_prod/
+/results/
+/angle1_logs/
+/job_list.txt
+/job_list_pool.txt
 
 # cache
 *.ipynb_checkpoints
