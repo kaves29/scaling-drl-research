@@ -71,11 +71,21 @@ def _last_env_step(csv_path):
     return int(df["env_step"].max()) if len(df) else None
 
 
+def _has_any_files(path):
+    """True if `path` contains at least one regular file, at any depth.
+    A checkpoint dir holding only empty subdirectories (however nested -
+    e.g. a leftover empty logs/ from a crashed campaign that never wrote a
+    CSV) has no real training artifacts and must be indistinguishable from
+    a never-started one - `any(path.iterdir())` alone doesn't catch this,
+    since an empty subdirectory is still one entry."""
+    return any(p.is_file() for p in path.rglob("*"))
+
+
 def classify(ckpt_dir, experiment, arch_name, env_name, seed, steps, snapshot):
     """Returns (status, reason); status is one of fresh, resume, done,
     done_legacy, review. Only fresh and resume jobs are emitted."""
     ckpt = Path(ckpt_dir)
-    if not ckpt.exists() or not any(ckpt.iterdir()):
+    if not ckpt.exists() or not _has_any_files(ckpt):
         return "fresh", ""
     if (ckpt / DONE_MARKER).exists():
         return "done", ""

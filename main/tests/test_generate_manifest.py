@@ -155,10 +155,23 @@ class GenerateManifestTest(unittest.TestCase):
         args = ("angle_1", "D2W512", "dog-run", 1, DMC_HARD_ENV_STEPS)
         self.assertEqual(gm.classify(os.path.abspath(_ckpt_dir("dog-run", 1)), *args, snapshot=True)[0], "done")
 
-        started = _ckpt_dir("dog-run", 2)
+        # Fixed 2026-09-26: an empty logs/ subfolder (no meta.pkl, no CSVs -
+        # e.g. left over from a crashed campaign) has no actual training
+        # artifacts and must classify as fresh, not review. This
+        # misclassified 137 real-fresh jobs on a Delta checkout after the
+        # original crash, since `any(ckpt.iterdir())` alone treats an
+        # empty subdirectory as "the checkpoint dir has content".
+        empty_logs_only = _ckpt_dir("dog-run", 2)
+        (empty_logs_only / "logs").mkdir(parents=True)
+        self.assertEqual(gm.classify(os.path.abspath(empty_logs_only), *args, snapshot=True)[0], "fresh")
+
+        # A real file nested inside that same subdirectory does count.
+        started = _ckpt_dir("dog-run", 3)
         (started / "logs").mkdir(parents=True)
+        (started / "logs" / "placeholder.txt").write_text("")
         self.assertEqual(gm.classify(os.path.abspath(started), *args, snapshot=True)[0], "review")
-        self.assertEqual(gm.classify(os.path.abspath(_ckpt_dir("dog-run", 3)), *args, snapshot=True)[0], "fresh")
+
+        self.assertEqual(gm.classify(os.path.abspath(_ckpt_dir("dog-run", 4)), *args, snapshot=True)[0], "fresh")
 
 
 if __name__ == "__main__":
