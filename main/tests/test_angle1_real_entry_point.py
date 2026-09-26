@@ -327,6 +327,36 @@ class Angle1RealEntryPointTest(unittest.TestCase):
                 f"+probe_capture_snapshot_root={Path(self.tmpdir) / 'pool'}",
             ], checkpoint_interval=10))
 
+    def test_pool_seed_run_writes_only_under_the_pool_experiment(self):
+        """A generate_manifest.py pool job (seeds 6-10): metrics, ledger and
+        snapshot must never land under angle_1's paths, and missing Angle 1
+        baselines degrade to a needs-review row rather than failing the run."""
+        from experiments.angle_1 import run
+
+        original_cwd = os.getcwd()
+        os.chdir(self.tmpdir)
+        self.addCleanup(os.chdir, original_cwd)
+
+        environment, seed = "cheetah-run", 6
+        pool_root = str(Path(self.tmpdir) / "pool")
+        args = self._run_args(_fast_overrides(env_name=environment, seed=seed, extra=[
+            "+save_probe_capture_snapshot=true", f"+probe_capture_snapshot_root={pool_root}",
+            "critic_degradation=true", "pathology_prop=true",
+            "onset_detection.baseline_experiment=angle_1",
+        ]))
+        args["experiment"] = "baseline_calibration_pool"
+        args["checkpoint_dir"] = str(Path(self.tmpdir) / "ckpt")
+        run(args)
+
+        results = Path(self.tmpdir) / "results"
+        run_key = f"baseline_calibration_pool_D1W8_{environment}_seed{seed}"
+        self.assertTrue((results / "metrics" / "baseline_calibration_pool" / "D1W8" / environment / f"{run_key}.csv").exists())
+        self.assertFalse((results / "metrics" / "angle_1").exists())
+        ledger = results / "ledgers" / "baseline_calibration_pool" / "architectures" / "D1W8" / "onset_events.csv"
+        self.assertIn("needs_manual_review", ledger.read_text())
+        self.assertFalse((results / "ledgers" / "angle_1").exists())
+        self.assertTrue((Path(pool_root) / environment / "D1W8" / f"seed{seed}" / "baseline_pool" / "probe_capture_pool.npz").exists())
+
     def test_pool_root_is_absolute_and_repo_anchored(self):
         from analysis.baseline_calibration_pool import POOL_STORAGE_ROOT
         from experiments.angle_1 import run

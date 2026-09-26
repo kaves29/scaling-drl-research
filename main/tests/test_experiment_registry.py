@@ -28,6 +28,14 @@ class TestExperimentPackageImports(unittest.TestCase):
         self.assertIn("angle_1", registered)
         self.assertIn("angle_2_a", registered)
 
+    def test_baseline_calibration_pool_runs_angle_1(self):
+        import experiments  # noqa: F401
+        from analysis.baseline_calibration_pool import POOL_EXPERIMENT
+        from experiments.angle_1 import run
+
+        self.assertIs(get_experiment(POOL_EXPERIMENT), run)
+        self.assertIs(get_experiment("angle_1"), run)
+
     def test_angle_2_a_entry_point_module_is_not_named_angle_2a(self):
         import pathlib
 

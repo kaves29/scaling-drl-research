@@ -1,5 +1,7 @@
 import os
 
+from analysis.baseline_calibration_pool import BASELINE_ARCHITECTURE, POOL_EXPERIMENT, POOL_SEEDS
+
 # Safe launch pattern (added 2026-09-21, after the 2026-09-20/21 incident:
 # a relative --checkpoint_dir crashed 100% of a 150-run campaign, and a
 # duplicated manifest launched 50 of those configs twice concurrently).
@@ -48,22 +50,23 @@ HARD_STEPS = 1_000_000
 MED_STEPS = 500_000
 MYO_STEPS = 1_000_000
 
-jobs, skipped_done, skipped_review = [], [], []
+skipped_done, skipped_review = [], []
 
-def add_jobs(env_list, steps):
+
+def add_jobs(jobs, env_list, steps, archs=ARCHS, seeds=SEEDS, experiment="angle_1", prefix="", extra=()):
     for env_name, env_type in env_list:
-        for arch_name, blocks, hidden in ARCHS:
-            for seed in SEEDS:
-                ckpt_dir = os.path.abspath(f"./angle1_prod/{arch_name}/{env_name}/seed_{seed}")
+        for arch_name, blocks, hidden in archs:
+            for seed in seeds:
+                ckpt_dir = os.path.abspath(f"./angle1_prod/{prefix}{arch_name}/{env_name}/seed_{seed}")
                 if os.path.exists(f"{ckpt_dir}/DONE"):
                     skipped_done.append(ckpt_dir); continue
                 if os.path.exists(ckpt_dir) and os.listdir(ckpt_dir):
                     skipped_review.append(ckpt_dir); continue
 
                 os.makedirs("./angle1_logs", exist_ok=True)
-                log_path = f"./angle1_logs/{arch_name}_{env_name}_seed{seed}.log"
+                log_path = f"./angle1_logs/{prefix.replace('/', '_')}{arch_name}_{env_name}_seed{seed}.log"
                 cmd = (
-                    f"python -u run.py --experiment angle_1 --config_name base_sac "
+                    f"python -u run.py --experiment {experiment} --config_name base_sac "
                     f"--overrides critic_num_blocks={blocks} "
                     f"--overrides critic_hidden_dim={hidden} "
                     f"--overrides updates_per_interaction_step=5 "
@@ -78,7 +81,11 @@ def add_jobs(env_list, steps):
                     f"--overrides seed={seed} "
                     f"--overrides critic_degradation=true "
                     f"--overrides pathology_prop=true "
-                    f"--overrides project_name=EchoCritic-angle_1 "
+                )
+                for override in extra:
+                    cmd += f"--overrides {override} "
+                cmd += (
+                    f"--overrides project_name=EchoCritic-{experiment} "
                     f"--checkpoint_dir {ckpt_dir} "
                     f"--checkpoint_interval 12501 "
                     f"--checkpoint_start_frac 0.15 "
@@ -86,15 +93,32 @@ def add_jobs(env_list, steps):
                 )
                 jobs.append(cmd)
 
-add_jobs(DMC_HARD, HARD_STEPS)
-add_jobs(MYO_HARD, MYO_STEPS)
-add_jobs(DMC_MEDIUM, MED_STEPS)
-add_jobs(MYO_MEDIUM, MYO_STEPS)
 
-with open("job_list.txt", "w") as f:
-    f.write("\n".join(jobs) + "\n")
+def add_grid(jobs, **kwargs):
+    add_jobs(jobs, DMC_HARD, HARD_STEPS, **kwargs)
+    add_jobs(jobs, MYO_HARD, MYO_STEPS, **kwargs)
+    add_jobs(jobs, DMC_MEDIUM, MED_STEPS, **kwargs)
+    add_jobs(jobs, MYO_MEDIUM, MYO_STEPS, **kwargs)
 
-print(f"Queued: {len(jobs)}")
+
+# Shared baseline-calibration pool's dedicated agents (seeds 6-10, see
+# analysis/baseline_calibration_pool.py): same training as the D2W512 grid
+# runs, under their own experiment name and checkpoint subtree.
+POOL_ARCHS = [a for a in ARCHS if a[0] == BASELINE_ARCHITECTURE]
+POOL_EXTRA = ("+save_probe_capture_snapshot=true", "onset_detection.baseline_experiment=angle_1")
+
+manifests = {"job_list.txt": [], "job_list_pool.txt": []}
+add_grid(manifests["job_list.txt"])
+add_grid(
+    manifests["job_list_pool.txt"], archs=POOL_ARCHS, seeds=POOL_SEEDS,
+    experiment=POOL_EXPERIMENT, prefix=f"{POOL_EXPERIMENT}/", extra=POOL_EXTRA,
+)
+
+for path, jobs in manifests.items():
+    with open(path, "w") as f:
+        f.write("\n".join(jobs) + "\n")
+    print(f"{path}: queued {len(jobs)}")
+
 print(f"Already done, skipped: {len(skipped_done)}")
 print(f"Partial/needs review, skipped: {len(skipped_review)}")
 for p in skipped_review:

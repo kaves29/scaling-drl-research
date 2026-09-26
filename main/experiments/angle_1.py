@@ -101,6 +101,7 @@ class PendingUpdateMetrics:
 
 
 @register_experiment("angle_1")
+@register_experiment("baseline_calibration_pool")
 def run(args: dict) -> None:
     ###############################
     # configs
