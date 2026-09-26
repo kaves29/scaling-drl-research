@@ -23,7 +23,9 @@ only the steps where it was computed. The flags below control whether that
 data is *persisted for onset analysis*, not whether it's computed.
 """
 
+import json
 import os
+from datetime import datetime, timezone
 
 from utils.hardware import (
     configure_hardware_env,
@@ -63,6 +65,7 @@ from scale_rl.envs import create_envs
 from scale_rl.envs.dmc import validate_dmc_not_heldout
 from scale_rl.envs.myosuite import validate_myosuite_core4
 from scale_rl.evaluation import evaluate
+from utils.atomic_io import atomic_write_text
 from utils.onset_ledger import WandbIdentity
 
 jax.config.update("jax_enable_x64", False)
@@ -100,6 +103,11 @@ class PendingUpdateMetrics:
         self._pending = []
 
 
+# Written to checkpoint_dir once every end-of-run training artifact is on
+# disk; generate_manifest.py skips runs that have it.
+DONE_MARKER = "DONE"
+
+
 @register_experiment("angle_1")
 @register_experiment("baseline_calibration_pool")
 def run(args: dict) -> None:
@@ -107,6 +115,11 @@ def run(args: dict) -> None:
     # configs
     ###############################
     args = DotMap(args)
+    if args.checkpoint_dir and (Path(args.checkpoint_dir) / DONE_MARKER).exists():
+        raise ValueError(
+            f"{args.checkpoint_dir} already holds a completed run ({DONE_MARKER} exists); "
+            f"refusing to retrain it. Resuming would overwrite its final metrics and snapshot."
+        )
     experiment_name = args.experiment or "angle_1"
     config_path = args.config_path
     config_name = args.config_name
@@ -412,6 +425,13 @@ def run(args: dict) -> None:
         )
         probe_capture.save(str(snapshot_paths["checkpoint_dir"]))
         print(f"[angle_1] probe-capture snapshot saved -> {snapshot_paths['checkpoint_dir']}")
+
+    # Before onset analysis: a failed analysis is rerun offline, never retrained.
+    if checkpoint_dir:
+        atomic_write_text(Path(checkpoint_dir) / DONE_MARKER, json.dumps({
+            "interaction_step": int(cfg.num_interaction_steps),
+            "completed_at": datetime.now(timezone.utc).isoformat(),
+        }))
 
     train_env.close()
     eval_env.close()

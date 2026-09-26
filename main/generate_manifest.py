@@ -1,6 +1,11 @@
 import os
+import pickle
+from pathlib import Path
 
-from analysis.baseline_calibration_pool import BASELINE_ARCHITECTURE, POOL_EXPERIMENT, POOL_SEEDS
+import pandas as pd
+
+from analysis.baseline_calibration_pool import BASELINE_ARCHITECTURE, POOL_EXPERIMENT, POOL_SEEDS, POOL_STORAGE_ROOT
+from analysis.metrics_store import RunIdentity, metrics_path
 
 # Safe launch pattern (added 2026-09-21, after the 2026-09-20/21 incident:
 # a relative --checkpoint_dir crashed 100% of a 150-run campaign, and a
@@ -50,20 +55,65 @@ HARD_STEPS = 1_000_000
 MED_STEPS = 500_000
 MYO_STEPS = 1_000_000
 
-skipped_done, skipped_review = [], []
+SNAPSHOT_FLAG = "+save_probe_capture_snapshot=true"
+DONE_MARKER = "DONE"  # experiments/angle_1.py's DONE_MARKER
 
 
-def add_jobs(jobs, env_list, steps, archs=ARCHS, seeds=SEEDS, experiment="angle_1", prefix="", extra=()):
+def _last_env_step(csv_path):
+    try:
+        df = pd.read_csv(csv_path, usecols=["env_step"])
+    except (OSError, ValueError, pd.errors.EmptyDataError):
+        return None
+    return int(df["env_step"].max()) if len(df) else None
+
+
+def classify(ckpt_dir, experiment, arch_name, env_name, seed, steps, snapshot):
+    """Returns (status, reason); status is one of fresh, resume, done,
+    done_legacy, review. Only fresh and resume jobs are emitted."""
+    ckpt = Path(ckpt_dir)
+    if not ckpt.exists() or not any(ckpt.iterdir()):
+        return "fresh", ""
+    if (ckpt / DONE_MARKER).exists():
+        return "done", ""
+    if not (ckpt / "meta.pkl").exists():
+        return "review", "started but never checkpointed (no meta.pkl)"
+    try:
+        with open(ckpt / "meta.pkl", "rb") as f:
+            int(pickle.load(f)["interaction_step"])
+    except Exception as e:
+        return "review", f"unreadable meta.pkl: {e!r}"
+
+    logs = sorted((ckpt / "logs").glob("*.csv"))
+    if len(logs) != 1:
+        return "review", f"expected exactly one logs/*.csv, found {len(logs)}"
+    last = _last_env_step(logs[0])
+    if last is None or last < steps:
+        return "resume", f"resumes from the checkpoint in meta.pkl (log at env_step {last})"
+
+    # Training finished but no DONE marker: a run from before the marker
+    # existed, or one that crashed during its end-of-run writes. Never
+    # resume these - resuming retrains the tail and overwrites final data.
+    identity = RunIdentity(experiment=experiment, architecture=arch_name, environment=env_name, seed=seed)
+    missing = []
+    if _last_env_step(metrics_path(identity)) != steps:
+        missing.append(f"metrics CSV at final env_step ({metrics_path(identity)})")
+    if snapshot:
+        snap = (
+            Path(POOL_STORAGE_ROOT) / env_name / arch_name / f"seed{seed}"
+            / "baseline_pool" / "checkpoints" / "pool" / "probe_capture_state.pkl"
+        )
+        if not snap.exists():
+            missing.append(f"pool snapshot ({snap})")
+    if missing:
+        return "review", "training finished but end-of-run artifacts missing: " + "; ".join(missing)
+    return "done_legacy", "pre-DONE-marker run; all end-of-run artifacts verified"
+
+
+def add_jobs(jobs, status, env_list, steps, archs=ARCHS, seeds=SEEDS, experiment="angle_1", prefix="", extra=()):
     for env_name, env_type in env_list:
         for arch_name, blocks, hidden in archs:
             for seed in seeds:
                 ckpt_dir = os.path.abspath(f"./angle1_prod/{prefix}{arch_name}/{env_name}/seed_{seed}")
-                if os.path.exists(f"{ckpt_dir}/DONE"):
-                    skipped_done.append(ckpt_dir); continue
-                if os.path.exists(ckpt_dir) and os.listdir(ckpt_dir):
-                    skipped_review.append(ckpt_dir); continue
-
-                os.makedirs("./angle1_logs", exist_ok=True)
                 log_path = f"./angle1_logs/{prefix.replace('/', '_')}{arch_name}_{env_name}_seed{seed}.log"
                 cmd = (
                     f"python -u run.py --experiment {experiment} --config_name base_sac "
@@ -76,7 +126,7 @@ def add_jobs(jobs, env_list, steps, archs=ARCHS, seeds=SEEDS, experiment="angle_
                 if env_type:
                     cmd += f"--overrides env={env_type} "
                 if arch_name == "D2W512" and seed in (1, 2, 3, 4, 5):
-                    cmd += "--overrides +save_probe_capture_snapshot=true "
+                    cmd += f"--overrides {SNAPSHOT_FLAG} "
                 cmd += (
                     f"--overrides seed={seed} "
                     f"--overrides critic_degradation=true "
@@ -91,35 +141,50 @@ def add_jobs(jobs, env_list, steps, archs=ARCHS, seeds=SEEDS, experiment="angle_
                     f"--checkpoint_start_frac 0.15 "
                     f"> {log_path} 2>&1"
                 )
-                jobs.append(cmd)
+                state, reason = classify(
+                    ckpt_dir, experiment, arch_name, env_name, seed, steps, snapshot=SNAPSHOT_FLAG in cmd,
+                )
+                status.setdefault(state, []).append((ckpt_dir, reason))
+                if state in ("fresh", "resume"):
+                    jobs.append(cmd)
 
 
-def add_grid(jobs, **kwargs):
-    add_jobs(jobs, DMC_HARD, HARD_STEPS, **kwargs)
-    add_jobs(jobs, MYO_HARD, MYO_STEPS, **kwargs)
-    add_jobs(jobs, DMC_MEDIUM, MED_STEPS, **kwargs)
-    add_jobs(jobs, MYO_MEDIUM, MYO_STEPS, **kwargs)
+def add_grid(jobs, status, **kwargs):
+    add_jobs(jobs, status, DMC_HARD, HARD_STEPS, **kwargs)
+    add_jobs(jobs, status, MYO_HARD, MYO_STEPS, **kwargs)
+    add_jobs(jobs, status, DMC_MEDIUM, MED_STEPS, **kwargs)
+    add_jobs(jobs, status, MYO_MEDIUM, MYO_STEPS, **kwargs)
 
 
 # Shared baseline-calibration pool's dedicated agents (seeds 6-10, see
 # analysis/baseline_calibration_pool.py): same training as the D2W512 grid
 # runs, under their own experiment name and checkpoint subtree.
 POOL_ARCHS = [a for a in ARCHS if a[0] == BASELINE_ARCHITECTURE]
-POOL_EXTRA = ("+save_probe_capture_snapshot=true", "onset_detection.baseline_experiment=angle_1")
+POOL_EXTRA = (SNAPSHOT_FLAG, "onset_detection.baseline_experiment=angle_1")
 
-manifests = {"job_list.txt": [], "job_list_pool.txt": []}
-add_grid(manifests["job_list.txt"])
-add_grid(
-    manifests["job_list_pool.txt"], archs=POOL_ARCHS, seeds=POOL_SEEDS,
-    experiment=POOL_EXPERIMENT, prefix=f"{POOL_EXPERIMENT}/", extra=POOL_EXTRA,
-)
 
-for path, jobs in manifests.items():
-    with open(path, "w") as f:
-        f.write("\n".join(jobs) + "\n")
-    print(f"{path}: queued {len(jobs)}")
+def main():
+    status = {}
+    manifests = {"job_list.txt": [], "job_list_pool.txt": []}
+    add_grid(manifests["job_list.txt"], status)
+    add_grid(
+        manifests["job_list_pool.txt"], status, archs=POOL_ARCHS, seeds=POOL_SEEDS,
+        experiment=POOL_EXPERIMENT, prefix=f"{POOL_EXPERIMENT}/", extra=POOL_EXTRA,
+    )
 
-print(f"Already done, skipped: {len(skipped_done)}")
-print(f"Partial/needs review, skipped: {len(skipped_review)}")
-for p in skipped_review:
-    print(f"  REVIEW: {p}")
+    os.makedirs("./angle1_logs", exist_ok=True)
+    for path, jobs in manifests.items():
+        with open(path, "w") as f:
+            f.write("\n".join(jobs) + "\n")
+        print(f"{path}: queued {len(jobs)}")
+
+    for state in ("fresh", "resume", "done", "done_legacy", "review"):
+        entries = status.get(state, [])
+        print(f"{state}: {len(entries)}")
+        if state in ("resume", "done_legacy", "review"):
+            for ckpt_dir, reason in entries:
+                print(f"  {ckpt_dir}: {reason}")
+
+
+if __name__ == "__main__":
+    main()

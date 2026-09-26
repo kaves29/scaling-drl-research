@@ -21,6 +21,7 @@ one `unittest discover` process) would otherwise hit "GlobalHydra is already
 initialized".
 """
 
+import json
 import os
 import pickle
 import shutil
@@ -135,13 +136,13 @@ class Angle1RealEntryPointTest(unittest.TestCase):
         GlobalHydra.instance().clear()
         shutil.rmtree(self.tmpdir, ignore_errors=True)
 
-    def _run_args(self, overrides, checkpoint_interval=1000):
+    def _run_args(self, overrides, checkpoint_interval=1000, checkpoint_dir=None):
         return {
             "experiment": "angle_1",
             "config_path": CONFIG_PATH,
             "config_name": "base_sac",
             "overrides": overrides,
-            "checkpoint_dir": self.tmpdir,
+            "checkpoint_dir": checkpoint_dir or self.tmpdir,
             "checkpoint_interval": checkpoint_interval,
             "checkpoint_start_frac": 0.0,
         }
@@ -154,26 +155,48 @@ class Angle1RealEntryPointTest(unittest.TestCase):
         csv_files = list(Path(self.tmpdir, "logs").glob("*.csv"))
         self.assertEqual(len(csv_files), 1, f"expected exactly one CSV log, found {csv_files}")
 
-    def test_run_checkpoints_and_resumes(self):
-        from experiments.angle_1 import run
+    def test_run_killed_after_a_checkpoint_resumes_and_marks_done(self):
+        from experiments import angle_1
 
-        # checkpoint_interval=10 with num_interaction_steps=20 guarantees at
-        # least one real mid-run checkpoint save.
-        run(self._run_args(_fast_overrides(seed=2), checkpoint_interval=10))
-        self.assertTrue((Path(self.tmpdir) / "meta.pkl").exists())
+        # 20 interaction steps, checkpoint at 10; killed at the step-10
+        # evaluation (the checkpoint is saved just before it).
+        args = self._run_args(_fast_overrides(seed=2), checkpoint_interval=10)
+        real_evaluate, calls = angle_1.evaluate, []
 
-        # Resuming the identical invocation must not crash (is_resumed=True
-        # path) - GlobalHydra must be cleared again before this second real
-        # hydra.initialize_config_dir() call within the same test.
+        def killing_evaluate(*a, **kw):
+            calls.append(None)
+            if len(calls) == 2:
+                raise KeyboardInterrupt
+            return real_evaluate(*a, **kw)
+
+        with mock.patch.object(angle_1, "evaluate", killing_evaluate):
+            with self.assertRaises(KeyboardInterrupt):
+                angle_1.run(args)
+        with open(Path(self.tmpdir) / "meta.pkl", "rb") as f:
+            self.assertEqual(pickle.load(f)["interaction_step"], 10)
+        self.assertFalse((Path(self.tmpdir) / angle_1.DONE_MARKER).exists())
+
         GlobalHydra.instance().clear()
-        run(self._run_args(_fast_overrides(seed=2), checkpoint_interval=10))
+        angle_1.run(args)
+        done = json.loads((Path(self.tmpdir) / angle_1.DONE_MARKER).read_text())
+        self.assertEqual(done["interaction_step"], 20)
+
+    def test_completed_run_refuses_to_run_again(self):
+        from experiments.angle_1 import DONE_MARKER, run
+
+        args = self._run_args(_fast_overrides(seed=7), checkpoint_interval=10)
+        run(args)
+        self.assertTrue((Path(self.tmpdir) / DONE_MARKER).exists())
+        GlobalHydra.instance().clear()
+        with self.assertRaisesRegex(ValueError, "already holds a completed run"):
+            run(args)
 
     def _logged_windows(self, overrides):
         from experiments.angle_1 import run
 
         GlobalHydra.instance().clear()
         wandb.log.reset_mock()
-        run(self._run_args(overrides))
+        run(self._run_args(overrides, checkpoint_dir=tempfile.mkdtemp(dir=self.tmpdir)))
         return [(c.kwargs["step"], list(c.args[0].items())) for c in wandb.log.call_args_list]
 
     def test_deferred_update_metrics_are_bit_identical_to_eager(self):
@@ -320,6 +343,8 @@ class Angle1RealEntryPointTest(unittest.TestCase):
 
         overrides = _fast_overrides(seed=6)
         run(self._run_args(overrides, checkpoint_interval=10))
+        # Stand-in for a checkpoint from before the DONE marker existed.
+        (Path(self.tmpdir) / "DONE").unlink()
         GlobalHydra.instance().clear()
         with self.assertRaisesRegex(FileNotFoundError, "No ProbeCapture checkpoint"):
             run(self._run_args(overrides + [
@@ -459,14 +484,14 @@ class Angle1RealEntryPointTest(unittest.TestCase):
                 f"env_name={environment}", f"seed={seed}",
                 "critic_num_blocks=1", "critic_hidden_dim=8",
                 *onset_overrides,
-            ]))
+            ], checkpoint_dir=tempfile.mkdtemp(dir=self.tmpdir)))
 
         GlobalHydra.instance().clear()
         run(self._run_args([
             f"env_name={environment}", "seed=99",
             "critic_num_blocks=3", "critic_hidden_dim=16",  # scaled: D3W16, != baseline D1W8
             *onset_overrides,
-        ]))
+        ], checkpoint_dir=tempfile.mkdtemp(dir=self.tmpdir)))
 
         ledger_path = Path("results/ledgers/angle_1/architectures/D3W16/onset_events.csv")
         self.assertTrue(ledger_path.exists(), f"expected a real onset ledger at {ledger_path}")
