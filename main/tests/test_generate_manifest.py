@@ -67,9 +67,9 @@ class GenerateManifestTest(unittest.TestCase):
         os.chdir(self.original_cwd)
         shutil.rmtree(self.tmpdir, ignore_errors=True)
 
-    def _generate(self):
+    def _generate(self, *argv):
         with redirect_stdout(StringIO()):
-            gm.main()
+            gm.main(list(argv))
         return {
             name: Path(name).read_text().splitlines() for name in ("job_list.txt", "job_list_pool.txt")
         }
@@ -105,6 +105,31 @@ class GenerateManifestTest(unittest.TestCase):
             # Unchanged command: run.py resumes from meta.pkl at the same path.
             self.assertEqual(grid[d], clean_grid[d])
         self.assertEqual(after["job_list_pool.txt"], clean["job_list_pool.txt"])
+
+    def test_backfill_writes_done_only_for_verified_legacy_runs(self):
+        for env, seed in FINISHED:
+            _write_checkpoint(env, seed, meta_step=487_539, last_env_step=DMC_HARD_ENV_STEPS)
+            _write_finished_artifacts(env, seed, self.pool_root)
+        for env, seed in PARTIAL:
+            _write_checkpoint(env, seed, meta_step=312_525, last_env_step=625_048)
+        # Finished training but its snapshot is missing: must stay unmarked.
+        _write_checkpoint("humanoid-run", 4, meta_step=487_539, last_env_step=DMC_HARD_ENV_STEPS)
+        _write_finished_artifacts("humanoid-run", 4, self.pool_root, snapshot=False)
+
+        before = self._generate()
+        self._generate("--backfill-done")
+        for env, seed in FINISHED:
+            self.assertTrue((_ckpt_dir(env, seed) / gm.DONE_MARKER).exists(), (env, seed))
+        for env, seed in PARTIAL + [("humanoid-run", 4)]:
+            self.assertFalse((_ckpt_dir(env, seed) / gm.DONE_MARKER).exists(), (env, seed))
+
+        status = {}
+        gm.add_grid([], status)
+        self.assertEqual(len(status["done"]), 11)
+        self.assertNotIn("done_legacy", status)
+        self.assertEqual(len(status["resume"]), 2)
+        self.assertEqual(len(status["review"]), 1)
+        self.assertEqual(self._generate(), before)
 
     def test_finished_run_missing_an_artifact_is_never_resumed(self):
         _write_checkpoint("dog-run", 1, meta_step=487_539, last_env_step=DMC_HARD_ENV_STEPS)

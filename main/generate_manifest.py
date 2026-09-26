@@ -1,11 +1,15 @@
+import argparse
+import json
 import os
 import pickle
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pandas as pd
 
 from analysis.baseline_calibration_pool import BASELINE_ARCHITECTURE, POOL_EXPERIMENT, POOL_SEEDS, POOL_STORAGE_ROOT
 from analysis.metrics_store import RunIdentity, metrics_path
+from utils.atomic_io import atomic_write_text
 
 # Safe launch pattern (added 2026-09-21, after the 2026-09-20/21 incident:
 # a relative --checkpoint_dir crashed 100% of a 150-run campaign, and a
@@ -163,7 +167,27 @@ POOL_ARCHS = [a for a in ARCHS if a[0] == BASELINE_ARCHITECTURE]
 POOL_EXTRA = (SNAPSHOT_FLAG, "onset_detection.baseline_experiment=angle_1")
 
 
-def main():
+def backfill_done(status):
+    """Writes DONE for runs classified done_legacy - verified here, on the
+    machine holding their files - so later manifests skip them outright."""
+    for ckpt_dir, reason in status.pop("done_legacy", []):
+        atomic_write_text(Path(ckpt_dir) / DONE_MARKER, json.dumps({
+            "backfilled_at": datetime.now(timezone.utc).isoformat(),
+            "backfilled_by": "generate_manifest.py --backfill-done",
+            "verified": reason,
+        }))
+        status.setdefault("done", []).append((ckpt_dir, "DONE backfilled"))
+        print(f"wrote {Path(ckpt_dir) / DONE_MARKER}")
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--backfill-done", action="store_true",
+        help="Write DONE into every run verified complete that predates the marker.",
+    )
+    args = parser.parse_args(argv)
+
     status = {}
     manifests = {"job_list.txt": [], "job_list_pool.txt": []}
     add_grid(manifests["job_list.txt"], status)
@@ -171,6 +195,8 @@ def main():
         manifests["job_list_pool.txt"], status, archs=POOL_ARCHS, seeds=POOL_SEEDS,
         experiment=POOL_EXPERIMENT, prefix=f"{POOL_EXPERIMENT}/", extra=POOL_EXTRA,
     )
+    if args.backfill_done:
+        backfill_done(status)
 
     os.makedirs("./angle1_logs", exist_ok=True)
     for path, jobs in manifests.items():
