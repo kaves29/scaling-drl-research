@@ -169,6 +169,7 @@ check_points/
 /phase1_jobs.txt
 /phase2_jobs.txt
 /phase3_jobs.txt
+/claim_launcher_*.log
 
 # cache
 *.ipynb_checkpoints
