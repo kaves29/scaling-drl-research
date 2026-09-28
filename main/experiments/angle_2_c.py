@@ -36,6 +36,7 @@ from dotmap import DotMap
 from experiments.angle_2c.config import validate_angle2c_config
 from experiments.angle_2c.matchup_2c import run_angle_2c_analysis
 from experiments.registry import register_experiment
+from utils.paths import wandb_dir
 
 
 @register_experiment("angle_2_c")
@@ -64,8 +65,8 @@ def run(args: dict) -> None:
             f"[angle_2_c] environment={run_cfg.environment} seed={run_cfg.seed} "
             f"matchup={matchup_name}: loading Angle 2B outputs from "
             f"'{run_cfg.angle_2b_results_root}' and Angle 2A checkpoints "
-            f"from the default root (zero training/env interaction/new "
-            f"sampling)..."
+            f"from '{run_cfg.angle_2a_results_root}' (zero training/env "
+            f"interaction/new sampling)..."
         )
         result = run_angle_2c_analysis(
             environment=run_cfg.environment,
@@ -76,7 +77,9 @@ def run(args: dict) -> None:
             analysis_seed=run_cfg.analysis_seed,
             onset_source_experiment=run_cfg.onset_source_experiment,
             onset_ledger_root=run_cfg.onset_ledger_root,
+            angle_2a_root=run_cfg.angle_2a_results_root,
             angle_2b_root=run_cfg.angle_2b_results_root,
+            pool_root=run_cfg.pool_root,
             output_root=run_cfg.output_root,
         )
 
@@ -102,6 +105,7 @@ def run(args: dict) -> None:
 def _log_to_wandb(result, wandb_project: str) -> None:
     run = wandb.init(
         project=wandb_project,
+        dir=wandb_dir(),
         group=f"angle_2c_{result.environment}_seed{result.seed}",
         job_type=result.matchup_name,
         name=f"angle2c-{result.matchup_name}-{result.environment}-seed{result.seed}",

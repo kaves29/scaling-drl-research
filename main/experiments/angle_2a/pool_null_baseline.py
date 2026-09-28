@@ -34,6 +34,7 @@ from analysis.baseline_calibration_pool import (
     POOL_ROLE,
     POOL_STORAGE_ROOT,
     all_unique_pairs,
+    check_pool_comparable,
     get_baseline_calibration_pool,
 )
 from experiments.angle_2a.agent_runner import ProbeCapture, TrainedAgentHandle, derive_rng_seed
@@ -48,8 +49,9 @@ from experiments.angle_2b.checkpoint_io import load_frozen_agent_snapshot
 from experiments.angle_2a.storage import matchup_dir
 from scale_rl.envs import create_envs
 from utils.atomic_io import atomic_write_text
+from utils.paths import results_path
 
-POOL_NULL_CACHE_ROOT = "results/angle_2a_pool_null"
+POOL_NULL_CACHE_ROOT = results_path("angle_2a_pool_null")
 
 
 @dataclass
@@ -114,6 +116,9 @@ def compute_pool_null_distribution(
     module docstring) and runs the diagonal-error procedure on all 45 unique
     pool-agent pairs for `environment`."""
     identities = get_baseline_calibration_pool(environment)
+    check_pool_comparable(
+        environment, [ident.seed for ident in identities], angle_2a_root, f"Angle 2A pool null ({environment})",
+    )
 
     train_env, eval_env = create_envs(**base_cfg.env)
     try:

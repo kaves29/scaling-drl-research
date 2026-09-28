@@ -34,6 +34,7 @@ from dotmap import DotMap
 from experiments.angle_2b.config import validate_angle2b_config
 from experiments.angle_2b.matchup_2b import run_angle_2b_analysis
 from experiments.registry import register_experiment
+from utils.paths import wandb_dir
 
 
 @register_experiment("angle_2_b")
@@ -70,6 +71,7 @@ def run(args: dict) -> None:
             num_states_per_source=run_cfg.num_states_per_source,
             angle_2a_root=run_cfg.angle_2a_results_root,
             output_root=run_cfg.output_root,
+            pool_root=run_cfg.pool_root,
         )
 
         print(
@@ -94,6 +96,7 @@ def run(args: dict) -> None:
 def _log_to_wandb(result, wandb_project: str) -> None:
     run = wandb.init(
         project=wandb_project,
+        dir=wandb_dir(),
         group=f"angle_2b_{result.environment}_seed{result.seed}",
         job_type=result.matchup_name,
         name=f"angle2b-{result.matchup_name}-{result.environment}-seed{result.seed}",

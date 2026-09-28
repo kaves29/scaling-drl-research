@@ -7,9 +7,10 @@ from pathlib import Path
 
 import pandas as pd
 
-from analysis.baseline_calibration_pool import BASELINE_ARCHITECTURE, POOL_EXPERIMENT, POOL_SEEDS, POOL_STORAGE_ROOT
+from analysis.baseline_calibration_pool import BASELINE_ARCHITECTURE, POOL_EXPERIMENT, POOL_SEEDS
 from analysis.metrics_store import RunIdentity, metrics_path
 from utils.atomic_io import atomic_write_text
+from utils.paths import RESULTS_ROOT, require_absolute, results_path
 
 # Safe launch pattern (added 2026-09-21, after the 2026-09-20/21 incident:
 # a relative --checkpoint_dir crashed 100% of a 150-run campaign, and a
@@ -81,7 +82,7 @@ def _has_any_files(path):
     return any(p.is_file() for p in path.rglob("*"))
 
 
-def classify(ckpt_dir, experiment, arch_name, env_name, seed, steps, snapshot):
+def classify(ckpt_dir, experiment, arch_name, env_name, seed, steps, snapshot, results_root=RESULTS_ROOT):
     """Returns (status, reason); status is one of fresh, resume, done,
     done_legacy, review. Only fresh and resume jobs are emitted."""
     ckpt = Path(ckpt_dir)
@@ -108,12 +109,13 @@ def classify(ckpt_dir, experiment, arch_name, env_name, seed, steps, snapshot):
     # existed, or one that crashed during its end-of-run writes. Never
     # resume these - resuming retrains the tail and overwrites final data.
     identity = RunIdentity(experiment=experiment, architecture=arch_name, environment=env_name, seed=seed)
+    metrics_csv = metrics_path(identity, root=results_path("metrics", results_root=results_root))
     missing = []
-    if _last_env_step(metrics_path(identity)) != steps:
-        missing.append(f"metrics CSV at final env_step ({metrics_path(identity)})")
+    if _last_env_step(metrics_csv) != steps:
+        missing.append(f"metrics CSV at final env_step ({metrics_csv})")
     if snapshot:
         snap = (
-            Path(POOL_STORAGE_ROOT) / env_name / arch_name / f"seed{seed}"
+            Path(results_path("baseline_calibration_pool", results_root=results_root)) / env_name / arch_name / f"seed{seed}"
             / "baseline_pool" / "checkpoints" / "pool" / "probe_capture_state.pkl"
         )
         if not snap.exists():
@@ -123,7 +125,10 @@ def classify(ckpt_dir, experiment, arch_name, env_name, seed, steps, snapshot):
     return "done_legacy", "pre-DONE-marker run; all end-of-run artifacts verified"
 
 
-def add_jobs(jobs, status, env_list, steps, archs=ARCHS, seeds=SEEDS, experiment="angle_1", prefix="", extra=()):
+def add_jobs(
+    jobs, status, env_list, steps, archs=ARCHS, seeds=SEEDS, experiment="angle_1", prefix="", extra=(),
+    results_root=RESULTS_ROOT,
+):
     for env_name, env_type in env_list:
         for arch_name, blocks, hidden in archs:
             for seed in seeds:
@@ -148,6 +153,8 @@ def add_jobs(jobs, status, env_list, steps, archs=ARCHS, seeds=SEEDS, experiment
                 )
                 for override in extra:
                     cmd += f"--overrides {override} "
+                if results_root != RESULTS_ROOT:
+                    cmd += f"--overrides results_root={results_root} "
                 cmd += (
                     f"--overrides project_name=EchoCritic-{experiment} "
                     f"--checkpoint_dir {ckpt_dir} "
@@ -157,6 +164,7 @@ def add_jobs(jobs, status, env_list, steps, archs=ARCHS, seeds=SEEDS, experiment
                 )
                 state, reason = classify(
                     ckpt_dir, experiment, arch_name, env_name, seed, steps, snapshot=SNAPSHOT_FLAG in cmd,
+                    results_root=results_root,
                 )
                 status.setdefault(state, []).append((ckpt_dir, reason))
                 if state in ("fresh", "resume"):
@@ -196,14 +204,20 @@ def main(argv=None):
         "--backfill-done", action="store_true",
         help="Write DONE into every run verified complete that predates the marker.",
     )
+    parser.add_argument(
+        "--results-root", default=RESULTS_ROOT,
+        help="Absolute results root the jobs write to and completed runs are verified against.",
+    )
     args = parser.parse_args(argv)
+    results_root = require_absolute(args.results_root, "--results-root")
 
     status = {}
     manifests = {"job_list.txt": [], "job_list_pool.txt": []}
-    add_grid(manifests["job_list.txt"], status)
+    add_grid(manifests["job_list.txt"], status, results_root=results_root)
     add_grid(
         manifests["job_list_pool.txt"], status, archs=POOL_ARCHS, seeds=POOL_SEEDS,
         experiment=POOL_EXPERIMENT, prefix=f"{POOL_EXPERIMENT}/", extra=POOL_EXTRA,
+        results_root=results_root,
     )
     if args.backfill_done:
         backfill_done(status)

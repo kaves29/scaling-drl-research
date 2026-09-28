@@ -18,6 +18,7 @@ from dataclasses import dataclass
 from typing import List
 
 from experiments.angle_2b.errors import Angle2BConfigError
+from utils.paths import RESULTS_ROOT, config_root, results_path
 
 REQUIRED_BLOCK_FIELDS = ("matchup_names",)
 VALID_MATCHUP_NAMES = ("matchup_1", "matchup_2")
@@ -32,6 +33,7 @@ class Angle2BRunConfig:
     num_states_per_source: int
     angle_2a_results_root: str
     output_root: str
+    pool_root: str
 
 
 def validate_angle2b_config(cfg) -> Angle2BRunConfig:
@@ -65,6 +67,10 @@ def validate_angle2b_config(cfg) -> Angle2BRunConfig:
 
     seed = int(cfg.seed)
     analysis_seed = int(block.analysis_seed) if "analysis_seed" in block and block.analysis_seed is not None else seed
+    results_root = config_root(cfg.get("results_root"), "results_root", RESULTS_ROOT)
+
+    def root(field, subdir):
+        return config_root(block.get(field), f"angle_2_b.{field}", results_path(subdir, results_root=results_root))
 
     return Angle2BRunConfig(
         environment=str(cfg.env_name),
@@ -72,6 +78,7 @@ def validate_angle2b_config(cfg) -> Angle2BRunConfig:
         matchup_names=matchup_names,
         analysis_seed=analysis_seed,
         num_states_per_source=int(block.get("num_states_per_source", 40)),
-        angle_2a_results_root=str(block.get("angle_2a_results_root", "results/angle_2a")),
-        output_root=str(block.get("output_root", "results/angle_2b")),
+        angle_2a_results_root=root("angle_2a_results_root", "angle_2a"),
+        output_root=root("output_root", "angle_2b"),
+        pool_root=root("pool_root", "baseline_calibration_pool"),
     )

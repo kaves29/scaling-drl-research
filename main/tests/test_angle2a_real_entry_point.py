@@ -8,13 +8,11 @@ newest structural change to this angle's real entry point.
 wandb.init() is called unconditionally by matchup.py's _log_to_wandb - mocked
 at the module-attribute level, same approach as test_angle1_real_entry_point.py.
 
-Every relevant path this module touches (onset ledger root, shared pool
-storage root, pool-null cache root, and run_matchup's own hardcoded
-output_root="results/angle_2a") defaults to a relative "results/..." path
-with no CLI/config override - so, same as test_angle1_real_entry_point.py's
-critic_degradation test, this test chdirs into a tmpdir for its duration
-(restored in tearDown) rather than writing into this repo's real results/
-directory.
+Every location Angle 2A reads or writes (onset ledger, shared pool,
+pool-null cache, matchup outputs) is derived from the config's results_root,
+set here to a tmpdir so the repo's real results/ stays untouched. The pool's
+composition (which seeds exist) is still narrowed to 4 agents by patching
+get_baseline_calibration_pool, since the pool seed list is not a config value.
 
 r_calibration and prereq_check are disabled via overrides: both are
 substantial, already-separately-tested phases (r_calibration.py,
@@ -23,7 +21,6 @@ changed recently; enabling them here would only add runtime and setup
 complexity without additional coverage of the actual change being tested.
 """
 
-import functools
 import os
 import shutil
 import tempfile
@@ -108,52 +105,15 @@ def _make_pool_agent_cfg(seed):
 
 
 class Angle2ARealEntryPointTest(unittest.TestCase):
-    """NOTE on a real bug found while writing this test (see the End-of-Task
-    Summary): SACAgent.save_checkpoint()/load_checkpoint()
-    (scale_rl/agents/sac/sac_agent.py) pass checkpoint_dir straight to
-    orbax with no os.path.abspath() conversion, and orbax's checkpointer
-    REJECTS any relative path outright ("Checkpoint path should be
-    absolute"), regardless of cwd - confirmed directly, not assumed. This
-    is pre-existing (not introduced by the pool refactor) and affects
-    Angle 1's own --checkpoint_dir too if it were ever passed relative; it
-    has simply never been hit because operators have always passed absolute
-    paths by convention, never enforced. It WOULD immediately crash a real
-    Angle 2A run, though: angle_2_a.py's Phase 2 hardcodes
-    output_root="results/angle_2a" (relative, no override mechanism at
-    all), so agent.save_checkpoint() inside save_frozen_agent_snapshot
-    would always fail on an unmodified real invocation. Patched here
-    (absolute-ifying checkpoint_dir before delegating to the real method)
-    so this test can still validate everything else about the real pipeline
-    - this is a test-only workaround, NOT a fix to the underlying bug."""
-
     def setUp(self):
         GlobalHydra.instance().clear()
         self.tmpdir = tempfile.mkdtemp()
-        self.original_cwd = os.getcwd()
-        os.chdir(self.tmpdir)
+        self.results_root = os.path.join(self.tmpdir, "results")
         self.wandb_init_patcher = mock.patch("wandb.init", side_effect=_fake_wandb_init)
         self.wandb_init_patcher.start()
 
-        from scale_rl.agents.sac.sac_agent import SACAgent
-
-        self._real_save_checkpoint = SACAgent.save_checkpoint
-        self._real_load_checkpoint = SACAgent.load_checkpoint
-
-        def _abs_save_checkpoint(agent_self, checkpoint_dir):
-            return self._real_save_checkpoint(agent_self, os.path.abspath(checkpoint_dir))
-
-        def _abs_load_checkpoint(agent_self, checkpoint_dir):
-            return self._real_load_checkpoint(agent_self, os.path.abspath(checkpoint_dir))
-
-        self.checkpoint_patcher = mock.patch.multiple(
-            SACAgent, save_checkpoint=_abs_save_checkpoint, load_checkpoint=_abs_load_checkpoint,
-        )
-        self.checkpoint_patcher.start()
-
     def tearDown(self):
-        self.checkpoint_patcher.stop()
         self.wandb_init_patcher.stop()
-        os.chdir(self.original_cwd)
         GlobalHydra.instance().clear()
         shutil.rmtree(self.tmpdir, ignore_errors=True)
 
@@ -210,8 +170,8 @@ class Angle2ARealEntryPointTest(unittest.TestCase):
         from experiments.angle_2_a import run
         from experiments.angle_2a.pool_null_baseline import load_pool_null_distribution
 
-        ledger_root = "results/ledgers"
-        pool_root = "results/baseline_calibration_pool"
+        ledger_root = os.path.join(self.results_root, "ledgers")
+        pool_root = os.path.join(self.results_root, "baseline_calibration_pool")
         onset_step = 15
 
         _write_onset_ledger_entry(ledger_root, ENVIRONMENT, seed=1, architecture="D2W8", onset_step=onset_step)
@@ -223,16 +183,9 @@ class Angle2ARealEntryPointTest(unittest.TestCase):
         self._seed_pool(pool_root, num_agents=4)
         fake_identities = [type("Ident", (), {"seed": s, "architecture": "D2W512"})() for s in range(1, 5)]
 
-        # POOL_STORAGE_ROOT is anchored to the real repo (2026-09-25), so the
-        # reader is pointed at this tmpdir's pool explicitly.
-        from experiments.angle_2a.pool_null_baseline import load_or_compute_pool_null_distribution
-
         with mock.patch(
             "experiments.angle_2a.pool_null_baseline.get_baseline_calibration_pool",
             return_value=fake_identities,
-        ), mock.patch(
-            "experiments.angle_2_a.load_or_compute_pool_null_distribution",
-            functools.partial(load_or_compute_pool_null_distribution, angle_2a_root=os.path.abspath(pool_root)),
         ):
             run({
                 "config_path": CONFIG_PATH,
@@ -248,7 +201,7 @@ class Angle2ARealEntryPointTest(unittest.TestCase):
                     "angle_2_a.r_calibration.enabled=false", "angle_2_a.num_mc_rollouts=2",
                     "angle_2_a.prereq_check.enabled=false",
                     "angle_2_a.run_null_baseline=true",
-                    "angle_2_a.onset_ledger_root=results/ledgers",
+                    f"results_root={self.results_root}",
                 ],
                 "checkpoint_dir": None,
                 "checkpoint_interval": None,
@@ -256,13 +209,13 @@ class Angle2ARealEntryPointTest(unittest.TestCase):
 
         # --- real matchup outputs exist ---
         for matchup_name in ("matchup_1", "matchup_2"):
-            out_dir = matchup_dir(ENVIRONMENT, 1, matchup_name, root="results/angle_2a")
+            out_dir = matchup_dir(ENVIRONMENT, 1, matchup_name, root=os.path.join(self.results_root, "angle_2a"))
             self.assertTrue((out_dir / "run_metadata.json").exists(), f"missing {matchup_name} run_metadata.json")
             self.assertTrue((out_dir / "probes.csv").exists())
 
         # --- pool null distribution genuinely computed and cached (not
         # skipped/empty) - confirms Phase 3's refactor actually ran ---
-        cached = load_pool_null_distribution(ENVIRONMENT, root="results/angle_2a_pool_null")
+        cached = load_pool_null_distribution(ENVIRONMENT, root=os.path.join(self.results_root, "angle_2a_pool_null"))
         self.assertIsNotNone(cached, "expected a cached pool null distribution after a real run")
         expected_pairs = len(all_unique_pairs(list(range(1, 5))))
         self.assertEqual(len(cached.pairs), expected_pairs)

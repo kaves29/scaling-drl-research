@@ -45,8 +45,15 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 
-from analysis.baseline_calibration_pool import BASELINE_ARCHITECTURE, POOL_MATCHUP_NAME, POOL_ROLE, POOL_STORAGE_ROOT
+from analysis.baseline_calibration_pool import (
+    BASELINE_ARCHITECTURE,
+    POOL_MATCHUP_NAME,
+    POOL_ROLE,
+    POOL_STORAGE_ROOT,
+    check_pool_comparable,
+)
 from experiments.angle_2a.storage import DEFAULT_OUTPUT_ROOT as ANGLE_2A_ROOT
+from experiments.angle_2b.storage import DEFAULT_OUTPUT_ROOT as ANGLE_2B_ROOT
 from experiments.angle_2b.checkpoint_io import load_frozen_agent_snapshot
 from experiments.angle_2b.gradients import compute_action_gradient
 from experiments.angle_2b.statistics import NullComparisonResult, compare_to_null
@@ -137,7 +144,7 @@ def run_angle_2c_analysis(
     onset_source_experiment: str,
     onset_ledger_root: str,
     angle_2a_root: str = ANGLE_2A_ROOT,
-    angle_2b_root: str = "results/angle_2b",
+    angle_2b_root: str = ANGLE_2B_ROOT,
     pool_root: str = POOL_STORAGE_ROOT,
     output_root: str = ANGLE_2C_ROOT,
 ) -> Angle2CResult:
@@ -182,6 +189,10 @@ def run_angle_2c_analysis(
     # point ---
     null_pair_rows = []
     null_direction, null_magnitude, null_offset, null_instability = [], [], [], []
+    check_pool_comparable(
+        environment, sorted({seed for pair in artifacts.null_pairs for seed in pair}), pool_root,
+        f"Angle 2C pool null ({environment})",
+    )
     for (seed_a, seed_b), pair in sorted(artifacts.null_pairs.items()):
         snap_a = load_frozen_agent_snapshot(
             environment, seed_a, POOL_MATCHUP_NAME, POOL_ROLE, root=pool_root, architecture=BASELINE_ARCHITECTURE,

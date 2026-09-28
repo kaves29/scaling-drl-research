@@ -27,8 +27,9 @@ import numpy as np
 import pandas as pd
 
 from analysis.baseline_calibration import compute_baseline_source_fingerprint
-from analysis.metrics_store import RunIdentity, load_metrics
+from analysis.metrics_store import METRICS_ROOT, RunIdentity, load_metrics
 from utils.atomic_io import atomic_write_text
+from utils.paths import results_path
 
 # Both values are valid: 5 is Angle 1's original locked baseline seed count
 # (existing callers/configs keep working unchanged); 10 is the expanded
@@ -36,7 +37,7 @@ from utils.atomic_io import atomic_write_text
 # added 2026-09-08. Anything else is very likely a caller bug (e.g. a
 # mismatched seed list), not a deliberate choice, so it still fails loudly.
 VALID_BASELINE_SEED_COUNTS = (5, 10)
-WINDOW_CALIBRATION_ROOT = "results/baselines"
+WINDOW_CALIBRATION_ROOT = results_path("baselines")
 
 # Practical conventions, not statistically derived - see research-methodology.md.
 BURN_IN_FRACTION = 0.25
@@ -122,7 +123,7 @@ def _ccf(x: np.ndarray, y: np.ndarray, max_abs_lag: int) -> np.ndarray:
 def calibrate_window_parameters(
     baseline_identities: List[RunIdentity],
     logging_per_interaction_step: int,
-    metrics_root: str = "results/metrics",
+    metrics_root: str = METRICS_ROOT,
     burn_in_fraction: float = BURN_IN_FRACTION,
     ccf_lag_fraction_cap: float = CCF_LAG_FRACTION_CAP,
 ) -> WindowCalibrationResult:
@@ -319,7 +320,7 @@ def _load_cached_fingerprint(architecture: str, environment: str, root: str) -> 
 def load_or_calibrate_window_parameters(
     baseline_identities: List[RunIdentity],
     logging_per_interaction_step: int,
-    metrics_root: str = "results/metrics",
+    metrics_root: str = METRICS_ROOT,
     window_root: str = WINDOW_CALIBRATION_ROOT,
     force_recompute: bool = False,
     burn_in_fraction: float = BURN_IN_FRACTION,

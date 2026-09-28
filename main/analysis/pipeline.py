@@ -11,8 +11,8 @@ experiments/angle_1.py).
 import warnings
 from typing import List, Optional
 
-from analysis.baseline_calibration import load_or_calibrate_baseline
-from analysis.metrics_store import RunIdentity, load_metrics
+from analysis.baseline_calibration import BASELINE_ROOT, load_or_calibrate_baseline
+from analysis.metrics_store import METRICS_ROOT, RunIdentity, load_metrics, run_metadata_path
 from analysis.window_calibration import load_or_calibrate_window_parameters
 from analysis.onset_detection import (
     STATUS_NEEDS_REVIEW,
@@ -22,7 +22,8 @@ from analysis.onset_detection import (
     detect_critic_degradation_onset,
     detect_propagation_onset,
 )
-from utils.onset_ledger import REQUIRED_COLUMNS, WandbIdentity, log_onset_event
+from utils.onset_ledger import DEFAULT_LEDGER_ROOT, REQUIRED_COLUMNS, WandbIdentity, log_onset_event
+from utils.run_metadata import RunMetadataMismatch, check_runs_comparable, load_run_metadata
 
 _STATUS_PRIORITY = [STATUS_NEEDS_REVIEW, STATUS_SUCCESS, STATUS_NO_ONSET]
 
@@ -43,9 +44,9 @@ def run_post_hoc_onset_analysis(
     onset_cfg: dict,
     logging_per_interaction_step: int,
     wandb_identity: Optional[WandbIdentity] = None,
-    metrics_root: str = "results/metrics",
-    baseline_root: str = "results/baselines",
-    ledger_root: str = "results/ledgers",
+    metrics_root: str = METRICS_ROOT,
+    baseline_root: str = BASELINE_ROOT,
+    ledger_root: str = DEFAULT_LEDGER_ROOT,
 ):
     """Runs onset detection for one finished run and upserts its ledger row.
 
@@ -68,6 +69,21 @@ def run_post_hoc_onset_analysis(
         }
     )
 
+    runs = {
+        ident.run_key: load_run_metadata(run_metadata_path(ident, root=metrics_root))
+        for ident in [run_identity, *baseline_identities]
+    }
+    try:
+        unverified = check_runs_comparable(runs, f"onset analysis of {run_identity.run_key}")
+    except RunMetadataMismatch as e:
+        row["status"] = STATUS_NEEDS_REVIEW
+        row["detection_notes"] = f"refused to combine runs: {e}"
+        log_onset_event(
+            run_identity.experiment, run_identity.architecture, row,
+            identity=wandb_identity, root=ledger_root,
+        )
+        raise
+
     metrics_df = load_metrics(run_identity, root=metrics_root)
     if metrics_df.empty:
         row["status"] = STATUS_NEEDS_REVIEW
@@ -84,6 +100,8 @@ def run_post_hoc_onset_analysis(
 
     steps = metrics_df["interaction_step"].tolist()
     notes = []
+    if unverified:
+        notes.append(f"settings not machine-verified (no run metadata) for: {unverified}")
     results = []
     force_baseline_recompute = bool(onset_cfg.get("force_baseline_recompute", False))
 

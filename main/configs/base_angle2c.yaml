@@ -12,6 +12,8 @@
 project_name: 'EchoCritic'
 seed: 108
 env_name: 'reacher-hard'
+# Absolute root every default output/input location below derives from; null = <repo>/results.
+results_root: null
 
 defaults:
   - _self_
@@ -43,7 +45,10 @@ angle_2_c:
   # proxy (see experiments/angle_2c/onset_lookup.py's module docstring for
   # what this can and cannot actually establish).
   onset_source_experiment: 'angle_1'
-  onset_ledger_root: 'results/ledgers'
-
-  angle_2b_results_root: 'results/angle_2b'
-  output_root: 'results/angle_2c'
+  # Absolute paths, or null for the default under results_root:
+  # ledgers/, angle_2a/, angle_2b/, angle_2c/, baseline_calibration_pool/.
+  onset_ledger_root: null
+  angle_2a_results_root: null
+  angle_2b_results_root: null
+  output_root: null
+  pool_root: null

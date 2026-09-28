@@ -11,7 +11,6 @@ import unittest
 from contextlib import redirect_stdout
 from io import StringIO
 from pathlib import Path
-from unittest import mock
 
 import pandas as pd
 
@@ -41,14 +40,14 @@ def _write_checkpoint(env, seed, meta_step, last_env_step):
     )
 
 
-def _write_finished_artifacts(env, seed, pool_root, snapshot=True):
-    metrics = Path("results/metrics/angle_1/D2W512") / env / f"angle_1_D2W512_{env}_seed{seed}.csv"
+def _write_finished_artifacts(env, seed, results_root, snapshot=True):
+    metrics = Path(results_root) / "metrics" / "angle_1" / "D2W512" / env / f"angle_1_D2W512_{env}_seed{seed}.csv"
     metrics.parent.mkdir(parents=True, exist_ok=True)
     pd.DataFrame({"interaction_step": range(0, 500_001, 2000), "env_step": range(0, 1_000_001, 4000)}).to_csv(
         metrics, index=False,
     )
     if snapshot:
-        snap = Path(pool_root) / env / "D2W512" / f"seed{seed}" / "baseline_pool" / "checkpoints" / "pool"
+        snap = Path(results_root) / "baseline_calibration_pool" / env / "D2W512" / f"seed{seed}" / "baseline_pool" / "checkpoints" / "pool"
         snap.mkdir(parents=True)
         (snap / "probe_capture_state.pkl").write_bytes(b"")
 
@@ -58,10 +57,7 @@ class GenerateManifestTest(unittest.TestCase):
         self.tmpdir = tempfile.mkdtemp()
         self.original_cwd = os.getcwd()
         os.chdir(self.tmpdir)
-        self.pool_root = str(Path(self.tmpdir) / "pool")
-        patcher = mock.patch.object(gm, "POOL_STORAGE_ROOT", self.pool_root)
-        patcher.start()
-        self.addCleanup(patcher.stop)
+        self.results_root = str(Path(self.tmpdir) / "results")
 
     def tearDown(self):
         os.chdir(self.original_cwd)
@@ -69,7 +65,7 @@ class GenerateManifestTest(unittest.TestCase):
 
     def _generate(self, *argv):
         with redirect_stdout(StringIO()):
-            gm.main(list(argv))
+            gm.main(["--results-root", self.results_root, *argv])
         return {
             name: Path(name).read_text().splitlines() for name in ("job_list.txt", "job_list_pool.txt")
         }
@@ -83,12 +79,12 @@ class GenerateManifestTest(unittest.TestCase):
 
         for env, seed in FINISHED:
             _write_checkpoint(env, seed, meta_step=487_539, last_env_step=DMC_HARD_ENV_STEPS)
-            _write_finished_artifacts(env, seed, self.pool_root)
+            _write_finished_artifacts(env, seed, self.results_root)
         for env, seed in PARTIAL:
             _write_checkpoint(env, seed, meta_step=312_525, last_env_step=625_048)
 
         status = {}
-        gm.add_grid([], status)
+        gm.add_grid([], status, results_root=self.results_root)
         self.assertEqual(len(status["done_legacy"]), 11)
         self.assertEqual(len(status["resume"]), 2)
         self.assertEqual(len(status["fresh"]), 150 - 13)
@@ -109,12 +105,12 @@ class GenerateManifestTest(unittest.TestCase):
     def test_backfill_writes_done_only_for_verified_legacy_runs(self):
         for env, seed in FINISHED:
             _write_checkpoint(env, seed, meta_step=487_539, last_env_step=DMC_HARD_ENV_STEPS)
-            _write_finished_artifacts(env, seed, self.pool_root)
+            _write_finished_artifacts(env, seed, self.results_root)
         for env, seed in PARTIAL:
             _write_checkpoint(env, seed, meta_step=312_525, last_env_step=625_048)
         # Finished training but its snapshot is missing: must stay unmarked.
         _write_checkpoint("humanoid-run", 4, meta_step=487_539, last_env_step=DMC_HARD_ENV_STEPS)
-        _write_finished_artifacts("humanoid-run", 4, self.pool_root, snapshot=False)
+        _write_finished_artifacts("humanoid-run", 4, self.results_root, snapshot=False)
 
         before = self._generate()
         self._generate("--backfill-done")
@@ -124,7 +120,7 @@ class GenerateManifestTest(unittest.TestCase):
             self.assertFalse((_ckpt_dir(env, seed) / gm.DONE_MARKER).exists(), (env, seed))
 
         status = {}
-        gm.add_grid([], status)
+        gm.add_grid([], status, results_root=self.results_root)
         self.assertEqual(len(status["done"]), 11)
         self.assertNotIn("done_legacy", status)
         self.assertEqual(len(status["resume"]), 2)
@@ -133,18 +129,18 @@ class GenerateManifestTest(unittest.TestCase):
 
     def test_finished_run_missing_an_artifact_is_never_resumed(self):
         _write_checkpoint("dog-run", 1, meta_step=487_539, last_env_step=DMC_HARD_ENV_STEPS)
-        _write_finished_artifacts("dog-run", 1, self.pool_root, snapshot=False)
+        _write_finished_artifacts("dog-run", 1, self.results_root, snapshot=False)
         state, reason = gm.classify(
             os.path.abspath(_ckpt_dir("dog-run", 1)), "angle_1", "D2W512", "dog-run", 1,
-            DMC_HARD_ENV_STEPS, snapshot=True,
+            DMC_HARD_ENV_STEPS, snapshot=True, results_root=self.results_root,
         )
         self.assertEqual(state, "review")
         self.assertIn("pool snapshot", reason)
 
-        shutil.rmtree("results")
+        shutil.rmtree(self.results_root)
         state, reason = gm.classify(
             os.path.abspath(_ckpt_dir("dog-run", 1)), "angle_1", "D2W512", "dog-run", 1,
-            DMC_HARD_ENV_STEPS, snapshot=False,
+            DMC_HARD_ENV_STEPS, snapshot=False, results_root=self.results_root,
         )
         self.assertEqual(state, "review")
         self.assertIn("metrics CSV", reason)

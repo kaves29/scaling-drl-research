@@ -37,6 +37,7 @@ from analysis.baseline_calibration_pool import (
     POOL_MATCHUP_NAME,
     POOL_ROLE,
     all_unique_pairs,
+    check_pool_comparable,
     get_baseline_calibration_pool,
 )
 from experiments.angle_2b.checkpoint_io import apply_agent_normalization, load_frozen_agent_snapshot
@@ -163,6 +164,9 @@ def build_null_distribution(
     the pool composition is fixed, shared infrastructure (see
     analysis/baseline_calibration_pool.get_baseline_calibration_pool)."""
     identities = get_baseline_calibration_pool(environment)
+    check_pool_comparable(
+        environment, [ident.seed for ident in identities], root, f"Angle 2B pool null ({environment})",
+    )
     seed_pairs = all_unique_pairs(sorted(ident.seed for ident in identities))
     if not seed_pairs:
         raise Angle2BSnapshotError(

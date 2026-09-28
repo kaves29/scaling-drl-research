@@ -50,8 +50,7 @@ import tqdm
 import wandb
 from dotmap import DotMap
 
-from analysis.baseline_calibration_pool import POOL_STORAGE_ROOT
-from analysis.metrics_store import MetricsRecorder, RunIdentity
+from analysis.metrics_store import MetricsRecorder, RunIdentity, run_metadata_path
 from analysis.pipeline import run_post_hoc_onset_analysis
 from experiments.angle_2a.agent_runner import ProbeCapture
 from experiments.angle_2a.env_state import capture_env_state
@@ -67,6 +66,16 @@ from scale_rl.envs.myosuite import validate_myosuite_core4
 from scale_rl.evaluation import evaluate
 from utils.atomic_io import atomic_write_text
 from utils.onset_ledger import WandbIdentity
+from utils.paths import RESULTS_ROOT, config_root, results_path
+from utils.run_metadata import (
+    RUN_METADATA_FILENAME,
+    SNAPSHOT_RUN_METADATA_FILENAME,
+    build_run_metadata,
+    check_resume_matches,
+    load_run_metadata,
+    record_launch,
+    save_run_metadata,
+)
 
 jax.config.update("jax_enable_x64", False)
 
@@ -158,14 +167,41 @@ def run(args: dict) -> None:
     # agent everything Angle 2A's refactored null-baseline (exact-state MC
     # rollouts) and Angle 2B/2C's null distribution (probe-capture states/
     # actions) need, without a second, separate training pass.
+    results_root = config_root(cfg.get("results_root"), "results_root", RESULTS_ROOT)
+    metrics_root = results_path("metrics", results_root=results_root)
     save_probe_capture_snapshot = bool(cfg.get("save_probe_capture_snapshot", False))
-    probe_capture_snapshot_root = str(cfg.get("probe_capture_snapshot_root", POOL_STORAGE_ROOT))
+    probe_capture_snapshot_root = str(cfg.get(
+        "probe_capture_snapshot_root", results_path("baseline_calibration_pool", results_root=results_root)
+    ))
     if save_probe_capture_snapshot and not os.path.isabs(probe_capture_snapshot_root):
         raise ValueError(
             f"probe_capture_snapshot_root must be an absolute path, got: "
             f"{probe_capture_snapshot_root!r}. Pool readers resolve it independently "
             f"of this run's cwd."
         )
+
+    checkpoint_dir = args.checkpoint_dir
+    is_resumed = bool(checkpoint_dir and (Path(checkpoint_dir) / "meta.pkl").exists())
+    run_identity = RunIdentity(
+        experiment=experiment_name,
+        architecture=get_architecture_id(cfg),
+        environment=cfg.env_name,
+        seed=cfg.seed,
+    )
+    run_metadata = build_run_metadata(
+        omegaconf.OmegaConf.to_container(cfg, resolve=True),
+        identity={**vars(run_identity), "run_key": run_identity.run_key},
+        launch={"started_at": datetime.now(timezone.utc).isoformat(), "resumed": is_resumed},
+    )
+    if checkpoint_dir:
+        metadata_path = Path(checkpoint_dir) / RUN_METADATA_FILENAME
+        stored_metadata = load_run_metadata(metadata_path)
+        if is_resumed and stored_metadata is not None:
+            check_resume_matches(stored_metadata, run_metadata, where=checkpoint_dir)
+            run_metadata = record_launch(stored_metadata, run_metadata)
+        elif is_resumed:
+            run_metadata["first_launch_unrecorded"] = True
+        save_run_metadata(metadata_path, run_metadata)
 
     #############################
     # envs
@@ -208,12 +244,10 @@ def run(args: dict) -> None:
         cfg=cfg.agent,
     )
 
-    checkpoint_dir = args.checkpoint_dir
     start_step = 1
     resumed_update_step = 0
     resumed_update_counter = 0
     resumed_wandb_run_id = None
-    is_resumed = bool(checkpoint_dir and (Path(checkpoint_dir) / "meta.pkl").exists())
 
     if is_resumed:
         agent.load_checkpoint(checkpoint_dir)
@@ -223,8 +257,16 @@ def run(args: dict) -> None:
         start_step = meta["interaction_step"] + 1
         resumed_update_step = meta["update_step"]
         resumed_update_counter = meta["update_counter"]
-        # .get(): older checkpoints predate this field.
+        # .get(): older checkpoints predate these fields.
         resumed_wandb_run_id = meta.get("wandb_run_id")
+        if "numpy_rng_state" in meta:
+            np.random.set_state(meta["numpy_rng_state"])
+            random.setstate(meta["python_rng_state"])
+        else:
+            print(
+                "[angle_1] WARNING: checkpoint predates RNG-state saving; replay sampling "
+                "restarts from the seed instead of continuing."
+            )
         if save_probe_capture_snapshot:
             probe_capture.load(checkpoint_dir)
             # One add per interaction step, so the restored count must match
@@ -273,16 +315,11 @@ def run(args: dict) -> None:
     #############################
     # onset tracking (opt-in)
     #############################
-    architecture = get_architecture_id(cfg)
-    run_identity = RunIdentity(
-        experiment=experiment_name,
-        architecture=architecture,
-        environment=cfg.env_name,
-        seed=cfg.seed,
-    )
+    architecture = run_identity.architecture
     metrics_recorder = None
     if critic_degradation_enabled or pathology_prop_enabled:
-        metrics_recorder = MetricsRecorder(run_identity)
+        metrics_recorder = MetricsRecorder(run_identity, root=metrics_root)
+        save_run_metadata(run_metadata_path(run_identity, root=metrics_root), run_metadata)
         if checkpoint_dir:
             metrics_recorder.load_existing_up_to(start_step - 1)
 
@@ -381,6 +418,8 @@ def run(args: dict) -> None:
                     # Lets a resumed process reattach to this run - see
                     # WandbTrainerLogger's run_id param.
                     "wandb_run_id": logger.run_id,
+                    "numpy_rng_state": np.random.get_state(),
+                    "python_rng_state": random.getstate(),
                 }, f)
             pd.DataFrame(local_metrics_cache).to_csv(csv_path, index=False)
             if metrics_recorder is not None:
@@ -424,6 +463,7 @@ def run(args: dict) -> None:
             agent_cfg=agent_cfg_dict, root=probe_capture_snapshot_root, architecture=architecture,
         )
         probe_capture.save(str(snapshot_paths["checkpoint_dir"]))
+        save_run_metadata(Path(snapshot_paths["checkpoint_dir"]).parent.parent / SNAPSHOT_RUN_METADATA_FILENAME, run_metadata)
         print(f"[angle_1] probe-capture snapshot saved -> {snapshot_paths['checkpoint_dir']}")
 
     # Before onset analysis: a failed analysis is rerun offline, never retrained.
@@ -487,6 +527,9 @@ def run(args: dict) -> None:
                 onset_cfg=onset_cfg,
                 logging_per_interaction_step=int(cfg.logging_per_interaction_step),
                 wandb_identity=wandb_identity,
+                metrics_root=metrics_root,
+                baseline_root=results_path("baselines", results_root=results_root),
+                ledger_root=results_path("ledgers", results_root=results_root),
             )
             print(f"[onset-ledger] onset analysis complete -> {ledger_path}")
         except Exception:

@@ -32,6 +32,7 @@ from scale_rl.buffers.base_buffer import Batch
 from scale_rl.networks.trainer import PRNGKey, Trainer
 from scale_rl.agents.sparse import get_sparsities_erdos_renyi,get_var_shape_dict,create_random_mask
 from scale_rl.networks.metrics import print_num_parameters,flatten_dict,format_params_str
+from utils.paths import require_absolute
 """
 The @dataclass decorator must have `frozen=True` to ensure the instance is immutable,
 allowing it to be treated as a static variable in JAX.
@@ -652,6 +653,7 @@ class SACAgent(BaseAgent):
     
     def save_checkpoint(self, checkpoint_dir: str):
         """Saves the agent's JAX PyTree state (networks, optimizers, PRNG key, churn batch) using Orbax."""
+        require_absolute(checkpoint_dir, "checkpoint_dir")
         os.makedirs(checkpoint_dir, exist_ok=True)
         ckpt_path = os.path.join(checkpoint_dir, "agent_ckpt")
 
@@ -669,6 +671,7 @@ class SACAgent(BaseAgent):
 
     def load_checkpoint(self, checkpoint_dir: str):
         """Restores the agent's JAX PyTree state back into their exact Flax TrainState structures."""
+        require_absolute(checkpoint_dir, "checkpoint_dir")
         ckpt_path = os.path.join(checkpoint_dir, "agent_ckpt")
 
         if not os.path.exists(ckpt_path):

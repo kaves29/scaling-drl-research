@@ -14,6 +14,7 @@ from dataclasses import dataclass
 from typing import List
 
 from experiments.angle_2c.errors import Angle2CConfigError
+from utils.paths import RESULTS_ROOT, config_root, results_path
 
 REQUIRED_BLOCK_FIELDS = ("matchup_names",)
 VALID_MATCHUP_NAMES = ("matchup_1", "matchup_2")
@@ -38,8 +39,10 @@ class Angle2CRunConfig:
     perturbation_sigma: float
     onset_source_experiment: str
     onset_ledger_root: str
+    angle_2a_results_root: str
     angle_2b_results_root: str
     output_root: str
+    pool_root: str
 
 
 def validate_angle2c_config(cfg) -> Angle2CRunConfig:
@@ -73,6 +76,10 @@ def validate_angle2c_config(cfg) -> Angle2CRunConfig:
 
     seed = int(cfg.seed)
     analysis_seed = int(block.analysis_seed) if "analysis_seed" in block and block.analysis_seed is not None else seed
+    results_root = config_root(cfg.get("results_root"), "results_root", RESULTS_ROOT)
+
+    def root(field, subdir):
+        return config_root(block.get(field), f"angle_2_c.{field}", results_path(subdir, results_root=results_root))
 
     return Angle2CRunConfig(
         environment=str(cfg.env_name),
@@ -82,7 +89,9 @@ def validate_angle2c_config(cfg) -> Angle2CRunConfig:
         num_perturbations=int(block.get("num_perturbations", DEFAULT_NUM_PERTURBATIONS)),
         perturbation_sigma=float(block.get("perturbation_sigma", DEFAULT_PERTURBATION_SIGMA)),
         onset_source_experiment=str(block.get("onset_source_experiment", "angle_1")),
-        onset_ledger_root=str(block.get("onset_ledger_root", "results/ledgers")),
-        angle_2b_results_root=str(block.get("angle_2b_results_root", "results/angle_2b")),
-        output_root=str(block.get("output_root", "results/angle_2c")),
+        onset_ledger_root=root("onset_ledger_root", "ledgers"),
+        angle_2a_results_root=root("angle_2a_results_root", "angle_2a"),
+        angle_2b_results_root=root("angle_2b_results_root", "angle_2b"),
+        output_root=root("output_root", "angle_2c"),
+        pool_root=root("pool_root", "baseline_calibration_pool"),
     )

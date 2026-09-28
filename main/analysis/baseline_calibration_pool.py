@@ -31,12 +31,12 @@ get_baseline_calibration_pool's docstring for why it uses all 10 seeds
 directly instead of a pairing scheme.
 """
 
-import os
 from dataclasses import dataclass
 from itertools import combinations
 from typing import List, Tuple, TypeVar
 
 from analysis.metrics_store import RunIdentity
+from utils.paths import results_path
 
 ANGLE1_EXPERIMENT = "angle_1"
 ANGLE1_BASELINE_SEEDS = (1, 2, 3, 4, 5)
@@ -55,9 +55,7 @@ BASELINE_ARCHITECTURE = "D2W512"  # matches configs/base_sac.yaml's onset_detect
 # Absolute and anchored to the repo root (2026-09-25), not the launching
 # shell's cwd, so the Angle 1 writer and the Angle 2A/2B/2C readers always
 # agree on one location.
-POOL_STORAGE_ROOT = os.path.abspath(
-    os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "results", "baseline_calibration_pool")
-)
+POOL_STORAGE_ROOT = results_path("baseline_calibration_pool")
 
 # matchup_name/role used with experiments/angle_2a/storage.py's
 # save_frozen_agent_snapshot/load_frozen_agent_snapshot for every pool
@@ -95,3 +93,19 @@ def all_unique_pairs(items: List[T]) -> List[Tuple[T, T]]:
     See module docstring's Pairing section for why this is the accepted
     design for Angle 2A/2B's null distributions specifically."""
     return list(combinations(items, 2))
+
+
+def check_pool_comparable(environment: str, seeds, pool_root: str, what: str) -> List[int]:
+    """Refuses to pair pool agents trained under different settings; returns
+    the seeds whose snapshots carry no training metadata."""
+    from experiments.angle_2a.storage import matchup_dir
+    from utils.run_metadata import SNAPSHOT_RUN_METADATA_FILENAME, check_runs_comparable, load_run_metadata
+
+    runs = {
+        seed: load_run_metadata(
+            matchup_dir(environment, seed, POOL_MATCHUP_NAME, root=pool_root, architecture=BASELINE_ARCHITECTURE)
+            / SNAPSHOT_RUN_METADATA_FILENAME
+        )
+        for seed in seeds
+    }
+    return check_runs_comparable(runs, what)

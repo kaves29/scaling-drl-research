@@ -8,6 +8,8 @@ seed: 108
 server: 'local'
 
 env_name: 'reacher-hard'
+# Absolute root for metrics/ledgers/baselines/pool snapshots; null = <repo>/results.
+results_root: null
 ##################################################################################
 # Training
 ##################################################################################

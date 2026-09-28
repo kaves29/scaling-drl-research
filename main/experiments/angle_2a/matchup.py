@@ -47,6 +47,7 @@ from experiments.angle_2a.probes import (
     sample_probes,
 )
 from experiments.angle_2a.storage import save_frozen_agent_snapshot, save_matchup_result
+from utils.paths import wandb_dir
 
 MAX_ROLLOUT_STEPS_MULTIPLIER = 3  # safety cap only; natural termination is via terminated/truncated
 
@@ -252,6 +253,7 @@ def run_matchup(
 def _log_to_wandb(matchup_name: str, run_metadata: Dict[str, Any], wandb_project: Optional[str], output_paths: Dict[str, Any]) -> None:
     run = wandb.init(
         project=wandb_project,
+        dir=wandb_dir(),
         group=f"angle_2a_{run_metadata['environment']}_seed{run_metadata['seed']}",
         job_type=matchup_name,
         name=(

@@ -3,26 +3,12 @@ data - not the building-block tests (matchup_2b.py/null_baseline.py/etc. are
 all individually tested, but no test previously called angle_2_b.run()
 itself).
 
-Same two workarounds as test_angle2a_real_entry_point.py, for the same
-reasons (see that file's class docstring for the full orbax finding):
-  1. wandb.init() mocked (angle_2_b.py's _log_to_wandb calls it
-     unconditionally).
-  2. SACAgent.save_checkpoint/load_checkpoint patched to absolute-ify their
-     checkpoint_dir argument before delegating to the real method - orbax
-     rejects relative paths outright, and Angle 2B's config has NO field to
-     override the pool root at all (confirmed by inspection: run_cfg has no
-     pool_root, and angle_2_b.py's run_angle_2b_analysis call doesn't pass
-     one either, so a real invocation would always fall back to
-     analysis.baseline_calibration_pool.POOL_STORAGE_ROOT's default) - a
-     second, independent gap from the orbax path issue. That default is
-     absolute and anchored to the repo (2026-09-25), so the test wraps
-     run_angle_2b_analysis to point it at this tmpdir's pool instead.
-
-Also chdirs into a tmpdir (restored in tearDown) for the relative Angle
-2A/2B result roots.
+wandb.init() is mocked (angle_2_b.py's _log_to_wandb calls it
+unconditionally). Every Angle 2A/2B/pool location comes from the config's
+results_root, set to a tmpdir; only the pool's seed list is narrowed to 4
+agents by patching get_baseline_calibration_pool.
 """
 
-import functools
 import os
 import shutil
 import tempfile
@@ -119,38 +105,20 @@ class Angle2BRealEntryPointTest(unittest.TestCase):
     def setUp(self):
         GlobalHydra.instance().clear()
         self.tmpdir = tempfile.mkdtemp()
-        self.original_cwd = os.getcwd()
-        os.chdir(self.tmpdir)
+        self.results_root = os.path.join(self.tmpdir, "results")
         self.wandb_init_patcher = mock.patch("wandb.init", side_effect=_fake_wandb_init)
         self.wandb_init_patcher.start()
 
-        from scale_rl.agents.sac.sac_agent import SACAgent
-
-        real_save, real_load = SACAgent.save_checkpoint, SACAgent.load_checkpoint
-
-        def _abs_save(agent_self, checkpoint_dir):
-            return real_save(agent_self, os.path.abspath(checkpoint_dir))
-
-        def _abs_load(agent_self, checkpoint_dir):
-            return real_load(agent_self, os.path.abspath(checkpoint_dir))
-
-        self.checkpoint_patcher = mock.patch.multiple(SACAgent, save_checkpoint=_abs_save, load_checkpoint=_abs_load)
-        self.checkpoint_patcher.start()
-
     def tearDown(self):
-        self.checkpoint_patcher.stop()
         self.wandb_init_patcher.stop()
-        os.chdir(self.original_cwd)
         GlobalHydra.instance().clear()
         shutil.rmtree(self.tmpdir, ignore_errors=True)
 
     def test_run_completes_end_to_end_against_the_real_pool(self):
         from experiments.angle_2_b import run
 
-        angle_2a_root = "results/angle_2a"
-        # POOL_STORAGE_ROOT is anchored to the real repo (2026-09-25), so the
-        # reader is pointed at this tmpdir's pool explicitly.
-        pool_root = "results/baseline_calibration_pool"
+        angle_2a_root = os.path.join(self.results_root, "angle_2a")
+        pool_root = os.path.join(self.results_root, "baseline_calibration_pool")
 
         _persist(ENVIRONMENT, 1, "matchup_1", "D", angle_2a_root, agent_seed=11, critic_num_blocks=2, critic_hidden_dim=16)
         _persist(ENVIRONMENT, 1, "matchup_1", "R", angle_2a_root, agent_seed=12, critic_num_blocks=1, critic_hidden_dim=8)
@@ -158,14 +126,9 @@ class Angle2BRealEntryPointTest(unittest.TestCase):
             _persist(ENVIRONMENT, seed, "baseline_pool", "pool", pool_root, agent_seed=100 + seed)
 
         fake_identities = [type("Ident", (), {"seed": s})() for s in range(1, 5)]
-        from experiments.angle_2b.matchup_2b import run_angle_2b_analysis
-
         with mock.patch(
             "experiments.angle_2b.null_baseline.get_baseline_calibration_pool",
             return_value=fake_identities,
-        ), mock.patch(
-            "experiments.angle_2_b.run_angle_2b_analysis",
-            functools.partial(run_angle_2b_analysis, pool_root=os.path.abspath(pool_root)),
         ):
             run({
                 "config_path": CONFIG_PATH,
@@ -173,13 +136,12 @@ class Angle2BRealEntryPointTest(unittest.TestCase):
                 "overrides": [
                     f"env_name={ENVIRONMENT}", "seed=1",
                     "angle_2_b.matchup_names=[matchup_1]",
-                    f"angle_2_b.angle_2a_results_root={angle_2a_root}",
-                    "angle_2_b.output_root=results/angle_2b",
+                    f"results_root={self.results_root}",
                     "angle_2_b.num_states_per_source=5",
                 ],
             })
 
-        out_dir = analysis_dir(ENVIRONMENT, 1, "matchup_1", root="results/angle_2b")
+        out_dir = analysis_dir(ENVIRONMENT, 1, "matchup_1", root=os.path.join(self.results_root, "angle_2b"))
         self.assertTrue((out_dir / "run_metadata.json").exists())
         self.assertTrue((out_dir / "null_distribution.csv").exists())
         self.assertTrue((out_dir / "gradients.npz").exists())

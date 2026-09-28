@@ -181,6 +181,50 @@ class Angle1RealEntryPointTest(unittest.TestCase):
         done = json.loads((Path(self.tmpdir) / angle_1.DONE_MARKER).read_text())
         self.assertEqual(done["interaction_step"], 20)
 
+    def test_resumed_run_continues_the_replay_sampling_rng_stream(self):
+        """Every replay-buffer sample after a resume must draw from the same
+        global NumPy RNG state as the uninterrupted run at that step, not a
+        stream re-seeded from the run seed."""
+        import hashlib
+
+        from experiments import angle_1
+        from scale_rl.buffers.numpy_buffer import NpyUniformBuffer
+
+        current = {"step": 0}
+        real_sample = NpyUniformBuffer.sample
+
+        def tracking_tqdm(iterable, **kwargs):
+            for step in iterable:
+                current["step"] = step
+                yield step
+
+        def run_recording(args, records, kill_at=None):
+            def recording_sample(buffer):
+                if kill_at is not None and current["step"] == kill_at:
+                    raise KeyboardInterrupt
+                state = np.random.get_state()[1].tobytes()
+                records.append((current["step"], hashlib.sha256(state).hexdigest()))
+                return real_sample(buffer)
+
+            GlobalHydra.instance().clear()
+            with mock.patch.object(angle_1.tqdm, "tqdm", tracking_tqdm), \
+                    mock.patch.object(NpyUniformBuffer, "sample", recording_sample):
+                angle_1.run(args)
+
+        overrides = _fast_overrides(seed=8)
+        uninterrupted = []
+        run_recording(self._run_args(overrides, 10, tempfile.mkdtemp(dir=self.tmpdir)), uninterrupted)
+
+        killed_dir = tempfile.mkdtemp(dir=self.tmpdir)
+        args = self._run_args(overrides, 10, killed_dir)
+        with self.assertRaises(KeyboardInterrupt):
+            run_recording(args, [], kill_at=15)
+        resumed = []
+        run_recording(args, resumed)
+
+        self.assertEqual(resumed[0][0], 11)
+        self.assertEqual(resumed, [r for r in uninterrupted if r[0] >= 11])
+
     def test_completed_run_refuses_to_run_again(self):
         from experiments.angle_1 import DONE_MARKER, run
 
@@ -345,12 +389,22 @@ class Angle1RealEntryPointTest(unittest.TestCase):
         run(self._run_args(overrides, checkpoint_interval=10))
         # Stand-in for a checkpoint from before the DONE marker existed.
         (Path(self.tmpdir) / "DONE").unlink()
+        snapshot_args = self._run_args(overrides + [
+            "+save_probe_capture_snapshot=true",
+            f"+probe_capture_snapshot_root={Path(self.tmpdir) / 'pool'}",
+        ], checkpoint_interval=10)
+
+        from utils.run_metadata import RunMetadataMismatch
+
+        GlobalHydra.instance().clear()
+        with self.assertRaisesRegex(RunMetadataMismatch, "save_probe_capture_snapshot"):
+            run(snapshot_args)
+
+        # A checkpoint from before run metadata existed still hits the ProbeCapture check.
+        (Path(self.tmpdir) / "run_metadata.json").unlink()
         GlobalHydra.instance().clear()
         with self.assertRaisesRegex(FileNotFoundError, "No ProbeCapture checkpoint"):
-            run(self._run_args(overrides + [
-                "+save_probe_capture_snapshot=true",
-                f"+probe_capture_snapshot_root={Path(self.tmpdir) / 'pool'}",
-            ], checkpoint_interval=10))
+            run(snapshot_args)
 
     def test_pool_seed_run_writes_only_under_the_pool_experiment(self):
         """A generate_manifest.py pool job (seeds 6-10): metrics, ledger and
@@ -358,14 +412,11 @@ class Angle1RealEntryPointTest(unittest.TestCase):
         baselines degrade to a needs-review row rather than failing the run."""
         from experiments.angle_1 import run
 
-        original_cwd = os.getcwd()
-        os.chdir(self.tmpdir)
-        self.addCleanup(os.chdir, original_cwd)
-
         environment, seed = "cheetah-run", 6
-        pool_root = str(Path(self.tmpdir) / "pool")
+        results = Path(self.tmpdir) / "results"
+        pool_root = results / "baseline_calibration_pool"
         args = self._run_args(_fast_overrides(env_name=environment, seed=seed, extra=[
-            "+save_probe_capture_snapshot=true", f"+probe_capture_snapshot_root={pool_root}",
+            "+save_probe_capture_snapshot=true", f"results_root={results}",
             "critic_degradation=true", "pathology_prop=true",
             "onset_detection.baseline_experiment=angle_1",
         ]))
@@ -373,7 +424,6 @@ class Angle1RealEntryPointTest(unittest.TestCase):
         args["checkpoint_dir"] = str(Path(self.tmpdir) / "ckpt")
         run(args)
 
-        results = Path(self.tmpdir) / "results"
         run_key = f"baseline_calibration_pool_D1W8_{environment}_seed{seed}"
         self.assertTrue((results / "metrics" / "baseline_calibration_pool" / "D1W8" / environment / f"{run_key}.csv").exists())
         self.assertFalse((results / "metrics" / "angle_1").exists())
@@ -445,22 +495,12 @@ class Angle1RealEntryPointTest(unittest.TestCase):
     def test_critic_degradation_onset_detection_writes_a_real_ledger_row(self):
         """The one remaining piece of Angle 1's real entry point never
         exercised via run() itself: critic_degradation=true's post-hoc
-        onset-detection/ledger-write path (analysis/pipeline.py). Only
-        tested previously by calling that function directly with synthetic
-        inputs, never through run()'s own config-driven call site.
-
-        analysis/pipeline.run_post_hoc_onset_analysis's metrics_root/
-        baseline_root/ledger_root default to relative "results/..." paths,
-        and run()'s own call site doesn't expose a way to override them -
-        so this test temporarily chdirs into a tmpdir (restored in
-        tearDown) rather than writing into this repo's real results/
-        directory, which must stay untouched."""
+        onset-detection/ledger-write path (analysis/pipeline.py), through
+        run()'s own config-driven call site, with results_root pointing at
+        a tmpdir so the repo's real results/ stays untouched."""
         from experiments.angle_1 import run
 
-        original_cwd = os.getcwd()
-        os.chdir(self.tmpdir)
-        self.addCleanup(os.chdir, original_cwd)
-
+        results = Path(self.tmpdir) / "results"
         environment = "cheetah-run"
         # Larger than this file's other tests' overrides: the ACF/CCF window
         # calibration needs enough post-burn-in recorded points for a real,
@@ -477,6 +517,7 @@ class Angle1RealEntryPointTest(unittest.TestCase):
             # ~10 updates per logging window here, so the default cadence
             # (30) would leave most windows with no actor_grad_cosine sample.
             "actor_grad_cosine_every=1",
+            f"results_root={results}",
         ]
         for seed in range(1, 6):
             GlobalHydra.instance().clear()
@@ -493,7 +534,7 @@ class Angle1RealEntryPointTest(unittest.TestCase):
             *onset_overrides,
         ], checkpoint_dir=tempfile.mkdtemp(dir=self.tmpdir)))
 
-        ledger_path = Path("results/ledgers/angle_1/architectures/D3W16/onset_events.csv")
+        ledger_path = results / "ledgers" / "angle_1" / "architectures" / "D3W16" / "onset_events.csv"
         self.assertTrue(ledger_path.exists(), f"expected a real onset ledger at {ledger_path}")
         import pandas as pd
         ledger_df = pd.read_csv(ledger_path)

@@ -22,8 +22,9 @@ from typing import Dict, Optional
 import pandas as pd
 
 from utils.atomic_io import atomic_write_text
+from utils.paths import results_path
 
-METRICS_ROOT = "results/metrics"
+METRICS_ROOT = results_path("metrics")
 
 METRIC_COLUMNS = ["interaction_step", "env_step", "td_error_variance", "actor_grad_cosine"]
 
@@ -56,6 +57,10 @@ def metrics_path(identity: RunIdentity, root: str = METRICS_ROOT) -> Path:
         / identity.environment
         / f"{identity.run_key}.csv"
     )
+
+
+def run_metadata_path(identity: RunIdentity, root: str = METRICS_ROOT) -> Path:
+    return metrics_path(identity, root=root).with_name(f"{identity.run_key}.run_metadata.json")
 
 
 class MetricsRecorder:

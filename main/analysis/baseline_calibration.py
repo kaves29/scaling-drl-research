@@ -21,10 +21,11 @@ from typing import List, Optional
 import numpy as np
 import pandas as pd
 
-from analysis.metrics_store import RunIdentity, load_metrics, metrics_path
+from analysis.metrics_store import METRICS_ROOT, RunIdentity, load_metrics, metrics_path
 from utils.atomic_io import atomic_write_text
+from utils.paths import results_path
 
-BASELINE_ROOT = "results/baselines"
+BASELINE_ROOT = results_path("baselines")
 
 # The scientific protocol requires exactly 5 default-SimBa baseline seeds -
 # not "at least 2", not a configurable count. Enforced in calibrate_baseline().
@@ -70,11 +71,29 @@ def _infer_logging_interval(steps: np.ndarray) -> Optional[int]:
     return int(values[np.argmax(counts)])
 
 
+def _check_logging_interval(steps: np.ndarray, expected_logging_interval: Optional[int], source: str) -> None:
+    if expected_logging_interval is None:
+        return
+    actual_interval = _infer_logging_interval(steps)
+    if actual_interval is not None and actual_interval != expected_logging_interval:
+        raise ValueError(
+            "Baseline logging interval and analyzed-run logging interval "
+            f"do not match: {source} was recorded "
+            f"every {actual_interval} interaction steps, but the run being "
+            f"analyzed uses logging_per_interaction_step="
+            f"{expected_logging_interval}. Onset thresholds computed from "
+            f"a mismatched grid are not meaningful at 'equivalent "
+            f"interaction steps'. Re-run this baseline seed with a matching "
+            f"logging_per_interaction_step, or explicitly resample if that "
+            f"is ever intentionally supported."
+        )
+
+
 def calibrate_baseline(
     baseline_identities: List[RunIdentity],
     metric_column: str,
     percentile: int = 95,
-    metrics_root: str = "results/metrics",
+    metrics_root: str = METRICS_ROOT,
     expected_logging_interval: Optional[int] = None,
 ) -> BaselineThresholds:
     """Computes stepwise percentile thresholds from the 5 baseline seed runs.
@@ -119,20 +138,7 @@ def calibrate_baseline(
                 f"(or pathology_prop=true) for this baseline seed?"
             )
 
-        if expected_logging_interval is not None:
-            actual_interval = _infer_logging_interval(df["interaction_step"].to_numpy())
-            if actual_interval is not None and actual_interval != expected_logging_interval:
-                raise ValueError(
-                    "Baseline logging interval and analyzed-run logging interval "
-                    f"do not match: baseline seed '{ident.run_key}' was recorded "
-                    f"every {actual_interval} interaction steps, but the run being "
-                    f"analyzed uses logging_per_interaction_step="
-                    f"{expected_logging_interval}. Onset thresholds computed from "
-                    f"a mismatched grid are not meaningful at 'equivalent "
-                    f"interaction steps'. Re-run this baseline seed with a matching "
-                    f"logging_per_interaction_step, or explicitly resample if that "
-                    f"is ever intentionally supported."
-                )
+        _check_logging_interval(df["interaction_step"].to_numpy(), expected_logging_interval, f"baseline seed '{ident.run_key}'")
 
         series.append(df.set_index("interaction_step")[metric_column].rename(ident.run_key))
 
@@ -242,7 +248,7 @@ def load_or_calibrate_baseline(
     baseline_identities: List[RunIdentity],
     metric_column: str,
     percentile: int = 95,
-    metrics_root: str = "results/metrics",
+    metrics_root: str = METRICS_ROOT,
     baseline_root: str = BASELINE_ROOT,
     force_recompute: bool = False,
     expected_logging_interval: Optional[int] = None,
@@ -276,6 +282,10 @@ def load_or_calibrate_baseline(
                 metric_column, percentile, root=baseline_root,
             )
             if cached_fingerprint == current_fingerprint:
+                _check_logging_interval(
+                    cached.steps, expected_logging_interval,
+                    f"the cached '{metric_column}' baseline for architecture '{cached.architecture}'",
+                )
                 return cached
             warnings.warn(
                 f"Cached baseline for architecture="

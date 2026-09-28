@@ -48,8 +48,9 @@ import pandas as pd
 
 from experiments.angle_2a.probes import Probe
 from utils.atomic_io import atomic_write_bytes, atomic_write_text
+from utils.paths import results_path
 
-DEFAULT_OUTPUT_ROOT = "results/angle_2a"
+DEFAULT_OUTPUT_ROOT = results_path("angle_2a")
 
 PROBE_SCALAR_COLUMNS = [
     "probe_id",

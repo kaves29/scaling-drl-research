@@ -10,6 +10,8 @@ seed: 108
 server: 'local'
 
 env_name: 'reacher-hard'
+# Absolute root every default output/input location below derives from; null = <repo>/results.
+results_root: null
 
 ##################################################################################
 # Training (shared hyperparameters for every agent Angle 2A trains: actor
@@ -59,7 +61,12 @@ angle_2_a:
   # under (see utils/onset_ledger.py). Angle 2A never re-detects onsets
   # itself; it only looks them up.
   onset_source_experiment: 'angle_1'
-  onset_ledger_root: 'results/ledgers'
+  # Absolute paths, or null for the default under results_root:
+  # ledgers/, angle_2a/, baseline_calibration_pool/ (plus the angle_2a_*
+  # caches, which always live under results_root).
+  onset_ledger_root: null
+  output_root: null
+  pool_root: null
 
   # Fixed experimental-protocol constant (not an architecture value). Kept
   # configurable for testability, but the scientific protocol requires

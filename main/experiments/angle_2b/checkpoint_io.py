@@ -24,11 +24,12 @@ import gymnasium as gym
 import numpy as np
 from omegaconf import OmegaConf
 
+from experiments.angle_2a.storage import DEFAULT_OUTPUT_ROOT as ANGLE_2A_ROOT
 from experiments.angle_2a.storage import check_snapshot_architecture, matchup_dir
 from experiments.angle_2b.errors import Angle2BSnapshotError
 from scale_rl.agents import create_agent
 
-DEFAULT_ANGLE_2A_ROOT = "results/angle_2a"
+DEFAULT_ANGLE_2A_ROOT = ANGLE_2A_ROOT
 
 
 @dataclass

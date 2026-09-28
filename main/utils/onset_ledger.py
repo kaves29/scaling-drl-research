@@ -25,6 +25,7 @@ from typing import Any, Dict, List, Optional
 import pandas as pd
 
 from utils.atomic_io import atomic_write_text
+from utils.paths import results_path
 
 REQUIRED_COLUMNS: List[str] = [
     "run_key",
@@ -50,7 +51,7 @@ VALID_STATUSES = {"success", "no_onset_detected", "needs_manual_review"}
 # can't be confidently classified as success/no_onset_detected uses
 # needs_manual_review instead.
 
-DEFAULT_LEDGER_ROOT = "results/ledgers"
+DEFAULT_LEDGER_ROOT = results_path("ledgers")
 
 
 class OnsetLedgerError(Exception):

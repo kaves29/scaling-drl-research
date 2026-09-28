@@ -4,6 +4,8 @@ from omegaconf import OmegaConf
 
 import wandb
 
+from utils.paths import wandb_dir
+
 # Canonical architecture-id map (WandB naming + onset ledger); unlisted
 # configs fall back to "D{critic_num_blocks}W{critic_hidden_dim}".
 _CRITIC_SIZE_MAP = {
@@ -52,6 +54,7 @@ class WandbTrainerLogger(object):
 
         wandb.init(
             project=cfg.project_name,
+            dir=wandb_dir(),
             group=run_info["group"],
             config=dict_cfg,
             job_type=run_info["job_type"],

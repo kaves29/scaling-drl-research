@@ -58,8 +58,9 @@ from experiments.angle_2a.probes import (
     sample_probes,
 )
 from utils.atomic_io import atomic_write_text
+from utils.paths import results_path
 
-DEFAULT_OUTPUT_ROOT = "results/angle_2a_r_calibration"
+DEFAULT_OUTPUT_ROOT = results_path("angle_2a_r_calibration")
 
 NUM_REPRESENTATIVE_PAIRS = 5
 NUM_ROLLOUTS_FOR_SIGMA = 50

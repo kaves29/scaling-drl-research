@@ -83,12 +83,36 @@ from experiments.angle_2a.pool_null_baseline import load_or_compute_pool_null_di
 from experiments.angle_2a.prereq_check import run_prereq_check
 from experiments.angle_2a.r_calibration import load_or_calibrate_r
 from experiments.registry import register_experiment
+from utils.paths import RESULTS_ROOT, config_root, results_path
 
 import hydra
 import jax
 
 validate_rocm_jax_available(_GPU_VENDOR)
 validate_nvidia_jax_available(_GPU_VENDOR)
+
+
+def resolve_angle2a_roots(cfg) -> dict:
+    """Every location Angle 2A reads or writes, absolute; validated before any work starts."""
+    results_root = config_root(cfg.get("results_root"), "results_root", RESULTS_ROOT)
+    block = cfg.angle_2_a
+    return {
+        "onset_ledger_root": config_root(
+            block.get("onset_ledger_root"), "angle_2_a.onset_ledger_root",
+            results_path("ledgers", results_root=results_root),
+        ),
+        "output_root": config_root(
+            block.get("output_root"), "angle_2_a.output_root",
+            results_path("angle_2a", results_root=results_root),
+        ),
+        "pool_root": config_root(
+            block.get("pool_root"), "angle_2_a.pool_root",
+            results_path("baseline_calibration_pool", results_root=results_root),
+        ),
+        "r_calibration_root": results_path("angle_2a_r_calibration", results_root=results_root),
+        "prereq_root": results_path("angle_2a_prereq", results_root=results_root),
+        "pool_null_root": results_path("angle_2a_pool_null", results_root=results_root),
+    }
 
 
 @register_experiment("angle_2_a")
@@ -116,11 +140,12 @@ def run(args: dict) -> None:
     # for a fully-valid Angle 2A config. Only the fields Angle 2A actually
     # needs are accessed (and thus lazily resolved) below.
     architectures = validate_angle2a_config(cfg)
+    roots = resolve_angle2a_roots(cfg)
 
     seed = int(cfg.seed)
     environment = str(cfg.env_name)
     onset_source_experiment = str(cfg.angle_2_a.onset_source_experiment)
-    onset_ledger_root = str(cfg.angle_2_a.onset_ledger_root)
+    onset_ledger_root = roots["onset_ledger_root"]
     num_probes_per_source = int(cfg.angle_2_a.num_probes_per_source)
     run_null_baseline = bool(cfg.angle_2_a.run_null_baseline)
     # Resumability (see experiments/angle_2a/matchup.py's checkpoint_dir doc)
@@ -135,17 +160,7 @@ def run(args: dict) -> None:
     checkpoint_root = args.checkpoint_dir or None
     checkpoint_interval = int(args.checkpoint_interval) if args.checkpoint_interval else None
 
-    # Fixed 2026-09-23: this was a relative path ("results/angle_2a"),
-    # which crashes agent.save_checkpoint() (Orbax requires absolute paths -
-    # see run.py's --checkpoint_dir fix, .claude/research-methodology.md's
-    # 2026-09-21 incident update, and the same class of bug found here via
-    # experiments/angle_2a/storage.py's save_frozen_agent_snapshot).
-    output_root = os.path.abspath("results/angle_2a")
-    if not os.path.isabs(output_root):
-        raise ValueError(
-            f"angle_2_a's output_root must be an absolute path, got: {output_root!r}. "
-            "Orbax requires absolute paths."
-        )
+    output_root = roots["output_root"]
 
     reference = architectures["reference"]
     reference_label = architecture_label(reference)
@@ -173,6 +188,7 @@ def run(args: dict) -> None:
             num_rollouts_for_sigma=int(cfg.angle_2_a.r_calibration.num_rollouts_for_sigma),
             se_margin_divisor=float(cfg.angle_2_a.r_calibration.se_margin_divisor),
             r_cap=int(cfg.angle_2_a.r_calibration.r_cap),
+            root=roots["r_calibration_root"],
         )
         num_mc_rollouts = r_result.calibrated_r
     else:
@@ -197,6 +213,7 @@ def run(args: dict) -> None:
             burn_in_fraction=float(cfg.angle_2_a.prereq_check.burn_in_fraction),
             num_probes=int(cfg.angle_2_a.prereq_check.num_probes),
             num_mc_rollouts=num_mc_rollouts,
+            output_root=roots["prereq_root"],
         )
 
     # Phase 1: look up BOTH onsets first (each independently, from its own
@@ -274,6 +291,8 @@ def run(args: dict) -> None:
             num_probes_per_source=num_probes_per_source,
             num_mc_rollouts=num_mc_rollouts,
             analysis_seed=seed,
+            angle_2a_root=roots["pool_root"],
+            cache_root=roots["pool_null_root"],
         )
         print(
             f"[angle_2_a] pool null baseline for env={environment}: "

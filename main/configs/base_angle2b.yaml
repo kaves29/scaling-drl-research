@@ -12,6 +12,8 @@
 project_name: 'EchoCritic'
 seed: 108
 env_name: 'reacher-hard'
+# Absolute root every default output/input location below derives from; null = <repo>/results.
+results_root: null
 
 defaults:
   - _self_
@@ -42,5 +44,8 @@ angle_2_b:
   # exactly 40; do not lower this to save compute.
   num_states_per_source: 40
 
-  angle_2a_results_root: 'results/angle_2a'
-  output_root: 'results/angle_2b'
+  # Absolute paths, or null for the default under results_root:
+  # angle_2a/, angle_2b/, baseline_calibration_pool/.
+  angle_2a_results_root: null
+  output_root: null
+  pool_root: null

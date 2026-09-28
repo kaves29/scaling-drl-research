@@ -20,8 +20,9 @@ import pandas as pd
 
 from utils.atomic_io import atomic_write_bytes
 from utils.atomic_io import atomic_write_text
+from utils.paths import results_path
 
-DEFAULT_OUTPUT_ROOT = "results/angle_2c"
+DEFAULT_OUTPUT_ROOT = results_path("angle_2c")
 
 NULL_PAIR_COLUMNS = [
     "environment", "seed_a", "seed_b",
