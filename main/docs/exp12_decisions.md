@@ -358,3 +358,173 @@ Definitions in the papers:
     Exp 1/2 entry points will not call those validators.
   - The MyoSuite tier labels differ.
   - HumanoidBench is absent from both documents.
+
+## Answers from the project lead (received 2026-10-03)
+
+The pending questions above are resolved as follows. Where an answer differs
+from my recommendation, the answer governs.
+
+- Q0: the later version is final. Only that version is saved verbatim in
+  `.claude/methodology-exp1-exp2.md`, followed by an "Amendments from the Phase 0
+  Q&A" section. Future changes arrive only as explicit messages. CLAUDE.md gets
+  a pointer; no other old docs are edited.
+- A1, A3, A4, A6, A7, A8: approved as proposed.
+- A2: per-critic mean-prediction offset, identical inputs and identical g(·)
+  shape. Paper check before implementing: see "Lyle et al. 2023 quotes" below.
+  Limitations (i) and (ii) are recorded in the amendments. A one-time
+  shared-offset sensitivity check runs on the development run only.
+- A5: P is the plasticity score (higher = more plastic) and L = P(fresh) −
+  P(current), positive when plasticity is lost. Tests required: current worse
+  than fresh gives L > 0 and triggers; the reverse never triggers.
+- A9: confirm that 5,000 transitions matches the repo's initial-random-steps
+  setting, and ask if it does not. Outcome: it does NOT match, see Q-A9 below
+  (2026-10-03).
+- B1–B3: 10,000 resamples, IQM, trigger when the 95% lower bound of L > 0.
+  B4: measure the false-trigger rate on healthy-run data and report it; never
+  call it nominal. B5: a non-finite check is invalid and never triggers.
+- C: rliable IQM of (scaled − D2W512) L at the final check, runs unpaired, no
+  per-environment normalisation.
+- D1: fork at the exact check step with full env state and RNG. Test that a
+  mid-episode restore reproduces the original trajectory per suite. If that
+  fails for a suite, STOP and ask; never fall back to an episode boundary.
+- D2: the original process restarts from the saved state as the CONTROL arm and
+  runs to max(100% B, fork + 25% B). The INJECTED arm is a separate resumable
+  job from the same save, running to fork + 25% B. Both use the same restore
+  path. GATE: the identity fork must pass on CUDA per architecture × suite
+  before any Exp 1 grid launch; the project lead runs those commands.
+- D3–D7: as proposed. Only D4W1024 and D6W1536 fork.
+- E1–E4: approved.
+- E5: recovery = (L_trigger − L_injected) / (L_trigger − L_healthy); choose the
+  smallest m within 0.10 of the best. Measure probe noise (the spread across the
+  5 rounds); if it exceeds 0.10, STOP and ask.
+- E6: D6W1536 on dog-run, with a dev seed outside 1–5. If it never triggers,
+  STOP and ask; never loosen the trigger.
+- E7: the healthy reference is the same critic's own earlier checks in the same
+  dev run, before the trigger.
+- F1: evaluate every 1% of B since the fork, 10 episodes each; cost it in
+  Phase 6. F2: approved.
+- F3/F4: no normalisation and no scalar summary. Graphs only: per-environment
+  paired differences in raw return with percentile bootstrap bands and every
+  seed's line. Save raw per-episode returns (and per-episode success where
+  provided). Analysis takes normalize(env, values), defaulting to identity.
+  One metadata file per suite holds benchmark constants as data only.
+- I1–I4: approved. Logging stays at the existing cadence with no new host syncs.
+- G1: keep the existing values with UTD = 2. G2: read SimBa's released code,
+  report its per-suite discount, and match it (see below). G3: fix MyoSuite
+  seeding in the Exp 1/2 code path only.
+- H1: try HumanoidBench plus torch in a throwaway env without changing the main
+  pins; STOP if it cannot coexist. Outcome: it cannot (see below). H2: tasks
+  are h1-reach-v0 and h1-run-v0. H3: one Q critic, listed as a limitation, with
+  a quote of where SimBa uses two.
+- R1: run the full existing suite once in the background. R2: accepted; measure
+  on CUDA and never reduce the probe.
+- N: proposed names approved. Dev seeds lie outside 1–5.
+
+## Lyle et al. 2023 quotes (arXiv 2303.01486, checked 2026-10-03 against the PDF text)
+
+- Offset a, Section 3.1, verbatim: "Given some offset a ∈ R, we will apply the
+  transformation g(x) = a + sin(10^5 f(x; ω0)), with ω0 sampled from the same
+  distribution as θ0, to construct a challenging prediction objective which
+  measures the ability of the network to perturb its predictions in random
+  directions sampled effectively uniformly over the input space. Because the
+  mean prediction output by a deep RL network tends to evolve away from zero
+  over time as the policy improves and the reward propagates through the value
+  function, we will set a to be equal to the network's mean prediction in order
+  not to bias the objective in favour of random initializations, which have mean
+  much closer to zero."
+- Appendix A.2 adds nothing about a. It reads, verbatim: "we draw 10 randomly
+  sampled target functions generated by the procedure described in Section 2.2,
+  and for each run the network's optimizer from the current parameters to
+  minimize the loss with respect to these new targets for 2000 steps."
+- Verdict: the paper sets a to "the network's mean prediction", where "the
+  network" is the one being probed. That matches the per-critic mean, so there is
+  nothing to stop on. The paper does not say over which inputs the mean is
+  taken. Stated choice: the mean prediction over the round's probe pool,
+  computed on the critic before probe training.
+- Baseline b, verbatim (Section 3.1, eq. 5): "we set a baseline value b to be
+  the loss obtained by some baseline function (e.g. if ℓ is a regression loss on
+  some set of targets, we set b to be the variance of the targets), and then
+  define plasticity to be the difference between the baseline and the
+  expectation of the final loss obtained by this optimization process after
+  starting from an initial parameter value θt and optimizing a sampled loss
+  function ℓ subtracted from the baseline b. P(θt) = b − E_ℓ∼L[ℓ(θ*_t)] where
+  θ*_t = O(θt, ℓ)". Also: "We then define the loss of plasticity over the course
+  of a trajectory (θt) as the difference P(θt) − P(θ0). We note that this
+  definition of plasticity loss is independent of the value of the baseline b".
+- Correction to the brief's belief: b is subtracted, not divided. There is no
+  ratio normalisation. With per-critic offsets the target variance is identical
+  for current and fresh, so b cancels in L exactly as the paper notes.
+  Implemented as P = b − final_loss.
+
+## SimBa released code (github.com/SonyResearch/simba @ 7d0358b, read 2026-10-03)
+
+- Discount: `configs/base.yaml` computes gamma = max(min((L/5 − 1)/(L/5), 0.995),
+  0.95), with L = max_episode_steps / action_repeat.
+  - DMC: `configs/env/dmc_hard.yaml` and `dmc_em.yaml` set max_episode_steps
+    1000, so gamma = 0.99.
+  - MyoSuite: `configs/env/myosuite.yaml` sets max_episode_steps 100 for every
+    MyoSuite task, so gamma = 0.95.
+  - HumanoidBench: `configs/env/hb_locomotion.yaml` sets max_episode_steps 1000,
+    so gamma = 0.99.
+- Two Q critics on HumanoidBench (for H3). `configs/env/hb_locomotion.yaml` sets
+  `episodic: true`, and `configs/agent/sac_simba.yaml` sets
+  `critic_use_cdq: ${env.episodic}`. The paper's Table 7 says "Clipped Double
+  Q: HumanoidBench: True, Other Envs: False". Exp 1/2 keeps one Q critic, as the
+  Methodology says. This is a listed limitation.
+- Random actions: SimBa's `run.py` overwrites actions with
+  `train_env.action_space.sample()` while `buffer.can_sample() is False`, i.e.
+  for the first min_length = 5,000 transitions. It still calls
+  `agent.sample_actions` first so obs_rms statistics are updated. This repo's
+  `experiments/angle_1.py` takes a random action only on interaction step 1.
+- HumanoidBench task IDs: SimBa's `scale_rl/envs/humanoid_bench.py` lists the
+  `h1hand-*` variants (e.g. "h1hand-run-v0", "h1hand-reach-v0"). The paper's
+  Table 5, however, gives action dim 19, which is the H1 body without hands.
+
+## HumanoidBench coexistence test (H1, 2026-10-03)
+
+Setup: a throwaway copy of the venv with the pins unchanged, HumanoidBench @
+cb11890 installed `--no-deps` (editable), torch 2.3.1+cpu, and OSMesa for
+headless rendering.
+
+Result: `gym.make` fails for h1-reach-v0, h1-run-v0, h1hand-reach-v0 and
+h1hand-run-v0 with `AttributeError: 'mujoco._structs.MjModel' object has no
+attribute 'flex_xvert0'`. The failure is in
+`humanoid_bench/dmc_deps/dmc_index.py:630`, a vendored copy of dm_control's
+indexer written for mujoco 3.1.6. It cannot coexist with the pinned
+mujoco 3.6.0. STOPPED; see Q-H1b.
+
+## New questions (2026-10-03), PENDING
+
+- Q-A9 (initial random actions). The repo takes a uniform-random action only on
+  interaction step 1, and the untrained actor acts from step 2. SimBa's released
+  code takes uniform-random actions until the buffer holds 5,000 transitions.
+  The fresh probe "after the initial replay buffer has been populated" happens
+  at 5,000 transitions either way. What differs is who filled the buffer.
+  Options:
+  (a) keep the repo behaviour (G1: "keep all existing values");
+  (b) match SimBa's random actions for the first 5,000 transitions, in the
+      Exp 1/2 path only.
+  Rec: (b), because the brief says the hyperparameters come from SimBa and
+  (a) looks like an accidental change. Your call.
+- Q-G2 (MyoSuite horizon). SimBa gets gamma = 0.95 by setting
+  max_episode_steps = 100, which also applies TimeLimit(100). For
+  myoHandKeyTurnFixed-v0, whose registered horizon is 200, that truncates
+  episodes at 100 raw steps. Pen (50), Pose (100) and Reach (100) are
+  unaffected because their own limit binds first.
+  Options:
+  (a) match SimBa exactly with max_episode_steps = 100 for MyoSuite, giving
+      gamma 0.95 and TimeLimit 100 for all four tasks;
+  (b) gamma 0.95 but keep the TimeLimit at 1000, so KeyTurn runs to 200.
+  Rec: (a), an exact SimBa match.
+- Q-H1b (HumanoidBench cannot coexist). Options:
+  (a) patch HumanoidBench's vendored `dmc_deps` for mujoco 3.6 and verify
+      physics against the reference;
+  (b) a separate environment with HumanoidBench's pins (mujoco 3.1.6,
+      gymnasium 0.29.1, dm_control 1.0.20), with the repo code verified under
+      it;
+  (c) drop HumanoidBench from Exp 1/2.
+  No recommendation without your input. (a) modifies third-party code.
+  (b) runs different simulator versions per suite. (c) changes the env set.
+- Q-H2b (no-hands premise). SimBa's released code lists `h1hand-*` IDs, but its
+  paper's Table 5 dims (act 19) match the no-hands H1. Keep h1-reach-v0 and
+  h1-run-v0 as decided? Rec: keep your decision; FYI only.

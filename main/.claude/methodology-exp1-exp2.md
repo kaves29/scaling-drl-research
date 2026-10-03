@@ -1,205 +1,11 @@
-# Methodology: Experiments 1 and 2 (source of truth, saved verbatim)
+# Methodology: Experiments 1 and 2 (source of truth)
 
-Saved verbatim from the task brief on 2026-10-03. The brief's section 2
-contains two consecutive versions of the text; both are reproduced below
-exactly as given. See docs/exp12_decisions.md for which version governs.
+The text between the two horizontal rules is the Methodology (final, later
+version from the task brief), saved verbatim. Amendments decided by the project
+lead after the Phase 0 Q&A follow below it; the verbatim text is never edited.
+Changes arrive only as explicit messages from the project lead.
 
 ---
-
-Statistical Practices:
-
-* MUST USE PERCENTILE BOOT STRAPS → rliable
-* Use interquartile-mean if you have distributions with low amounts of samples → removes outliers out of the question and computes mean
-* Using the hyper parameters from other papers in field is justified because we are not aiming to compare different architectures, but rather understand. Furthermore, the hyper parameters were tested on a larger number of environments which proves their generalizability since we are only testing on a subset of what they tested on
-* Include baselines to give the reader an understanding of your results → healthy/default architecture in Experiment 1 and paired no-injection control in Experiment 2
-* “Another common approach is to isolate the precise modification made in the proposed
-algorithm. Perhaps the proposed algorithm introduces a new sampling strategy from replay
-buffers. Instead of comparing against a suite of different learning rules, we can instead make
-a small number of pairwise comparison between similar algorithms. For instance, we can
-endow DQN and A3C with our proposed replay buffer and perform two pairwise comparisons
-against the original DQN and A3C respectively. We do not care if DQN with the novel replay
-buffer outperforms A3C with the old replay buffer, as many design variables change between
-these populations. By eliminating several such pairwise comparisons, we can significantly
-decrease the probability of false negatives and number of samples to detect differences.” → seemed very relevant to our research design but I could not pinpoint exactly how
-
-Configurations:
-Seeds:
-5 seeds throughout the study
-Critic Size:
-Where actor architecture is held constant at depth=1 and width=128
-
-1. depth=2 & width=512 → 4.2 million parameters
-2. depth=4 & width=1024 → 33.6 million parameters
-3. depth=6 & width=1536 → 113 million parameters
-
-UTD Ratio:
-
-* Holding constant across experiments at 2 to isolate the effects of scaling → default used by the research papers
-* Could possibly change in ablations but that is later
-
-Other hyperparameters to hold constant:
-
-* Learning rate: $0.0001$
-* Batch Size: 256
-* Discount Factor: Heuristic → TD-MPC2 heuristic (Hansen et al. 2023), as used in SimBa
-* Target Soft Update: 0.005
-* Action Repeat: 2
-* Entropy: abs(A)/2
-* Temperature Learning Rate: 1e-4
-* Weight Decay: 1e-2
-* Optimizer: AdamW
-
-Experiment 1:
-General:
-Scaling → critic degradation/development of optimization pathologies
-What is the definition of degrade → loss of plasticity and ability to fit to new targets → executed using the same method from Lyle et al. 2023 study
-Environments:
-DMC:
-
-1. dog-run - hard
-2. dog-trot - hard
-3. humanoid-run - hard
-4. humanoid-walk - hard
-5. humanoid-stand - hard
-6. swimmer-swimmer15 - medium
-7. hopper-hop - medium
-
-Myosuite:
-
-1. myoHandKeyTurnFixed-v0 - hard
-2. myoHandPenTwirlFixed-v0 - hard
-3. myoHandPoseRandom-v0- close to hard
-4. myoHandReachFixed-v0 - medium
-
-Humanoid Bench:
-
-1. h1-shelf-place - hard
-2. h1-reach - hard
-
-Environment Steps: 500k for medium DMC and 2 million for Humanoid Bench, everything else is 1 million
-Methodology:
-
-* Train one of each of the 3 unique critics within 3 separate agents
-* Before training, run the plasticity probe on the fresh, untrained critic to establish the run's initial plasticity score. This is the reference point for that run and is not compared across architectures
-* Periodically check for plasticity loss for all of them as introduced by Lyle et al. 2023. For each period check, we will perform 5 different rounds of evaluation with 1000 step-probe each. Periodically means each run must have 20 probe tests scattered evenly across the training time at 1/20, 2/20, ... 20/20 of the run's training budget
-* Take the IQM across the probes of each period check to get one plasticity score per agent for that period
-* For each run, compute the loss of plasticity relative to that run's own fresh, untrained score using the plasticity-loss formulation from Lyle et al. 2023 → handles that every network can lose some plasticity over training and that critics of different sizes fit the probe differently from the start
-* Use percentile bootstrap confidence intervals to determine whether the observed plasticity loss is statistically supported at the 95% level
-* Use the probe learning curves descriptively to determine whether the plasticity loss manifests as the slower/shallow new-target learning described by Lyle et al. 2023 → do not introduce a new slope formula
-* The first check where an individual run's plasticity loss is statistically supported is called $f^*_{run}$ and is used as the fork point in Experiment 2
-* Pool across environments using rliable's stratified bootstrap (65 runs per architecture), with the time axis in fractions of the training budget → quantify the overall scaling-related plasticity loss for each architecture. This pooled result is separate from the individual-run $f^*_{run}$ used for Experiment 2
-* Every seed in every environment is also shown descriptively, and the individual-run $f^*_{run}$ values are retained in the structured ledger
-* If a run has not reached statistically supported plasticity loss by 95% of the nominal training budget, $f^*_{run}$ is null and the run is reported as a null result for Experiment 2
-
-Limitations:
-
-* Every network is expected to lose some plasticity over training (Lyle et al. 2023) → the fresh same-architecture reference measures the decline within each run, while the separate pooled architecture comparison is used to understand whether scaling increases the amount of plasticity loss
-* Many comparisons across 20 checks → a first statistically supported crossing can still be affected by multiple comparisons and noisy checkpoints
-* With few runs, percentile bootstrap intervals can be wide or unstable
-* Individual runs can reach statistically supported degradation at different points in training → Experiment 2 therefore aligns the post-fork analysis by steps since fork rather than absolute training step
-* Some runs may never reach the degradation criterion within 95% of the nominal budget → this is a valid null result and means there is no eligible fork for that run
-* 5 seeds matches SimBa's ablations, but SimBa used 10 seeds for its main SAC comparisons → confidence intervals will be wide
-
-Experiment 2:
-General:
-Must establish: Critic pathology propagate from the critic to the actor, degrading actor performance and developing optimization pathologies within the actor
-Environments:
-DMC:
-
-1. dog-run - hard
-2. dog-trot - hard
-3. humanoid-run - hard
-4. humanoid-walk - hard
-5. humanoid-stand - hard
-6. swimmer-swimmer15 - medium
-7. hopper-hop - medium
-
-Myosuite:
-
-1. myoHandKeyTurnFixed-v0 - hard
-2. myoHandPenTwirlFixed-v0 - hard
-3. myoHandPoseRandom-v0- close to hard
-4. myoHandReachFixed-v0 - medium
-
-Humanoid Bench:
-
-1. h1-shelf-place - hard
-2. h1-reach - hard
-
-Environment Steps: 500k for medium DMC and 2 million for Humanoid Bench, everything else is 1 million
-Methodology:
-Positive control (run before the main experiment, and before the main runs of Experiment 1):
-
-1. Probe a fresh critic
-2. Probe a normally trained critic
-3. Obtain a naturally degraded scaled critic checkpoint from a preliminary SAC/SimBa run using the Experiment 1 degradation criterion and probe it → the score should show clear plasticity loss
-4. Apply plasticity injection to the naturally degraded critic and probe it again → the score should recover toward the normally trained critic
-
-* Use one scaled critic architecture and one environment for the positive-control calibration
-* A null result is only meaningful if the probe could have detected degradation, and this shows the probe works with SAC critics, SimBa, and continuous control (Lyle et al. 2023 shows it works in their settings, not ours)
-* Step 4 is also the first test of the injection
-* No separate artificial damage procedure is used; the degraded critic comes from the same SAC/SimBa setting being studied
-
-m-selection (part of the positive control):
-
-* Head = last m residual blocks + post-layer-norm + output layer
-* Since SimBa has no dedicated encoder, this head boundary is defined explicitly for the injection
-* Test m = last block only, half of the total residual blocks, and all residual blocks
-* For each m, apply the plasticity injection to the naturally degraded critic and run the plasticity probe
-* Keep the smallest m for which the injected critic has no statistically detectable plasticity deficit relative to the normally trained healthy critic
-* Record which m was chosen and the evidence (probe scores for each candidate) in a results file so the decision can be audited later
-
-Main experiment:
-
-* Record whether $t_{cp} < t_{ap}$ as a descriptive result → measured visually and not deep empirically
-* Create a scaled critic architecture agent
-* When an individual run reaches $f^*_{run}$, fork the complete training state into two identical agents. The fork is performed once per run
-* If an individual run has not reached statistically supported degradation by 95% of the nominal training budget, no fork is performed → reported as a normal null result
-* After the fork, continue both agents for a fixed post-fork horizon of 25% of the nominal training budget for that environment, measured from the fork point → ensures every run has the same amount of time to respond to the intervention
-* The maximum total training budget is 120% of the nominal budget → a fork must therefore occur by 95% to receive the full 25% post-fork horizon
-* To isolate whether the critic pathology is propagating to the actor, perform plasticity injection (Nikishin et al. 2023) to the critic of one of the agents and not the other
-* The two branches begin from the same complete training state at the fork → model parameters, optimizer state, replay buffer, RNG state, and relevant training counters are duplicated before the intervention
-* Plasticity injection: freeze the critic's head, and add two newly initialized copies of it, one trainable and one frozen. The head's output = frozen old head + trainable new head − frozen copy of the new head. The two new copies start identical, so predictions are unchanged at the moment of injection. Earlier residual blocks remain trainable and receive gradients through the injected head construction. Trainable parameter count is unchanged and total parameter count grows by the size of the two new head copies (Nikishin et al. 2023)
-* SimBa has no dedicated encoder, so the head is defined by choice → head = [last m residual blocks + post-layer-norm + output layer]
-* The target critic is also injected using the same construction, and the normal SAC Polyak target update continues from the post-injection state
-* New trainable injection parameters continue with newly created optimizer state while existing trainable parameters keep their existing AdamW state; frozen parameters are excluded from the optimizer and do not receive weight-decay updates
-* Inject the single Q critic used by this SAC implementation
-* Use a fixed panel of 256 state-action pairs sampled once from the replay buffer at the fork and fixed thereafter for the injection correctness checks
-
-Check 1, at the fork:
-
-* Compute Q-values and $\nabla_aQ$ on the fixed panel for (1) the critic just before injection, (2) the injected critic immediately after injection, and (3) the control critic immediately after the fork → all three must match within an implementation-appropriate numerical tolerance determined from the actual dtype
-
-Check 2, just after the fork:
-
-* Run the plasticity probe on a copy of each critic → the injected critic should show improved plasticity relative to the control
-* This is a validation of the intended plasticity-rescue effect, not something to force through implementation changes
-
-Check 3, later:
-
-* Q-values, actor updates, and returns are expected to diverge → this is the result being measured, not something to force
-
-Identity fork:
-
-* Fork without injecting either branch → both must remain numerically identical within an implementation-appropriate tolerance over 1000 further training steps
-* This tests fork fidelity (RNG, replay buffer, optimizer state, and relevant training state) separately from injection
-* We will sustain the plasticity loss checks within both critics after the fork → verifies whether the injection changes the critic's plasticity trajectory and checks that the critic itself is not silently drifting in a way that confounds interpretation
-* Observe the performance of the two agents thereafter, and measure for the development of actor pathologies and degradations through observing overall agent performance and recording the following actor-specific pathology metrics:
-   * Policy churn → measures rapid changes in actor behavior and policy updates (Schaul et al. 2022; Tang & Berseth 2024)
-   * Actor gradient norm → measures changes in the magnitude and stability of the actor optimization signal (Bjorck et al. 2021)
-   * Action saturation / average absolute action → measures whether the actor's outputs become abnormally concentrated near the action bounds (Bjorck et al. 2021)
-* The primary actor outcome is the return/performance trajectory; the actor pathology metrics are supporting diagnostics rather than separate primary endpoints
-* Actor_grad_cosine is retained as a mechanism diagnostic for Experiment 3 rather than being treated as one of the primary Experiment 2 actor pathology metrics
-
-Limitations:
-
-* Plasticity, exploration, and performance interact in RL (Nikishin et al. 2023) → a change in the injected agent's reward after the fork could partly come through changes in the actor/environment interaction, which is why return alone is not treated as the explanation for propagation
-* The injection intervention tests the causal importance of critic plasticity after degradation, but it does not necessarily remove the original reason the scaled critic became degraded → if the critic later redegrades, this is an important result rather than an implementation failure
-* With 5 seeds, a visible gap in the injected vs. control trajectories can still be affected by seed variation → plot percentile bootstrap confidence bands over paired seed-level differences
-* Individual runs fork at different absolute training steps → all post-fork comparisons are therefore aligned by steps since fork, with the same 25% post-fork horizon
-* If degradation occurs after 95% of the nominal training budget, the run is reported as a null result rather than receiving a shorter post-fork window
-* The actor pathology metrics are supporting diagnostics and are not individually treated as proof of propagation; the causal conclusion comes from the paired intervention and the downstream trajectory
-* Policy churn and action saturation require definitions appropriate to continuous stochastic SAC rather than being copied directly from discrete-action or different actor-critic settings; the implementation should follow the relevant literature while preserving the meaning of the metrics
 
 Statistical Practices:
 
@@ -412,3 +218,67 @@ Limitations:
 * The actor-side pathology/optimization diagnostics are supporting measurements and are not individually treated as proof of propagation; the causal conclusion comes from the paired intervention and the downstream trajectory
 * Policy churn and action saturation require definitions appropriate to continuous stochastic SAC rather than being copied directly from discrete-action or different actor-critic settings; the implementation should follow the relevant literature while preserving the meaning of the metrics
 * Development/calibration runs are excluded from the confirmatory analysis → the selected injection configuration is frozen before the main Experiment 2 runs
+
+---
+
+## Amendments from the Phase 0 Q&A
+
+Decided by the project lead on 2026-10-03, in reply to the Phase 0 questions. The
+rationale and the full Q&A are in docs/exp12_decisions.md.
+
+(a) HumanoidBench tasks. HumanoidBench uses h1-reach-v0 and h1-run-v0, the
+no-hands H1 versions. h1-shelf-place is removed from both experiments. Both IDs
+must be verified as registered and stepping. Status: blocked, see
+docs/exp12_decisions.md H1/H2 (2026-10-03).
+
+(b) Fork design. At the trigger the complete training state is saved. The
+original process then restarts from that saved state and continues as the
+CONTROL arm, running to max(100% of B, fork + 25% of B). The INJECTED arm is a
+separate resumable job restored from the same save, running from the fork to
+fork + 25% of B. Both arms use the same restore code path. Experiment 1's data
+after the fork comes from the restored control. The identity fork must pass on
+CUDA for every architecture and suite before any Experiment 1 grid run is
+launched. The fork happens at the exact check step, with the full environment
+state and its random state restored.
+
+(c) Probe target offset. In each probe round both the current critic and the
+stored fresh critic fit g(x) = a + sin(1e5 * f(x; w0)) on identical inputs with
+an identical random function f(.; w0). Each critic's offset a is its own mean
+prediction. Plasticity score P = b - (final probe loss), where b is the variance
+of the targets. Plasticity loss L = P(fresh) - P(current), which is positive when
+plasticity has been lost.
+Limitations:
+  (i) the current and fresh critics' targets differ by a constant shift;
+  (ii) the probe budget (5 rounds x 1000 steps) is smaller than Lyle et al.'s
+       (10 targets x 2000 steps).
+On the development run only, the probe is also computed once with a single
+shared offset, and the report states whether the sign of the plasticity loss
+agrees. This is a one-time sensitivity check.
+
+(d) m-selection rule, fixed before any result is seen.
+  recovery(m) = (L at trigger - L after injection with m) / (L at trigger - L at the healthy reference)
+0 means no change and 1 means fully back to healthy. Choose the smallest m whose
+recovery is within 0.10 of the best recovery. Report recovery for all three
+candidates (last block, half of the residual blocks, all residual blocks). m is
+expressed by these labels so it transfers across architectures. Measure the
+probe's own noise (the spread across the 5 rounds on the same critic). If it
+exceeds 0.10, stop and consult the project lead.
+
+(e) Positive control. D6W1536 on dog-run (DMC hard, 1M environment steps), with
+a development seed outside 1-5. If it never triggers, stop and consult. The
+trigger is never loosened.
+
+(f) Healthy reference. The "normally trained critic" is the same critic's own
+earlier checks in the same development run, before it triggers. No separate
+D2W512 reference run is used.
+
+(g) No normalization in Experiment 2. No returns are normalized anywhere, and no
+scalar summary is reported. Experiment 2 outputs graphs only: per-environment
+paired differences (injected minus control) in raw return units, aligned by
+steps since fork, with percentile bootstrap bands and every seed's line shown.
+For post-hoc normalization later:
+  - raw per-episode returns (and per-episode success where the environment
+    provides it) are saved for every evaluation;
+  - analysis scripts take a normalize(env, values) function that defaults to
+    identity;
+  - one metadata file per suite records benchmark-defined constants as data only.

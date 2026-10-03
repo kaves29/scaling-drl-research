@@ -1,5 +1,7 @@
 # EchoCritic Research Codebase
 
+> **Experiments 1 and 2 are governed by `.claude/methodology-exp1-exp2.md`** (with its Amendments section). Where this file or `.claude/research-methodology.md` conflicts with it, that Methodology wins for Experiments 1 and 2. Decisions log: `docs/exp12_decisions.md`.
+
 ## Project
 - This is a causal/mechanistic DRL research project.
 - Main question: how critic scaling in SimBa-based SAC produces critic pathology and whether it propagates to actor-side behavior.
