@@ -70,3 +70,33 @@ trigger:
   consecutive_checks: 1    # 2 is under consideration (undecided); 1 is the current rule
   null_threshold: 0.0      # fire when the lower bound > this; 0 = "distinguishable from zero"
   eligible_fraction: 0.95  # f*_run must be at or before 95% of the budget (checks 1..19 of 20)
+
+##################################################################################
+# Experiment 2 fork (Methodology Exp 2; amendment (b))
+##################################################################################
+fork:
+  enabled: true
+  architectures: ['D4W1024', 'D6W1536']   # only scaled critics fork (D6)
+  horizon_fraction: 0.25                  # post-fork horizon, measured from the fork
+  max_total_fraction: 1.2                 # maximum total budget
+  eval_every_fraction: 0.01               # post-fork evaluation every 1% of B (F1)
+  eval_episodes: 10
+  identity_snapshot_steps: null           # validation only: control keeps a snapshot at fork + this many steps
+  source: null                            # arm jobs (exp2_arm): absolute path of the parent Exp 1 run directory
+  arm: null                               # arm jobs: 'injected' | 'identity' (validation only)
+
+injection:
+  m: null              # 'last' | 'half' | 'all'; frozen by the positive control before main Exp 2 runs
+
+checks:
+  check1_tolerance_eps: 64   # PROPOSED (pending lead approval): |dQ|, |d dQ/da| <= 64 * eps_f32 * scale
+
+testing:
+  force_trigger_check: null  # TEST-ONLY: force the trigger at this check; refused unless run_role=dev
+  stop_after_identity_snapshot: false  # VALIDATION-ONLY: end the job once fork.identity_snapshot_steps is saved; run_role=dev only
+
+positive_control:            # scripts/positive_control.py, amendments (d)-(f)
+  architecture: D6W1536
+  env_name: dog-run
+  similar_within: 0.10       # choose the smallest m whose recovery is within this of the best
+  noise_threshold: 0.10      # STOP and consult if the probe's own noise exceeds this

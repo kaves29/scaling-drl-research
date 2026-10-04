@@ -25,14 +25,15 @@ real_fit = probe._fit
 real_summarize = probe.summarize
 
 
-def unpaired_probe_round(target_def, critics, tx, obs, act, key, cfg):
+def unpaired_probe_round(target_def, critics, tx, obs, act, key, cfg, shared_offset=None):
     out = {}
     for i, (name, critic) in enumerate(critics.items()):
-        out.update(real_probe_round(target_def, {name: critic}, tx, obs, act, jax.random.fold_in(key, i), cfg))
+        out.update(real_probe_round(target_def, {name: critic}, tx, obs, act, jax.random.fold_in(key, i), cfg,
+                                    shared_offset))
     return out
 
 
-def zero_offset_fit(network_def, tx, params, obs, act, base, idx, chunk):
+def zero_offset_fit(network_def, tx, params, obs, act, base, idx, chunk, offset=None):
     losses, final, offset = real_fit(network_def, tx, params, obs, act, base - 0.0, idx, chunk)
     # Re-run with a = 0 by shifting the targets back by the critic's own offset.
     losses0, final0, _ = real_fit(network_def, tx, params, obs, act, base - offset, idx, chunk)
@@ -81,15 +82,18 @@ def keep_dev_load(results_root=None, include_dev=False, require_complete=True):
     return real_load(results_root, include_dev=True, require_complete=require_complete)
 
 
-def source_mutation(module, attr, old, new):
-    """attr rebuilt from module's source with one textual change (for logic written inline)."""
+def source_mutation(module, attr, old, new=None):
+    """attr rebuilt from module's source with textual changes (for logic written inline).
+    `old` is one anchor (with `new`) or a list of (anchor, replacement) pairs; each anchor must occur once."""
     import inspect
 
     source = inspect.getsource(module)
-    if old not in source:
-        raise ValueError(f"mutation anchor not found in {module.__name__}: {old!r}")
+    for a, b in ([(old, new)] if new is not None else old):
+        if source.count(a) != 1:
+            raise ValueError(f"mutation anchor must occur once in {module.__name__}: {a!r}")
+        source = source.replace(a, b)
     namespace = {"__name__": module.__name__ + "_mutated"}
-    exec(compile(source.replace(old, new), module.__file__, "exec"), namespace)
+    exec(compile(source, module.__file__, "exec"), namespace)
     return namespace[attr]
 
 
@@ -126,10 +130,99 @@ MUTATIONS = [
 ]
 
 
+from experiments.exp12 import fork, injection, m_selection  # noqa: E402
+
+real_inject = injection.inject
+
+
+def fresh_trunk_state(old_state, trunk_params, num_blocks, m, learning_rate, weight_decay):
+    import optax
+
+    return optax.adamw(learning_rate=learning_rate, weight_decay=weight_decay).init(trunk_params)
+
+
+def shared_count_inject(*args, **kwargs):
+    critic, target = real_inject(*args, **kwargs)
+    new = critic.opt_state["new"]
+    new = (new[0]._replace(count=critic.opt_state["trunk"][0].count), *new[1:])
+    return critic.replace(opt_state={**critic.opt_state, "new": new}), target
+
+
+def argmax_select_m(recoveries, similar_within):
+    return max(m_selection.M_LABELS, key=lambda m: recoveries[m])
+
+
+INJ = "tests.test_exp12_injection.InjectionInvariantsTest"
+PC = "tests.test_exp12_positive_control"
+FORK = "tests.test_exp12_fork.ForkUnitTest"
+MUTATIONS += [
+    ("injection: Q = old + new (subtraction of the frozen copy removed)", injection, "InjectedSACCritic",
+     source_mutation(injection, "InjectedSACCritic", "return self.old(z) + (self.new(z) - self.copy(z))",
+                     "return self.old(z) + self.new(z)"),
+     f"{INJ}.test_predictions_unchanged_bit_for_bit_and_action_gradients_within_dtype_tolerance"),
+    ("injection: frozen heads' parameter gradients not stopped", injection, "InjectedSACCritic",
+     source_mutation(injection, "InjectedSACCritic", [
+         ('params["old"] = jax.lax.stop_gradient(params["old"])', "pass"),
+         ('params["copy"] = jax.lax.stop_gradient(params["copy"])', "pass")]),
+     f"{INJ}.test_gradients_reach_earlier_blocks_through_the_frozen_head"),
+    ("injection: plain AdamW on every parameter (frozen heads decay)", injection, "inject",
+     source_mutation(injection, "inject", [
+         ("tx = injected_optimizer(learning_rate, weight_decay)",
+          "tx = optax.adamw(learning_rate=learning_rate, weight_decay=weight_decay)"),
+         ("    opt_state = {\n", "    opt_state = tx.init(params)\n    _unused = {\n")]),
+     f"{INJ}.test_training_keeps_frozen_heads_bit_identical_and_moves_trainable_parts"),
+    ("injection: trunk optimizer state recreated (moments and count reset)", injection, "_carry_trunk_state",
+     fresh_trunk_state, f"{INJ}.test_optimizer_state_rules"),
+    ("injection: new head shares the trunk's step count", injection, "inject", shared_count_inject,
+     f"{INJ}.test_optimizer_state_rules"),
+    ("injection: copy head initialised independently of the new head", injection, "inject",
+     source_mutation(injection, "inject",
+                     "copy_head = jax.tree_util.tree_map(lambda x: jnp.array(x, copy=True), new_head)",
+                     "copy_head = _Head(m, hidden, original.dtype).init(jax.random.fold_in(key, 1), "
+                     "jnp.zeros((1, hidden), original.dtype))[\"params\"]"),
+     f"{INJ}.test_new_copies_identical_and_freshly_initialised"),
+    ("injection: target critic's new head differs from the online one", injection, "inject",
+     source_mutation(injection, "inject", '"new": jax.tree_util.tree_map(jnp.array, new_head),',
+                     '"new": jax.tree_util.tree_map(lambda x: x + 1e-3, new_head),'),
+     f"{INJ}.test_new_copies_identical_and_freshly_initialised"),
+    ("m rule: best recovery instead of the smallest m within 0.10", m_selection, "select_m", argmax_select_m,
+     f"{PC}.MSelectionArithmeticTest.test_select_smallest_m_within_tolerance"),
+    ("healthy reference includes the trigger check", m_selection, "healthy_reference",
+     source_mutation(m_selection, "healthy_reference", '1 <= r["check_index"] < trigger_check',
+                     '1 <= r["check_index"] <= trigger_check'),
+     f"{PC}.MSelectionArithmeticTest.test_healthy_reference_definitions"),
+    ("probe noise not expressed in recovery units", m_selection, "evaluate",
+     source_mutation(m_selection, "evaluate", 'out["noise"] = max(out["noise_recovery_units"].values())',
+                     'out["noise"] = max(raw.values())'),
+     f"{PC}.MSelectionArithmeticTest.test_evaluate_stops_on_noise"),
+    ("shared offset ignored (each critic keeps its own)", probe, "probe_round",
+     source_mutation(probe, "probe_round", "    if shared_offset is not None:\n", "    if False:\n"),
+     f"{PC}.SharedOffsetTest.test_shared_offset_modes"),
+    ("Check 1 ignores dQ/da", fork, "check1",
+     source_mutation(fork, "check1", '"pass": dq <= tol_q and dg <= tol_g,', '"pass": dq <= tol_q,'),
+     f"{FORK}.test_check1_compares_values_and_action_gradients"),
+    ("fork plan: injected arm runs to N instead of fork + 25% N", fork, "fork_plan",
+     source_mutation(fork, "fork_plan", "arm_end = fork_step + horizon", "arm_end = max(n, fork_step)"),
+     f"{FORK}.test_fork_plan"),
+    ("post-fork eval does not restore the agent's key", fork, "post_fork_eval",
+     source_mutation(fork, "post_fork_eval", "        core._rng = saved_key\n", ""),
+     f"{FORK}.test_post_fork_eval_leaves_training_state_untouched"),
+    ("post-fork eval does not restore the global numpy RNG", fork, "post_fork_eval",
+     source_mutation(fork, "post_fork_eval", "        np.random.set_state(np_state)\n", ""),
+     f"{FORK}.test_post_fork_eval_leaves_training_state_untouched"),
+    ("post-fork eval leaves the global numpy RNG unseeded (Reach goals follow training)", fork,
+     "post_fork_eval", source_mutation(fork, "post_fork_eval", "        np.random.seed(env_seed)\n", ""),
+     f"{FORK}.test_post_fork_eval_leaves_training_state_untouched"),
+    ("post-fork eval does not restore Python's random", fork, "post_fork_eval",
+     source_mutation(fork, "post_fork_eval", "        random.setstate(py_state)\n", ""),
+     f"{FORK}.test_post_fork_eval_leaves_training_state_untouched"),
+]
+
+
 def _run(test_id):
     suite = unittest.defaultTestLoader.loadTestsFromName(test_id)
     result = unittest.TextTestRunner(stream=open("/dev/null", "w"), verbosity=0).run(suite)
-    return result.wasSuccessful()
+    return result.wasSuccessful(), "error" if result.errors else "assertion"
 
 
 def main():
@@ -144,14 +237,14 @@ def main():
         for p in patches:
             p.start()
         try:
-            broken_passes = _run(test_id)
+            broken_passes, how = _run(test_id)
         finally:
             for p in patches:
                 p.stop()
-        restored_passes = _run(test_id)
+        restored_passes, _ = _run(test_id)
         status = "OK" if (not broken_passes and restored_passes) else "PROBLEM"
         ok &= status == "OK"
-        print(f"[{status}] {label}: mutated -> {'PASS' if broken_passes else 'FAIL'}, "
+        print(f"[{status}] {label}: mutated -> {'PASS' if broken_passes else f'FAIL ({how})'}, "
               f"restored -> {'PASS' if restored_passes else 'FAIL'}  ({test_id.split('.')[-1]})")
     return 0 if ok else 1
 

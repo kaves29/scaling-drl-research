@@ -237,6 +237,9 @@ class Exp12Trainer:
         them must not perturb the global RNG states restored after."""
         state_dir = Path(state_dir)
         meta = load_meta(state_dir)
+        injected = meta["extra_state"].get("injection")
+        if injected is not None and "injection" not in self.extra_state:
+            self.inject(injected["m"], injected["seed"])  # rebuild the structure the weights belong to
         self.agent.load_checkpoint(str(state_dir))
         load_buffer(self.buffer, state_dir)
         restore_env(self.train_env, meta["train_env"])
@@ -259,6 +262,17 @@ class Exp12Trainer:
         self.logger.media_dict = dict(meta["media"])
         for name, values in meta["agent_window_buffers"].items():
             setattr(self._sac_agent, name, [jnp.asarray(v) for v in values])
+
+    def inject(self, m_label: str, seed: int) -> None:
+        """Plasticity injection into the online and target critic (experiments/exp12/injection.py)."""
+        from experiments.exp12.injection import inject, injection_key
+
+        a = self._sac_agent
+        a._critic, a._target_critic = inject(
+            a._critic, a._target_critic, m_label, injection_key(seed),
+            float(self.cfg.agent.critic_learning_rate), float(self.cfg.agent.critic_weight_decay),
+        )
+        self.extra_state["injection"] = {"m": m_label, "seed": int(seed)}
 
     @property
     def _sac_agent(self):

@@ -64,12 +64,14 @@ def env_replay(in_path, out_path):
 
 
 def exp1_run(spec_path):
+    """Runs exp1 (or exp2_arm) from a JSON spec, optionally dying at a chosen point."""
     from exp12_helpers import CONFIG_PATH, patch_wandb
 
     with open(spec_path) as f:
         spec = json.load(f)
     patch_wandb()
-    from experiments import exp1
+    from experiments import exp1, exp2_arm
+    from experiments.exp12 import fork
     from experiments.exp12.trainer import Exp12Trainer
 
     crash_step = spec.get("crash_step")
@@ -86,8 +88,18 @@ def exp1_run(spec_path):
             return original_train(self, last_step, after_step=hook, **kwargs)
 
         Exp12Trainer.train = train
-    exp1.run({
-        "experiment": "exp1", "config_path": CONFIG_PATH, "config_name": "base_exp12",
+    if spec.get("crash_inside_fork_write"):
+        original_save_npz = fork.save_npz
+
+        def save_npz(path, arrays):
+            original_save_npz(path, arrays)
+            if path.name == "panel.npz":
+                os._exit(4)  # fork state on disk, FORK_READY never written
+
+        fork.save_npz = save_npz
+    entry = exp2_arm.run if spec.get("experiment") == "exp2_arm" else exp1.run
+    entry({
+        "experiment": spec.get("experiment", "exp1"), "config_path": CONFIG_PATH, "config_name": "base_exp12",
         "overrides": spec["overrides"], "checkpoint_dir": spec["checkpoint_dir"],
         "checkpoint_interval": spec["checkpoint_interval"], "checkpoint_start_frac": 0.0,
     })

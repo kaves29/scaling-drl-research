@@ -14,7 +14,7 @@ and keys come from dedicated streams that do not consume the training RNGs.
 
 import functools
 from dataclasses import dataclass
-from typing import Dict
+from typing import Dict, Optional
 
 import jax
 import jax.numpy as jnp
@@ -64,14 +64,20 @@ def _base_targets(network_def, key, obs, act, chunk, scale):
     return jnp.sin(scale * f)
 
 
+@functools.partial(jax.jit, static_argnames=("network_def", "chunk"))
+def _mean_prediction(network_def, params, obs, act, chunk):
+    return jnp.mean(_chunked(lambda o, a: network_def.apply({"params": params}, o, a).reshape(-1), obs, act, chunk))
+
+
 @functools.partial(jax.jit, static_argnames=("network_def", "tx", "chunk"))
-def _fit(network_def, tx, params, obs, act, base_targets, idx, chunk):
-    """Returns (per-step minibatch losses, final pool MSE, offset a)."""
+def _fit(network_def, tx, params, obs, act, base_targets, idx, chunk, offset=None):
+    """Returns (per-step minibatch losses, final pool MSE, offset a). a defaults to the critic's own mean prediction."""
 
     def predict(p):
         return _chunked(lambda o, a: network_def.apply({"params": p}, o, a).reshape(-1), obs, act, chunk)
 
-    offset = jnp.mean(predict(params))
+    if offset is None:
+        offset = jnp.mean(predict(params))
     targets = offset + base_targets
 
     def loss_fn(p, batch_idx):
@@ -98,15 +104,32 @@ def sample_pool(agent, buffer, rng: np.random.Generator, pool_size: int):
     return jnp.asarray(obs), jnp.asarray(buffer._actions[idx])
 
 
-def probe_round(target_def, critics: Dict[str, tuple], tx, obs, act, key, cfg: ProbeConfig) -> Dict[str, Dict]:
-    """critics: name -> (network_def, params). All share pool, w0 and minibatch order."""
+def _unpack(critic, tx):
+    return critic if len(critic) == 3 else (*critic, tx)
+
+
+def probe_round(target_def, critics: Dict[str, tuple], tx, obs, act, key, cfg: ProbeConfig,
+                shared_offset: Optional[str] = None) -> Dict[str, Dict]:
+    """critics: name -> (network_def, params) or (network_def, params, optimizer); the default
+    optimizer is `tx`. All share the pool, w0 and the minibatch order. An injected critic is
+    probed with its own optimizer, so its frozen parts stay frozen (decision A8).
+
+    shared_offset (one-time sensitivity check, amendment (c)): None gives each critic its own
+    offset; a critic name gives all critics that critic's mean prediction; "mean" gives all
+    critics the average of their mean predictions."""
     target_key, idx_key = jax.random.split(key)
     base = _base_targets(target_def, target_key, obs, act, cfg.eval_chunk, cfg.target_scale)
     b = jnp.var(base)
     idx = jax.random.randint(idx_key, (cfg.steps, cfg.batch_size), 0, cfg.pool_size)
+    common = None
+    if shared_offset is not None:
+        means = {n: _mean_prediction(_unpack(c, tx)[0], c[1], obs, act, cfg.eval_chunk) for n, c in critics.items()}
+        common = jnp.mean(jnp.stack(list(means.values()))) if shared_offset == "mean" else means[shared_offset]
     out = {}
-    for name, (network_def, params) in critics.items():
-        losses, final, offset = _fit(network_def, tx, params, obs, act, base, idx, cfg.eval_chunk)
+    for name, critic in critics.items():
+        network_def, params, critic_tx = _unpack(critic, tx)
+        shared = {} if common is None else {"offset": common}
+        losses, final, offset = _fit(network_def, critic_tx, params, obs, act, base, idx, cfg.eval_chunk, **shared)
         out[name] = {"losses": losses, "final_loss": final, "offset": offset, "b": b, "score": b - final}
     return out
 
@@ -121,12 +144,13 @@ def probe_rng(seed: int, check_index: int, round_index: int) -> np.random.Genera
 
 
 def run_probe(agent, buffer, target_def, critics: Dict[str, tuple], tx, seed: int, check_index: int,
-              cfg: ProbeConfig) -> Dict[str, Dict[str, np.ndarray]]:
+              cfg: ProbeConfig, shared_offset: Optional[str] = None) -> Dict[str, Dict[str, np.ndarray]]:
     """All rounds of one check. Transfers to host once, after the last round."""
     rounds = []
     for r in range(cfg.rounds):
         obs, act = sample_pool(agent, buffer, probe_rng(seed, check_index, r), cfg.pool_size)
-        rounds.append(probe_round(target_def, critics, tx, obs, act, probe_key(seed, check_index, r), cfg))
+        rounds.append(probe_round(target_def, critics, tx, obs, act, probe_key(seed, check_index, r), cfg,
+                                  shared_offset))
     rounds = jax.device_get(rounds)
     return {
         name: {k: np.stack([rd[name][k] for rd in rounds]) for k in rounds[0][name]}

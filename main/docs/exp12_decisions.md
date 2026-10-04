@@ -713,3 +713,101 @@ results arrive. Later changes are appended as new, dated entries.
   `trigger:`, with the current values unchanged: resamples 10,000, confidence
   0.95, consecutive_checks 1, null_threshold 0.0 (fire when the lower bound is
   > null_threshold) and eligible_fraction 0.95.
+
+## Phase 4 (2026-10-04): fork, injection, Checks 1-3, identity fork, positive control
+
+### What was built
+- `experiments/exp12/injection.py`. Head = last m blocks + post-LN + output.
+  Q = old(z) + (new(z) − copy(z)). The frozen old/copy heads get
+  stop_gradient on their parameters only, so gradients still reach the trunk
+  through them. The trunk keeps its AdamW state and count; the new head gets
+  a fresh AdamW state and its own count; frozen parameters get zero updates
+  and no weight decay (E3/E4). The target critic is injected the same way.
+  m labels: last = 1, half = max(1, D // 2), all = D. half = 1 for D2, 2 for
+  D4, 3 for D6.
+- `experiments/exp12/fork.py`, the fork in `experiments/exp1.py`, and
+  `experiments/exp2_arm.py` (D2). At f*_run the complete state is saved. The
+  original process restarts from that saved state as the control and runs to
+  max(N, fork + 0.25N). The injected arm is a separate, resumable `exp2_arm`
+  job running to fork + 0.25N. Both go through the same restore path.
+- Post-fork evaluations every 1% of B (26 points × 10 episodes, F1) run on a
+  fresh env seeded from (seed, eval index) with a dedicated JAX key, and
+  restore the agent key and the numpy and Python global RNG states
+  afterwards. Tests show they cannot change training (the control equals a
+  fork-disabled run bit for bit). Post-fork probes continue on the same k/20
+  grid past check 20.
+- Records: `results/exp12/exp2/<run_key>/{fork,check1_<arm>,check2}.json`
+  and `arm_<arm>/{checks,eval_episodes,metrics}.csv`, with raw per-episode
+  return, length and success (F3/F4).
+- `scripts/compare_identity_fork.py` and `testing.stop_after_identity_snapshot`
+  (validation only; dev only).
+- `experiments/exp12/m_selection.py` and `scripts/positive_control.py`, for
+  amendments (c)–(f).
+
+### Choices made (routine, shown for veto)
+- Identity fork "1,000 training steps" is read as 1,000 interaction steps
+  (= 2,000 gradient updates at UTD 2), via `fork.identity_snapshot_steps=1000`.
+- The structural metrics of an injected critic (the encoder intermediates
+  in `sac_update.get_critic_with_metrics`) are NaN in the injected arm's
+  metrics.csv. The injected critic has no single encoder output, and the
+  normal path is unchanged. Q values, TD loss and actor metrics are
+  unaffected. (The I1–I4 actor diagnostics are Phase 5.)
+- The fork panel is 256 replay (s, a) pairs from a dedicated stream, drawn
+  once at the fork and shared by Check 1 for all arms.
+- The positive control's injected critics use the same injection key as the
+  injected arm (`injection_key(seed)`), so they are the critics the arm
+  would start from. Its probes reuse the trigger check's own pool, targets
+  and minibatch order, so the degraded critic reproduces the recorded
+  trigger probe exactly (asserted on CPU: max |diff| = 0).
+- The shared-offset sensitivity check (amendment (c)) reports three versions
+  of the single offset: the degraded critic's mean, the fresh critic's mean,
+  and their average. For each it reports whether the sign of L agrees with
+  the per-critic-offset L. It is reported only and changes nothing.
+
+### Open questions for the project lead (nothing below is applied)
+- P4-1 Check 1 tolerance. Q is bit-identical after injection. dQ/da is not:
+  reverse mode adds the three heads' cotangents in a different order. The
+  measured gap on CPU is up to 7.2 float32 eps × max|dQ/da| at D6W1536, and
+  0.83 eps in the tiny smoke run. Proposed:
+  pass if both |ΔQ| and |Δ dQ/da| ≤ 64 · eps_f32 · the pre-injection max
+  magnitude (`checks.check1_tolerance_eps: 64`). The control and identity
+  arms must still be bit-identical; this tolerance applies only to the
+  injected arm. Approve or change it.
+- P4-2 What counts as "Check 2 passed". Proposed: the 95% percentile
+  bootstrap interval of IQM over rounds of P(injected) − P(control), on the
+  fork check's own pool, lies above 0. It is reported in check2.json and
+  never excludes a fork. Approve or change it.
+- P4-3 Which L is the healthy reference. "The same critic's own earlier
+  checks before it triggers" (f) can mean (a) `last_pre_trigger`: L at check
+  f* − 1; or (b) `iqm_pre_trigger`: the IQM of all per-round L of checks
+  1..f* − 1. The script requires `--healthy_reference`, has no default, and
+  stops if f* is check 1.
+- P4-4 How to measure the probe's own noise against 0.10. Implemented as the
+  spread over the 5 rounds of each probed critic's L (the degraded critic and
+  the three injected ones), divided by L_trigger − L_healthy so that it is in
+  recovery units. The largest of these is compared to 0.10. Spread is either
+  (a) `range`: max − min, or (b) `std`: sample std. The script requires
+  `--noise_statistic`, has no default. Also confirm that normalising by
+  L_trigger − L_healthy is the intended reading of "exceeds 0.10".
+- P4-5 Identity-fork coverage. The CUDA commands cover D4W1024 and D6W1536 ×
+  one environment per suite (dog-run, myo-key-turn, h1-run-v0). The CPU
+  restore tests already covered all 13 environments. Is one environment per
+  suite enough?
+- Still open from Phase 3: consecutive checks (YES/NO).
+
+### Bugs found and fixed by the Phase 4 tests (2026-10-04)
+- Resume right after the fork. The kill test failed when the control was
+  killed at step 101, after the fork and before its first save. The resumed
+  control read its plan back from fork.json, which also holds two directory
+  paths, so its `extra_state["fork"]` differed from an uninterrupted run.
+  `fork.read_fork` now returns the plan only. All three kill points and the
+  arm kill point resume bit-identically.
+- Post-fork evaluation pairing on HumanoidBench. Reach draws its goal from
+  the global `np.random` at reset, so a post-fork evaluation's goals depended
+  on the training process's global RNG state at that moment. Training was
+  never affected (the state was restored), but injected and control
+  evaluations were not guaranteed to face the same goals. The global numpy
+  and Python RNGs are now seeded from (seed, eval index) inside the
+  evaluation and restored afterwards. Checked on h1-reach-v0 (venv_hb): two
+  different training RNG states give identical eval returns, and the
+  training state is unchanged.

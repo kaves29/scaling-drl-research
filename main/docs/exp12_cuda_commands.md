@@ -69,3 +69,56 @@ python scripts/profile_exp12.py --env hopper-hop --env_group dmc_medium \
 The key fields are `train_it_per_s_probes_off`, `probe_check_s`,
 `probe_overhead_pct_of_wallclock`, `peak_device_bytes` (per process; the
 recommended concurrent jobs per GPU come from it) and `ratio_exp1_over_angle1`.
+
+## 5. Identity-fork gate (D2): per forking architecture × suite, before any Exp 1 grid launch
+Only D4W1024 and D6W1536 fork. One environment per suite (dog-run, myo-key-turn,
+h1-run-v0); tell me if you want every environment instead. Each parent is a dev
+run (seed 101, its own results root) whose trigger is forced at check 1 (test
+hook, dev only). It forks there, and the control saves a snapshot 1,000
+interaction steps after the fork and stops. The identity arm restores the
+same fork state through the same path, saves its snapshot at the same step,
+and stops. `compare_identity_fork.py` then requires every agent leaf, the
+optimizer state, keys, obs normalisation, the buffer, the env RNG and replay
+record, the global RNGs, counters, meters, probe records, post-fork
+evaluations and the Check 1 panel to be bit-identical. Exit code 0 = PASS. If
+it passes only with deterministic ops (step 1), that decision comes to you.
+```bash
+for ARCH in "4 1024" "6 1536"; do set -- $ARCH; D=$1; W=$2
+for SUITE in "dog-run dmc_hard" "myo-key-turn myosuite_simba" "h1-run-v0 humanoid_bench"; do
+  set -- $SUITE; ENV=$1; GROUP=$2; NAME=D${D}W${W}_${ENV}; BASE=$OUT/5_identity/$NAME
+  COMMON=(--config_name base_exp12 --overrides env_name=$ENV --overrides env=$GROUP --overrides seed=101
+          --overrides critic_num_blocks=$D --overrides critic_hidden_dim=$W --overrides run_role=dev
+          --overrides testing.force_trigger_check=1 --overrides fork.identity_snapshot_steps=1000
+          --overrides testing.stop_after_identity_snapshot=true --overrides results_root=$BASE/results)
+  python run.py --experiment exp1 "${COMMON[@]}" --checkpoint_dir $BASE/parent 2>&1 | tee $BASE.parent.log
+  python run.py --experiment exp2_arm "${COMMON[@]}" --overrides fork.source=$BASE/parent \
+    --overrides fork.arm=identity --checkpoint_dir $BASE/identity 2>&1 | tee $BASE.identity.log
+  python scripts/compare_identity_fork.py --run_dir $BASE/parent --arm_dir $BASE/identity \
+    --out $OUT/5_identity/${NAME}.json
+done; done
+```
+Cost: each parent trains to 5% of its budget plus 1,000 steps (dog-run D6W1536:
+25,000 + 1,000 interaction steps), and each arm runs 1,000 steps. Section 4
+gives the throughput needed to cost this.
+
+## 6. Positive control and m-selection (after sections 1-5 pass and the definitions below are decided)
+A development run: D6W1536 on dog-run, seed 102 (outside 1-5), run_role=dev,
+with the unchanged trigger. It forks at its own f*_run. Once its
+`fork/FORK_READY` exists, the script probes fresh, degraded and injected
+(m = last, half, all) critics on the trigger check's own pool, applies amendment
+(d), and runs the one-time shared-offset check. Exit 3 means STOP and consult
+(it never triggered, there is no pre-trigger check, recovery is undefined, or
+noise > 0.10). The two definitions below are still OPEN QUESTIONS for you;
+the script refuses to run without them:
+  --healthy_reference last_pre_trigger | iqm_pre_trigger
+  --noise_statistic range | std
+```bash
+PC=$OUT/6_positive_control
+python run.py --experiment exp1 --config_name base_exp12 --overrides env_name=dog-run --overrides env=dmc_hard \
+  --overrides seed=102 --overrides critic_num_blocks=6 --overrides critic_hidden_dim=1536 \
+  --overrides run_role=dev --overrides results_root=$PC/results --checkpoint_dir $PC/dev_run 2>&1 | tee $PC.dev_run.log
+python scripts/positive_control.py --run_dir $PC/dev_run --out_dir $PC/result \
+  --healthy_reference <DECIDED> --noise_statistic <DECIDED> 2>&1 | tee $PC.result.log
+```
+The chosen m is not applied automatically. You freeze it by setting
+`injection.m` for the Exp 2 injected arms.

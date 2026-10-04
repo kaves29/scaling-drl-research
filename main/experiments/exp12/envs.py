@@ -195,6 +195,15 @@ def create_envs(
     return make(reward_scale), make(1.0)
 
 
+def create_eval_env(env_type: str, seed: int, env_name: str, rescale_action: bool, no_termination: bool,
+                    action_repeat: int, max_episode_steps: int, **kwargs) -> SyncVectorEnv:
+    """A standalone evaluation env (reward scale 1), e.g. for the post-fork evaluations."""
+    return SyncVectorEnv([
+        lambda: _make_one_env(env_type, env_name, seed, rescale_action, no_termination, action_repeat, 1.0,
+                              max_episode_steps)
+    ])
+
+
 def env_restore_state(vec_env: SyncVectorEnv) -> Dict[str, Any]:
     return {
         "env": vec_env.envs[0].restore_state(),

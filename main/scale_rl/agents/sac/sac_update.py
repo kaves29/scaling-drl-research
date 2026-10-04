@@ -245,6 +245,12 @@ def get_critic_with_metrics(
             "train/critic_q1_srank": critic_q1_srank,
             "train/critic_q2_srank": critic_q2_srank,
         }
+    elif 'intermediates_encoder___call__' not in newintermediates:
+        # Exp 2 injected critic (experiments/exp12/injection.py): no single SimBa encoder output to
+        # measure, so its structural metrics are reported as not computed.
+        critic_info = {k: float("nan") for k in (
+            "train/critic_DR0.1", "train/critic_DR0.2", "train/critic_fnorm", "train/critic_wnorm",
+            "train/critic_srank")}
     else:
         critic_DR1 = get_dormant_ratio(newintermediates,prefix='critic',tau=0.1)
         critic_DR2 = get_dormant_ratio(newintermediates,prefix='critic',tau=0.2)

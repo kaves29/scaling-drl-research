@@ -7,6 +7,7 @@ import numpy as np
 import orbax.checkpoint
 import pandas as pd
 
+from experiments.exp12.injection import InjectedSACCritic, injected_optimizer
 from experiments.exp12.probe import check_steps, critic_optimizer, iqm, probe_config, run_probe, summarize
 from experiments.exp12.trigger import bootstrap_interval, f_star, trigger_config, triggered
 from utils.atomic_io import atomic_write_text
@@ -21,14 +22,21 @@ class RunProbes:
     and restored with the training state; learning curves go to probes/*.npz.
     """
 
-    def __init__(self, trainer, run_dir: str):
+    def __init__(self, trainer, run_dir: str, fresh_dir: str = None):
         self.trainer = trainer
         self.cfg = probe_config(trainer.cfg)
         self.seed = int(trainer.cfg.seed)
         self.dir = Path(run_dir) / "probes"
-        self.fresh_path = Path(run_dir) / FRESH_CRITIC_DIR
-        self.critic_def = trainer._sac_agent.critic.network_def
-        self.tx = critic_optimizer(trainer.cfg.agent)
+        # Arms read the fresh reference stored by the parent Exp 1 run.
+        self.fresh_path = Path(fresh_dir) if fresh_dir is not None else Path(run_dir) / FRESH_CRITIC_DIR
+        a = trainer.cfg.agent
+        # The original architecture: fresh reference and target generator, also for an injected arm.
+        self.critic_def = original_critic_def(trainer.cfg)
+        self.tx = critic_optimizer(a)
+        self.injected_tx = injected_optimizer(float(a.critic_learning_rate), float(a.critic_weight_decay))
+        self.forced_check = trainer.cfg.testing.force_trigger_check
+        if self.forced_check is not None and trainer.cfg.run_role != "dev":
+            raise ValueError("testing.force_trigger_check is a test-only hook and requires run_role=dev.")
         self.trigger = trigger_config(trainer.cfg)
         checks = check_steps(int(trainer.cfg.num_interaction_steps), self.cfg.checks)
         if checks[0] <= int(trainer.cfg.buffer.min_length):
@@ -36,10 +44,24 @@ class RunProbes:
                 f"The first probe check (interaction step {checks[0]}) must come after the fresh-critic "
                 f"probe at buffer.min_length={trainer.cfg.buffer.min_length}."
             )
+        self.check_every = checks[0]
         self.check_index = {step: k for k, step in enumerate(checks, 1)}
         self.fresh = None
         if self.fresh_path.exists():
             self.fresh = orbax.checkpoint.PyTreeCheckpointer().restore(str(self.fresh_path))["params"]
+
+    def extend_to(self, last_step: int) -> None:
+        """Adds checks on the same k/checks grid beyond 100% of the budget (post-fork arms)."""
+        k = 1
+        while k * self.check_every <= last_step:
+            self.check_index[k * self.check_every] = k
+            k += 1
+
+    def current_critic(self, trainer):
+        critic = trainer._sac_agent.critic
+        if isinstance(critic.network_def, InjectedSACCritic):
+            return (critic.network_def, critic.params, self.injected_tx)
+        return (critic.network_def, critic.params)
 
     @property
     def records(self) -> List[Dict]:
@@ -63,10 +85,7 @@ class RunProbes:
         k = self.check_index.get(trainer.interaction_step)
         if k is None:
             return
-        critics = {
-            "current": (self.critic_def, trainer._sac_agent.critic.params),
-            "fresh": (self.critic_def, self.fresh),
-        }
+        critics = {"current": self.current_critic(trainer), "fresh": (self.critic_def, self.fresh)}
         self.record_check(k, self._probe(k, critics))
 
     @property
@@ -92,6 +111,9 @@ class RunProbes:
             "triggered": triggered(low, tc.null_threshold) and s["valid"],
             "valid": s["valid"],
         }
+        if self.forced_check is not None and k == self.forced_check:
+            row["triggered"] = True  # TEST-ONLY hook (testing.force_trigger_check, run_role=dev only)
+            row["forced"] = True
         self.records.append(row)
         if self.f_star is None:
             self.trainer.extra_state["f_star"] = f_star(
@@ -112,3 +134,13 @@ class RunProbes:
     def write_csv(self) -> None:
         self.dir.mkdir(parents=True, exist_ok=True)
         atomic_write_text(self.dir / "probe_checks.csv", pd.DataFrame(self.records).to_csv(index=False))
+
+
+def original_critic_def(cfg):
+    import jax.numpy as jnp
+
+    from scale_rl.agents.sac.sac_network import SACCritic
+
+    a = cfg.agent
+    return SACCritic(a.critic_block_type, int(a.critic_num_blocks), int(a.critic_hidden_dim),
+                     jnp.float16 if a.mixed_precision else jnp.float32)
