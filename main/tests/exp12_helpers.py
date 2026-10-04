@@ -41,8 +41,9 @@ def patch_wandb():
 
 def tiny_overrides(env_name="hopper-hop", env_group="dmc_medium", seed=1, steps=300, extra=()):
     """steps is in interaction steps (env steps / action_repeat). Probes are shrunk
-    (same procedure, fewer steps / smaller pool) so a CPU test finishes quickly."""
-    return [
+    (same procedure, fewer steps / smaller pool) so a CPU test finishes quickly.
+    Entries in `extra` replace defaults with the same key."""
+    base = [
         f"env_name={env_name}",
         f"env={env_group}",
         f"seed={seed}",
@@ -53,8 +54,9 @@ def tiny_overrides(env_name="hopper-hop", env_group="dmc_medium", seed=1, steps=
         "evaluation_per_interaction_step=100", "logging_per_interaction_step=20",
         "num_eval_episodes=1",
         "probe.steps=20", "probe.pool_size=64", "probe.batch_size=16", "probe.eval_chunk=32",
-        *extra,
     ]
+    replaced = {e.split("=", 1)[0] for e in extra}
+    return [o for o in base if o.split("=", 1)[0] not in replaced] + list(extra)
 
 
 def compose(overrides, config_name="base_exp12"):

@@ -8,6 +8,10 @@ parameters without enumerating task-specific fields.
 """
 
 import copy
+import importlib.util
+import os
+import sys
+import types
 from typing import Any, Dict, Tuple
 
 import gymnasium as gym
@@ -19,7 +23,8 @@ from scale_rl.envs.myosuite import MYOSUITE_TASKS_DICT, MyosuiteGymnasiumVersion
 from scale_rl.envs.wrappers import DoNotTerminate, RepeatAction, ScaleReward
 from scale_rl.envs.wrappers.vector import SyncVectorEnv
 
-SUPPORTED_ENV_TYPES = ("dmc", "myosuite")
+SUPPORTED_ENV_TYPES = ("dmc", "myosuite", "humanoid_bench")
+HUMANOID_BENCH_TASKS = ("h1-reach-v0", "h1-run-v0")
 
 
 def make_myosuite_env(env_name: str, seed: int) -> gym.Env:
@@ -29,12 +34,62 @@ def make_myosuite_env(env_name: str, seed: int) -> gym.Env:
     return MyosuiteGymnasiumVersionWrapper(myo_gym.make(MYOSUITE_TASKS_DICT[env_name], seed=seed))
 
 
+def _import_humanoid_bench():
+    """Imports HumanoidBench (carlosferrazza/humanoid-bench @ cb11890, installed
+    --no-deps) against this repo's pinned mujoco/dm_control.
+
+    Its bundled copy of dm_control's mujoco/index.py carries a size table frozen
+    at mujoco 3.1.6 and fails on 3.6.0; the installed dm_control index is the
+    same module with a current table, so it is used instead. The torch-only
+    policy wrappers (hierarchical tasks, unused by h1-reach / h1-run) are
+    replaced by a stub that raises if called.
+    """
+    if "humanoid_bench" in sys.modules:
+        return
+    from dm_control.mujoco import index as dm_index
+
+    gl = os.environ.get("MUJOCO_GL")
+    if gl not in ("egl", "osmesa") or os.environ.get("PYOPENGL_PLATFORM") != gl:
+        raise RuntimeError(
+            "HumanoidBench builds an offscreen renderer: export MUJOCO_GL=egl PYOPENGL_PLATFORM=egl "
+            "on GPU nodes (osmesa for both on CPU-only machines)."
+        )
+    spec = importlib.util.find_spec("humanoid_bench")
+    if spec is None:
+        raise ImportError("humanoid_bench is not installed; see scripts/install_humanoid_bench.sh")
+    deps = types.ModuleType("humanoid_bench.dmc_deps")
+    deps.__path__ = [os.path.join(spec.submodule_search_locations[0], "dmc_deps")]
+    deps.dmc_index = dm_index
+    sys.modules["humanoid_bench.dmc_deps"] = deps
+    sys.modules["humanoid_bench.dmc_deps.dmc_index"] = dm_index
+
+    def unavailable(*args, **kwargs):
+        raise RuntimeError("HumanoidBench's torch policy wrappers are not available in this stack.")
+
+    torch_stub = types.ModuleType("humanoid_bench.mjx.flax_to_torch")
+    torch_stub.TorchModel = torch_stub.TorchPolicy = unavailable
+    sys.modules["humanoid_bench.mjx.flax_to_torch"] = torch_stub
+    import humanoid_bench  # noqa: F401  (registers the gym ids)
+
+
+def make_humanoid_bench_env(env_name: str, seed: int) -> gym.Env:
+    if env_name not in HUMANOID_BENCH_TASKS:
+        raise ValueError(f"{env_name!r} is not one of the Exp 1/2 HumanoidBench tasks {HUMANOID_BENCH_TASKS}")
+    _import_humanoid_bench()
+    env = gym.make(env_name)
+    env.reset(seed=seed)  # seeds the env's own np_random once, before ExactRestore wraps it
+    return env
+
+
 def get_env_rng_state(env: gym.Env, env_type: str) -> Any:
     base = env.unwrapped
     if env_type == "dmc":
         return base._env.task.random.get_state()
     if env_type == "myosuite":
         return base.np_random.np_random.bit_generator.state
+    if env_type == "humanoid_bench":
+        # Reach samples its goal from the global np.random at reset.
+        return {"np_random": base.np_random.bit_generator.state, "global": np.random.get_state()}
     raise ValueError(f"unsupported env_type {env_type!r}")
 
 
@@ -44,6 +99,9 @@ def set_env_rng_state(env: gym.Env, env_type: str, state: Any) -> None:
         base._env.task.random.set_state(state)
     elif env_type == "myosuite":
         base.np_random.np_random.bit_generator.state = state
+    elif env_type == "humanoid_bench":
+        base.np_random.bit_generator.state = state["np_random"]
+        np.random.set_state(state["global"])
     else:
         raise ValueError(f"unsupported env_type {env_type!r}")
 
@@ -75,7 +133,9 @@ class ExactRestore(gym.Wrapper):
         }
 
     def restore(self, state: Dict[str, Any]):
-        """Replays to the recorded state; returns the last observation."""
+        """Replays to the recorded state; returns the last observation. For
+        HumanoidBench this also moves the global np.random; callers restore
+        the global state afterwards (Exp12Trainer.restore does)."""
         set_env_rng_state(self.env, self._env_type, state["rng_at_reset"])
         obs, _ = self.reset()
         for action in state["actions"]:
@@ -90,6 +150,8 @@ def _make_one_env(
         env = make_dmc_env(env_name, seed)
     elif env_type == "myosuite":
         env = make_myosuite_env(env_name, seed)
+    elif env_type == "humanoid_bench":
+        env = make_humanoid_bench_env(env_name, seed)
     else:
         raise ValueError(f"unsupported env_type {env_type!r}; supported: {SUPPORTED_ENV_TYPES}")
     if rescale_action:

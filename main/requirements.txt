@@ -103,3 +103,12 @@ wandb==0.28.1
 Werkzeug==3.1.8
 wrapt==2.2.2
 zipp==4.1.0
+# Exp 1/2 analysis: rliable stratified bootstrap (added 2026-10-04; installs under the pins above)
+rliable==1.2.0
+arch==7.2.0
+formulaic==1.2.2
+interface_meta==2.0.1
+narwhals==2.26.0
+patsy==1.0.3
+seaborn==0.13.2
+statsmodels==0.15.0

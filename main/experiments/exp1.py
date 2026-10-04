@@ -18,6 +18,7 @@ from hydra.core.global_hydra import GlobalHydra
 
 from analysis.metrics_store import RunIdentity
 from experiments.angle_1 import DONE_MARKER
+from experiments.exp12 import ledger
 from experiments.exp12.run_probes import RunProbes
 from experiments.exp12.state import latest_state_dir
 from experiments.exp12.trainer import Exp12Trainer
@@ -28,6 +29,7 @@ from utils.paths import require_absolute
 from utils.run_metadata import (
     RUN_METADATA_FILENAME,
     build_run_metadata,
+    code_version,
     check_resume_matches,
     load_run_metadata,
     record_launch,
@@ -95,10 +97,20 @@ def run(args: dict) -> None:
     checkpoint_start = int(args.checkpoint_start_frac * num_steps)
     probes = RunProbes(trainer, str(run_dir)) if cfg.probe.enabled else None
 
-    def save(t: Exp12Trainer) -> None:
+    identity = run_identity(cfg)
+    ledger_identity = {
+        "run_key": identity.run_key, "run_role": cfg.run_role, "architecture": identity.architecture,
+        "environment": identity.environment, "seed": identity.seed, "budget_env_steps": int(cfg.num_env_steps),
+        "num_interaction_steps": num_steps, "num_checks": int(cfg.probe.checks),
+        "code_commit": code_version()["commit"],
+    }
+
+    def save(t: Exp12Trainer, status: str = "running") -> None:
         t.save(state_root)
         if probes is not None:
             probes.write_csv()
+            ledger.write_run(ledger_identity, probes.records, probes.f_star, status, probes.dir,
+                             results_root=cfg.results_root)
 
     def after_step(t: Exp12Trainer) -> None:
         step = t.interaction_step
@@ -110,7 +122,7 @@ def run(args: dict) -> None:
     trainer.train(
         num_steps, after_step=after_step, before_first_update=probes.capture_fresh if probes is not None else None
     )
-    save(trainer)
+    save(trainer, status="complete")
     atomic_write_text(run_dir / DONE_MARKER, json.dumps({
         "interaction_step": num_steps,
         "completed_at": datetime.now(timezone.utc).isoformat(),

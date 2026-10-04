@@ -587,3 +587,95 @@ mujoco 3.6.0. STOPPED; see Q-H1b.
   check, projected probe overhead 7.1% of wall-clock over a 500k-step run, and
   exp1/angle_1 wall-time ratio 0.96 with probes off. All of these NEED CUDA
   numbers; the CPU ratio is not representative.
+
+## Answers to the Phase 2 gate (received 2026-10-04)
+
+- 1, probe overhead: proceed with the probe unchanged, and measure it on CUDA
+  (docs/exp12_cuda_commands.md §2).
+- 2, dynamic range: add a fresh-critic range check to the CUDA plan, covering
+  D2W512, D4W1024 and D6W1536 with real settings. Report the fresh score, the
+  round spread, and the score at pools {1,600, 6,400, 25,600}, using fresh
+  critics only. Nothing changes until the lead decides. Implemented as
+  `scripts/probe_fresh_checks.py --mode range` (§3).
+- 3, A9: match SimBa (random actions until 5,000 transitions) in the Exp 1/2
+  code only. Implemented in `Exp12Trainer.train`; amendment (h).
+- 4, G2: match SimBa exactly (MyoSuite max_episode_steps = 100, so gamma 0.95),
+  with KeyTurn's truncation added to the limitations. Implemented as
+  `configs/env/myosuite_simba.yaml`; amendment (i).
+- 5, HumanoidBench: time-boxed. First try a patch so that one stack serves all
+  suites; if that fails, try one shared mujoco version in a throwaway env.
+  Report before creating a second env, and never drop HumanoidBench without
+  asking.
+
+## HumanoidBench outcome (2026-10-04): one stack serves all suites, no second environment
+
+- Approach: no HumanoidBench file is edited. `experiments/exp12/envs.py` imports
+  HumanoidBench with two `sys.modules` entries.
+  - Its bundled `dmc_deps/dmc_index.py` is a copy of dm_control's
+    `mujoco/index.py` whose size table is frozen at mujoco 3.1.6. It is
+    pointed at the installed `dm_control.mujoco.index` (dm_control 1.0.38),
+    the same module with a current table.
+  - The torch-only `mjx/flax_to_torch` module, used only by HumanoidBench's
+    hierarchical policy wrappers and not by h1-reach / h1-run, is replaced
+    by a stub that raises if called. So torch is not needed.
+- Install: `scripts/install_humanoid_bench.sh`, which installs carlosferrazza/humanoid-bench @
+  cb1189039151c8aadaaa987b442da54383c87fab with `--no-deps -e`. An editable
+  install is required because `dmc_deps/` and the assets are not packaged. No
+  pinned dependency changes.
+- Verified here (CPU, throwaway copy of the pinned venv plus HumanoidBench):
+  - Both tasks register and step. h1-reach-v0 has obs 57 and act 19;
+    h1-run-v0 has obs 51 and act 19. Both match SimBa's paper Table 5, which
+    confirms the no-hands H1 matches the paper. SimBa's released code lists the
+    `h1hand-*` variants instead.
+  - Phase 1 restore tests pass with HumanoidBench included: the cross-process
+    mid-episode restore is bit-exact for both tasks, and the trainer's
+    save/restore/resume on h1-reach-v0 is bit-exact.
+  - Break evidence covers four cases: env RNG not restored, global np.random
+    not restored (the Reach goal), and actions not replayed are all detected,
+    and the intact restore passes.
+- Randomness: HumanoidBench uses the env's own `np_random` for the initial-state
+  noise, and Reach draws its goal from the global `np.random` at reset. That
+  global stream is shared with replay sampling, which is SimBa's behaviour too.
+  ExactRestore records both RNG states before each reset. Exp12Trainer restores
+  the envs before the global RNG, so the order is correct.
+- Rendering: HumanoidBench builds an offscreen renderer at construction, so runs
+  need `MUJOCO_GL=egl PYOPENGL_PLATFORM=egl` on GPU nodes (osmesa on CPU). The
+  factory raises a clear error otherwise.
+- Limitation: the physics run on mujoco 3.6.0 rather than HumanoidBench's pinned
+  3.1.6, the same engine version as the DMC and MyoSuite runs. Results are
+  therefore not bit-comparable to SimBa's HumanoidBench numbers.
+
+## Phase 3 findings (2026-10-04)
+
+- rliable 1.2.0 defect: `StratifiedIndependentBootstrap._get_indices` draws with
+  the global `np.random.choice` and ignores `random_state`. The paired-algorithm
+  intervals were therefore not reproducible: the same input twice gave different
+  CIs in the 3rd decimal place. Fix in `analysis/exp1_analysis.py`: the global
+  stream is seeded immediately before every rliable call. This is offline
+  analysis, and a test now checks reproducibility.
+- Trigger false-trigger rate under a synthetic null (B4, measured, not
+  nominal). Five rounds of symmetric N(0, 1) per-round losses and 10,000
+  resamples give a per-check rate of 4.93% over 4,000 null checks, about twice
+  the one-sided nominal 2.5%. That is the anti-conservatism of a percentile
+  bootstrap with n = 5. If the 19 eligible checks were independent, a null run
+  would trigger at least once with probability ≈ 0.62. Real checks are
+  correlated (the same critic evolves), so the run-level rate is lower than
+  that, but likely substantial. The empirical rate on fresh-vs-fresh critics
+  with real probes is §4 of the CUDA plan. No change made.
+- Statistics written down (as decided): the bootstrap uses np.random.default_rng([seed, "BOOT",
+  check]), 10,000 resamples and the IQM (scipy trim_mean 0.25), with
+  numpy-percentile 2.5/97.5. A check triggers on a lower bound > 0 strictly.
+  f*_run is the first triggering check among checks 1..19.
+- Exp 1 primary endpoint: rliable `get_interval_estimates` with a tuple input
+  (scaled, default), meaning stratified (by environment) independent resampling,
+  percentile method, 50,000 reps, statistic IQM(scaled) − IQM(D2W512) of the
+  final-check L. A missing (seed, environment) cell is refused rather than
+  imputed.
+- Ledger layout (routine): one directory per run under
+  `results/exp12/exp1/runs/<run_key>/` holding run.csv, checks.csv and
+  probe_curves.npz. Every save rewrites it atomically, so concurrent jobs never
+  share a file.
+- Dependencies: rliable==1.2.0 with its transitive deps pinned in requirements.txt
+  (arch 7.2.0, statsmodels 0.15.0, seaborn 0.13.2, patsy 1.0.3, formulaic 1.2.2,
+  interface_meta 2.0.1, narwhals 2.26.0). No existing pin changes, and
+  `pip check` is clean.

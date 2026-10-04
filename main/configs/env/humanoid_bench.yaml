@@ -1,0 +1,19 @@
+##################################################################################
+# HumanoidBench (H1, no hands) for Exp 1/2: SimBa's configs/env/hb_locomotion.yaml
+# settings, except episodic: false. SimBa sets episodic: true there, which turns
+# on clipped double-Q; the Methodology uses a single Q critic everywhere.
+##################################################################################
+
+env_type: 'humanoid_bench'
+env_name: ${env_name}
+num_env_steps: 2_000_000
+episodic: false
+
+seed: ${seed}
+num_train_envs: 1
+num_eval_envs: 1
+no_termination: false
+action_repeat: 2
+rescale_action: true
+reward_scale: 1
+max_episode_steps: 1000

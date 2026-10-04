@@ -1,8 +1,9 @@
 """Exp 1/2 SAC training loop with exact, complete state save/restore.
 
 The per-step body mirrors experiments/angle_1.py's loop, in the same RNG
-consumption order, so with probes off the training trajectory equals the
-existing code's. Differences are only in what is persisted: a save captures
+consumption order, except that (as in SimBa's released run.py) actions are
+uniform random until the replay buffer holds min_length transitions. With
+min_length=1 the two loops coincide exactly, which the parity test uses. Differences are only in what is persisted: a save captures
 everything needed for a bit-exact continuation (agent incl. optimizer state and
 JAX key, obs_rms, replay buffer, global numpy/python RNG, both envs mid-episode,
 the vector action-space RNG, loop counters, and partially-filled logging
@@ -137,9 +138,11 @@ class Exp12Trainer:
         cfg = self.cfg
         for interaction_step in range(self.interaction_step + 1, int(last_step) + 1):
             self.interaction_step = interaction_step
+            # SimBa's run.py: uniform random actions until the buffer can be sampled;
+            # the agent still sees each observation so obs_rms keeps updating.
             if self.timestep:
                 actions = self.agent.sample_actions(interaction_step, prev_timestep=self.timestep, training=True)
-            else:
+            if not self.buffer.can_sample():
                 actions = self.train_env.action_space.sample()
             next_observations, rewards, terminateds, truncateds, env_infos = self.train_env.step(actions)
             next_buffer_observations = next_observations.copy()

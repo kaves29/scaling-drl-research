@@ -1,6 +1,7 @@
 """Phase 1 (Exp 1/2 foundations): exact env restore, seeding, bit-exact resume,
 kill-and-resume through the real entry point, and parity with angle_1's loop."""
 
+import importlib.util
 import json
 import os
 import pickle
@@ -33,13 +34,16 @@ from experiments.exp12.state import latest_state_dir  # noqa: E402
 from experiments.exp12.trainer import Exp12Trainer  # noqa: E402
 
 RUNNER = str(Path(__file__).resolve().parent / "exp12_subprocess_runner.py")
+HAVE_HB = importlib.util.find_spec("humanoid_bench") is not None
 ALL_ENVS = [
     ("dmc", "dog-run"), ("dmc", "dog-trot"), ("dmc", "humanoid-run"), ("dmc", "humanoid-walk"),
     ("dmc", "humanoid-stand"), ("dmc", "swimmer-swimmer15"), ("dmc", "hopper-hop"),
     ("myosuite", "myo-key-turn"), ("myosuite", "myo-pen-twirl"), ("myosuite", "myo-pose-hard"),
     ("myosuite", "myo-reach"),
-]
-SUITES = [("hopper-hop", "dmc_medium"), ("myo-reach", "myosuite_hard")]
+] + ([("humanoid_bench", "h1-reach-v0"), ("humanoid_bench", "h1-run-v0")] if HAVE_HB else [])
+SUITES = [("hopper-hop", "dmc_medium"), ("myo-reach", "myosuite_simba")] + (
+    [("h1-reach-v0", "humanoid_bench")] if HAVE_HB else []
+)
 
 
 def _subprocess(*args):
@@ -55,11 +59,16 @@ def _env(env_type, env_name, seed=3):
 
 
 def _mismatches(env_a, env_b, actions):
-    count = 0
-    for a in actions:
-        oa, ob = env_a.step(a), env_b.step(a)
-        count += int(not all(np.array_equal(x, y) for x, y in zip(oa[:4], ob[:4])))
-    return count
+    """Rolls each env out separately from the same global np.random state (HumanoidBench
+    Reach draws goals from it, so interleaving two envs in one process would couple them)."""
+    start = np.random.get_state()
+    outputs = []
+    for env in (env_a, env_b):
+        np.random.set_state(start)
+        outputs.append([env.step(a)[:4] for a in actions])
+    return sum(
+        int(not all(np.array_equal(x, y) for x, y in zip(oa, ob))) for oa, ob in zip(*outputs)
+    )
 
 
 class EnvRestoreAcrossProcessesTest(unittest.TestCase):
@@ -102,7 +111,10 @@ class EnvRestoreBreakTest(unittest.TestCase):
         return env, exp12_envs.env_restore_state(env), rng.uniform(-1, 1, (400,) + shape)
 
     def test_restore_is_exact_and_each_component_is_necessary(self):
-        for env_type, env_name in [("dmc", "hopper-hop"), ("myosuite", "myo-pose-hard")]:
+        cases = [("dmc", "hopper-hop"), ("myosuite", "myo-pose-hard")]
+        if HAVE_HB:
+            cases.append(("humanoid_bench", "h1-reach-v0"))
+        for env_type, env_name in cases:
             with self.subTest(env=env_name, variant="intact"):
                 env, state, actions = self._capture(env_type, env_name)
                 fresh = _env(env_type, env_name)
@@ -116,6 +128,20 @@ class EnvRestoreBreakTest(unittest.TestCase):
                 with mock.patch.object(exp12_envs, "set_env_rng_state", lambda *a: None):
                     exp12_envs.restore_env(fresh, state)
                 self.assertGreater(_mismatches(env, fresh, actions), 0)
+            if env_type == "humanoid_bench":
+                with self.subTest(env=env_name, variant="global np.random not restored (Reach goal)"):
+                    env, state, actions = self._capture(env_type, env_name)
+                    fresh = _env(env_type, env_name)
+                    fresh.reset()
+                    real_set = exp12_envs.set_env_rng_state
+
+                    def env_rng_only(env_, env_type_, st):
+                        env_.unwrapped.np_random.bit_generator.state = st["np_random"]
+
+                    with mock.patch.object(exp12_envs, "set_env_rng_state", env_rng_only):
+                        exp12_envs.restore_env(fresh, state)
+                    self.assertIs(exp12_envs.set_env_rng_state, real_set)
+                    self.assertGreater(_mismatches(env, fresh, actions), 0)
             with self.subTest(env=env_name, variant="actions not replayed"):
                 env, state, actions = self._capture(env_type, env_name)
                 fresh = _env(env_type, env_name)
@@ -242,7 +268,8 @@ class KillAndResumeEntryPointTest(unittest.TestCase):
     """exp1.run() killed at different points and relaunched ends bit-identical to an uninterrupted run."""
 
     def _run(self, run_dir, crash_step=None, interval=60):
-        spec = {"overrides": tiny_overrides("hopper-hop", "dmc_medium", steps=300), "checkpoint_dir": run_dir,
+        overrides = tiny_overrides("hopper-hop", "dmc_medium", steps=300, extra=[f"results_root={run_dir}_results"])
+        spec = {"overrides": overrides, "checkpoint_dir": run_dir,
                 "checkpoint_interval": interval, "crash_step": crash_step}
         spec_path = os.path.join(self.tmp, "spec.json")
         with open(spec_path, "w") as f:
@@ -277,6 +304,72 @@ class KillAndResumeEntryPointTest(unittest.TestCase):
         self.assertIn("DONE", r.stderr)
 
 
+class SimbaRandomWarmupTest(unittest.TestCase):
+    """A9: uniform random actions until the buffer holds min_length transitions, then the policy."""
+
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp()
+        self.patchers = patch_wandb()
+
+    def tearDown(self):
+        for p in self.patchers:
+            p.stop()
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def test_random_until_min_length_then_policy(self):
+        import copy
+
+        cfg = compose(tiny_overrides(steps=200, extra=["buffer.min_length=50"]))
+        np.random.seed(cfg.seed)
+        random.seed(cfg.seed)
+        t = Exp12Trainer(cfg, self.tmp)
+        t.start()
+        uniform = copy.deepcopy(t.train_env.action_space)
+        taken = []
+        real_step = t.train_env.step
+
+        def recording_step(actions):
+            taken.append(np.array(actions, copy=True))
+            return real_step(actions)
+
+        t.train_env.step = recording_step
+        t.train(60)
+        expected = [uniform.sample() for _ in range(51)]
+        for i in range(50):
+            np.testing.assert_array_equal(taken[i], expected[i], err_msg=f"step {i + 1} should be uniform random")
+        self.assertFalse(np.array_equal(taken[50], expected[50]), "step 51 should come from the policy")
+
+
+class DiscountAndHorizonTest(unittest.TestCase):
+    """G2: SimBa's per-suite horizon gives gamma 0.95 for MyoSuite (TimeLimit 100) and 0.99 elsewhere."""
+
+    def test_gamma_per_suite(self):
+        cases = [("myo-key-turn", "myosuite_simba", 0.95, 100), ("dog-run", "dmc_hard", 0.99, 1000),
+                 ("hopper-hop", "dmc_medium", 0.99, 1000), ("h1-run-v0", "humanoid_bench", 0.99, 1000)]
+        for env_name, group, gamma, horizon in cases:
+            with self.subTest(env=env_name):
+                cfg = compose([f"env_name={env_name}", f"env={group}"])
+                self.assertAlmostEqual(cfg.gamma, gamma)
+                self.assertEqual(cfg.env.max_episode_steps, horizon)
+                self.assertFalse(cfg.agent.critic_use_cdq)
+
+    def test_keyturn_is_truncated_at_100_raw_steps(self):
+        env = exp12_envs.create_envs(
+            env_type="myosuite", seed=1, env_name="myo-key-turn", num_train_envs=1, num_eval_envs=1,
+            rescale_action=True, no_termination=False, action_repeat=2, reward_scale=1.0, max_episode_steps=100,
+        )[0]
+        env.reset()
+        lengths, n = [], 0
+        while len(lengths) < 5:
+            _, _, term, trunc, _ = env.step(np.zeros((1,) + env.single_action_space.shape))
+            n += 1
+            if term[0] or trunc[0]:
+                lengths.append((n, bool(trunc[0])))
+                n = 0
+        self.assertTrue(all(length <= 50 for length, _ in lengths), lengths)  # 50 interaction steps = 100 raw
+        self.assertTrue(any(length == 50 and trunc for length, trunc in lengths), lengths)
+
+
 class Angle1ParityTest(unittest.TestCase):
     """With probes off, exp1's loop reproduces experiments/angle_1.py's training bit-for-bit."""
 
@@ -293,7 +386,8 @@ class Angle1ParityTest(unittest.TestCase):
         from experiments import angle_1, exp1
 
         steps = 290  # not an evaluation step, so angle_1's mid-step checkpoint equals end-of-step
-        overrides = tiny_overrides("cheetah-run", "dmc_medium", steps=steps)
+        # min_length=1: SimBa's random warm-up (exp1) and angle_1's single random first action coincide.
+        overrides = tiny_overrides("cheetah-run", "dmc_medium", steps=steps, extra=["buffer.min_length=1"])
         da, de = os.path.join(self.tmp, "a"), os.path.join(self.tmp, "e")
         angle1_overrides = [o for o in overrides if not o.startswith("probe.")]
         angle_1.run({"experiment": "angle_1", "config_path": CONFIG_PATH, "config_name": "base_sac",

@@ -179,7 +179,8 @@ class ProbeDoesNotChangeTrainingTest(unittest.TestCase):
 
         run_dir = os.path.join(self.tmp, name)
         exp1.run({"experiment": "exp1", "config_path": CONFIG_PATH, "config_name": "base_exp12",
-                  "overrides": tiny_overrides(steps=400, extra=[f"probe.enabled={str(probe_on).lower()}"]),
+                  "overrides": tiny_overrides(steps=400, extra=[f"probe.enabled={str(probe_on).lower()}",
+                                                              f"results_root={self.tmp}/results_{name}"]),
                   "checkpoint_dir": run_dir, "checkpoint_interval": 10**9, "checkpoint_start_frac": 0.0})
         return run_dir, latest_state_dir(Path(run_dir) / "state")
 

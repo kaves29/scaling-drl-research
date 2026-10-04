@@ -18,7 +18,7 @@ import jax  # noqa: E402
 import jax.numpy as jnp  # noqa: E402
 import numpy as np  # noqa: E402
 
-from experiments.exp12 import probe  # noqa: E402
+from experiments.exp12 import ledger, probe, trigger  # noqa: E402
 
 real_probe_round = probe.probe_round
 real_fit = probe._fit
@@ -56,19 +56,74 @@ def always_valid_summarize(result, current="current", fresh="fresh"):
     return s
 
 
+real_load = ledger.load
+real_last_eligible = trigger.last_eligible_check
+
+
+def flipped_triggered(ci_low):
+    return bool(np.isfinite(ci_low) and ci_low < 0)
+
+
+def non_strict_triggered(ci_low):
+    return bool(np.isfinite(ci_low) and ci_low >= 0)
+
+
+def mean_bootstrap_interval(loss_rounds, seed, check_index, reps=trigger.REPS, confidence=trigger.CONFIDENCE):
+    x = np.asarray(loss_rounds, dtype=np.float64)
+    if not np.all(np.isfinite(x)):
+        return float("nan"), float("nan")
+    rng = np.random.default_rng([seed, trigger.BOOT_STREAM, check_index])
+    stats = x[rng.integers(0, x.size, size=(reps, x.size))].mean(1)
+    low, high = np.percentile(stats, [2.5, 97.5])
+    return float(low), float(high)
+
+
+def keep_dev_load(results_root=None, include_dev=False, require_complete=True):
+    return real_load(results_root, include_dev=True, require_complete=require_complete)
+
+
+def source_mutation(module, attr, old, new):
+    """attr rebuilt from module's source with one textual change (for logic written inline)."""
+    import inspect
+
+    source = inspect.getsource(module)
+    if old not in source:
+        raise ValueError(f"mutation anchor not found in {module.__name__}: {old!r}")
+    namespace = {"__name__": module.__name__ + "_mutated"}
+    exec(compile(source.replace(old, new), module.__file__, "exec"), namespace)
+    return namespace[attr]
+
+
+from experiments.exp12 import trainer as trainer_module  # noqa: E402
+
+PHASE3 = "tests.test_exp12_phase3"
 MUTATIONS = [
-    ("pairing: current/fresh get different targets+minibatches", "probe_round", unpaired_probe_round,
+    ("pairing: current/fresh get different targets+minibatches", probe, "probe_round", unpaired_probe_round,
      "tests.test_exp12_probe.ProbePairingTest.test_identical_inputs_targets_and_minibatches"),
-    ("offset: a forced to 0 instead of each critic's own mean", "_fit", zero_offset_fit,
+    ("offset: a forced to 0 instead of each critic's own mean", probe, "_fit", zero_offset_fit,
      "tests.test_exp12_probe.ProbePairingTest.test_per_critic_offset_is_each_critics_own_mean"),
-    ("offset: a forced to 0 (known-answer test)", "_fit", zero_offset_fit,
+    ("offset: a forced to 0 (known-answer test)", probe, "_fit", zero_offset_fit,
      "tests.test_exp12_probe.ProbeArithmeticTest.test_frozen_constant_critic_has_known_score"),
-    ("baseline b dropped from P", "probe_round", no_baseline_probe_round,
+    ("baseline b dropped from P", probe, "probe_round", no_baseline_probe_round,
      "tests.test_exp12_probe.ProbeArithmeticTest.test_frozen_constant_critic_has_known_score"),
-    ("sign: L = P(current) - P(fresh)", "summarize", flipped_summarize,
+    ("sign: L = P(current) - P(fresh)", probe, "summarize", flipped_summarize,
      "tests.test_exp12_probe.ProbeArithmeticTest.test_sign_convention_plasticity_loss_positive_when_current_is_worse"),
-    ("non-finite check treated as valid", "summarize", always_valid_summarize,
+    ("non-finite check treated as valid", probe, "summarize", always_valid_summarize,
      "tests.test_exp12_probe.ProbeArithmeticTest.test_non_finite_round_marks_check_invalid"),
+    ("trigger fires on the gain side (upper tail)", trigger, "triggered", flipped_triggered,
+     f"{PHASE3}.TriggerTest.test_current_worse_triggers_and_reverse_never_does"),
+    ("trigger fires when the lower bound equals 0", trigger, "triggered", non_strict_triggered,
+     f"{PHASE3}.TriggerTest.test_edge_cases"),
+    ("f*_run allowed at 20/20 (past 95% of budget)", trigger, "last_eligible_check", lambda checks, frac=0.95: checks,
+     f"{PHASE3}.TriggerTest.test_f_star_first_eligible_check_only"),
+    ("bootstrap statistic is the mean, not the IQM", trigger, "bootstrap_interval", mean_bootstrap_interval,
+     f"{PHASE3}.TriggerTest.test_statistic_is_iqm_not_mean"),
+    ("dev runs not excluded by default", ledger, "load", keep_dev_load,
+     f"{PHASE3}.LedgerTest.test_round_trip_and_dev_excluded_by_default"),
+    ("A9: random action only on step 1 (angle_1 rule) instead of until min_length", trainer_module,
+     "Exp12Trainer",
+     source_mutation(trainer_module, "Exp12Trainer", "if not self.buffer.can_sample():", "if self.timestep is None:"),
+     "tests.test_exp12_foundations.SimbaRandomWarmupTest.test_random_until_min_length_then_policy"),
 ]
 
 
@@ -80,11 +135,12 @@ def _run(test_id):
 
 def main():
     ok = True
-    import tests.test_exp12_probe as test_module
+    import importlib
 
-    for label, attr, replacement, test_id in MUTATIONS:
-        patches = [mock.patch.object(probe, attr, replacement)]
-        if hasattr(test_module, attr):  # names the test module imported directly
+    for label, module, attr, replacement, test_id in MUTATIONS:
+        test_module = importlib.import_module(test_id.rsplit(".", 2)[0])
+        patches = [mock.patch.object(module, attr, replacement)]
+        if getattr(test_module, attr, None) is getattr(module, attr):  # names a test module imported directly
             patches.append(mock.patch.object(test_module, attr, replacement))
         for p in patches:
             p.start()

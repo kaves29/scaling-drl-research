@@ -8,6 +8,7 @@ import orbax.checkpoint
 import pandas as pd
 
 from experiments.exp12.probe import check_steps, critic_optimizer, iqm, probe_config, run_probe, summarize
+from experiments.exp12.trigger import bootstrap_interval, f_star, triggered
 from utils.atomic_io import atomic_write_text
 
 FRESH_CRITIC_DIR = "fresh_critic"
@@ -67,8 +68,14 @@ class RunProbes:
         }
         self.record_check(k, self._probe(k, critics))
 
+    @property
+    def f_star(self):
+        """First eligible triggering check ({check_index, interaction_step}) or None."""
+        return self.trainer.extra_state.get("f_star")
+
     def record_check(self, k: int, result: Dict) -> Dict:
         s = summarize(result)
+        low, high = bootstrap_interval(s["loss_rounds"], self.seed, k)
         row = {
             "check_index": k,
             "interaction_step": self.trainer.interaction_step,
@@ -78,9 +85,14 @@ class RunProbes:
             "score_current_iqm": s["score_current_iqm"],
             "score_fresh_iqm": s["score_fresh_iqm"],
             "loss_iqm": s["loss_iqm"],
+            "ci_low": low,
+            "ci_high": high,
+            "triggered": triggered(low) and s["valid"],
             "valid": s["valid"],
         }
         self.records.append(row)
+        if self.f_star is None:
+            self.trainer.extra_state["f_star"] = f_star(self.records, self.cfg.checks)
         return row
 
     def _probe(self, k: int, critics: Dict) -> Dict:

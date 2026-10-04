@@ -61,7 +61,11 @@ SETTINGS_KEYS = (
     "evaluation_per_interaction_step",
     "num_eval_episodes",
 )
-SIMULATOR_PACKAGES = {"dmc": ("dm_control", "mujoco"), "myosuite": ("myosuite", "mujoco")}
+SIMULATOR_PACKAGES = {
+    "dmc": ("dm_control", "mujoco"),
+    "myosuite": ("myosuite", "mujoco"),
+    "humanoid_bench": ("humanoid_bench", "dm_control", "mujoco"),
+}
 
 
 class RunMetadataMismatch(ValueError):

@@ -282,3 +282,24 @@ For post-hoc normalization later:
   - analysis scripts take a normalize(env, values) function that defaults to
     identity;
   - one metadata file per suite records benchmark-defined constants as data only.
+
+## Amendments from the Phase 2 approval (2026-10-04)
+
+(h) Initial random actions. As in SimBa's released code, Experiments 1 and 2
+take uniform random actions until the replay buffer holds 5,000 transitions,
+then use the policy. The agent still sees each observation, so obs_rms is
+updated during the warm-up. The fresh-critic probe happens at that point,
+before the first update.
+
+(i) MyoSuite horizon and discount. Matching SimBa exactly, every MyoSuite task
+uses max_episode_steps = 100, which gives gamma = 0.95 via the TD-MPC2 heuristic.
+DMC and HumanoidBench keep 1000, which gives gamma = 0.99.
+Limitation: the resulting TimeLimit(100) truncates myoHandKeyTurnFixed-v0 at
+100 raw steps (50 interaction steps), half of its registered 200-step horizon.
+
+(j) HumanoidBench single Q. SimBa's released code and paper use clipped
+double-Q on HumanoidBench (paper Table 7: "Clipped Double Q: HumanoidBench:
+True, Other Envs: False"; configs/env/hb_locomotion.yaml sets episodic: true,
+and sac_simba.yaml sets critic_use_cdq: ${env.episodic}). The Methodology's
+single Q critic is used everywhere. Limitation: on HumanoidBench this departs
+from SimBa's configuration.
