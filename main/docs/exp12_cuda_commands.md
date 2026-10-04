@@ -14,31 +14,26 @@ schedules a grid run.
   C: the identity-fork gate. D: the positive control. E: preflight. F: the
   grid, which I never run.
 
-## Matmul precision (OPEN QUESTION, needed before Block A)
+## Matmul precision: FP32 everywhere, no TF32 (decided 2026-10-04, amendment (v))
 
-- **What the Methodology says:** nothing about matmul precision or TF32.
-- **What the code does:** never sets `jax_default_matmul_precision`, so every
-  job (training, probes, Check 1, arms) uses JAX's backend default.
-- **What that means on an A100 (believed, not verified here):** float32
-  matmuls run in TF32, a 10-bit mantissa. Step A0 measures this.
-- **Consequence under amendment (m):** if TF32 is detected, Check 1 stops
-  every injected arm. Under the current rules TF32 is therefore effectively
-  not allowed in any arm.
+Every Exp 1/2 job runs with `export JAX_DEFAULT_MATMUL_PRECISION=highest`.
+This covers training, probes, the range and null checks, Check 1 and 2, both
+arms, the positive control, preflight and the grid. TF32 is not allowed
+anywhere.
 
-The precision is set per job with one environment variable, which JAX honours
-(checked: `JAX_DEFAULT_MATMUL_PRECISION=highest` gives
-`jax.config.jax_default_matmul_precision == "highest"`). No code change is
-needed for either option. **Your decision:**
-
-| Option | Setting for every job | Effect |
-|---|---|---|
-| (a) FP32 everywhere (my recommendation) | `export JAX_DEFAULT_MATMUL_PRECISION=highest` | Check 1, the identity fork and amendment (m) stay as written. The probe target sin(1e5·f(x)) amplifies matmul rounding by 1e5, so FP32 keeps the probe targets independent of the device's TF32 behaviour. Cost: an estimated ~3× slower training and probes for D6W1536 (table below). |
-| (b) TF32 everywhere | leave the variable unset (backend default) | About 3× faster for D4/D6. Amendment (m) would have to change: Check 1 now stops on TF32, and the 64 eps tolerance was set for FP32. Probe targets then depend on TF32 rounding (still paired and deterministic on one device). |
-| (c) Mixed (e.g. TF32 training, FP32 probes) | per-script settings | Not recommended: it adds a numerical difference between training and measurement. |
-
-Until you decide, every block below writes `export
-JAX_DEFAULT_MATMUL_PRECISION=<DECIDED>`. Use `highest` for (a), or remove the
-line for (b).
+- **Why:** Check 1, the identity fork and amendment (m) assume FP32. The probe
+  target sin(1e5·f(x)) amplifies matmul rounding by 1e5, so FP32 keeps it
+  independent of the device's TF32 behaviour.
+- **Cost:** an estimated ~3× slower training and probes for D6W1536 (table
+  below).
+- **How it is set:** JAX honours the variable (checked:
+  `JAX_DEFAULT_MATMUL_PRECISION=highest` gives
+  `jax.config.jax_default_matmul_precision == "highest"`), so no code change
+  is needed. The code itself never sets the precision; without the variable,
+  JAX's backend default applies, which on an A100 is believed to be TF32.
+- **Check:** A0 verifies `tf32_detected: false` with the setting. Check 1
+  also stops any injected or identity arm that runs with TF32. Training
+  itself has no such check, so the variable must be exported for every job.
 
 ## How the runtime and memory estimates were made (no GPU measurement exists yet)
 
@@ -61,6 +56,8 @@ line for (b).
 - **Compile:** ≈ 1–2 min per process for D6W1536 (update scan plus probe
   fit); less for smaller critics.
 - **Uncertainty:** treat every number as ±50% until Block A measures it.
+- **Which figures apply:** only the FP32 ones (amendment (v)). The TF32
+  figures are kept for reference.
 
 | Critic | Train it/s, dog-run (FP32 / TF32) | One probe check, 2 critics (FP32 / TF32) | Peak GPU memory per process* | Host memory per process |
 |---|---|---|---|---|
@@ -83,13 +80,13 @@ pip install -r requirements.txt                                     # adds rliab
 bash scripts/install_humanoid_bench.sh /abs/path/to/humanoid-bench  # pinned commit, --no-deps, editable
 export MUJOCO_GL=egl PYOPENGL_PLATFORM=egl                          # HumanoidBench builds an offscreen renderer
 export XLA_PYTHON_CLIENT_PREALLOCATE=false                          # several processes share the GPU in the tests
-export JAX_DEFAULT_MATMUL_PRECISION=<DECIDED>                       # see "Matmul precision"
+export JAX_DEFAULT_MATMUL_PRECISION=highest                         # FP32 everywhere, no TF32 (amendment (v))
 OUT=/abs/path/to/exp12_cuda_checks && mkdir -p $OUT
 ```
 
 ## Block A: one A100, 4 CPUs, ≤ 30 min in total
 
-Estimated total: ~28 min with FP32, ~18 min with TF32. Peak host memory
+Estimated total: ~28 min (FP32, as decided). Peak host memory
 ~4 GB; peak GPU memory ~5 GB. Run the steps in order. If A1 fails, stop and
 send me the log.
 
@@ -103,11 +100,13 @@ for P in default highest; do
     | tee $OUT/A0_matmul_precision_$P.json
 done
 ```
-- If the `default` file shows `tf32_detected: true` and you chose option (b),
-  send it to me: the injected arms would stop at Check 1.
-- The `highest` file must show `tf32_detected: false`.
+- The `highest` file must show `tf32_detected: false`. If it does not,
+  stop and send me both files: the grid's precision setting is not taking
+  effect.
+- The `default` file is for the record only. It shows what the A100 does
+  without the setting.
 
-### A1. Smoke tests on the GPU (~10 min, both precisions; host ~4 GB, GPU < 1 GB per process)
+### A1. Smoke tests on the GPU (~10 min; host ~4 GB, GPU < 1 GB per process)
 These are the tests whose result could differ on a GPU:
 - probe isolation and pairing;
 - injection Check 1 tolerances;

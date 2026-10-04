@@ -1063,3 +1063,21 @@ Working rules from this message:
   identity fork, Check 1).
 - Branch: stay on `claude/eloquent-fermat-inxqlt`. No merge or push to main
   until asked.
+
+## Matmul precision (decided 2026-10-04): FP32 everywhere, no TF32 (amendment (v))
+
+- **The gap:** the Methodology says nothing about matmul precision, and the
+  code never sets `jax_default_matmul_precision`. On an A100, JAX's backend
+  default is believed to be TF32 for float32 matmuls (step A0 measures it),
+  and under amendment (m) that would stop every injected arm at Check 1.
+- **The options:** (a) FP32 everywhere, (b) TF32 everywhere (amendment (m)
+  would have to change), (c) mixed.
+- **Your decision: (a).** Every job exports
+  `JAX_DEFAULT_MATMUL_PRECISION=highest`; JAX honours the variable, so no
+  code change is needed. `docs/exp12_cuda_commands.md` sets it in Setup and
+  requires it for the grid.
+- **What checks it:** A0 must show `tf32_detected: false` with the setting.
+  Check 1 still stops any arm that runs with TF32. Exp 1 training itself has
+  no such check, so the variable must be exported for every job.
+- **Estimated cost:** ~3× slower training and probes for D6W1536 than TF32
+  (~15 vs ~50 it/s on dog-run; not yet measured on a GPU).

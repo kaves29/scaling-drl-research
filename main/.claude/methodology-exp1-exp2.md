@@ -413,3 +413,11 @@ previous state as LATEST.
 
 (u) Limitation: the whole grid, including both arms of every fork, must run
 on one GPU model.
+
+## Amendment from the precision decision (2026-10-04)
+
+(v) Matmul precision. Every Experiment 1 and 2 job runs float32 matmuls in
+full FP32 (`JAX_DEFAULT_MATMUL_PRECISION=highest`). This covers training,
+probes, calibration checks, Checks 1–2, both arms, the positive control,
+preflight and the grid. TF32 is not allowed anywhere. Check 1 (amendment (m))
+still stops an arm if TF32 is detected.
