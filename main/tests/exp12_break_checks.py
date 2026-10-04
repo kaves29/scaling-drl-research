@@ -57,18 +57,17 @@ def always_valid_summarize(result, current="current", fresh="fresh"):
 
 
 real_load = ledger.load
-real_last_eligible = trigger.last_eligible_check
 
 
-def flipped_triggered(ci_low):
-    return bool(np.isfinite(ci_low) and ci_low < 0)
+def flipped_triggered(ci_low, null_threshold):
+    return bool(np.isfinite(ci_low) and ci_low < -null_threshold)
 
 
-def non_strict_triggered(ci_low):
-    return bool(np.isfinite(ci_low) and ci_low >= 0)
+def non_strict_triggered(ci_low, null_threshold):
+    return bool(np.isfinite(ci_low) and ci_low >= null_threshold)
 
 
-def mean_bootstrap_interval(loss_rounds, seed, check_index, reps=trigger.REPS, confidence=trigger.CONFIDENCE):
+def mean_bootstrap_interval(loss_rounds, seed, check_index, reps, confidence):
     x = np.asarray(loss_rounds, dtype=np.float64)
     if not np.all(np.isfinite(x)):
         return float("nan"), float("nan")
@@ -114,7 +113,7 @@ MUTATIONS = [
      f"{PHASE3}.TriggerTest.test_current_worse_triggers_and_reverse_never_does"),
     ("trigger fires when the lower bound equals 0", trigger, "triggered", non_strict_triggered,
      f"{PHASE3}.TriggerTest.test_edge_cases"),
-    ("f*_run allowed at 20/20 (past 95% of budget)", trigger, "last_eligible_check", lambda checks, frac=0.95: checks,
+    ("f*_run allowed at 20/20 (past 95% of budget)", trigger, "last_eligible_check", lambda checks, eligible_fraction: checks,
      f"{PHASE3}.TriggerTest.test_f_star_first_eligible_check_only"),
     ("bootstrap statistic is the mean, not the IQM", trigger, "bootstrap_interval", mean_bootstrap_interval,
      f"{PHASE3}.TriggerTest.test_statistic_is_iqm_not_mean"),

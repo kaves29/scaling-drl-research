@@ -12,9 +12,29 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from exp12_helpers import CONFIG_PATH, patch_wandb, tiny_overrides  # noqa: E402
-from experiments.exp12 import ledger  # noqa: E402
-from experiments.exp12.trigger import bootstrap_interval, f_star, last_eligible_check, triggered  # noqa: E402
+from exp12_helpers import CONFIG_PATH, compose, patch_wandb, tiny_overrides  # noqa: E402
+from experiments.exp12 import ledger, trigger  # noqa: E402
+from experiments.exp12.trigger import TriggerConfig, trigger_config  # noqa: E402
+
+# The shipped trigger settings (configs/base_exp12.yaml). The wrappers below look the
+# functions up on the module at call time, so the break checks' patches reach them.
+TC = trigger_config(compose([]))
+
+
+def bootstrap_interval(x, seed, check_index, reps=None):
+    return trigger.bootstrap_interval(x, seed, check_index, reps or TC.resamples, TC.confidence)
+
+
+def triggered(ci_low):
+    return trigger.triggered(ci_low, TC.null_threshold)
+
+
+def f_star(records, checks, consecutive_checks=None):
+    return trigger.f_star(records, checks, consecutive_checks or TC.consecutive_checks, TC.eligible_fraction)
+
+
+def last_eligible_check(checks):
+    return trigger.last_eligible_check(checks, TC.eligible_fraction)
 
 
 def false_trigger_rate(n_checks=4000, rounds=5, seed=0):
@@ -26,6 +46,34 @@ def false_trigger_rate(n_checks=4000, rounds=5, seed=0):
 
 
 class TriggerTest(unittest.TestCase):
+    def test_shipped_config_is_the_current_rule(self):
+        self.assertEqual(TC, TriggerConfig(resamples=10_000, confidence=0.95, consecutive_checks=1,
+                                           null_threshold=0.0, eligible_fraction=0.95))
+
+    def test_settings_come_from_config(self):
+        cfg = compose(["trigger.resamples=500", "trigger.confidence=0.9", "trigger.consecutive_checks=2",
+                       "trigger.null_threshold=0.05", "trigger.eligible_fraction=0.9"])
+        self.assertEqual(trigger_config(cfg), TriggerConfig(500, 0.9, 2, 0.05, 0.9))
+        with self.assertRaises(ValueError):
+            trigger_config(compose(["trigger.consecutive_checks=0"]))
+
+    def test_null_threshold_shifts_the_firing_line(self):
+        self.assertTrue(trigger.triggered(0.04, 0.0))
+        self.assertFalse(trigger.triggered(0.04, 0.05))
+        self.assertTrue(trigger.triggered(0.06, 0.05))
+
+    def test_consecutive_checks_rule(self):
+        rec = lambda k, t: {"check_index": k, "interaction_step": 10 * k, "triggered": t}
+        fires = {3, 5, 6, 9}
+        records = [rec(k, k in fires) for k in range(1, 21)]
+        self.assertEqual(f_star(records, 20, 1)["check_index"], 3)
+        self.assertEqual(f_star(records, 20, 2)["check_index"], 6)  # first pair 5,6 completes at 6
+        self.assertIsNone(f_star(records, 20, 3))
+        late = [rec(k, k in (19, 20)) for k in range(1, 21)]
+        self.assertIsNone(f_star(late, 20, 2))  # completes at 20/20, past 95%
+        gap = [rec(k, k in (4, 6)) for k in range(1, 21) if k != 5]
+        self.assertIsNone(f_star(gap, 20, 2))  # a missing check breaks the run
+
     def test_current_worse_triggers_and_reverse_never_does(self):
         loss = np.array([0.30, 0.25, 0.28, 0.35, 0.27])  # L = P(fresh) - P(current) > 0: plasticity lost
         low, high = bootstrap_interval(loss, seed=1, check_index=3)

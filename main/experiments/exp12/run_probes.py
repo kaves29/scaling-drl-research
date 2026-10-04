@@ -8,7 +8,7 @@ import orbax.checkpoint
 import pandas as pd
 
 from experiments.exp12.probe import check_steps, critic_optimizer, iqm, probe_config, run_probe, summarize
-from experiments.exp12.trigger import bootstrap_interval, f_star, triggered
+from experiments.exp12.trigger import bootstrap_interval, f_star, trigger_config, triggered
 from utils.atomic_io import atomic_write_text
 
 FRESH_CRITIC_DIR = "fresh_critic"
@@ -29,6 +29,7 @@ class RunProbes:
         self.fresh_path = Path(run_dir) / FRESH_CRITIC_DIR
         self.critic_def = trainer._sac_agent.critic.network_def
         self.tx = critic_optimizer(trainer.cfg.agent)
+        self.trigger = trigger_config(trainer.cfg)
         checks = check_steps(int(trainer.cfg.num_interaction_steps), self.cfg.checks)
         if checks[0] <= int(trainer.cfg.buffer.min_length):
             raise ValueError(
@@ -75,7 +76,8 @@ class RunProbes:
 
     def record_check(self, k: int, result: Dict) -> Dict:
         s = summarize(result)
-        low, high = bootstrap_interval(s["loss_rounds"], self.seed, k)
+        tc = self.trigger
+        low, high = bootstrap_interval(s["loss_rounds"], self.seed, k, tc.resamples, tc.confidence)
         row = {
             "check_index": k,
             "interaction_step": self.trainer.interaction_step,
@@ -87,12 +89,14 @@ class RunProbes:
             "loss_iqm": s["loss_iqm"],
             "ci_low": low,
             "ci_high": high,
-            "triggered": triggered(low) and s["valid"],
+            "triggered": triggered(low, tc.null_threshold) and s["valid"],
             "valid": s["valid"],
         }
         self.records.append(row)
         if self.f_star is None:
-            self.trainer.extra_state["f_star"] = f_star(self.records, self.cfg.checks)
+            self.trainer.extra_state["f_star"] = f_star(
+                self.records, self.cfg.checks, tc.consecutive_checks, tc.eligible_fraction
+            )
         return row
 
     def _probe(self, k: int, critics: Dict) -> Dict:
