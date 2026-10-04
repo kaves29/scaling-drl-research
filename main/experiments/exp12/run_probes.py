@@ -7,7 +7,7 @@ import numpy as np
 import orbax.checkpoint
 import pandas as pd
 
-from experiments.exp12.probe import check_steps, critic_optimizer, probe_config, run_probe, summarize
+from experiments.exp12.probe import check_steps, critic_optimizer, iqm, probe_config, run_probe, summarize
 from utils.atomic_io import atomic_write_text
 
 FRESH_CRITIC_DIR = "fresh_critic"
@@ -54,6 +54,7 @@ class RunProbes:
             "check_index": 0,
             "interaction_step": trainer.interaction_step,
             **{f"score_fresh_r{r}": float(v) for r, v in enumerate(score)},
+            "score_fresh_iqm": iqm(score) if np.all(np.isfinite(score)) else float("nan"),
         })
 
     def maybe_check(self, trainer) -> None:

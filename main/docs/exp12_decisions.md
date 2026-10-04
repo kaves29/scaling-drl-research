@@ -528,3 +528,39 @@ mujoco 3.6.0. STOPPED; see Q-H1b.
 - Q-H2b (no-hands premise). SimBa's released code lists `h1hand-*` IDs, but its
   paper's Table 5 dims (act 19) match the no-hands H1. Keep h1-reach-v0 and
   h1-run-v0 as decided? Rec: keep your decision; FYI only.
+
+## Phase 1–2 engineering choices (routine; cannot change results) and findings (2026-10-03/04)
+
+- The exp1 loop (`experiments/exp12/trainer.py`) repeats angle_1's per-step body in
+  the same RNG-consumption order. The Angle1ParityTest shows identical params,
+  optimizer state, JAX key, obs_rms and every logged metric row.
+- Exact env restore: `ExactRestore` records the simulator RNG state just before
+  each reset plus the actions taken since. A restore resets with that RNG and
+  replays the actions. Verified bit-exact in a new process for all 11
+  DMC/MyoSuite envs, across episode resets.
+- Resume also persists SACAgent's per-window host buffers (actor_loss / entropy /
+  churn). These are missing from angle_1's resume path (a pre-existing gap, left
+  untouched there). Without them, the logged window containing the resume point
+  differs.
+- State directories are named `step_<n>_<uid>`. A directory name is never
+  reused, because tensorstore/Orbax caches by path within a process; reusing a
+  name caused NOT_FOUND restores in tests. `LATEST` is repointed atomically, and
+  older or orphaned states are deleted after the commit.
+- The fresh critic is saved once per run to `<run_dir>/fresh_critic` (Orbax),
+  not into every state, because it is 454 MB for D6W1536.
+- Probe RNG: the JAX key is fold_in(PRNGKey(seed), "PROB", check, round). The
+  pool sampler is np.random.default_rng([seed, "PROB", check, round]). Neither
+  consumes any training stream.
+- Probe rounds run as a Python loop over one jitted fit, compiled once per
+  (critic architecture, optimizer). Current and fresh are separate calls of the
+  same compiled function, sharing the pool, target function and minibatch
+  indices, with one host transfer per check. Whether rounds should instead be
+  vmapped for speed is a CUDA measurement question (NEEDS CUDA).
+- Pool and final-loss evaluation are chunked (2,560 rows per chunk) to bound
+  activation memory for D6W1536.
+- A guard rejects configs whose first check falls at or before
+  buffer.min_length (impossible in real budgets: 12,500 > 5,000).
+- Existing test suite (R1): the single run was OOM-killed by the 15 GB container
+  memory cgroup after 126 tests, all passing. One process reached 13.8 GB while
+  running concurrently with the Exp 1/2 tests. It will be re-run alone, one
+  module per process.
