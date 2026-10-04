@@ -19,7 +19,7 @@ import numpy as np
 import omegaconf
 import pandas as pd
 
-from experiments.angle_1 import PendingUpdateMetrics
+from experiments.exp12.diagnostics import ActorDiagnostics, DiagnosticPendingUpdateMetrics
 from experiments.exp12.envs import create_envs, env_restore_state, restore_env
 from experiments.exp12.state import (
     commit_state_dir,
@@ -96,6 +96,7 @@ class Exp12Trainer:
         self.pending = None
         # Small per-experiment state (e.g. probe records) persisted with every save.
         self.extra_state: Dict = {}
+        self.diagnostics = ActorDiagnostics(cfg)
         self.run_name = (
             f"{cfg.env_name}_CD{cfg.agent.critic_num_blocks}_CW{cfg.agent.critic_hidden_dim}"
             f"_AD{cfg.agent.actor_num_blocks}_AW{cfg.agent.actor_hidden_dim}_seed{cfg.seed}"
@@ -103,7 +104,8 @@ class Exp12Trainer:
 
     def _attach_logger(self, run_id: Optional[str] = None) -> None:
         self.logger = WandbTrainerLogger(self.cfg, run_id=run_id)
-        self.pending = PendingUpdateMetrics(self.logger, int(self.cfg.actor_grad_cosine_every))
+        self.pending = DiagnosticPendingUpdateMetrics(self.logger, int(self.cfg.actor_grad_cosine_every),
+                                                      self.diagnostics)
 
     def start(self) -> None:
         """Fresh start: step-0 evaluation, then the first train-env reset."""
@@ -173,7 +175,8 @@ class Exp12Trainer:
                 if num_updates:
                     batches = [self.buffer.sample() for _ in range(num_updates)]
                     batches = {key: np.stack([b[key] for b in batches]) for key in batches[0]}
-                    update_info = self.agent.update_many(self.update_step, batches, int(cfg.actor_grad_cosine_every))
+                    update_info = self.agent.update_many(self.update_step, batches, int(cfg.actor_grad_cosine_every),
+                                                         **self.diagnostics.update_kwargs(self))
                     self.pending.add(self.update_step, update_info)
                     self.update_step += num_updates
 
@@ -181,6 +184,7 @@ class Exp12Trainer:
                 self.pending.flush()
                 metrics_info = self.agent.get_metrics(self.update_step, self.buffer.sample())
                 self.logger.update_metric(**metrics_info)
+                self.logger.update_metric(**self.diagnostics.window_metrics())
 
             if interaction_step % cfg.evaluation_per_interaction_step == 0:
                 self.pending.flush()
@@ -227,6 +231,7 @@ class Exp12Trainer:
             "agent_window_buffers": {
                 name: [np.asarray(v) for v in getattr(self._sac_agent, name)] for name in AGENT_WINDOW_BUFFERS
             },
+            "actor_diagnostics": self.diagnostics.state(),
         })
         commit_state_dir(root, path, keep_previous=keep_previous)
         self.write_logs()
@@ -262,6 +267,7 @@ class Exp12Trainer:
         self.logger.media_dict = dict(meta["media"])
         for name, values in meta["agent_window_buffers"].items():
             setattr(self._sac_agent, name, [jnp.asarray(v) for v in values])
+        self.diagnostics.load_state(meta["actor_diagnostics"])
 
     def inject(self, m_label: str, seed: int) -> None:
         """Plasticity injection into the online and target critic (experiments/exp12/injection.py)."""

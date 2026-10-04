@@ -3,6 +3,9 @@
     <results_root>/exp12/exp1/runs/<run_key>/run.csv          one row: identity, budget, role, f*_run, fork step
     <results_root>/exp12/exp1/runs/<run_key>/checks.csv       one row per check (0 = fresh-critic probe)
     <results_root>/exp12/exp1/runs/<run_key>/probe_curves.npz learning curves of every check
+    <results_root>/exp12/exp1/runs/<run_key>/metrics.csv      training metrics per logging window (actor
+                                                              diagnostics, Q values, returns), for the
+                                                              shared-time-axis plot
 
 Files are written atomically and rewritten at every save, so an interrupted run
 shows its progress (status "running") and a finished one is "complete".
@@ -43,7 +46,8 @@ def ledger_root(results_root: Optional[str] = None) -> Path:
 
 
 def write_run(identity: Dict, records: List[Dict], f_star: Optional[Dict], status: str, probe_dir: Path,
-              results_root: Optional[str] = None, fork_step: Optional[int] = None) -> Path:
+              results_root: Optional[str] = None, fork_step: Optional[int] = None,
+              metrics_rows: Optional[List[Dict]] = None, action_repeat: int = 1) -> Path:
     """identity: run_key, run_role, architecture, environment, seed, budget_env_steps,
     num_interaction_steps, num_checks, code_commit."""
     out = ledger_root(results_root) / identity["run_key"]
@@ -68,6 +72,13 @@ def write_run(identity: Dict, records: List[Dict], f_star: Optional[Dict], statu
         "code_commit": identity.get("code_commit"),
     }
     atomic_write_text(out / "checks.csv", checks_df.to_csv(index=False))
+    if metrics_rows is not None:
+        metrics = pd.DataFrame(metrics_rows)
+        if not metrics.empty:
+            metrics.insert(0, "run_key", identity["run_key"])
+            metrics["interaction_step"] = metrics.env_step / action_repeat
+            metrics["budget_fraction"] = metrics.interaction_step / n
+        atomic_write_text(out / "metrics.csv", metrics.to_csv(index=False))
     atomic_write_text(out / "run.csv", pd.DataFrame([run]).reindex(columns=RUN_COLUMNS).to_csv(index=False))
     curves = {}
     for path in sorted(Path(probe_dir).glob("check_*.npz")):
@@ -105,3 +116,10 @@ def load(results_root: Optional[str] = None, include_dev: bool = False,
     runs = runs[keep].reset_index(drop=True)
     checks = checks[checks.run_key.isin(runs.run_key)].reset_index(drop=True)
     return runs, checks
+
+
+def load_metrics(run_keys, results_root: Optional[str] = None) -> pd.DataFrame:
+    """metrics.csv of the given runs (training metrics per logging window), concatenated."""
+    frames = [pd.read_csv(ledger_root(results_root) / k / "metrics.csv") for k in run_keys
+              if (ledger_root(results_root) / k / "metrics.csv").exists()]
+    return pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()

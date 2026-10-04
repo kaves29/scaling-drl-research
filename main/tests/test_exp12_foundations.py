@@ -410,7 +410,10 @@ class Angle1ParityTest(unittest.TestCase):
             np.testing.assert_array_equal(rms_a[k], rms_e[k])
         csv_a = pd.read_csv(next((Path(da) / "logs").glob("*.csv")))
         csv_e = pd.read_csv(next(p for p in (Path(de) / "logs").glob("*.csv") if "eval_episodes" not in p.name))
-        self.assertEqual(set(csv_a.columns), set(csv_e.columns))
+        # exp1 adds only the Exp 1/2 actor diagnostics (on by default); every shared column is identical.
+        self.assertEqual(set(csv_e.columns) - set(csv_a.columns),
+                         {"train/policy_kl", "train/actor_saturation", "train/actor_gnorm_std"})
+        self.assertEqual(set(csv_a.columns) - set(csv_e.columns), set())
         pd.testing.assert_frame_equal(csv_a, csv_e[csv_a.columns], check_exact=True)
 
 

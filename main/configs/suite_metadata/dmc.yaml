@@ -1,0 +1,11 @@
+# Benchmark-defined constants, recorded as data only (amendment (g)). Nothing reads
+# these to normalise results; analysis takes normalize(env, values) = identity.
+suite: dmc
+source: >-
+  dm_control suite (Tassa et al. 2018, "DeepMind Control Suite"): every task's per-step
+  reward lies in [0, 1], so a 1000-step episode's return lies in [0, 1000]. Here an episode is 1000 raw environment steps
+  (max_episode_steps: 1000) at action repeat 2.
+return_min: 0
+return_max: 1000
+episode_env_steps: 1000
+environments: [dog-run, dog-trot, humanoid-run, humanoid-walk, humanoid-stand, swimmer-swimmer15, hopper-hop]

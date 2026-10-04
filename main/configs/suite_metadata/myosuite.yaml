@@ -1,0 +1,17 @@
+# Benchmark-defined constants, recorded as data only (amendment (g)). Nothing reads
+# these to normalise results; analysis takes normalize(env, values) = identity.
+suite: myosuite
+source: >-
+  MyoSuite 2.12.2 as installed. Its tasks report success through the per-step env info
+  'solved'; MyoSuite defines no return bound or normalising constant. The registered
+  episode horizons (gymnasium registry, raw steps) are listed; Exp 1/2 use
+  max_episode_steps = 100 (amendment (i)).
+version: 2.12.2
+success_signal: env info 'solved' (per step); per-episode success is recorded
+registered_max_episode_steps:
+  myoHandKeyTurnFixed-v0: 200
+  myoHandPenTwirlFixed-v0: 50
+  myoHandPoseRandom-v0: 100
+  myoHandReachFixed-v0: 100
+environments: {myo-key-turn: myoHandKeyTurnFixed-v0, myo-pen-twirl: myoHandPenTwirlFixed-v0,
+               myo-pose-hard: myoHandPoseRandom-v0, myo-reach: myoHandReachFixed-v0}

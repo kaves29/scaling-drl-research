@@ -91,6 +91,11 @@ injection:
 checks:
   check1_tolerance_eps: 64   # PROPOSED (pending lead approval): |dQ|, |d dQ/da| <= 64 * eps_f32 * scale
 
+diagnostics:                 # Exp 1/2 actor diagnostics I1-I4 (experiments/exp12/diagnostics.py)
+  enabled: true
+  kl_reference_size: 256     # I1: states in the per-window KL reference batch
+  saturation_threshold: 0.99 # I3: |a| above this counts as saturated
+
 testing:
   force_trigger_check: null  # TEST-ONLY: force f*_run at this check (it and the consecutive_checks - 1 before it fire); run_role=dev only
   stop_after_identity_snapshot: false  # VALIDATION-ONLY: end the job once fork.identity_snapshot_steps is saved; run_role=dev only

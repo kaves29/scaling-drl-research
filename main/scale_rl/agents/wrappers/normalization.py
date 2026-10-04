@@ -75,13 +75,17 @@ class ObservationNormalizer(AgentWrapper):
         update_step: int,
         batches: Dict[str, np.ndarray],
         actor_grad_cosine_every: int,
+        **diagnostics,
     ):
+        """diagnostics: SACAgent.update_many's optional Exp 1/2 actor diagnostics
+        (kl_ref_observations must already be normalized)."""
         batches["observation"] = self._normalize(batches["observation"])
         batches["next_observation"] = self._normalize(batches["next_observation"])
         return self.agent.update_many(
             update_step=update_step,
             batches=batches,
             actor_grad_cosine_every=actor_grad_cosine_every,
+            **diagnostics,
         )
     def get_metrics(self, update_step: int, batch: Dict[str, np.ndarray]):
         batch["observation"] = self._normalize(batch["observation"])

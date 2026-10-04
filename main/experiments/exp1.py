@@ -145,7 +145,8 @@ def run(args: dict) -> None:
         probes.write_csv()
         plan = t.extra_state.get("fork")
         ledger.write_run(ledger_identity, probes.records, probes.f_star, status, probes.dir,
-                         results_root=cfg.results_root, fork_step=plan["fork_step"] if plan else None)
+                         results_root=cfg.results_root, fork_step=plan["fork_step"] if plan else None,
+                         metrics_rows=t.metrics_rows, action_repeat=int(cfg.action_repeat))
         if plan is not None:
             exp2_ledger.write_json(identity.run_key, "fork.json", plan, cfg.results_root)
             exp2_ledger.write_arm(identity.run_key, "control", plan, probes.records,

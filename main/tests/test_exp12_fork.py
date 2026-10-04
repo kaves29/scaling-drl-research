@@ -168,6 +168,25 @@ class ForkEndToEndTest(unittest.TestCase):
             self.assertFalse(np.array_equal(a, b), "the trainable new head should have moved away from its copy")
         self.assertEqual(_meta(latest_state_dir(Path(self.arm_dirs["injected"]) / "state"))["interaction_step"], 200)
 
+    def test_exp2_analysis_runs_on_the_real_outputs(self):
+        from analysis import exp2_analysis
+
+        out = os.path.join(self.tmp, "exp2_analysis")
+        outputs = exp2_analysis.run_analysis(out, "mean", self.results, include_dev=True)
+        fork_row = outputs["forks"].iloc[0]
+        self.assertTrue(fork_row.complete)
+        self.assertTrue(fork_row.check1_pass)
+        self.assertEqual(len(outputs["paired"]), 26)  # one paired difference per post-fork evaluation
+        self.assertEqual(set(outputs["bands"].n_seeds), {1})
+        for name in ("paired_returns.csv", "check1_table.csv", "check2_table.csv", "plasticity_post_fork.csv",
+                     "diagnostics_post_fork.csv"):
+            self.assertTrue(os.path.exists(os.path.join(out, name)), name)
+        diag = pd.read_csv(os.path.join(out, "diagnostics_post_fork.csv"))
+        self.assertTrue({"train/policy_kl", "train/actor_saturation", "train/actor_gnorm_std"} <= set(diag.columns))
+        self.assertEqual(set(diag.arm), {"control", "injected"})
+        metrics = ledger.load_metrics([self.run_key], self.results)
+        self.assertTrue(metrics["train/policy_kl"].notna().any())
+
     def test_fork_is_invisible_to_the_exp1_trajectory(self):
         # Same run with forking disabled: the control's continuation must be bit-identical, which shows the
         # save/restore, the post-fork evaluations and the extra probe checks do not touch training.

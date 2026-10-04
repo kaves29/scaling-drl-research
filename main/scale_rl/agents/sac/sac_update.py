@@ -1,4 +1,4 @@
-from typing import Any, Dict, Tuple
+from typing import Any, Dict, Optional, Tuple
 
 import flax
 import jax
@@ -16,6 +16,7 @@ def update_actor(
     temperature: Trainer,
     batch: Batch,
     critic_use_cdq: bool,
+    saturation_threshold: Optional[float] = None,
 ) -> Tuple[Trainer, Dict[str, float]]:
     def actor_loss_fn(
         actor_params: flax.core.FrozenDict[str, Any],
@@ -42,6 +43,9 @@ def update_actor(
             "train/actor_action": jnp.mean(jnp.abs(actions)),
             "train/actor_pnorm": tree_norm(actor_params),
         }
+        if saturation_threshold is not None:
+            # Fraction of sampled action components near the tanh bound (Exp 1/2 diagnostic I3).
+            actor_info["train/actor_saturation"] = jnp.mean(jnp.abs(actions) > saturation_threshold)
 
         return actor_loss, actor_info
 

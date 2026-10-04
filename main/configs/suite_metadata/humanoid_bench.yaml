@@ -1,0 +1,12 @@
+# Benchmark-defined constants, recorded as data only (amendment (g)). Nothing reads
+# these to normalise results; analysis takes normalize(env, values) = identity.
+suite: humanoid_bench
+source: >-
+  HumanoidBench at commit cb1189039151c8aadaaa987b442da54383c87fab
+  (humanoid_bench/envs/reach.py: Reach.success_bar = 12000;
+  humanoid_bench/envs/basic_locomotion_envs.py: Run(Walk) inherits Walk.success_bar = 700;
+  humanoid_bench/tasks.py: Task.max_episode_steps = 1000).
+commit: cb1189039151c8aadaaa987b442da54383c87fab
+success_bar: {h1-reach-v0: 12000, h1-run-v0: 700}
+episode_env_steps: 1000
+environments: [h1-reach-v0, h1-run-v0]

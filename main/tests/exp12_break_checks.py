@@ -245,6 +245,65 @@ MUTATIONS += [
 ]
 
 
+from analysis import exp2_analysis  # noqa: E402
+from experiments.exp12 import diagnostics  # noqa: E402
+from scale_rl.agents.sac import sac_agent, sac_update  # noqa: E402
+
+DIAG = "tests.test_exp12_diagnostics"
+EA = "tests.test_exp12_exp2_analysis.SyntheticResultsTest"
+KL_LINE = "jnp.mean(pre_tanh(new_actor).kl_divergence(pre_tanh(actor)))"
+MUTATIONS += [
+    # The scanned update is jitted: each mutation rebuilds it, so no compiled version is reused.
+    ("I1: KL(pi_{t-1} || pi_t) instead of KL(pi_t || pi_{t-1})", sac_agent, "_update_sac_networks_scan",
+     source_mutation(sac_agent, "_update_sac_networks_scan", KL_LINE,
+                     "jnp.mean(pre_tanh(actor).kl_divergence(pre_tanh(new_actor)))"),
+     f"{DIAG}.KnownAnswerTest.test_policy_kl_is_the_closed_form_gaussian_kl_new_vs_old"),
+    ("diagnostics perturb the actor update", sac_agent, "_update_sac_networks_scan",
+     source_mutation(sac_agent, "_update_sac_networks_scan", "    if kl_ref_observations is not None:\n",
+                     "    if kl_ref_observations is not None:\n        new_actor = new_actor.replace(params="
+                     "jax.tree_util.tree_map(lambda p: p * 1.0001, new_actor.params))\n"),
+     f"{DIAG}.KnownAnswerTest.test_diagnostics_never_change_the_update"),
+    ("I3: saturation of the deterministic mean action, not the sampled one", sac_update, "update_actor",
+     source_mutation(sac_update, "update_actor", "jnp.mean(jnp.abs(actions) > saturation_threshold)",
+                     "jnp.mean(jnp.abs(jnp.tanh(dist.distribution.mean())) > saturation_threshold)"),
+     f"{DIAG}.KnownAnswerTest.test_saturation_is_the_fraction_of_sampled_components_beyond_the_threshold"),
+    ("I2: sample SD (ddof=1) instead of the population SD", diagnostics.ActorDiagnostics, "window_metrics",
+     source_mutation(diagnostics, "ActorDiagnostics", "float(np.std(values))",
+                     "float(np.std(values, ddof=1))").window_metrics,
+     f"{DIAG}.KnownAnswerTest.test_gnorm_std_is_the_population_sd_of_the_window"),
+    ("I2: the gnorm window is never reset", diagnostics.ActorDiagnostics, "window_metrics",
+     source_mutation(diagnostics, "ActorDiagnostics", "values, self.gnorm = self.gnorm, []",
+                     "values = self.gnorm").window_metrics,
+     f"{DIAG}.KnownAnswerTest.test_gnorm_std_is_the_population_sd_of_the_window"),
+    ("I1: KL reference drawn from the global numpy RNG", diagnostics.ActorDiagnostics, "update_kwargs",
+     source_mutation(diagnostics, "ActorDiagnostics",
+                     "idx = rng.integers(0, trainer.buffer._num_in_buffer, size=self.reference_size)",
+                     "idx = np.random.randint(0, trainer.buffer._num_in_buffer, size=self.reference_size)"
+                     ).update_kwargs,
+     f"{DIAG}.ReferenceBatchTest.test_reference_batch_per_window_from_a_dedicated_stream"),
+    ("I1: KL reference never redrawn after the first window", diagnostics.ActorDiagnostics, "update_kwargs",
+     source_mutation(diagnostics, "ActorDiagnostics", "if window != self.window:",
+                     "if self.window is None:").update_kwargs,
+     f"{DIAG}.ReferenceBatchTest.test_reference_batch_per_window_from_a_dedicated_stream"),
+    ("Exp 2: paired difference control - injected", exp2_analysis, "paired_returns",
+     source_mutation(exp2_analysis, "paired_returns", 'per_eval["injected"] - per_eval["control"]',
+                     'per_eval["control"] - per_eval["injected"]'),
+     f"{EA}.test_paired_difference_is_injected_minus_control_mean_return"),
+    ("Exp 2: forks with an unfinished arm enter the paired graphs", exp2_analysis, "paired_returns",
+     source_mutation(exp2_analysis, "paired_returns", "complete = forks[forks.complete].run_key",
+                     "complete = forks.run_key"),
+     f"{EA}.test_band_per_environment_over_complete_confirmatory_forks"),
+    ("Exp 2: development runs not excluded by default", exp2_analysis, "load",
+     source_mutation(exp2_analysis, "load", "runs, _ = ledger.load(results_root, include_dev=include_dev,",
+                     "runs, _ = ledger.load(results_root, include_dev=True,"),
+     f"{EA}.test_tables_and_files"),
+    ("Exp 2: the secondary analysis uses every fork", exp2_analysis, "run_analysis",
+     source_mutation(exp2_analysis, "run_analysis", "success = forks[forks.check2_pass == True].run_key",
+                     "success = forks.run_key"),
+     f"{EA}.test_secondary_is_the_check2_success_subset"),
+]
+
+
 def _run(test_id):
     suite = unittest.defaultTestLoader.loadTestsFromName(test_id)
     result = unittest.TextTestRunner(stream=open("/dev/null", "w"), verbosity=0).run(suite)

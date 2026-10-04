@@ -870,3 +870,78 @@ results arrive. Later changes are appended as new, dated entries.
   3 shared-offset repeats of the degraded critic. These use a different
   offset by design. Pooling only the 4 main series is the alternative, and
   is reported alongside. Which should decide the stop?
+
+## Phase 5 (2026-10-04): actor diagnostics I1–I4 and the Experiment 2 analysis
+
+### Actor diagnostics (experiments/exp12/diagnostics.py; approved definitions I1–I4)
+- I1, `train/policy_kl`. The per-update KL(π_t ‖ π_{t−1}) of the pre-tanh
+  diagonal Gaussians (equal to the tanh-squashed KL, since tanh is a
+  bijection), averaged over a 256-state reference batch from replay. It is
+  computed inside the fused scan and logged as the window mean. The
+  existing `train/policy_churn` / `train/churn` are kept unchanged.
+- I2. `train/actor_gnorm` is kept. `train/actor_gnorm_std` is the
+  population SD (ddof 0) of the per-update norms in the logging window. The
+  values come from the host copy that the existing flush already makes, so
+  there is no new device sync.
+- I3. `train/actor_action` is kept. `train/actor_saturation` is the fraction
+  of the actor-update sampled action components with |a| > 0.99. It uses the
+  same sampled actions, so no RNG is consumed.
+- I4. On in every Exp 1/2 run (`diagnostics.enabled: true`). The Angle 1 path
+  passes neither argument and is unchanged. Tests: the update is bit-identical
+  with the diagnostics on or off; Angle 1 parity still holds bit for bit, and
+  exp1 adds exactly the three columns.
+
+Routine choices (shown for veto):
+- The KL reference batch is redrawn at the start of each logging window
+  from a dedicated stream (seed, "KLRF", window). It is normalised with the
+  obs statistics at that moment and then held fixed, so the KL reflects
+  parameter updates only, not the normaliser's drift.
+- The reference batch and the open window's gnorm values are saved with
+  the training state, so resume stays bit-exact (verified by the resume and
+  kill tests).
+- The Exp 1 per-run ledger gains `metrics.csv`, the training metrics per
+  logging window, for the shared-time-axis plot. Existing files are
+  unchanged.
+
+Observation (CPU, tiny D1W8 actor). `train/policy_kl` came out at about
+10–20 nats per update, while the L2 churn was about 1e-3. A hand-computed
+closed form confirms the value (11.0385 vs 11.0377 logged). It is large
+because some action dimensions have σ ≈ 6e-5 (log_std_min = −10), and KL is
+very sensitive to near-deterministic dimensions. Expect heavy-tailed values;
+it is reported as specified.
+
+### Experiment 2 analysis (analysis/exp2_analysis.py)
+- Primary: per architecture and environment, the paired difference
+  (injected − control) of each evaluation's mean raw return, aligned by steps
+  since fork. Every seed's line is drawn, with a 95% percentile bootstrap
+  band over seeds; the same resampled seed sets are used at every point.
+  Forks enter only when both arms have all 26 evaluations.
+- Also produced:
+  - both arms' post-fork plasticity loss and actor diagnostics;
+  - the Check 1 and Check 2 tables;
+  - the shared-time-axis plot of each scaled run (L, KL, gnorm, gnorm SD,
+    saturation, |a|, eval return; f*_run dashed);
+  - the SECONDARY graphs restricted to forks whose Check 2 passed.
+- No normalisation: `normalize(env, values)` defaults to the identity and
+  is applied per environment to per-episode returns. There is no scalar
+  summary. Dev runs and the identity arm are excluded.
+- `configs/suite_metadata/{dmc,myosuite,humanoid_bench}.yaml` record
+  benchmark constants as data only, each with its source:
+  - DMC returns lie in [0, 1000].
+  - HumanoidBench success bars: h1-reach 12000, h1-run 700 (Run inherits
+    Walk's bar).
+  - MyoSuite's registered horizons, and that it defines no return bound.
+
+### Questions raised in Phase 5 (PENDING)
+- P5-Q3. Which statistic over seeds goes in the Exp 2 bands, mean or IQM?
+  With at most 5 seeds per environment, the IQM averages the middle values
+  only. `--statistic` is a required argument with no default until you
+  decide.
+- P5-Q4. Observed while recording the MyoSuite horizons: the registered
+  horizon of myoHandPenTwirlFixed-v0 is 50 raw steps, below our
+  max_episode_steps of 100. The registry's own TimeLimit therefore ends
+  PenTwirl episodes at 50 raw steps (25 interaction steps), while γ = 0.95
+  is derived from 100. Verified: the env's wrapper chain has the registry's
+  TimeLimit(50) inside our TimeLimit(100). Amendment (i) noted only KeyTurn's
+  truncation. Should
+  this go into the limitations, or should something change?

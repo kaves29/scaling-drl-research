@@ -239,6 +239,8 @@ def _sac_update(
     target_tau: float,
     temp_target_entropy: float,
     churn_ref_batch: dict,
+    saturation_threshold: Optional[float] = None,
+    kl_ref_observations: Optional[jnp.ndarray] = None,
 ) -> Tuple[Trainer, Trainer, Trainer, Trainer, Dict[str, float]]:
     def get_deterministic_actions(actor_params, actor, observations):
         dist = actor.apply(variables={"params": actor_params}, observations=observations)
@@ -253,9 +255,15 @@ def _sac_update(
         temperature=temperature,
         batch=batch,
         critic_use_cdq=critic_use_cdq,
+        saturation_threshold=saturation_threshold,
     )
     a_curr = get_deterministic_actions(new_actor.params, new_actor, churn_ref_batch["observation"])
     churn = jnp.mean(jnp.linalg.norm(a_curr - a_prev, axis=-1))
+    if kl_ref_observations is not None:
+        # Tang & Berseth's SAC churn, KL(pi_t || pi_{t-1}) per update. Tanh is a bijection, so this
+        # equals the KL of the pre-tanh diagonal Gaussians (Exp 1/2 diagnostic I1).
+        pre_tanh = lambda a: a.apply(variables={"params": a.params}, observations=kl_ref_observations).distribution
+        actor_info["train/policy_kl"] = jnp.mean(pre_tanh(new_actor).kl_divergence(pre_tanh(actor)))
 
     new_temperature, temperature_info = update_temperature(
         temperature=temperature,
@@ -345,6 +353,7 @@ def _update_sac_networks(
         "target_tau",
         "temp_target_entropy",
         "actor_grad_cosine_every",
+        "saturation_threshold",
     ),
 )
 def _update_sac_networks_scan(
@@ -362,8 +371,11 @@ def _update_sac_networks_scan(
     temp_target_entropy: float,
     churn_ref_batch: dict,
     actor_grad_cosine_every: int,
+    saturation_threshold: Optional[float] = None,
+    kl_ref_observations: Optional[jnp.ndarray] = None,
 ) -> Tuple[PRNGKey, Trainer, Trainer, Trainer, Trainer, Dict[str, jnp.ndarray]]:
-    """_update_sac_networks scanned over the leading axis of `batches`."""
+    """_update_sac_networks scanned over the leading axis of `batches`. The two optional
+    diagnostics (Exp 1/2 only) add outputs and never change the updates."""
 
     def body(carry, xs):
         rng, actor, critic, target_critic, temperature = carry
@@ -372,6 +384,7 @@ def _update_sac_networks_scan(
         new_actor, new_critic, new_target_critic, new_temperature, info = _sac_update(
             actor_key, critic_key, actor, critic, target_critic, temperature, batch,
             gamma, n_step, critic_use_cdq, target_tau, temp_target_entropy, churn_ref_batch,
+            saturation_threshold, kl_ref_observations,
         )
         info["train/actor_grad_cosine"] = jax.lax.cond(
             update_step % actor_grad_cosine_every == 0,
@@ -480,11 +493,14 @@ class SACAgent(BaseAgent):
         update_step: int,
         batches: Dict[str, np.ndarray],
         actor_grad_cosine_every: int,
+        saturation_threshold: Optional[float] = None,
+        kl_ref_observations: Optional[np.ndarray] = None,
     ) -> Dict[str, jnp.ndarray]:
         """Runs one update per leading-axis slice of `batches` in a single
         compiled call, starting at `update_step`. Returns per-update device
         arrays of shape (n,), with train/actor_grad_cosine NaN on steps where
-        it was not computed."""
+        it was not computed. saturation_threshold / kl_ref_observations add the
+        Exp 1/2 actor diagnostics train/actor_saturation / train/policy_kl."""
         batches = {key: jnp.asarray(value) for key, value in batches.items()}
 
         if self.churn_ref_batch is None:
@@ -511,6 +527,8 @@ class SACAgent(BaseAgent):
             temp_target_entropy=self._cfg.temp_target_entropy,
             churn_ref_batch=self.churn_ref_batch,
             actor_grad_cosine_every=actor_grad_cosine_every,
+            saturation_threshold=saturation_threshold,
+            kl_ref_observations=None if kl_ref_observations is None else jnp.asarray(kl_ref_observations),
         )
 
         self.actor_entropy_buffer.append(update_info["train/entropy"])
