@@ -35,6 +35,10 @@ from utils.run_metadata import _strip_locations as strip_locations
 ARM_KEYS = {"fork.source", "fork.arm", "injection.m"}
 
 
+class Check1Failed(RuntimeError):
+    """Check 1 failed or TF32 matmuls were detected: the arm stops before training (decision 1, Phase 4)."""
+
+
 def check_matches_parent(cfg, source: Path) -> None:
     parent = load_run_metadata(source / RUN_METADATA_FILENAME)
     if parent is None:
@@ -55,19 +59,21 @@ def check2(trainer, probes, plan, pre_params) -> dict:
     result = run_probe(trainer.agent, trainer.buffer, probes.critic_def, critics, probes.tx,
                        int(trainer.cfg.seed), k, probes.cfg)
     tc = trigger_config(trainer.cfg)
-    improvement = result["injected"]["score"] - result["control"]["score"]
-    low, high = bootstrap_interval(improvement, int(trainer.cfg.seed), k, tc.resamples, tc.confidence)
+    diff = result["injected"]["score"] - result["control"]["score"]
+    low, high = bootstrap_interval(diff, int(trainer.cfg.seed), k, tc.resamples, tc.confidence)
     out = {
         "check_index": k,
         **{f"score_{n}_rounds": result[n]["score"].tolist() for n in critics},
         **{f"score_{n}_iqm": iqm(result[n]["score"]) for n in critics},
         "loss_injected_rounds": (result["fresh"]["score"] - result["injected"]["score"]).tolist(),
         "loss_control_rounds": (result["fresh"]["score"] - result["control"]["score"]).tolist(),
-        "improvement_rounds": improvement.tolist(), "improvement_iqm": iqm(improvement),
-        "improvement_ci_low": low, "improvement_ci_high": high,
-        # PROPOSED definition of "Check 2 succeeded" (pending lead approval): the bootstrap interval
-        # of IQM(P_injected - P_control) lies above 0. Reported only; never excludes a fork.
-        "improved": bool(np.isfinite(low) and low > 0),
+        # Paired difference P(injected) - P(control) per round, its IQM and percentile bootstrap
+        # interval (over 5 rounds only; see the Methodology limitations).
+        "paired_difference_rounds": diff.tolist(), "paired_difference_iqm": iqm(diff),
+        "paired_difference_ci_low": low, "paired_difference_ci_high": high,
+        "confidence": tc.confidence, "bootstrap_resamples": tc.resamples,
+        # Check 2 passes when the interval lies above 0 (approved 2026-10-04). Reported only.
+        "pass": bool(np.isfinite(low) and low > 0),
     }
     probes.dir.mkdir(parents=True, exist_ok=True)
     np.savez_compressed(probes.dir / "check2_curves.npz",
@@ -92,6 +98,7 @@ def run(args: dict) -> None:
         raise ValueError(f"{source} has no complete fork ({fork.READY} missing)")
     check_matches_parent(cfg, source)
     fork.check_validation_flags(cfg)
+    fork.check_same_device(source)
     plan = fork.read_fork(source)
     run_key = run_identity(cfg).run_key
     arm_dir.mkdir(parents=True, exist_ok=True)
@@ -114,9 +121,14 @@ def run(args: dict) -> None:
             trainer.inject(cfg.injection.m, int(cfg.seed))
         after = fork.panel_q_and_grad(trainer._sac_agent.critic, panel)
         control = fork.load_npz(fork.fork_dir(source) / "check1_control.npz")
-        result = fork.check1(pre, after, control, float(cfg.checks.check1_tolerance_eps))
+        result = fork.check1(pre, after, control, float(cfg.checks.check1_tolerance_eps),
+                             injected=arm == "injected", precision=fork.matmul_precision_report())
         fork.save_npz(arm_dir / "check1_after.npz", after)
         exp2_ledger.write_json(run_key, f"check1_{arm}.json", result, cfg.results_root)
+        if not result["pass"]:
+            raise Check1Failed(f"Check 1 failed for the {arm} arm of {run_key} (max {result['max_eps_units']:.3g} "
+                               f"eps units, TF32 detected: {result['tf32_detected']}); stop and ask the "
+                               "project lead. Details in check1_" + arm + ".json")
         if arm == "injected":
             exp2_ledger.write_json(run_key, "check2.json", check2(trainer, probes, plan, pre_params),
                                    cfg.results_root)

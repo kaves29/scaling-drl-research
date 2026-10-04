@@ -7,8 +7,7 @@ import numpy as np
 from experiments.exp12.injection import M_LABELS
 from experiments.exp12.probe import iqm
 
-HEALTHY_REFERENCES = ("last_pre_trigger", "iqm_pre_trigger")
-NOISE_STATISTICS = ("range", "std")
+HEALTHY_REFERENCES = ("iqm_pre_trigger", "last_pre_trigger")  # primary (decision 3, Phase 4), sensitivity
 
 
 class Stop(Exception):
@@ -39,13 +38,11 @@ def recovery(l_trigger: float, l_injected: float, l_healthy: float) -> float:
     return (l_trigger - l_injected) / (l_trigger - l_healthy)
 
 
-def spread(values, statistic: str) -> float:
-    values = np.asarray(values, dtype=np.float64)
-    if statistic == "range":
-        return float(values.max() - values.min())
-    if statistic == "std":
-        return float(np.std(values, ddof=1))
-    raise ValueError(f"noise statistic must be one of {NOISE_STATISTICS}")
+def pooled_sd(series: Dict[str, np.ndarray]) -> float:
+    """Pooled within-series SD: sqrt(sum_i sum_r (x_ir - mean_i)^2 / sum_i (n_i - 1))."""
+    ss = sum(float(np.sum((np.asarray(x, np.float64) - np.mean(x)) ** 2)) for x in series.values())
+    dof = sum(len(x) - 1 for x in series.values())
+    return float(np.sqrt(ss / dof))
 
 
 def select_m(recoveries: Dict[str, float], similar_within: float) -> str:
@@ -54,26 +51,29 @@ def select_m(recoveries: Dict[str, float], similar_within: float) -> str:
     return next(m for m in M_LABELS if recoveries[m] >= best - similar_within)
 
 
-def evaluate(loss: Dict[str, np.ndarray], l_healthy: float, noise_statistic: str, noise_threshold: float,
-             similar_within: float) -> Dict:
-    """loss: per-round L for 'degraded' and 'injected_<m>' on one shared pool. A stop per (d)
+def evaluate(loss: Dict[str, np.ndarray], l_healthy: float, noise_series: Dict[str, np.ndarray],
+             noise_threshold: float, similar_within: float) -> Dict:
+    """loss: per-round L for 'degraded' and 'injected_<m>' on one shared pool. noise_series: every
+    per-round L series the script probed, pooled for the noise SD. A stop per (d) and decisions 3-4
     leaves chosen_m None and states the reason; every number computed so far is kept."""
     l_trigger = iqm(loss["degraded"])
     denominator = l_trigger - l_healthy
+    noise_sd = pooled_sd(noise_series)
     out = {"l_trigger": l_trigger, "l_healthy": l_healthy, "denominator": denominator,
-           "l_injected": {m: iqm(loss[f"injected_{m}"]) for m in M_LABELS}, "chosen_m": None, "stop": None}
+           "l_injected": {m: iqm(loss[f"injected_{m}"]) for m in M_LABELS},
+           "noise_sd": noise_sd, "noise_series": sorted(noise_series), "chosen_m": None, "stop": None}
     if not denominator > 0:
         out["stop"] = (f"L at the trigger ({l_trigger:.6g}) is not above the healthy reference ({l_healthy:.6g}); "
                        "recovery is undefined")
         return out
     out["recovery"] = {m: recovery(l_trigger, out["l_injected"][m], l_healthy) for m in M_LABELS}
-    raw = {name: spread(v, noise_statistic) for name, v in loss.items()}
-    out["noise_raw"] = raw
-    out["noise_recovery_units"] = {name: v / denominator for name, v in raw.items()}
-    out["noise"] = max(out["noise_recovery_units"].values())
-    if out["noise"] > noise_threshold:
-        out["stop"] = (f"probe noise {out['noise']:.4f} (recovery units, {noise_statistic} over rounds) "
-                       f"exceeds {noise_threshold}")
+    out["noise"] = noise_sd / denominator  # recovery units
+    if denominator < noise_sd:
+        out["stop"] = (f"L_trigger - L_healthy ({denominator:.6g}) is below the probe noise "
+                       f"(pooled SD {noise_sd:.6g})")
+        return out
+    if out["noise"] >= noise_threshold:
+        out["stop"] = f"probe noise {out['noise']:.4f} (pooled SD in recovery units) is >= {noise_threshold}"
         return out
     out["chosen_m"] = select_m(out["recovery"], similar_within)
     return out

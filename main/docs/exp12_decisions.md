@@ -811,3 +811,62 @@ results arrive. Later changes are appended as new, dated entries.
   evaluation and restored afterwards. Checked on h1-reach-v0 (venv_hb): two
   different training RNG states give identical eval returns, and the
   training state is unchanged.
+
+## Answers to Phase 4 (received 2026-10-04) and how they are implemented
+
+1. Check 1. A 64 eps relative tolerance for the injected arm only. The
+   control must match bit-exactly. Report the observed maximum and the GPU
+   matmul precision. If TF32 is on, or any GPU deviation exceeds 64 eps,
+   stop and ask.
+   Implemented in `fork.check1(..., injected, precision)`:
+   - pre vs control: tolerance 0. Pre vs after and after vs control: 64 eps
+     only when the arm is injected; an identity arm also needs 0.
+   - `max_eps_units` records the observed maximum.
+   - `matmul_precision_report()` records the configured precision
+     (jax_default_matmul_precision, NVIDIA_TF32_OVERRIDE, XLA_FLAGS), the
+     device, and a measured float32 matmul error. TF32 is "detected" when the
+     relative error exceeds 1e-4 (float32 gives about 1e-6 here, TF32 about
+     1e-3).
+   - On failure, the arm writes check1_<arm>.json and stops (Check1Failed)
+     before its first save.
+2. Check 2. Approved. check2.json reports the paired difference
+   P(injected) − P(control) per round, its IQM and its 95% interval, and pass
+   = interval above 0. The 5-round bootstrap caveat is amendment (n).
+3. Healthy reference. The IQM of all pre-trigger checks. The last
+   pre-trigger check is reported as a sensitivity only. Exit 3 if
+   L_trigger − L_healthy ≤ 0 or below the probe noise.
+4. Probe noise. The pooled SD of per-round L over all probe evaluations in
+   the script, divided by L_trigger − L_healthy. Stop if ≥ 0.10.
+   Implemented: the pooled within-series SD over the 7 L series the script
+   probes (degraded, injected last/half/all, and the 3 shared-offset repeats
+   of the degraded critic). `noise_sd_main_probe_only` (the 4 main series)
+   is also reported.
+5. Identity fork. D4W1024 and D6W1536 in each suite, on the GPU model the
+   grid will use. In Phase 6, both arms of a fork go on the same GPU model.
+   Implemented now: fork.json records the device model. The control (on
+   resume) and the arm jobs refuse to run on a different model
+   (`fork.check_same_device`), and every launch records its device in
+   run_metadata.json.
+6. Consecutive checks: 2. This is amendment (l), with
+   `trigger.consecutive_checks: 2`. The test-only hook
+   `testing.force_trigger_check=k` now forces f*_run = k: checks k−1 and k
+   fire, and k must be ≥ 2. The CUDA identity commands force check 2.
+7. HumanoidBench Reach evaluation seeding.
+   `HumanoidBenchReachEvalSeedingTest` runs on a real h1-reach-v0 env in
+   venv_hb. It asserts that Reach reads np.random at reset (so the test is
+   not vacuous). It then checks that two different training RNG states give
+   identical evaluation returns, and that the numpy and Python global RNGs
+   and the agent key are restored. Break and restore (run by hand in
+   venv_hb): removing the per-evaluation seeding fails the test, removing
+   the numpy restore fails the test, and the restored code passes.
+
+### Questions raised by these answers (PENDING; my working reading is in place until you answer)
+- P5-Q1. With 2 consecutive checks, check f*−1 has itself fired. "All
+  pre-trigger checks" can mean (a) checks 1..f*−1, which is the literal
+  reading and is implemented, so the healthy reference includes a firing
+  check; or (b) checks 1..f*−2, which leaves out both checks of the
+  triggering pair. Which do you want?
+- P5-Q2. "All probe evaluations in the script" is implemented to include the
+  3 shared-offset repeats of the degraded critic. These use a different
+  offset by design. Pooling only the 4 main series is the alternative, and
+  is reported alongside. Which should decide the stop?

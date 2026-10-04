@@ -9,20 +9,22 @@ minibatch order (the trigger check's own probe streams):
     degraded    the critic at f*_run (step 3)
     injected_m  the degraded critic after plasticity injection, m in last/half/all (step 4)
 The normally trained critic (step 2) is the same run's pre-trigger checks (amendment (f)),
-read from its probe records. recovery(m) and the m rule follow amendment (d); the
-probe's noise is the spread of the per-round L of each probed critic, in recovery
-units. The one-time shared-offset sensitivity check (amendment (c)) repeats the
+read from its probe records: the IQM of the per-round L of all checks before f*_run
+(decision 3, 2026-10-04); the last pre-trigger check is reported as a sensitivity only.
+recovery(m) and the m rule follow amendment (d). The probe's noise is the pooled SD of
+the per-round L of every L series the script probes (the degraded and three injected
+critics, and the three shared-offset repeats), divided by L_trigger - L_healthy
+(decision 4). The one-time shared-offset sensitivity check (amendment (c)) repeats the
 fresh/degraded probe with a single offset taken from the degraded critic, from the
 fresh critic, and from their average.
 
 Writes <out_dir>/positive_control.json and positive_control_curves.npz. Exit codes:
 0 = m chosen (still to be frozen by the project lead in injection.m), 3 = STOP and
-consult (no trigger, no pre-trigger check, undefined recovery, or noise above the
-threshold). This run and its results stay out of the confirmatory analyses
+consult (no trigger, no pre-trigger check, L_trigger - L_healthy <= 0 or below the
+pooled noise SD, or noise >= 0.10 in recovery units). This run and its results stay out of the confirmatory analyses
 (ledger.load excludes run_role=dev).
 
-    python scripts/positive_control.py --run_dir /abs/dev_run --out_dir /abs/positive_control \\
-        --healthy_reference <last_pre_trigger|iqm_pre_trigger> --noise_statistic <range|std>
+    python scripts/positive_control.py --run_dir /abs/dev_run --out_dir /abs/positive_control
 """
 
 import argparse
@@ -100,7 +102,8 @@ def run(args) -> int:
 
     from experiments.angle_1 import DONE_MARKER
     from experiments.exp12 import fork
-    from experiments.exp12.m_selection import Stop, evaluate, healthy_reference, loss_rounds
+    from experiments.exp12.m_selection import HEALTHY_REFERENCES, Stop, evaluate, healthy_reference, loss_rounds
+    from experiments.exp12.m_selection import pooled_sd
     from experiments.exp12.probe import critic_optimizer, iqm, probe_config, run_probe
     from experiments.exp12.run_probes import FRESH_CRITIC_DIR
     from utils.run_metadata import RUN_METADATA_FILENAME, load_run_metadata
@@ -115,8 +118,8 @@ def run(args) -> int:
     cfg = omegaconf.OmegaConf.create(meta["resolved_config"])
     report = {
         "created_at": datetime.now(timezone.utc).isoformat(), "run_dir": str(run_dir),
-        "run_identity": meta.get("identity"), "healthy_reference_definition": args.healthy_reference,
-        "noise_statistic": args.noise_statistic, "noise_threshold": float(cfg.positive_control.noise_threshold),
+        "run_identity": meta.get("identity"), "healthy_reference_definition": HEALTHY_REFERENCES[0],
+        "noise_statistic": "pooled SD of per-round L", "noise_threshold": float(cfg.positive_control.noise_threshold),
         "similar_within": float(cfg.positive_control.similar_within), "allow_any_setting": args.allow_any_setting,
         "status": None, "stop": None, "chosen_m": None,
     }
@@ -150,10 +153,12 @@ def run(args) -> int:
         {"check_index": r["check_index"], "loss_iqm": r["loss_iqm"], "loss_rounds": loss_rounds(r).tolist()}
         for r in sorted(records, key=lambda r: r["check_index"]) if 1 <= r["check_index"] < k]
     try:
-        l_healthy, used = healthy_reference(records, k, args.healthy_reference)
+        references = {d: healthy_reference(records, k, d) for d in HEALTHY_REFERENCES}
     except Stop as e:
         return finish("stop", str(e))
+    l_healthy, used = references[HEALTHY_REFERENCES[0]]
     report["healthy_reference_checks"] = used
+    report["healthy_reference"] = {d: {"l_healthy": v, "checks": c} for d, (v, c) in references.items()}
 
     fresh = orbax.checkpoint.PyTreeCheckpointer().restore(str(run_dir / FRESH_CRITIC_DIR))["params"]
     critic_def, critics = probe_critics(trainer, fresh)
@@ -182,9 +187,15 @@ def run(args) -> int:
     report["shared_offset_sensitivity"] = sensitivity
 
     pc = cfg.positive_control
-    selection = evaluate(loss, l_healthy, args.noise_statistic, float(pc.noise_threshold), float(pc.similar_within))
+    noise_series = {**loss, **{f"shared_offset_{m}_degraded": np.array(v["loss_rounds"])
+                               for m, v in sensitivity.items()}}
+    report["noise_sd_main_probe_only"] = pooled_sd(loss)  # reported only
+    selection = evaluate(loss, l_healthy, noise_series, float(pc.noise_threshold), float(pc.similar_within))
     report["selection"] = selection
     report["chosen_m"] = selection["chosen_m"]
+    # Sensitivity only: the same rule against the last pre-trigger check; never used to choose m.
+    report["selection_sensitivity_last_pre_trigger"] = evaluate(
+        loss, references["last_pre_trigger"][0], noise_series, float(pc.noise_threshold), float(pc.similar_within))
     trainer.close()
     if selection["stop"] is not None:
         return finish("stop", selection["stop"])
@@ -192,13 +203,9 @@ def run(args) -> int:
 
 
 def main(argv=None) -> int:
-    from experiments.exp12.m_selection import HEALTHY_REFERENCES, NOISE_STATISTICS
-
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--run_dir", required=True)
     parser.add_argument("--out_dir", required=True)
-    parser.add_argument("--healthy_reference", required=True, choices=HEALTHY_REFERENCES)
-    parser.add_argument("--noise_statistic", required=True, choices=NOISE_STATISTICS)
     parser.add_argument("--allow_any_setting", action="store_true",
                         help="TEST-ONLY: skip the D6W1536 / dog-run requirement (recorded in the output)")
     args = parser.parse_args(argv)

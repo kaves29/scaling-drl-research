@@ -2,7 +2,7 @@
 
 Layout under the Exp 1 run directory:
     fork/state/                 complete training state at f*_run (never deleted)
-    fork/fork.json              fork step, check index, horizons, paths
+    fork/fork.json              fork step, check index, horizons, paths, device that produced the fork
     fork/panel.npz              fixed panel of 256 replay (s, a) pairs, drawn once at the fork
     fork/check1_pre.npz         Q and dQ/da on the panel: the critic just before injection
     fork/check1_control.npz     the same for the control critic right after its restore
@@ -47,13 +47,48 @@ def is_ready(run_dir) -> bool:
     return (fork_dir(run_dir) / READY).exists()
 
 
-FORK_JSON_PATHS = ("run_dir", "fresh_critic_dir")
+FORK_JSON_INFO = ("run_dir", "fresh_critic_dir", "device")
+TF32_REL_ERROR = 1e-4  # float32 matmul error is ~1e-6 here; TF32 (10-bit mantissa) gives ~1e-3
+
+
+def _read_fork_json(run_dir) -> Dict:
+    with open(fork_dir(run_dir) / "fork.json") as f:
+        return json.load(f)
 
 
 def read_fork(run_dir) -> Dict:
-    """The fork plan (with run_key); fork.json's directory paths are for readers only."""
-    with open(fork_dir(run_dir) / "fork.json") as f:
-        return {k: v for k, v in json.load(f).items() if k not in FORK_JSON_PATHS}
+    """The fork plan (with run_key); fork.json's paths and device are for readers and checks only."""
+    return {k: v for k, v in _read_fork_json(run_dir).items() if k not in FORK_JSON_INFO}
+
+
+def device_info() -> Dict:
+    d = jax.devices()[0]
+    return {"platform": d.platform, "device_kind": d.device_kind, "device_count": jax.device_count()}
+
+
+def check_same_device(run_dir) -> None:
+    """Both arms of a fork must run on the GPU model that produced the fork state (decision 5, Phase 4)."""
+    recorded = _read_fork_json(run_dir).get("device")
+    current = device_info()
+    if recorded is None or (recorded["platform"], recorded["device_kind"]) != (current["platform"],
+                                                                                current["device_kind"]):
+        raise RuntimeError(f"fork in {run_dir} was produced on {recorded}, but this job runs on {current}; "
+                           "both arms of a fork must run on the same device model")
+
+
+def matmul_precision_report() -> Dict:
+    """How float32 matmuls are computed here, configured and measured (TF32 makes Check 1 stop)."""
+    import os
+
+    rng = np.random.default_rng(0)
+    a, b = rng.standard_normal((256, 256)), rng.standard_normal((256, 256))
+    exact = a @ b
+    got = np.asarray(jax.jit(jnp.matmul)(jnp.asarray(a, jnp.float32), jnp.asarray(b, jnp.float32)), np.float64)
+    rel = float(np.abs(got - exact).max() / np.abs(exact).max())
+    return {**device_info(), "jax_default_matmul_precision": jax.config.jax_default_matmul_precision,
+            "NVIDIA_TF32_OVERRIDE": os.environ.get("NVIDIA_TF32_OVERRIDE"),
+            "XLA_FLAGS": os.environ.get("XLA_FLAGS"), "float32_matmul_max_rel_error": rel,
+            "tf32_detected": rel > TF32_REL_ERROR}
 
 
 def fork_plan(cfg, fork_step: int, check_index: int) -> Dict:
@@ -86,23 +121,28 @@ def panel_q_and_grad(critic, panel) -> Dict[str, np.ndarray]:
     return {"q": np.asarray(q).reshape(-1), "dq_da": np.asarray(grad)}
 
 
-def check1(pre: Dict, injected: Dict, control: Dict, tolerance_eps: float) -> Dict:
-    """All three critics must agree within tolerance_eps * float32 eps * the pre-injection scale."""
+def check1(pre: Dict, after: Dict, control: Dict, tolerance_eps: float, injected: bool,
+           precision: Optional[Dict] = None) -> Dict:
+    """Check 1 on the panel. The control (and an identity arm) must equal the pre-fork critic bit for
+    bit; an injected critic may differ by tolerance_eps * float32 eps * the pre-injection max magnitude
+    (the reverse-mode summation order of dQ/da changes). TF32 matmuls fail the check (stop and ask)."""
     eps = float(np.finfo(np.float32).eps)
     scale_q, scale_g = float(np.abs(pre["q"]).max()), float(np.abs(pre["dq_da"]).max())
-    tol_q, tol_g = tolerance_eps * eps * scale_q, tolerance_eps * eps * scale_g
-    out = {"tolerance_eps": tolerance_eps, "tolerance_q": tol_q, "tolerance_dq_da": tol_g, "pairs": {}}
-    named = {"pre": pre, "injected": injected, "control": control}
-    for a, b in (("pre", "injected"), ("pre", "control"), ("injected", "control")):
+    out = {"tolerance_eps": tolerance_eps, "after_is_injected": injected, "precision": precision, "pairs": {}}
+    named = {"pre": pre, "after": after, "control": control}
+    for a, b in (("pre", "after"), ("pre", "control"), ("after", "control")):
+        tol = tolerance_eps if injected and "after" in (a, b) else 0.0
         dq = float(np.abs(named[a]["q"] - named[b]["q"]).max())
         dg = float(np.abs(named[a]["dq_da"] - named[b]["dq_da"]).max())
         out["pairs"][f"{a}_vs_{b}"] = {
-            "max_abs_dq": dq, "max_abs_d_dq_da": dg,
+            "max_abs_dq": dq, "max_abs_d_dq_da": dg, "tolerance_eps": tol,
             "dq_eps_units": dq / (eps * scale_q) if scale_q else 0.0,
             "d_dq_da_eps_units": dg / (eps * scale_g) if scale_g else 0.0,
-            "pass": dq <= tol_q and dg <= tol_g,
+            "pass": dq <= tol * eps * scale_q and dg <= tol * eps * scale_g,
         }
-    out["pass"] = all(p["pass"] for p in out["pairs"].values())
+    out["max_eps_units"] = max(max(p["dq_eps_units"], p["d_dq_da_eps_units"]) for p in out["pairs"].values())
+    out["tf32_detected"] = bool(precision and precision.get("tf32_detected"))
+    out["pass"] = all(p["pass"] for p in out["pairs"].values()) and not out["tf32_detected"]
     return out
 
 
@@ -129,7 +169,8 @@ def write_fork(trainer, run_dir, plan: Dict, run_key: str, fresh_critic_dir: str
     save_npz(d / "panel.npz", panel)
     save_npz(d / "check1_pre.npz", panel_q_and_grad(trainer._sac_agent.critic, panel))
     atomic_write_text(d / "fork.json", json.dumps({**plan, "run_key": run_key, "run_dir": str(run_dir),
-                                                   "fresh_critic_dir": fresh_critic_dir}, indent=2))
+                                                   "fresh_critic_dir": fresh_critic_dir,
+                                                   "device": device_info()}, indent=2))
     return d
 
 

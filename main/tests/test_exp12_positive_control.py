@@ -17,7 +17,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
 from exp12_helpers import CONFIG_PATH, patch_wandb, tiny_overrides  # noqa: E402
 from experiments.exp12.m_selection import (  # noqa: E402
-    Stop, evaluate, healthy_reference, loss_rounds, recovery, select_m, spread)
+    HEALTHY_REFERENCES, Stop, evaluate, healthy_reference, loss_rounds, pooled_sd, recovery, select_m)
 from experiments.exp12.probe import iqm, probe_round  # noqa: E402
 from test_exp12_probe import CFG, LinearCritic, _pool  # noqa: E402
 
@@ -61,9 +61,15 @@ class MSelectionArithmeticTest(unittest.TestCase):
         self.assertEqual(select_m({"last": 0.9, "half": 0.2, "all": 0.1}, 0.10), "last")
         self.assertEqual(select_m({"last": 0.78, "half": 0.89, "all": 0.89}, 0.10), "half")
 
-    def test_spread(self):
-        self.assertEqual(spread([1.0, 3.0, 2.0], "range"), 2.0)
-        self.assertAlmostEqual(spread([1.0, 3.0, 2.0], "std"), 1.0)
+    def test_primary_healthy_reference_is_the_iqm_of_pre_trigger_checks(self):
+        self.assertEqual(HEALTHY_REFERENCES[0], "iqm_pre_trigger")
+
+    def test_pooled_sd(self):
+        a, b = np.array([1.0, 2.0, 3.0]), np.array([10.0, 10.0, 13.0, 15.0])
+        expect = np.sqrt((np.sum((a - a.mean()) ** 2) + np.sum((b - b.mean()) ** 2)) / (2 + 3))
+        self.assertAlmostEqual(pooled_sd({"a": a, "b": b}), expect)
+        self.assertAlmostEqual(pooled_sd({"a": a}), np.std(a, ddof=1))
+        self.assertEqual(pooled_sd({"a": a, "b": a + 100}), pooled_sd({"a": a}))  # means do not mix
 
     def _loss(self, degraded, last, half, full):
         return {"degraded": np.array(degraded), "injected_last": np.array(last),
@@ -71,24 +77,53 @@ class MSelectionArithmeticTest(unittest.TestCase):
 
     def test_evaluate_chooses_m(self):
         loss = self._loss([1.0] * 5, [0.9] * 5, [0.3] * 5, [0.25, 0.25, 0.25, 0.25, 0.26])
-        out = evaluate(loss, 0.2, "range", 0.10, 0.10)
+        out = evaluate(loss, 0.2, loss, 0.10, 0.10)
         self.assertIsNone(out["stop"])
         self.assertEqual(out["chosen_m"], "half")
         self.assertAlmostEqual(out["recovery"]["half"], 0.875)
-        self.assertAlmostEqual(out["noise_recovery_units"]["injected_all"], 0.01 / 0.8)
+        self.assertAlmostEqual(out["noise_sd"], pooled_sd(loss))
+        self.assertAlmostEqual(out["noise"], pooled_sd(loss) / 0.8)
+
+    def test_noise_pools_every_series_given(self):
+        loss = self._loss([1.0] * 5, [0.9] * 5, [0.3] * 5, [0.25] * 5)
+        extra = {"shared_offset_mean_degraded": np.array([1.0, 1.0, 1.0, 1.0, 1.5])}
+        out = evaluate(loss, 0.2, {**loss, **extra}, 0.10, 0.10)
+        self.assertAlmostEqual(out["noise_sd"], pooled_sd({**loss, **extra}))
+        self.assertGreater(out["noise_sd"], 0)
+        self.assertEqual(out["noise_series"], sorted({**loss, **extra}))
 
     def test_evaluate_stops_on_noise(self):
-        loss = self._loss([1.0, 1.0, 1.0, 1.0, 1.2], [0.9] * 5, [0.3] * 5, [0.25] * 5)
-        out = evaluate(loss, 0.2, "range", 0.10, 0.10)  # 0.2 / 0.8 = 0.25 recovery units
+        loss = self._loss([1.0, 1.0, 1.0, 1.0, 2.0], [0.9] * 5, [0.3] * 5, [0.25] * 5)
+        out = evaluate(loss, 0.2, loss, 0.10, 0.10)  # pooled SD sqrt(0.8 / 16) = 0.224; / 0.8 = 0.28
         self.assertIsNone(out["chosen_m"])
         self.assertIn("noise", out["stop"])
-        self.assertAlmostEqual(out["noise"], 0.25)
+        self.assertAlmostEqual(out["noise"], pooled_sd(loss) / 0.8)
+        self.assertGreaterEqual(out["noise"], 0.10)
+
+    def test_noise_exactly_at_the_threshold_stops(self):
+        loss = self._loss([1.0] * 5, [0.9] * 5, [0.3] * 5, [0.25] * 5)
+        noise = {"x": np.array([0.0, 0.08])}  # SD = 0.08 / sqrt(2)
+        sd = 0.08 / np.sqrt(2)
+        out = evaluate(loss, 1.0 - sd / 0.10, noise, 0.10, 0.10)  # denominator = sd / 0.10
+        self.assertAlmostEqual(out["noise"], 0.10)
+        self.assertIsNotNone(out["stop"])
+        out = evaluate(loss, 1.0 - sd / 0.0999, noise, 0.10, 0.10)
+        self.assertIsNone(out["stop"])
 
     def test_evaluate_stops_when_trigger_not_above_healthy(self):
         loss = self._loss([0.2] * 5, [0.1] * 5, [0.1] * 5, [0.1] * 5)
-        out = evaluate(loss, 0.3, "std", 0.10, 0.10)
+        out = evaluate(loss, 0.3, loss, 0.10, 0.10)
         self.assertIsNone(out["chosen_m"])
         self.assertIn("undefined", out["stop"])
+        flat = self._loss([0.5] * 5, [0.1] * 5, [0.1] * 5, [0.1] * 5)
+        self.assertIn("undefined", evaluate(flat, 0.5, flat, 0.10, 0.10)["stop"])  # exactly zero
+
+    def test_evaluate_stops_when_gap_is_below_the_noise(self):
+        loss = self._loss([1.0] * 5, [0.9] * 5, [0.3] * 5, [0.25] * 5)
+        noise = {"x": np.array([0.0, 1.0, 0.0, 1.0, 0.0])}  # SD ~ 0.548
+        out = evaluate(loss, 0.6, noise, 10.0, 0.10)  # gap 0.4 < SD, even with a lax noise threshold
+        self.assertIsNone(out["chosen_m"])
+        self.assertIn("below the probe noise", out["stop"])
 
 
 class SharedOffsetTest(unittest.TestCase):
@@ -132,7 +167,7 @@ def _run_exp1(run_dir, overrides):
 
 
 class PositiveControlEndToEndTest(unittest.TestCase):
-    """A tiny dev run whose trigger is forced at check 5 (test-only hook), then the script."""
+    """A tiny dev run whose f*_run is forced at check 5 (checks 4 and 5 fire; test-only hook), then the script."""
 
     @classmethod
     def setUpClass(cls):
@@ -152,71 +187,79 @@ class PositiveControlEndToEndTest(unittest.TestCase):
             p.stop()
         shutil.rmtree(cls.tmp, ignore_errors=True)
 
-    def _script(self, run_dir, out_name, *extra):
+    def _script(self, run_dir, out_name, allow_any=True):
         import positive_control
 
         out = os.path.join(self.tmp, out_name)
-        code = positive_control.run(positive_control_args(run_dir, out, *extra))
+        code = positive_control.run(positive_control_args(run_dir, out, allow_any))
         with open(os.path.join(out, "positive_control.json")) as f:
             return code, json.load(f)
 
     def test_full_report(self):
-        code, report = self._script(self.run_dir, "pc", "last_pre_trigger", "range")
+        code, report = self._script(self.run_dir, "pc")
         self.assertEqual(code, 0 if report["status"] == "m_chosen" else 3)
         self.assertEqual(report["trigger_check"]["check_index"], 5)
         self.assertTrue(report["trigger_check"]["forced"])
         # The degraded critic on the trigger check's own streams reproduces the run's recorded probe exactly.
         self.assertEqual(report["trigger_reproduction_max_abs_diff"], 0.0)
         self.assertEqual(set(report["loss_rounds"]), {"degraded", "injected_last", "injected_half", "injected_all"})
-        self.assertEqual(report["healthy_reference_checks"], [4])
+        # Primary healthy reference: IQM over all pre-trigger checks; the last one is a sensitivity only.
+        self.assertEqual(report["healthy_reference_definition"], "iqm_pre_trigger")
+        self.assertEqual(report["healthy_reference_checks"], [1, 2, 3, 4])
+        pooled = np.concatenate([c["loss_rounds"] for c in report["pre_trigger_checks"]])
+        self.assertAlmostEqual(report["selection"]["l_healthy"], iqm(pooled))
+        self.assertEqual(report["healthy_reference"]["last_pre_trigger"]["checks"], [4])
+        self.assertAlmostEqual(report["selection_sensitivity_last_pre_trigger"]["l_healthy"],
+                               report["pre_trigger_checks"][-1]["loss_iqm"])
         self.assertEqual([c["check_index"] for c in report["pre_trigger_checks"]], [1, 2, 3, 4])
         self.assertEqual(set(report["shared_offset_sensitivity"]), {"degraded", "fresh", "mean"})
         sel = report["selection"]
+        # Noise: pooled SD over every per-round L series the script probed (4 main + 3 shared-offset).
+        series = {**{n: np.array(v) for n, v in report["loss_rounds"].items()},
+                  **{f"shared_offset_{m}_degraded": np.array(v["loss_rounds"])
+                     for m, v in report["shared_offset_sensitivity"].items()}}
+        self.assertEqual(len(sel["noise_series"]), 7)
+        self.assertAlmostEqual(sel["noise_sd"], pooled_sd(series))
         if "recovery" in sel:
             for m in ("last", "half", "all"):
                 self.assertAlmostEqual(sel["recovery"][m], recovery(sel["l_trigger"], sel["l_injected"][m],
                                                                     sel["l_healthy"]))
         if report["status"] == "m_chosen":
             self.assertEqual(report["chosen_m"], select_m(sel["recovery"], 0.10))
+            self.assertLess(sel["noise"], 0.10)
         else:
             self.assertIsNone(report["chosen_m"])
             self.assertTrue(report["stop"])
+        print(f"\n[positive control, tiny forced run] status={report['status']} stop={report['stop']}")
         self.assertTrue(os.path.exists(os.path.join(self.tmp, "pc", "positive_control_curves.npz")))
 
     def test_injection_does_not_change_predictions_before_the_probe(self):
         # D1W8: m = last = half = all = 1 block, so all three injected critics start from the same head.
-        _, report = self._script(self.run_dir, "pc_iqm", "iqm_pre_trigger", "std")
-        self.assertEqual(report["healthy_reference_checks"], [1, 2, 3, 4])
+        _, report = self._script(self.run_dir, "pc_offsets")
         offsets = {n: report["probe"][n]["offset_rounds"] for n in ("degraded", "injected_last")}
         np.testing.assert_allclose(offsets["degraded"], offsets["injected_last"], rtol=0, atol=1e-6)
 
     def test_never_triggered_run_stops(self):
-        code, report = self._script(self.no_fork_dir, "pc_nofork", "last_pre_trigger", "range")
+        code, report = self._script(self.no_fork_dir, "pc_nofork")
         self.assertEqual((code, report["status"], report["chosen_m"]), (3, "stop", None))
         self.assertIn("never triggered", report["stop"])
 
     def test_refuses_wrong_setting(self):
-        import positive_control
-
         with self.assertRaises(SystemExit) as e:  # D1W8 hopper-hop is not D6W1536 dog-run
-            positive_control.run(positive_control_args(self.run_dir, os.path.join(self.tmp, "x"), "last_pre_trigger",
-                                                       "range", allow_any=False))
+            self._script(self.run_dir, "x", allow_any=False)
         self.assertIn("D6W1536", str(e.exception))
 
-    def test_requires_both_pending_definitions(self):
+    def test_cli_needs_no_definition_flags(self):
         import positive_control
 
-        for argv in (["--run_dir", "/a", "--out_dir", "/b", "--noise_statistic", "range"],
-                     ["--run_dir", "/a", "--out_dir", "/b", "--healthy_reference", "last_pre_trigger"]):
-            with self.assertRaises(SystemExit):
-                positive_control.main(argv)
+        with self.assertRaises(SystemExit):
+            positive_control.main(["--run_dir", "/a", "--out_dir", "/b", "--healthy_reference", "last_pre_trigger"])
 
 
-def positive_control_args(run_dir, out_dir, healthy, noise, allow_any=True):
+def positive_control_args(run_dir, out_dir, allow_any=True):
     import argparse
 
-    return argparse.Namespace(run_dir=run_dir, out_dir=out_dir, healthy_reference=healthy, noise_statistic=noise,
-                              allow_any_setting=allow_any)
+    return argparse.Namespace(run_dir=run_dir, out_dir=out_dir, allow_any_setting=allow_any)
 
 
 if __name__ == "__main__":

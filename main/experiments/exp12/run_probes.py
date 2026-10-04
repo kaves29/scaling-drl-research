@@ -38,6 +38,9 @@ class RunProbes:
         if self.forced_check is not None and trainer.cfg.run_role != "dev":
             raise ValueError("testing.force_trigger_check is a test-only hook and requires run_role=dev.")
         self.trigger = trigger_config(trainer.cfg)
+        if self.forced_check is not None and self.forced_check < self.trigger.consecutive_checks:
+            raise ValueError(f"testing.force_trigger_check must be >= trigger.consecutive_checks "
+                             f"({self.trigger.consecutive_checks}): f*_run needs that many firing checks")
         checks = check_steps(int(trainer.cfg.num_interaction_steps), self.cfg.checks)
         if checks[0] <= int(trainer.cfg.buffer.min_length):
             raise ValueError(
@@ -111,7 +114,7 @@ class RunProbes:
             "triggered": triggered(low, tc.null_threshold) and s["valid"],
             "valid": s["valid"],
         }
-        if self.forced_check is not None and k == self.forced_check:
+        if self.forced_check is not None and self.forced_check - tc.consecutive_checks < k <= self.forced_check:
             row["triggered"] = True  # TEST-ONLY hook (testing.force_trigger_check, run_role=dev only)
             row["forced"] = True
         self.records.append(row)

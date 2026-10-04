@@ -69,7 +69,8 @@ def record_metadata(cfg, run_dir: Path, resumed: bool, experiment: str = EXPERIM
     metadata = build_run_metadata(
         omegaconf.OmegaConf.to_container(cfg, resolve=True),
         identity={**vars(identity), "run_key": identity.run_key, "run_role": cfg.run_role},
-        launch={"started_at": datetime.now(timezone.utc).isoformat(), "resumed": resumed},
+        launch={"started_at": datetime.now(timezone.utc).isoformat(), "resumed": resumed,
+                "device": fork.device_info()},
     )
     path = run_dir / RUN_METADATA_FILENAME
     stored = load_run_metadata(path)
@@ -92,6 +93,8 @@ def run(args: dict) -> None:
     state_root = run_dir / "state"
     latest = latest_state_dir(state_root)
     plan = fork.read_fork(run_dir) if fork.is_ready(run_dir) else None
+    if plan is not None:
+        fork.check_same_device(run_dir)  # the control continues on the fork's device model
     enter_control_on_restore = False
     if plan is not None and (latest is None or load_meta(latest)["interaction_step"] < plan["fork_step"]):
         latest = latest_state_dir(fork.fork_dir(run_dir) / "state")  # control restarts from the fork state

@@ -47,7 +47,7 @@ def false_trigger_rate(n_checks=4000, rounds=5, seed=0):
 
 class TriggerTest(unittest.TestCase):
     def test_shipped_config_is_the_current_rule(self):
-        self.assertEqual(TC, TriggerConfig(resamples=10_000, confidence=0.95, consecutive_checks=1,
+        self.assertEqual(TC, TriggerConfig(resamples=10_000, confidence=0.95, consecutive_checks=2,
                                            null_threshold=0.0, eligible_fraction=0.95))
 
     def test_settings_come_from_config(self):
@@ -124,10 +124,17 @@ class TriggerTest(unittest.TestCase):
 
     def test_f_star_first_eligible_check_only(self):
         rec = lambda k, t, valid=True: {"check_index": k, "interaction_step": 100 * k, "triggered": t, "valid": valid}
-        self.assertIsNone(f_star([rec(k, k == 20) for k in range(1, 21)], 20))  # 20/20 is past 95%
-        self.assertEqual(f_star([rec(k, k in (7, 9)) for k in range(1, 21)], 20)["check_index"], 7)
-        self.assertEqual(f_star([rec(k, k == 19) for k in range(1, 21)], 20)["interaction_step"], 1900)
-        self.assertIsNone(f_star([rec(0, True)] + [rec(k, False) for k in range(1, 21)], 20))  # fresh check 0
+        # One firing check (c = 1).
+        self.assertIsNone(f_star([rec(k, k == 20) for k in range(1, 21)], 20, 1))  # 20/20 is past 95%
+        self.assertEqual(f_star([rec(k, k in (7, 9)) for k in range(1, 21)], 20, 1)["check_index"], 7)
+        self.assertEqual(f_star([rec(k, k == 19) for k in range(1, 21)], 20, 1)["interaction_step"], 1900)
+        self.assertIsNone(f_star([rec(0, True)] + [rec(k, False) for k in range(1, 21)], 20, 1))  # fresh check 0
+        # The shipped rule: two consecutive firing checks (c = 2).
+        self.assertIsNone(f_star([rec(k, k in (7, 9)) for k in range(1, 21)], 20))
+        self.assertEqual(f_star([rec(k, k in (7, 8)) for k in range(1, 21)], 20)["check_index"], 8)
+        self.assertEqual(f_star([rec(k, k in (18, 19)) for k in range(1, 21)], 20)["interaction_step"], 1900)
+        self.assertIsNone(f_star([rec(k, k in (19, 20)) for k in range(1, 21)], 20))  # completes past 95%
+        self.assertIsNone(f_star([rec(0, True), rec(1, True)] + [rec(k, False) for k in range(2, 21)], 20))
         self.assertEqual(last_eligible_check(20), 19)
 
 
@@ -289,11 +296,12 @@ class Exp1LedgerEndToEndTest(unittest.TestCase):
         run = runs.iloc[0]
         self.assertEqual(run.status, "complete")
         self.assertEqual(list(checks.check_index), list(range(21)))
-        eligible = checks[(checks.check_index >= 1) & (checks.check_index <= 19) & checks.triggered.astype(bool)]
-        if eligible.empty:
-            self.assertTrue(pd.isna(run.f_star_check))
+        fired = set(checks[(checks.check_index >= 1) & checks.triggered.astype(bool)].check_index)
+        pairs = [k for k in range(2, 20) if {k - 1, k} <= fired]  # shipped rule: 2 consecutive, completing <= 19
+        if pairs:
+            self.assertEqual(run.f_star_check, pairs[0])
         else:
-            self.assertEqual(run.f_star_check, eligible.check_index.min())
+            self.assertTrue(pd.isna(run.f_star_check))
         for _, row in checks[checks.check_index > 0].iterrows():
             low, high = bootstrap_interval([row[f"loss_r{r}"] for r in range(5)], 1, int(row.check_index))
             self.assertAlmostEqual(row.ci_low, low)

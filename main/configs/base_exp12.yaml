@@ -67,7 +67,7 @@ probe:
 trigger:
   resamples: 10_000        # percentile bootstrap of the IQM over the per-round losses
   confidence: 0.95
-  consecutive_checks: 1    # 2 is under consideration (undecided); 1 is the current rule
+  consecutive_checks: 2    # f*_run = the check completing the first run of 2 consecutive firing checks (amendment (l))
   null_threshold: 0.0      # fire when the lower bound > this; 0 = "distinguishable from zero"
   eligible_fraction: 0.95  # f*_run must be at or before 95% of the budget (checks 1..19 of 20)
 
@@ -92,7 +92,7 @@ checks:
   check1_tolerance_eps: 64   # PROPOSED (pending lead approval): |dQ|, |d dQ/da| <= 64 * eps_f32 * scale
 
 testing:
-  force_trigger_check: null  # TEST-ONLY: force the trigger at this check; refused unless run_role=dev
+  force_trigger_check: null  # TEST-ONLY: force f*_run at this check (it and the consecutive_checks - 1 before it fire); run_role=dev only
   stop_after_identity_snapshot: false  # VALIDATION-ONLY: end the job once fork.identity_snapshot_steps is saved; run_role=dev only
 
 positive_control:            # scripts/positive_control.py, amendments (d)-(f)

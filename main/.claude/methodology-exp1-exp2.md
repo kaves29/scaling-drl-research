@@ -315,3 +315,46 @@ from SimBa's configuration.
   - HumanoidBench needs an EGL offscreen context on GPU nodes
     (MUJOCO_GL=egl PYOPENGL_PLATFORM=egl).
   - The HumanoidBench integration is verified on CPU only; it is untested on GPU.
+
+## Amendments from the Phase 4 approval (2026-10-04)
+
+(l) Trigger: two consecutive firing checks. A check fires when the lower bound
+of its 95% percentile bootstrap interval is above 0. f*_run is the check that
+completes the first run of 2 consecutive firing checks (k-1 and k). It must
+itself be at or before 95% of the budget, so the earliest f*_run is check 2
+and the latest is check 19. Config: trigger.consecutive_checks = 2.
+
+(m) Check 1 tolerance. The control arm, and the identity arm used for
+validation, must reproduce the pre-fork critic's Q and dQ/da on the panel bit
+for bit. The injected arm may differ from it by at most 64 float32 eps times
+the pre-injection maximum magnitude, separately for Q and for dQ/da (the
+reverse-mode summation order of dQ/da changes). Check 1 records the observed
+maximum in eps units, the float32 matmul precision in use (configured and
+measured) and the device model. If TF32 matmuls are detected, or any
+deviation exceeds its tolerance, the arm stops before training and the
+project lead decides.
+
+(n) Check 2 is reported as the paired difference P(injected) - P(control) on
+the fork check's own pool, with its IQM and 95% percentile bootstrap interval.
+It passes when the interval lies above 0. It is reported only and never
+excludes a fork.
+Limitation: Check 2's interval, like the trigger's, is a bootstrap over only
+5 probe rounds. With 5 values the bootstrap distribution of the IQM is
+coarse (few distinct values), and percentile intervals from so few
+observations can be too narrow, so the nominal 95% coverage is not
+guaranteed.
+
+(o) Positive control.
+  - Healthy reference: the IQM of the per-round L pooled over all checks
+    before f*_run. The last check before f*_run is reported as a sensitivity
+    only and is never used to choose m.
+  - Probe noise: the pooled SD of the per-round L over every probe evaluation
+    in the positive-control script, divided by L_trigger - L_healthy (recovery
+    units).
+  - Stop and consult (exit 3) if L_trigger - L_healthy is non-positive, if it
+    is below the pooled noise SD, or if the noise is 0.10 or more.
+
+(p) Device model. Both arms of a fork run on the GPU model that produced the
+fork state. The fork records it, and the control (on resume) and the arm jobs
+refuse to run on a different model. The identity-fork validation runs for
+D4W1024 and D6W1536 in each suite on the GPU model the grid will use.
