@@ -115,7 +115,53 @@ Routine engineering choices are listed under "Choices (routine, shown for veto)"
 
 ## 4. Test results
 
-See section 4a (filled in from the Phase 7 run below).
+Phase 7 run, CPU, 2026-10-04: every test module in its own process, three at a time.
+
+- **Full suite:** 375 tests. 374 pass, 1 fails, and 2 are skipped (the
+  HumanoidBench ones; both pass in venv_hb).
+- **Existing tests:** 258, the same set as the Phase 2 baseline; 257 pass.
+- **Pre-existing failure, separated:**
+  `test_angle2a_env_state_determinism_smoke.TestMyosuiteDeterminism.test_myo_baoding_p1`.
+  It fails identically before any Exp 1/2 change.
+- **No new failures.** Angle 1, 2A, 2B and 2C behaviour is unchanged:
+  - all their tests pass;
+  - Exp 1 with probes off reproduces angle_1's parameters, optimizer state,
+    RNG and metrics bit for bit (Angle1ParityTest). The only difference is
+    the three added diagnostic columns.
+- **HumanoidBench in venv_hb:** env restore across processes, the restore
+  break test, discount and horizon, and resume exactness (8 tests); the
+  Reach evaluation-seeding test; the tiny pipeline. All pass.
+
+| Exp 1/2 module | Tests | What it proves |
+|---|---|---|
+| test_exp12_foundations | 12 | exact env restore mid-episode for all 13 envs in a new process (HumanoidBench in venv_hb); each restored component is necessary; MyoSuite seeding; bit-exact resume per suite; kill-and-resume of exp1; SimBa warm-up; γ per suite; PenTwirl's registered 50-step limit; truncation bootstrapped, termination not; Angle 1 parity |
+| test_exp12_probe | 9 | known-answer scores; current/fresh paired on identical inputs, targets and minibatches; per-critic offset; L sign; invalid checks; probes on = probes off for training |
+| test_exp12_phase3 | 19 | trigger settings from config; IQM bootstrap; lower bound > 0; edge cases (ties, zeros, NaN); synthetic null rate; c = 2 consecutive checks and eligibility to check 19; ledger round trip; dev excluded; rliable analysis on known effects, reproducible |
+| test_exp12_injection | 8 | Q bit-identical at injection, dQ/da within tolerance; parameter counts; head boundary; new = copy; frozen heads bit-identical over 50 steps incl. weight decay; optimizer state rules; gradients reach the trunk; target and Polyak |
+| test_exp12_fork | 23 (1 skipped here, passes in venv_hb) | fork plan and files; identity arm bit-identical to the control; Check 1 (bit-exact control and identity, 64 eps injected, TF32 stops, dQ/da compared); Check 2 paired difference; arm records; frozen head unchanged; fork invisible to the Exp 1 trajectory; refusals (config, m, missing fork, device model); post-fork evaluation isolation and seeding; identity-validation procedure and compare script; HumanoidBench Reach seeding; **kill matrix**: before a check, mid-interval, inside a routine save (previous checkpoint intact), inside the fork write, right after the fork, mid-post-fork control and arm, all bit-identical after resume |
+| test_exp12_positive_control | 15 | recovery toward the fresh critic; m rule; pooled SD; stop rules (L_trigger ≤ 0, noise ≥ 0.10, at the boundary); shared offset modes; end to end on a forced dev run (trigger probe reproduced exactly; noise from the four real-settings series only) |
+| test_exp12_diagnostics | 8 | KL equals the closed form, direction KL(π_t ‖ π_{t−1}); saturation on the sampled actions; gnorm population SD; reference batch from a dedicated stream per window; update bit-identical with diagnostics on or off; metrics present every window |
+| test_exp12_exp2_analysis | 11 | bands (known answers, shared resamples, reproducible, IQM default); paired differences; incomplete forks and dev runs excluded; Check-2-success secondary; normalize hook per environment |
+| test_exp12_manifest | 9 | 195 jobs, unique absolute paths, budgets and composed configs; DONE/resume; arm jobs per fork and device, config equal to the parent except the arm keys; no overlap; launcher dry run; preflight PASS and FAIL |
+| test_exp12_pipeline | 3 (1 skipped here, passes in venv_hb) | tiny end-to-end per suite (DMC, MyoSuite, HumanoidBench): 20 checks, forced trigger, fork, both arms, Checks 1–2, post-fork probes and evaluations, both ledgers, both analysis scripts |
+| **Total Exp 1/2** | **117** | |
+
+**Break-and-restore evidence** (`python tests/exp12_break_checks.py`): 55
+mutations. Each one makes its named test fail by an assertion (never by a
+crash), and the test passes again once restored. They cover: probe pairing,
+offset, baseline, sign and validity; trigger tail, strictness, eligibility,
+statistic and consecutive rule; dev exclusion; SimBa warm-up; every
+injection invariant; the m rule, recovery and noise; the shared offset;
+Check 1 (dQ/da, bit-exact control, TF32, device); the fork plan; post-fork
+evaluation isolation; the diagnostics; the Exp 2 analysis; the manifests;
+and truncation (critic target, final observation, PenTwirl limit). Two
+further HumanoidBench Reach mutations were run by hand in venv_hb: both
+fail the test, and the restored code passes.
+
+**NEEDS CUDA VERIFICATION:** every test above on the Linux + CUDA stack, with
+and without deterministic ops; the identity-fork gate per architecture ×
+suite; Check 1 tolerances and TF32 on the grid's GPU; all GPU performance
+numbers in section 5.
 
 ## 5. Measured numbers
 
@@ -176,7 +222,8 @@ See section 4a (filled in from the Phase 7 run below).
 | 4 | `f9002e0` fork, injection, Checks, identity fork, positive control; `57215f8` Phase 4 decisions |
 | 5 | `f4e3972` actor diagnostics and Exp 2 analysis |
 | 6 | `e79a9fa` manifests, launch plumbing, profiling |
-| 7 | `6063411` Phase 5–6 decisions, per-suite pipeline and kill matrix; see the final commit for this summary |
+| 7 | `6063411` Phase 5–6 decisions, per-suite pipeline and kill matrix |
+| 8 | `2b9ccc3` summary draft; the final commit carries the Phase 7 results |
 
 ## 8. What to run next (all on the CUDA stack, from `main/`)
 
