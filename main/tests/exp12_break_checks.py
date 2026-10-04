@@ -304,6 +304,38 @@ MUTATIONS += [
 ]
 
 
+import generate_manifest  # noqa: E402
+
+MAN = "tests.test_exp12_manifest.Exp12GridTest"
+MUTATIONS += [
+    ("manifest: one fixed save interval instead of one save per probe check", generate_manifest, "add_exp12_grid",
+     source_mutation(generate_manifest, "add_exp12_grid",
+                     "interval = EXP12_BUDGETS[env_group] // EXP12_ACTION_REPEAT // EXP12_CHECKS",
+                     "interval = 12501"),
+     f"{MAN}.test_every_job_composes_with_the_methodology_budget"),
+    ("manifest: arm jobs for the default critic too", generate_manifest, "add_exp12_grid",
+     source_mutation(generate_manifest, "add_exp12_grid", "if arch[0] not in EXP12_FORKING or not",
+                     "if not"),
+     f"{MAN}.test_arm_jobs_only_for_completed_forks_grouped_by_device"),
+    ("manifest: arm jobs not grouped by the fork's device model", generate_manifest, "add_exp12_grid",
+     source_mutation(generate_manifest, "add_exp12_grid", 'f"exp2_arms_{_device_slug(device)}.txt"',
+                     '"exp2_arms.txt"'),
+     f"{MAN}.test_arm_jobs_only_for_completed_forks_grouped_by_device"),
+    ("manifest: DONE runs queued again", generate_manifest, "add_exp12_grid",
+     source_mutation(generate_manifest, "add_exp12_grid", '                if state != "done":\n',
+                     "                if True:\n"),
+     f"{MAN}.test_done_and_resume_classification"),
+    ("manifest: relative --ckpt-root accepted", generate_manifest, "main",
+     source_mutation(generate_manifest, "main", 'ckpt_root = require_absolute(args.ckpt_root or "", "--ckpt-root")',
+                     "ckpt_root = os.path.abspath(args.ckpt_root)"),
+     f"{MAN}.test_cli_writes_the_manifests"),
+    ("manifest: arm config differs from its parent's (results_root dropped)", generate_manifest, "add_exp12_grid",
+     source_mutation(generate_manifest, "add_exp12_grid", "arm_overrides = overrides + [",
+                     "arm_overrides = overrides[:-1] + ["),
+     f"{MAN}.test_arm_jobs_only_for_completed_forks_grouped_by_device"),
+]
+
+
 def _run(test_id):
     suite = unittest.defaultTestLoader.loadTestsFromName(test_id)
     result = unittest.TextTestRunner(stream=open("/dev/null", "w"), verbosity=0).run(suite)

@@ -945,3 +945,62 @@ it is reported as specified.
   TimeLimit(50) inside our TimeLimit(100). Amendment (i) noted only KeyTurn's
   truncation. Should
   this go into the limitations, or should something change?
+
+## Phase 6 (2026-10-04): manifests, launch plumbing, compute profiling
+
+### What was built
+- `generate_manifest.py --grid exp12 --ckpt-root ABS --results-root ABS
+  [--injection-m m]`. The Angle 1 default is unchanged.
+  - `exp12_exp1_jobs.txt`: the 195 Exp 1 jobs (3 critics × 13 envs × seeds
+    1–5), absolute checkpoint and log paths.
+  - `exp2_arms_<device>.txt`: one injected-arm job per completed fork of a
+    D4W1024/D6W1536 run, grouped by the GPU model recorded in fork.json.
+    Arm jobs are written only once `--injection-m` is given, i.e. after m is
+    frozen; until then they are listed as waiting.
+  - Re-running is safe: DONE runs are skipped, and every other started run
+    resumes.
+- `scripts/claim_launcher.py --phase-files ...`: optional. The default (the
+  Angle 1 phase files) is unchanged.
+- `scripts/preflight_checkpoint_check.py --experiment exp1 [--with-fork]`:
+  a dev-role smoke run (tiny probe settings, 4,000 env steps). It must leave
+  a complete state and a ledger. With --with-fork it must also fork, run the
+  injected arm to DONE, and pass Check 1 on that device.
+- `scripts/profile_exp12.py`, new options:
+  - `--diagnostics_off`: the I1–I4 overhead;
+  - `--fork_timing`: complete-state save and restore with the buffer at a
+    95%-of-budget fork;
+  - `--eval_cost`: the F1 cost;
+  - also `recommended_jobs_per_gpu_upper_bound`.
+- Tests (`tests/test_exp12_manifest.py`): the 195-run grid with unique,
+  absolute paths, every job's composed config and budget, DONE/resume
+  classification, arm jobs (forks only, per device, config identical to
+  the parent except the 3 arm keys), no checkpoint overlap, the claim
+  launcher dry run, and the preflight PASS and FAIL cases.
+
+### Choices (routine, shown for veto)
+- Checkpoint interval = N/20 interaction steps, one save right after each
+  probe check: 12,500 for swimmer and hopper, 25,000 for 1M-step tasks,
+  50,000 for HumanoidBench. A crash loses at most 5% of a run.
+  `checkpoint_start_frac 0.0`.
+- Layout: `<ckpt-root>/exp1/<arch>/<env>/seed_<s>`,
+  `<ckpt-root>/exp2_arm/<arch>/<env>/seed_<s>/injected`, and
+  `<ckpt-root>/logs/`.
+- The scaled Exp 1 jobs must stay on the grid's GPU model: after their fork
+  they are the control arm, and a control resumed on another model refuses
+  to run (amendment (p)).
+
+### Measured here (CPU only; NEEDS CUDA VERIFICATION for the GPU numbers)
+- Complete state at fork size, D6W1536 on dog-run: 2.62 GB with a
+  475,000-transition buffer; save 17.4 s, restore 18.4 s (local disk).
+  D2W512 on hopper-hop: 99 MB, 1.0 s / 0.8 s.
+- One post-fork evaluation (10 episodes, actor D1W128, CPU):
+  - dog-run 41.1 s, i.e. 0.30 h per arm for 26 evaluations;
+  - hopper-hop 7.3 s;
+  - myo-key-turn 2.8 s and myo-pen-twirl 1.7 s;
+  - h1-run-v0 3.4 s.
+  The untrained policy ends MyoSuite and HumanoidBench episodes early, so
+  those three are lower bounds; full-length h1-run episodes would take about
+  49 s. As a share of the arm's training time it needs the GPU it/s from
+  section 4.
+- Diagnostics overhead on CPU, D2W512, 60 steps: within noise (−1.2%). The
+  real number comes from section 4.

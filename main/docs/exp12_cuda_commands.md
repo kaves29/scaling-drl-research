@@ -60,20 +60,37 @@ python scripts/probe_fresh_checks.py --mode null --env dog-run --env_group dmc_h
   --archs D2W512 D4W1024 D6W1536 --null_pairs 100 --out_dir $OUT/3_null_dog_run
 ```
 
-## 4. Probe overhead, training throughput and peak memory per critic size
-dog-run (1M env steps; also times angle_1 against exp1 with probes off), and
-hopper-hop (500k env steps, the worst case for probe overhead as a share of the
-run):
+## 4. Compute profile per critic size (probe, diagnostics, fork, post-fork evaluations)
+- dog-run (1M env steps) also times angle_1 against exp1 with probes off.
+- hopper-hop (500k env steps) is the worst case for probe overhead as a
+  share of the run.
+- myo-key-turn and h1-run-v0 give the post-fork evaluation cost for their
+  suites.
 ```bash
 python scripts/profile_exp12.py --env dog-run --env_group dmc_hard \
   --archs D2W512 D4W1024 D6W1536 --train_steps 3000 --probe_repeats 2 \
-  --angle1 --compare_steps 8000 --out $OUT/4_profile_dog_run.json
+  --angle1 --compare_steps 8000 --diagnostics_off --fork_timing --eval_cost --out $OUT/4_profile_dog_run.json
 python scripts/profile_exp12.py --env hopper-hop --env_group dmc_medium \
-  --archs D2W512 D4W1024 D6W1536 --train_steps 3000 --probe_repeats 2 --out $OUT/4_profile_hopper_hop.json
+  --archs D2W512 D4W1024 D6W1536 --train_steps 3000 --probe_repeats 2 --eval_cost --out $OUT/4_profile_hopper_hop.json
+python scripts/profile_exp12.py --env myo-key-turn --env_group myosuite_simba \
+  --archs D6W1536 --train_steps 3000 --probe_repeats 1 --eval_cost --out $OUT/4_profile_myo_key_turn.json
+python scripts/profile_exp12.py --env h1-run-v0 --env_group humanoid_bench \
+  --archs D6W1536 --train_steps 3000 --probe_repeats 1 --eval_cost --out $OUT/4_profile_h1_run.json
 ```
-The key fields are `train_it_per_s_probes_off`, `probe_check_s`,
-`probe_overhead_pct_of_wallclock`, `peak_device_bytes` (per process; the
-recommended concurrent jobs per GPU come from it) and `ratio_exp1_over_angle1`.
+Key fields:
+- `train_it_per_s_probes_off`, `probe_check_s`, `probe_overhead_pct_of_wallclock`
+- `diagnostics_overhead_pct`: training it/s cost of the I1–I4 diagnostics
+- `fork_save_s`, `fork_restore_s`, `fork_state_bytes`: complete state with
+  the buffer at a 95%-of-budget fork
+- `post_fork_eval_s`, `post_fork_eval_overhead_pct`: the F1 cost of 26
+  evaluations against the arm's 25%-of-budget training
+- `peak_device_bytes` and `recommended_jobs_per_gpu_upper_bound`: per
+  process; set `XLA_PYTHON_CLIENT_PREALLOCATE=false` when running jobs
+  concurrently
+- `ratio_exp1_over_angle1`
+
+The probe rule (stop and ask if the largest critic's overhead exceeds about
+5%) applies to these numbers.
 
 ## 5. Identity-fork gate (D2): per forking architecture × suite, before any Exp 1 grid launch
 Run this on the GPU model the grid will use (amendment (p)). Only D4W1024 and
@@ -133,3 +150,34 @@ python scripts/positive_control.py --run_dir $PC/dev_run --out_dir $PC/result 2>
 ```
 The chosen m is not applied automatically. You freeze it by setting
 `injection.m` for the Exp 2 injected arms.
+
+## 7. Preflight on the grid's GPU model (after sections 1-6, before the grid)
+One smoke run per critic size on the node type the grid will use (tiny probe
+settings, 4,000 env steps). The forking sizes also fork, run the injected arm
+and require Check 1 to pass on that device.
+```bash
+for ARCH in "2 512" "4 1024" "6 1536"; do set -- $ARCH
+  FORK=$([ "$1" = 2 ] && echo "" || echo "--with-fork")
+  python scripts/preflight_checkpoint_check.py --experiment exp1 $FORK \
+    --override critic_num_blocks=$1 --override critic_hidden_dim=$2 \
+    --override env_name=dog-run --override env=dmc_hard --override seed=999 \
+    --checkpoint_dir $OUT/7_preflight_D$1 2>&1 | tee $OUT/7_preflight_D$1.log
+done
+```
+
+## 8. The grid (NOT run by me; for when you decide to launch)
+```bash
+GRID=/abs/path/exp12_grid; RESULTS=/abs/path/exp12_results
+python generate_manifest.py --grid exp12 --ckpt-root $GRID --results-root $RESULTS   # 195 Exp 1 jobs
+python scripts/claim_launcher.py --concurrency <from section 4> --num-gpus <n> --phase-files exp12_exp1_jobs.txt
+# once the positive control froze m, and as forks complete; on the GPU model each file is named after:
+python generate_manifest.py --grid exp12 --ckpt-root $GRID --results-root $RESULTS --injection-m <m>
+python scripts/check_manifest_overlap.py exp12_exp1_jobs.txt exp2_arms_<device>.txt   # must print OK
+python scripts/claim_launcher.py --concurrency <n> --num-gpus <n> --phase-files exp2_arms_<device>.txt
+```
+- Re-running generate_manifest.py is safe. Runs with DONE are skipped, and
+  unfinished ones resume: from state/LATEST, from the saved fork state, or
+  from scratch before their first save.
+- Scaled runs (D4W1024, D6W1536) that fork continue as the control on their
+  device model. A control resumed on another model refuses to run, so keep
+  every D4/D6 Exp 1 job on the grid's GPU model.

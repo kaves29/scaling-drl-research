@@ -20,6 +20,17 @@ the project's conda env activated):
         --override updates_per_interaction_step=5 \\
         --override env_name=dog-run --override env=dmc_hard \\
         --override seed=999 --override project_name=EchoCritic-preflight-test
+
+Experiments 1 and 2 (`--experiment exp1`): a dev-role smoke run of the given
+architecture/environment with SMOKE_OVERRIDES_EXP12 (4,000 env steps, tiny probe
+settings so 20 checks fit; plumbing only, not the real probe cost). PASS needs a
+complete state under state/LATEST and the run's ledger. With --with-fork, f*_run is
+forced at check 2 (test hook, dev only), the run must fork, and the injected arm
+(exp2_arm) must then complete with Check 1 passing on this device:
+
+    python scripts/preflight_checkpoint_check.py --experiment exp1 --with-fork \\
+        --override critic_num_blocks=6 --override critic_hidden_dim=1536 \\
+        --override env_name=dog-run --override env=dmc_hard --override seed=999
 """
 import argparse
 import os
@@ -27,6 +38,12 @@ import subprocess
 import sys
 import tempfile
 import time
+
+SMOKE_OVERRIDES_EXP12 = [
+    "run_role=dev", "num_env_steps=4000", "buffer.min_length=50",
+    "probe.steps=10", "probe.pool_size=256", "probe.batch_size=32", "probe.eval_chunk=256",
+    "fork.eval_episodes=1",
+]
 
 
 def build_parser():
@@ -70,7 +87,69 @@ def build_parser():
         default=None,
         help="Absolute dir to checkpoint into. Defaults to a fresh tempdir (auto-created, absolute).",
     )
+    parser.add_argument("--with-fork", action="store_true",
+                        help="exp1 only: force a fork and run the injected arm to completion.")
+    parser.add_argument("--injection-m", default="last", help="exp1 --with-fork: m for the smoke arm.")
     return parser
+
+
+def _run(cmd, repo_root, log_path, timeout):
+    with open(log_path, "w") as logf:
+        proc = subprocess.Popen(cmd, cwd=repo_root, stdout=logf, stderr=subprocess.STDOUT)
+        try:
+            return proc.wait(timeout=timeout), False
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            proc.wait()
+            return None, True
+
+
+def exp12_preflight(args, checkpoint_dir, repo_root):
+    """Exp 1/2 smoke run (and optionally fork + injected arm); returns the list of failures."""
+    import json
+    from pathlib import Path
+
+    run_dir, arm_dir = Path(checkpoint_dir) / "run", Path(checkpoint_dir) / "arm_injected"
+    results = Path(checkpoint_dir) / "results"
+    overrides = SMOKE_OVERRIDES_EXP12 + list(args.overrides)
+    overrides.append(f"results_root={results}")
+    if args.with_fork:
+        overrides.append("testing.force_trigger_check=2")
+    base = [sys.executable, "-u", "run.py", "--config_name", "base_exp12"]
+    flags = ["--checkpoint_interval", str(args.checkpoint_interval), "--checkpoint_start_frac", "0.0"]
+    ov = [x for o in overrides for x in ("--overrides", o)]
+    failures = []
+    rc, timed_out = _run(base + ["--experiment", "exp1"] + ov + ["--checkpoint_dir", str(run_dir)] + flags,
+                         repo_root, run_dir.parent / "preflight_exp1.log", args.timeout)
+    latest = run_dir / "state" / "LATEST"
+    print(f"[preflight] exp1 returncode = {rc}, timed_out = {timed_out}")
+    if rc != 0 or timed_out:
+        failures.append(f"exp1 exited with {rc} (timed out: {timed_out}); see {run_dir.parent / 'preflight_exp1.log'}")
+    if not latest.exists() or not (run_dir / "state" / latest.read_text().strip() / "meta.pkl").exists():
+        failures.append(f"no complete state under {run_dir / 'state'}")
+    if not list((results / "exp12" / "exp1" / "runs").glob("*/run.csv")):
+        failures.append(f"no Exp 1 ledger under {results}")
+    if args.with_fork and not failures:
+        if not (run_dir / "fork" / "FORK_READY").exists():
+            failures.append("the run did not fork (is the architecture in fork.architectures?)")
+        else:
+            arm = ov + ["--overrides", f"fork.source={run_dir}", "--overrides", "fork.arm=injected",
+                        "--overrides", f"injection.m={args.injection_m}"]
+            rc, timed_out = _run(base + ["--experiment", "exp2_arm"] + arm + ["--checkpoint_dir", str(arm_dir)] + flags,
+                                 repo_root, run_dir.parent / "preflight_exp2_arm.log", args.timeout)
+            print(f"[preflight] exp2_arm returncode = {rc}, timed_out = {timed_out}")
+            check1 = list((results / "exp12" / "exp2").glob("*/check1_injected.json"))
+            if rc != 0 or timed_out or not (arm_dir / "DONE").exists():
+                failures.append(f"exp2_arm did not complete; see {run_dir.parent / 'preflight_exp2_arm.log'}")
+            if not check1:
+                failures.append("no check1_injected.json")
+            else:
+                c1 = json.loads(check1[0].read_text())
+                print(f"[preflight] Check 1: pass={c1['pass']} max_eps_units={c1['max_eps_units']:.3g} "
+                      f"tf32_detected={c1['tf32_detected']} device={c1['precision']['device_kind']}")
+                if not c1["pass"]:
+                    failures.append("Check 1 failed (see check1_injected.json)")
+    return failures
 
 
 def main():
@@ -84,6 +163,12 @@ def main():
 
     log_path = os.path.join(checkpoint_dir, "preflight_run.log")
     repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+    if args.experiment == "exp1":
+        print(f"[preflight] Exp 1/2 smoke run in {checkpoint_dir}")
+        failures = exp12_preflight(args, checkpoint_dir, repo_root)
+        print("\n=== PASS ===" if not failures else "\n=== FAIL ===\n" + "\n".join(failures))
+        return 0 if not failures else 1
 
     cmd = [
         sys.executable, "-u", "run.py",

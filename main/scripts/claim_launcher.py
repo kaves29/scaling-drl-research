@@ -158,13 +158,14 @@ def _log(log_path: Path, slot: int, msg: str) -> None:
             f.write(f"{time.time():.6f} [slot{slot}] {msg}\n")
 
 
-def _worker(slot, num_gpus, dry_run, my_job_id, my_host, repo_root, log_path, deadline=None):
+def _worker(slot, num_gpus, dry_run, my_job_id, my_host, repo_root, log_path, deadline=None, phase_files=None):
     gpu = slot % num_gpus
-    for phase_idx, phase_file in enumerate(PHASE_FILES):
+    phase_files = PHASE_FILES if phase_files is None else phase_files
+    for phase_idx, phase_file in enumerate(phase_files):
         if deadline is not None and time.time() > deadline:
             _log(log_path, slot, "max-seconds reached (test mode) - stopping")
             return
-        for prior in PHASE_FILES[:phase_idx]:
+        for prior in phase_files[:phase_idx]:
             while not _phase_fully_done(prior, repo_root):
                 _log(log_path, slot, f"waiting on {prior} to finish (elsewhere) before starting {phase_file}")
                 time.sleep(POLL_INTERVAL_SECONDS)
@@ -227,6 +228,12 @@ def main(argv=None):
         "Real launches never set this - dry-run mode otherwise has no natural end, "
         "since nothing it does ever writes a DONE marker.",
     )
+    parser.add_argument(
+        "--phase-files", nargs="+", default=PHASE_FILES,
+        help="Manifests run in order, each only after every job of the previous ones is DONE "
+        "(default: the Angle 1 phase files). Exp 1/2: exp12_exp1_jobs.txt, then, on the GPU model "
+        "that produced the forks, exp2_arms_<device>.txt.",
+    )
     args = parser.parse_args(argv)
 
     repo_root = Path(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -239,7 +246,8 @@ def main(argv=None):
     print(f"[claim_launcher] slurm_job_id={my_job_id} hostname={my_host} log={log_path}")
 
     threads = [
-        threading.Thread(target=_worker, args=(slot, args.num_gpus, args.dry_run, my_job_id, my_host, repo_root, log_path, deadline))
+        threading.Thread(target=_worker, args=(slot, args.num_gpus, args.dry_run, my_job_id, my_host, repo_root, log_path, deadline,
+                                               args.phase_files))
         for slot in range(args.concurrency)
     ]
     for t in threads:
