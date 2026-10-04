@@ -564,3 +564,26 @@ mujoco 3.6.0. STOPPED; see Q-H1b.
   memory cgroup after 126 tests, all passing. One process reached 13.8 GB while
   running concurrently with the Exp 1/2 tests. It will be re-run alone, one
   module per process.
+
+## Phase 2 gate evidence (2026-10-04, CPU only)
+
+- Existing suite, re-run alone with one module per process: 258 tests, 257 OK.
+  The single failure is the known pre-existing
+  `test_angle2a_env_state_determinism_smoke.TestMyosuiteDeterminism.test_myo_baoding_p1`.
+  No new failures.
+- Exp 1/2 tests: 7 Phase 1 and 9 Phase 2 tests pass. The break checks
+  (`tests/exp12_break_checks.py`) give 6 out of 6 mutations detected and
+  passing again once restored.
+- Tiny-run demo: hopper-hop, critic D1W64, 20k interaction steps, real probe
+  settings (5 rounds × 1000 steps, pool 25,600). All 21 probes ran, and one check
+  took a median of 17 s on CPU.
+  - Finding for the lead (no change made): by check 20 both critics' probe
+    losses plateau near b ≈ 0.5, so P ≈ 0.008–0.009. The probe's dynamic range
+    is compressed for this small critic. Its range at the real critic sizes must
+    be checked on CUDA.
+  - L stayed negative at every check (current more plastic than fresh), so the
+    trigger would never have fired in this run.
+- Profiler (CPU, D2W512, humanoid-run): 4.4 training it/s, 413 s per probe
+  check, projected probe overhead 7.1% of wall-clock over a 500k-step run, and
+  exp1/angle_1 wall-time ratio 0.96 with probes off. All of these NEED CUDA
+  numbers; the CPU ratio is not representative.
