@@ -303,3 +303,15 @@ True, Other Envs: False"; configs/env/hb_locomotion.yaml sets episodic: true,
 and sac_simba.yaml sets critic_use_cdq: ${env.episodic}). The Methodology's
 single Q critic is used everywhere. Limitation: on HumanoidBench this departs
 from SimBa's configuration.
+
+## Amendments from the Phase 3 approval (2026-10-04)
+
+(k) HumanoidBench limitations (h1-reach-v0, h1-run-v0):
+  - Physics runs on mujoco 3.6.0, the repo's pinned version shared with DMC and
+    MyoSuite, rather than HumanoidBench's pinned 3.1.6. Results are not
+    bit-comparable to SimBa's HumanoidBench numbers.
+  - SimBa's released code lists the with-hands `h1hand-*` tasks, while its
+    paper's Table 5 dimensions (action dim 19) match the no-hands H1 used here.
+  - HumanoidBench needs an EGL offscreen context on GPU nodes
+    (MUJOCO_GL=egl PYOPENGL_PLATFORM=egl).
+  - The HumanoidBench integration is verified on CPU only; it is untested on GPU.

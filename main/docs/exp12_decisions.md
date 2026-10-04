@@ -679,3 +679,37 @@ mujoco 3.6.0. STOPPED; see Q-H1b.
   (arch 7.2.0, statsmodels 0.15.0, seaborn 0.13.2, patsy 1.0.3, formulaic 1.2.2,
   interface_meta 2.0.1, narwhals 2.26.0). No existing pin changes, and
   `pip check` is clean.
+
+## Pre-specified rules for the CUDA calibration checks (logged 2026-10-04, BEFORE any CUDA result exists)
+
+Decided by the project lead with the Phase 3 approval. This entry is committed
+before any range, null or profile result exists, and must not be edited after
+results arrive. Later changes are appended as new, dated entries.
+
+- RANGE rule (`scripts/probe_fresh_checks.py --mode range`, real settings,
+  pool 25,600). PASS if, at all three critic sizes (D2W512, D4W1024, D6W1536),
+  the fresh critic's score P lies between 10% and 90% of the target baseline b,
+  i.e. 0.1·b ≤ P ≤ 0.9·b, using the IQM over the 5 rounds of P and of b. The
+  round-to-round spread (std and range of P over the 5 rounds) is always
+  reported. The script prints the PASS/FAIL verdict per size.
+- RANGE fallback ladder if the rule fails. Step 1 is a smaller probe pool (the
+  range run already reports 6,400 and 1,600). Step 2 is more probe steps. Each
+  step is proposed to the lead, not applied. Anything else, such as a different
+  learning rate or target, needs asking first.
+- NULL rule (`--mode null`, fresh-pair null, at least 100 pairs per size). If the
+  per-check fire rate on fresh pairs exceeds 5% at any size, the lead will
+  decide whether to adopt a null-calibrated threshold: the 95th percentile of L
+  between two independent fresh critics at that size. Claude does NOT adopt it.
+  The script only reports the rate and the would-be threshold, and saves every
+  per-round loss, IQM and interval so alternative rules can be evaluated
+  offline.
+- CONSECUTIVE checks (require 2 consecutive firing checks): UNDECIDED. The
+  lead's message carried the unresolved placeholder "[YES/NO]". The current
+  rule (one firing check) stays until the lead confirms. The count is a config
+  value (`trigger.consecutive_checks`, currently 1). If it is ever set to c > 1,
+  f*_run is the check that completes the first run of c consecutive firing
+  checks, and that check must itself be at or before 95% of the budget.
+- All trigger settings are config values in `configs/base_exp12.yaml` under
+  `trigger:`, with the current values unchanged: resamples 10,000, confidence
+  0.95, consecutive_checks 1, null_threshold 0.0 (fire when the lower bound is
+  > null_threshold) and eligible_fraction 0.95.
