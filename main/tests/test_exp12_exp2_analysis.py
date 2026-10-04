@@ -36,7 +36,7 @@ def _write_run(root, arch, env, seed, role="confirmatory", check2_pass=True, com
                      fork_step=100, metrics_rows=metrics, action_repeat=2)
     key = ident["run_key"]
     exp2_ledger.write_json(key, "fork.json", PLAN, root)
-    exp2_ledger.write_json(key, "check1_injected.json", {"pass": True, "max_eps_units": 1.5, "tf32_detected": False},
+    exp2_ledger.write_json(key, "check1_injected.json", {"pass": True, "max_eps_units": 1.5},
                            root)
     exp2_ledger.write_json(key, "check2.json", {"pass": check2_pass, "paired_difference_iqm": 0.1,
                                                 "paired_difference_ci_low": 0.05 if check2_pass else -0.1,

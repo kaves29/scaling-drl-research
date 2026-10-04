@@ -1066,6 +1066,8 @@ Working rules from this message:
 
 ## Matmul precision (decided 2026-10-04): FP32 everywhere, no TF32 (amendment (v))
 
+**SUPERSEDED the same day by the TF32 decision below.**
+
 - **The gap:** the Methodology says nothing about matmul precision, and the
   code never sets `jax_default_matmul_precision`. On an A100, JAX's backend
   default is believed to be TF32 for float32 matmuls (step A0 measures it),
@@ -1081,3 +1083,105 @@ Working rules from this message:
   no such check, so the variable must be exported for every job.
 - **Estimated cost:** ~3× slower training and probes for D6W1536 than TF32
   (~15 vs ~50 it/s on dog-run; not yet measured on a GPU).
+
+## Matmul precision revised (2026-10-04): TF32 everywhere possible (amendment (v) rewritten)
+
+Your instruction replaces "FP32 everywhere". Implemented as follows.
+
+- **The setting.** `experiments/exp12/precision.py:set_matmul_precision()`
+  sets `jax_default_matmul_precision = "tensorfloat32"` when
+  `jax.default_backend() == "gpu"`, and does nothing otherwise. It is called
+  first in `exp1.run`, `exp2_arm.run`, and at import in
+  `scripts/probe_fresh_checks.py`, `scripts/profile_exp12.py` and
+  `scripts/positive_control.py` (right after `configure_hardware_env()`).
+  The preflight goes through `exp1.run`/`exp2_arm.run`.
+- **Why "tensorfloat32" and not "high" or the default.** In jax 0.4.34,
+  `"tensorfloat32"` is an alias of `Precision.HIGH` (the two are identical).
+  The `Precision` docstring says DEFAULT and HIGH both use "tensorfloat32
+  where available, otherwise float32" on GPU, HIGHEST uses float32, and
+  precision "has no impact on CPU backends". Leaving the default would
+  probably also give TF32, but whether DEFAULT is TF32 depends on the
+  XLA/cuBLAS defaults of the installed jaxlib. "tensorfloat32" is the one
+  value whose meaning is TF32 by name, so it is set explicitly. Verified on
+  CPU: the 17 dots of Check 1's Q-and-gradient function lower to
+  `precision = [HIGH, HIGH]` under the setting and to `[HIGHEST, HIGHEST]`
+  inside Check 1's context. Whether HIGH really runs TF32 kernels on the A100 is
+  **NEEDS CUDA VERIFICATION** (A0). If A0 shows FP32-level error at the run
+  setting, I will send it to you and propose `"default"`.
+- **What it covers.** Every float32 dot and convolution in Exp 1/2 jobs:
+  training, action selection, probes, post-fork evaluation and diagnostics.
+  Dtypes stay float32. There is no bf16 or fp16, `mixed_precision: false` in
+  both agent configs, and x64 is off.
+- **Check 1 and A0.** `fork.panel_q_and_grad` runs inside
+  `jax.default_matmul_precision("highest")` (`fork.CHECK1_PRECISION`).
+  Check 1's tolerances are unchanged (0 for control and identity, 64 eps for
+  the injected arm). The TF32 stop and the `precision` argument of `check1`
+  are removed, and `check1_<arm>.json` records `matmul_precision: highest`.
+  The A0 command in the CUDA sheet runs `matmul_precision_report()` at the
+  run setting and inside a "highest" context. Verified on CPU: the report
+  records `tensorfloat32` and `highest` respectively (errors are equal on
+  CPU, about 6e-7, as documented).
+- **Metadata.** `run_metadata.json` launches now carry
+  `runtime = {jax, jaxlib, platform, device_kind, backend_platform_version
+  (the CUDA version on GPU), jax_cuda12_plugin, jax_cuda12_pjrt,
+  matmul_precision}` next to `device`. There is no new refusal logic.
+- **Search (whole repo, every text file).** Every hit for
+  `JAX_DEFAULT_MATMUL_PRECISION`, `jax_default_matmul_precision`,
+  `precision=`, `Precision.HIGHEST`, `NVIDIA_TF32_OVERRIDE`, tf32, XLA flags
+  and `jax_enable_x64`:
+  - `experiments/angle_1.py:80` `jax.config.update("jax_enable_x64", False)`.
+    Kept: x64 is off, confirmed at runtime after importing `exp2_arm`
+    (`jax.config.jax_enable_x64 == False`).
+  - `generate_manifest.py:48`, a commented CPU thread flag
+    (`--xla_cpu_multi_thread_eigen=false`). It does not touch GPU precision.
+    Kept.
+  - `docs/exp12_cuda_commands.md:187` `--xla_gpu_deterministic_ops=true` (the
+    B1 deterministic pass). It is believed not to disable TF32 (it governs
+    reduction and scatter determinism and autotuning), but this is not
+    verified. Kept; only the tests run under it.
+  - The old FP32 decision: `JAX_DEFAULT_MATMUL_PRECISION=highest` in the CUDA
+    sheet's Setup and grid notes, and `NVIDIA_TF32_OVERRIDE`/`XLA_FLAGS` in
+    `matmul_precision_report()`. Removed. The sheet now says not to set
+    either variable.
+  - The old `fork.TF32_REL_ERROR`, `tf32_detected` (fork, exp2 analysis,
+    preflight output, tests) and the TF32 break-check mutation. Removed or
+    replaced (below).
+  - The new code: `precision.py`, `fork.py:116` (the Check 1 context), the
+    preflight line `check1_precision=...`, and its test regex.
+  - No `precision=` argument and no `Precision.*` exists anywhere in model or
+    agent code (scale_rl, experiments), and no launch script sets a
+    precision or TF32 variable.
+- **SimBa's released code** (`/tmp/claude-0/simba` @ 7d0358b). It sets no
+  matmul precision, TF32, XLA or x64 flag; only `mixed_precision: false`. It
+  therefore ran at JAX's default precision (believed to be TF32 on Ampere,
+  per the docstring; not verified), so no question arises.
+- **Tests.**
+  - `ForkUnitTest.test_check1_tf32_stops` is replaced by
+    `test_check1_fails_when_the_injection_construction_is_broken`. It
+    patches `InjectedSACCritic.__call__` to drop the frozen copy
+    (old + new instead of old + (new − copy)). Check 1 must then fail on
+    pre-vs-after while pre-vs-control still passes. The correct
+    construction passes.
+  - Break check: "Check 1 ignores TF32" is replaced by "Check 1 tolerance
+    effectively infinite" (1e12 eps), which this test catches.
+  - `test_arm_stops_before_training_when_check1_fails` now forces the
+    failure with a one-ulp change in Q after the restore, not by injecting
+    TF32.
+- **Docs.** Amendment (v) is rewritten (with a note on (m)). The CUDA sheet:
+  - the Setup export is removed;
+  - A0 measures both settings;
+  - A3 profiles TF32 only;
+  - all estimates are rescaled to TF32 (~3× faster matmul-bound steps than
+    FP32, an estimate);
+  - Block A is ~20 min.
+  The master summary's precision lines and its section references to the
+  sheet (§0–§8 → Setup, A0–A3, B1–B4, C, D, E, F) are refreshed.
+- **Verified on CPU** (this machine; GPU behaviour is NEEDS CUDA VERIFICATION):
+  - all 10 Exp 1/2 test modules, 117 tests: fork 23, injection 8,
+    positive_control 15, diagnostics 8, exp2_analysis 11, manifest 9 (the
+    preflight with fork prints `check1_precision=highest`), probe 9, phase3
+    19, foundations 12 (Angle 1 parity, bit-exact resume), pipeline 3;
+  - the two HumanoidBench-only tests in venv_hb (pipeline h1-reach, Reach
+    evaluation seeding) pass;
+  - `tests/exp12_break_checks.py`: 55 of 55 mutations fail their test by
+    assertion and pass again when restored, including the new Check 1 one.

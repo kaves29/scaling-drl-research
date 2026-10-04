@@ -19,6 +19,7 @@ from hydra.core.global_hydra import GlobalHydra
 from analysis.metrics_store import RunIdentity
 from experiments.angle_1 import DONE_MARKER
 from experiments.exp12 import exp2_ledger, fork, ledger
+from experiments.exp12.precision import runtime_info, set_matmul_precision
 from experiments.exp12.run_probes import RunProbes
 from experiments.exp12.state import latest_state_dir, load_meta
 from experiments.exp12.trainer import Exp12Trainer
@@ -70,7 +71,7 @@ def record_metadata(cfg, run_dir: Path, resumed: bool, experiment: str = EXPERIM
         omegaconf.OmegaConf.to_container(cfg, resolve=True),
         identity={**vars(identity), "run_key": identity.run_key, "run_role": cfg.run_role},
         launch={"started_at": datetime.now(timezone.utc).isoformat(), "resumed": resumed,
-                "device": fork.device_info()},
+                "device": fork.device_info(), "runtime": runtime_info()},
     )
     path = run_dir / RUN_METADATA_FILENAME
     stored = load_run_metadata(path)
@@ -82,6 +83,7 @@ def record_metadata(cfg, run_dir: Path, resumed: bool, experiment: str = EXPERIM
 
 @register_experiment(EXPERIMENT)
 def run(args: dict) -> None:
+    set_matmul_precision()
     args = DotMap(args)
     run_dir = Path(require_absolute(args.checkpoint_dir or "", "checkpoint_dir"))
     if (run_dir / DONE_MARKER).exists():

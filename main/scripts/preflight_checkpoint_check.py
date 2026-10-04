@@ -146,7 +146,7 @@ def exp12_preflight(args, checkpoint_dir, repo_root):
             else:
                 c1 = json.loads(check1[0].read_text())
                 print(f"[preflight] Check 1: pass={c1['pass']} max_eps_units={c1['max_eps_units']:.3g} "
-                      f"tf32_detected={c1['tf32_detected']} device={c1['precision']['device_kind']}")
+                      f"check1_precision={c1['matmul_precision']}")
                 if not c1["pass"]:
                     failures.append("Check 1 failed (see check1_injected.json)")
     return failures

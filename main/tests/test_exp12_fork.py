@@ -13,6 +13,7 @@ from pathlib import Path
 from unittest import mock
 
 import jax
+import jax.numpy as jnp
 import numpy as np
 import pandas as pd
 
@@ -126,9 +127,7 @@ class ForkEndToEndTest(unittest.TestCase):
                                                                "tolerance_eps": 0.0})
         self.assertLessEqual(injected["max_eps_units"], 64)
         for c in (identity, injected):
-            self.assertFalse(c["tf32_detected"])
-            self.assertIn("float32_matmul_max_rel_error", c["precision"])
-            self.assertIn("device_kind", c["precision"])
+            self.assertEqual(c["matmul_precision"], "highest")  # Check 1 runs in full FP32 (amendment (v))
 
     def test_check2_written_and_paired_with_the_exp1_check(self):
         with open(self.exp2 / "check2.json") as f:
@@ -218,14 +217,23 @@ class ForkEndToEndTest(unittest.TestCase):
 
         record = self.exp2 / "check1_identity.json"
         kept = record.read_text()
-        arm_dir = os.path.join(self.tmp, "tf32_arm")
-        tf32 = {**fork.matmul_precision_report(), "tf32_detected": True}
+        arm_dir = os.path.join(self.tmp, "check1_fails_arm")
+        real = fork.panel_q_and_grad
+        calls = []
+
+        def off_by_one_ulp_after_restore(critic, panel):
+            out = real(critic, panel)
+            calls.append(1)
+            if len(calls) == 2:  # the arm's critic after the (identity) restore
+                out["q"] = np.nextafter(out["q"], np.float32(np.inf))
+            return out
+
         try:
-            with mock.patch.object(fork, "matmul_precision_report", return_value=tf32):
+            with mock.patch.object(fork, "panel_q_and_grad", off_by_one_ulp_after_restore):
                 with self.assertRaisesRegex(Check1Failed, "stop and ask"):
                     run_arm(arm_dir, self.overrides, self.run_dir, "identity")
             with open(record) as f:
-                self.assertTrue(json.load(f)["tf32_detected"])
+                self.assertFalse(json.load(f)["pass"])
         finally:
             record.write_text(kept)
         self.assertIsNone(latest_state_dir(Path(arm_dir) / "state"))  # stopped before its first save
@@ -276,16 +284,29 @@ class ForkUnitTest(unittest.TestCase):
         self.assertFalse(fork.check1(pre, one_ulp, pre, 64, injected=False)["pass"])  # identity arm
         self.assertTrue(fork.check1(pre, one_ulp, pre, 64, injected=True)["pass"])
 
-    def test_check1_tf32_stops(self):
-        rng = np.random.default_rng(2)
-        pre = {"q": rng.normal(size=8).astype(np.float32), "dq_da": rng.normal(size=(8, 2)).astype(np.float32)}
-        report = fork.matmul_precision_report()
-        self.assertFalse(report["tf32_detected"])  # CPU float32
-        self.assertLess(report["float32_matmul_max_rel_error"], 1e-5)
-        self.assertTrue(fork.check1(pre, pre, pre, 64, injected=True, precision=report)["pass"])
-        result = fork.check1(pre, pre, pre, 64, injected=True, precision={**report, "tf32_detected": True})
+    def test_check1_fails_when_the_injection_construction_is_broken(self):
+        from experiments.exp12 import injection
+        from test_exp12_injection import ACT, OBS, _critic, _inject
+
+        class WithoutTheFrozenCopy(injection.InjectedSACCritic):
+            def __call__(self, observations, actions):  # Q = old + new: the "- copy" term is missing
+                inputs = jnp.concatenate((observations, actions), axis=1)
+                z = self.trunk(inputs)
+                return self.old(z) + self.new(z) + 0.0 * self.copy(z)
+
+        rng = np.random.default_rng(3)
+        panel = {"observation": rng.normal(size=(32, OBS)).astype(np.float32),
+                 "action": rng.uniform(-1, 1, (32, ACT)).astype(np.float32)}
+        critic, target = _critic(2)
+        pre = fork.panel_q_and_grad(critic, panel)
+        ok, _ = _inject(critic, target, "last")
+        self.assertTrue(fork.check1(pre, fork.panel_q_and_grad(ok, panel), pre, 64, injected=True)["pass"])
+        with mock.patch.object(injection, "InjectedSACCritic", WithoutTheFrozenCopy):
+            broken, _ = _inject(critic, target, "last")
+        result = fork.check1(pre, fork.panel_q_and_grad(broken, panel), pre, 64, injected=True)
         self.assertFalse(result["pass"])
-        self.assertTrue(result["tf32_detected"])
+        self.assertFalse(result["pairs"]["pre_vs_after"]["pass"])
+        self.assertTrue(result["pairs"]["pre_vs_control"]["pass"])
 
     def test_both_arms_must_run_on_the_fork_device_model(self):
         d = Path(tempfile.mkdtemp())

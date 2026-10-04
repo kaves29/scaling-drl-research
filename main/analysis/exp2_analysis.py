@@ -77,7 +77,6 @@ def load(results_root=None, include_dev: bool = False) -> Dict[str, pd.DataFrame
         row = {**ident, "fork_step": plan["fork_step"], "fork_check_index": plan["fork_check_index"],
                "check1_pass": None if c1 is None else c1["pass"],
                "check1_max_eps_units": None if c1 is None else c1.get("max_eps_units"),
-               "check1_tf32_detected": None if c1 is None else c1.get("tf32_detected"),
                "check2_pass": None if c2 is None else c2["pass"],
                "check2_paired_difference_iqm": None if c2 is None else c2["paired_difference_iqm"],
                "check2_ci_low": None if c2 is None else c2["paired_difference_ci_low"],
@@ -239,8 +238,8 @@ def run_analysis(out_dir: str, statistic: str = "iqm", results_root=None, includ
     if forks.empty:
         raise ValueError("no forks in results/exp12/exp2")
     forks.to_csv(out / "forks.csv", index=False)
-    forks[["run_key", "architecture", "environment", "seed", "check1_pass", "check1_max_eps_units",
-           "check1_tf32_detected"]].to_csv(out / "check1_table.csv", index=False)
+    forks[["run_key", "architecture", "environment", "seed", "check1_pass", "check1_max_eps_units"]].to_csv(
+        out / "check1_table.csv", index=False)
     forks[["run_key", "architecture", "environment", "seed", "check2_paired_difference_iqm", "check2_ci_low",
            "check2_ci_high", "check2_pass"]].to_csv(out / "check2_table.csv", index=False)
     paired = paired_returns(data["evals"], forks, normalize)

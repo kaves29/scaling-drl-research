@@ -332,7 +332,9 @@ reverse-mode summation order of dQ/da changes). Check 1 records the observed
 maximum in eps units, the float32 matmul precision in use (configured and
 measured) and the device model. If TF32 matmuls are detected, or any
 deviation exceeds its tolerance, the arm stops before training and the
-project lead decides.
+project lead decides. [TF32 part SUPERSEDED by (v), 2026-10-04: Check 1 runs
+in full FP32 and no longer stops on TF32. Any deviation beyond its tolerance
+still stops the arm.]
 
 (n) Check 2 is reported as the paired difference P(injected) - P(control) on
 the fork check's own pool, with its IQM and 95% percentile bootstrap interval.
@@ -414,10 +416,22 @@ previous state as LATEST.
 (u) Limitation: the whole grid, including both arms of every fork, must run
 on one GPU model.
 
-## Amendment from the precision decision (2026-10-04)
+## Amendment from the precision decision (2026-10-04, revised the same day)
 
-(v) Matmul precision. Every Experiment 1 and 2 job runs float32 matmuls in
-full FP32 (`JAX_DEFAULT_MATMUL_PRECISION=highest`). This covers training,
-probes, calibration checks, Checks 1–2, both arms, the positive control,
-preflight and the grid. TF32 is not allowed anywhere. Check 1 (amendment (m))
-still stops an arm if TF32 is detected.
+(v) Matmul precision (replaces the earlier FP32-everywhere version of (v)).
+- Every float32 matrix multiplication in Experiment 1 and 2 jobs uses TF32
+  on GPUs that support it. This covers training updates, action selection,
+  probes, post-fork evaluation and diagnostics.
+- It is set explicitly at the start of every GPU entry point:
+  `jax_default_matmul_precision = "tensorfloat32"`. Nothing else forces a
+  higher precision, and the setting is a no-op on CPU.
+- No other mixed precision is used (no bf16 or fp16). Everything that is not
+  a matmul stays float32, and x64 is off.
+- The one exception is Check 1 (and the A0 error measurement), which
+  computes Q and dQ/da in full FP32 inside a local
+  `jax.default_matmul_precision("highest")` context. Its tolerances are
+  unchanged: injected arm within 64 eps, control and identity arms
+  bit-exact.
+- The earlier rule that Check 1 stops an arm when TF32 is detected is
+  removed. Every launch records its matmul precision setting, GPU model, and
+  JAX, jaxlib and CUDA versions in run_metadata.json.

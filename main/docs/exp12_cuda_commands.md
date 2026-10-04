@@ -14,26 +14,29 @@ schedules a grid run.
   C: the identity-fork gate. D: the positive control. E: preflight. F: the
   grid, which I never run.
 
-## Matmul precision: FP32 everywhere, no TF32 (decided 2026-10-04, amendment (v))
+## Matmul precision: TF32 for every matmul that can use it (amendment (v), revised 2026-10-04)
 
-Every Exp 1/2 job runs with `export JAX_DEFAULT_MATMUL_PRECISION=highest`.
-This covers training, probes, the range and null checks, Check 1 and 2, both
-arms, the positive control, preflight and the grid. TF32 is not allowed
-anywhere.
-
-- **Why:** Check 1, the identity fork and amendment (m) assume FP32. The probe
-  target sin(1e5·f(x)) amplifies matmul rounding by 1e5, so FP32 keeps it
-  independent of the device's TF32 behaviour.
-- **Cost:** an estimated ~3× slower training and probes for D6W1536 (table
-  below).
-- **How it is set:** JAX honours the variable (checked:
-  `JAX_DEFAULT_MATMUL_PRECISION=highest` gives
-  `jax.config.jax_default_matmul_precision == "highest"`), so no code change
-  is needed. The code itself never sets the precision; without the variable,
-  JAX's backend default applies, which on an A100 is believed to be TF32.
-- **Check:** A0 verifies `tf32_detected: false` with the setting. Check 1
-  also stops any injected or identity arm that runs with TF32. Training
-  itself has no such check, so the variable must be exported for every job.
+- **Setting:** every Exp 1/2 GPU entry point (exp1, exp2_arm,
+  probe_fresh_checks, profile_exp12, positive_control) calls
+  `experiments/exp12/precision.set_matmul_precision()` first. On a GPU it sets
+  `jax_default_matmul_precision = "tensorfloat32"`; on CPU it does nothing.
+- **Why that value:** jax 0.4.34 documents `"tensorfloat32"` (=
+  `Precision.HIGH`) as "On GPU: uses tensorfloat32 where available,
+  otherwise float32". Its `DEFAULT` is documented the same way on GPU, but the
+  explicit name keeps the choice independent of JAX's default.
+- **What it covers:** training updates, action selection, probes, post-fork
+  evaluation and diagnostics. All dtypes stay float32: there is no bf16 or
+  fp16, and x64 is off.
+- **Exception:** Check 1 computes its panel Q and dQ/da inside
+  `jax.default_matmul_precision("highest")` (full FP32). Verified on CPU: all
+  17 critic matmuls lower with `precision = [HIGH, HIGH]` under the run
+  setting and `[HIGHEST, HIGHEST]` inside Check 1's context.
+- **Removed:** the rule that stopped an arm when TF32 was detected. Each
+  launch records its precision, GPU model and JAX/jaxlib/CUDA versions in
+  `run_metadata.json`.
+- **Do not set:** `JAX_DEFAULT_MATMUL_PRECISION` (the code sets the
+  precision itself) or `NVIDIA_TF32_OVERRIDE=0` (it would disable TF32 inside
+  cuBLAS).
 
 ## How the runtime and memory estimates were made (no GPU measurement exists yet)
 
@@ -56,8 +59,8 @@ anywhere.
 - **Compile:** ≈ 1–2 min per process for D6W1536 (update scan plus probe
   fit); less for smaller critics.
 - **Uncertainty:** treat every number as ±50% until Block A measures it.
-- **Which figures apply:** only the FP32 ones (amendment (v)). The TF32
-  figures are kept for reference.
+- **Which figures apply:** the TF32 ones (amendment (v), revised). The FP32
+  figures are kept only for comparison.
 
 | Critic | Train it/s, dog-run (FP32 / TF32) | One probe check, 2 critics (FP32 / TF32) | Peak GPU memory per process* | Host memory per process |
 |---|---|---|---|---|
@@ -70,8 +73,15 @@ of the GPU per process. Buffer host memory = filled transitions × bytes per
 transition: dog-run 1,948 B, i.e. 0.97 GB at 500k transitions; hopper 148 B;
 MyoSuite 832–1,088 B; HumanoidBench 496–544 B.
 
-Forecast from these numbers: the probe takes ≈ 9% of a D6W1536 dog-run's
-wall-clock (FP32), above the ~5% rule. A3 and B4 measure it.
+Forecast from these numbers: under TF32 the probe takes ≈ 7% of a D6W1536
+dog-run's wall-clock (21 checks × ~35 s against 500,000 steps at ~50 it/s).
+That is above the ~5% rule; A3 and B4 measure it.
+
+**What changed with TF32:** every per-step and per-check estimate now uses the
+TF32 column. The bigger critics get faster (D6W1536 training ~15 → ~50 it/s,
+one probe check ~160 → ~35 s; D4W1024 ~42 → ~100 it/s). D2W512 is
+environment-bound and unchanged. Block totals are refreshed below. Tiny-network
+test runs (A1, B1) do not change.
 
 ## Setup (once per node; not timed in Block A)
 ```bash
@@ -80,38 +90,45 @@ pip install -r requirements.txt                                     # adds rliab
 bash scripts/install_humanoid_bench.sh /abs/path/to/humanoid-bench  # pinned commit, --no-deps, editable
 export MUJOCO_GL=egl PYOPENGL_PLATFORM=egl                          # HumanoidBench builds an offscreen renderer
 export XLA_PYTHON_CLIENT_PREALLOCATE=false                          # several processes share the GPU in the tests
-export JAX_DEFAULT_MATMUL_PRECISION=highest                         # FP32 everywhere, no TF32 (amendment (v))
 OUT=/abs/path/to/exp12_cuda_checks && mkdir -p $OUT
 ```
 
 ## Block A: one A100, 4 CPUs, ≤ 30 min in total
 
-Estimated total: ~28 min (FP32, as decided). Peak host memory
+Estimated total: ~20 min under TF32 (it was ~28 min under FP32). Peak host memory
 ~4 GB; peak GPU memory ~5 GB. Run the steps in order. If A1 fails, stop and
 send me the log.
 
-### A0. Matmul precision report (< 1 min; host ~2 GB, GPU < 1 GB)
-It records the configured precision, the device, and the measured float32
-matmul error, both at the backend default and at `highest`.
+### A0. Matmul precision report (< 1 min; host ~2 GB, GPU < 1 GB) — NEEDS CUDA VERIFICATION
+It measures the float32 matmul error (256×256, against float64) under the run
+setting (what training uses) and under `highest` (what Check 1 uses), and
+records the device and versions.
 ```bash
-for P in default highest; do
-  ( [ $P = default ] && unset JAX_DEFAULT_MATMUL_PRECISION || export JAX_DEFAULT_MATMUL_PRECISION=highest
-    python -c "import json; from experiments.exp12.fork import matmul_precision_report as r; print(json.dumps(r(), indent=2))" ) \
-    | tee $OUT/A0_matmul_precision_$P.json
-done
+python - <<'PY' | tee $OUT/A0_matmul_precision.json
+import json, jax
+from experiments.exp12.precision import set_matmul_precision
+from experiments.exp12.fork import matmul_precision_report as report
+set_matmul_precision()
+out = {"run_setting": report()}
+with jax.default_matmul_precision("highest"):
+    out["check1_highest"] = report()
+print(json.dumps(out, indent=2))
+PY
 ```
-- The `highest` file must show `tf32_detected: false`. If it does not,
-  stop and send me both files: the grid's precision setting is not taking
-  effect.
-- The `default` file is for the record only. It shows what the A100 does
-  without the setting.
+Expect:
+- `run_setting.matmul_precision == "tensorfloat32"`, `platform == "gpu"`, and
+  a relative error of about 1e-4 to 1e-3 (TF32 active);
+- `check1_highest` at about 1e-7 to 1e-6 (full FP32).
+
+If `run_setting` shows about 1e-7–1e-6, TF32 is not active with
+`"tensorfloat32"` on this jaxlib. Send me the file; the fallback is `"default"`.
 
 ### A1. Smoke tests on the GPU (~10 min; host ~4 GB, GPU < 1 GB per process)
 These are the tests whose result could differ on a GPU:
 - probe isolation and pairing;
 - injection Check 1 tolerances;
 - diagnostics bit-identity;
-- Check 1 and TF32 logic;
+- Check 1 (including detection of a deliberately broken injection);
 - post-fork evaluation isolation;
 - the identity-validation procedure end to end.
 
@@ -122,7 +139,7 @@ python -m unittest -v tests.test_exp12_probe tests.test_exp12_injection tests.te
   tests.test_exp12_fork.ForkUnitTest tests.test_exp12_fork.IdentityValidationTest 2>&1 | tee $OUT/A1_smoke.log
 ```
 
-### A2. Fresh-critic dynamic range, dog-run (~10 min FP32 / ~5 min TF32; host ~3 GB, GPU ~4 GB for D6W1536)
+### A2. Fresh-critic dynamic range, dog-run (~5 min TF32; was ~10 min FP32; host ~3 GB, GPU ~4 GB for D6W1536)
 - **Rule (pre-specified):** PASS if, at all three sizes, 0.1·b ≤ IQM(P) ≤
   0.9·b at the configured pool (25,600). The round-to-round spread is always
   reported, and the verdict goes to `range_verdict.json`.
@@ -130,20 +147,21 @@ python -m unittest -v tests.test_exp12_probe tests.test_exp12_injection tests.te
   probe steps; each step is proposed to you, not applied.
 - **Estimate:** per size, a 5,000-step random buffer fill (~0.5 min), plus
   compile, plus 3 pool sizes × one single-critic probe (5 rounds × 1,000
-  steps; D6W1536 ≈ 80 s each in FP32).
+  steps; D6W1536 ≈ 18 s each under TF32).
 ```bash
 python scripts/probe_fresh_checks.py --mode range --env dog-run --env_group dmc_hard \
   --archs D2W512 D4W1024 D6W1536 --pools 1600 6400 25600 --out_dir $OUT/A2_range_dog_run
 ```
 
-### A3. Short profile, D6W1536 on dog-run (~8 min FP32 / ~4 min TF32; host ~3 GB, GPU ~5 GB)
+### A3. Short profile, D6W1536 on dog-run, TF32 setting only (~4 min; was ~8 min FP32; host ~3 GB, GPU ~5 GB)
 - **Measures:** training it/s, the time of one full probe check, the
   projected probe overhead for a whole run, and peak GPU memory, all for the
   critic that decides the 5% rule.
 - **Steps timed:** 300 training steps after 100 warm-up steps; 1 probe check
   after a compile warm-up check.
 - **Estimate:** 5,000 random steps (~0.5 min), compile (~1.5 min), 300 steps
-  (~0.3 min), 2 probe checks (~5.5 min).
+  (~0.1 min), 2 probe checks (~1.2 min). The script sets the TF32 precision
+  itself.
 ```bash
 python scripts/profile_exp12.py --env dog-run --env_group dmc_hard --archs D6W1536 \
   --train_steps 300 --warmup_steps 100 --probe_repeats 1 --out $OUT/A3_profile_dog_run_D6.json
@@ -152,7 +170,7 @@ Key fields: `train_it_per_s_probes_off`, `probe_check_s`,
 `probe_overhead_pct_of_wallclock`, `peak_device_bytes`. If the overhead
 exceeds ~5%, I report it and ask; the probe is never reduced.
 
-## Block B: full tests and calibration (~10 h FP32 / ~4 h TF32)
+## Block B: full tests and calibration (~4.4 h TF32; was ~10 h FP32)
 
 ### B1. Full Exp 1/2 tests and break checks (~2 h for both passes; host ~6 GB, GPU < 1 GB per process)
 - Run the tests twice: once with default XLA flags and once with
@@ -171,7 +189,7 @@ XLA_FLAGS=--xla_gpu_deterministic_ops=true \
 python tests/exp12_break_checks.py 2>&1 | tee $OUT/B1_break_checks.log        # ~6 min (4.5 min on CPU)
 ```
 
-### B2. Fresh-critic dynamic range, hopper-hop (~8 min FP32 / ~4 min TF32; host ~3 GB, GPU ~4 GB)
+### B2. Fresh-critic dynamic range, hopper-hop (~4 min TF32; was ~8 min FP32; host ~3 GB, GPU ~4 GB)
 The same rule as A2. hopper-hop has the 500k-step budget, so it is the worst
 case for the overhead share.
 ```bash
@@ -179,7 +197,7 @@ python scripts/probe_fresh_checks.py --mode range --env hopper-hop --env_group d
   --archs D2W512 D4W1024 D6W1536 --pools 1600 6400 25600 --out_dir $OUT/B2_range_hopper_hop
 ```
 
-### B3. Fresh-pair null, at least 100 pairs per size (~6 h FP32 / ~1.3 h TF32; host ~3 GB, GPU ~5 GB)
+### B3. Fresh-pair null, at least 100 pairs per size (~1.3 h TF32; was ~6 h FP32; host ~3 GB, GPU ~5 GB)
 - **What it saves:** every pair's per-round P, b and L, its IQM and its
   bootstrap interval, appended to `null_pairs_<arch>.jsonl` as each pair
   finishes. Re-running the same command resumes.
@@ -194,7 +212,7 @@ python scripts/probe_fresh_checks.py --mode null --env dog-run --env_group dmc_h
   --archs D2W512 D4W1024 D6W1536 --null_pairs 100 --out_dir $OUT/B3_null_dog_run
 ```
 
-### B4. Full compute profile (~2.1 h FP32 / ~1 h TF32; host ~8 GB, GPU ~7 GB)
+### B4. Full compute profile (~1 h TF32; was ~2.1 h FP32; host ~8 GB, GPU ~7 GB)
 - **What each run adds:**
   - dog-run (1M env steps) also times angle_1 against exp1 with probes off;
   - hopper-hop (500k) is the worst case for the probe's share;
@@ -288,14 +306,14 @@ instead of 50,000–100,000. Saving and restoring it is the same
 size-independent code path (np.savez of the filled part). Full-size save and
 restore is timed in B4 (`--fork_timing`).
 
-**Runtime estimates (FP32 / TF32), for the six cells run sequentially:**
-- **Full budget:** ~6 h / ~2 h. The D6W1536 parents dominate: ~45,000
-  training steps (dog-run, myo-key-turn) or ~95,000 (h1-run-v0), plus the
-  fresh probe and checks 1–2.
-- **Reduced:** ~1.4 h / ~35 min. Per D6W1536 cell: 5,000 random steps,
-  7,000 training steps (~8 min), the fresh probe and 2 checks (~7 min), and
-  2 × 1,000 post-fork steps with the restore, Check 1 and evaluation 0
-  (~5 min) ≈ 20 min. Per D4W1024 cell ≈ 8 min.
+**Runtime estimates (TF32), for the six cells run sequentially:**
+- **Full budget:** ~2 h (was ~6 h FP32). The D6W1536 parents dominate:
+  ~45,000 training steps (dog-run, myo-key-turn) or ~95,000 (h1-run-v0), plus
+  the fresh probe and checks 1–2.
+- **Reduced:** ~35 min (was ~1.4 h FP32). Per D6W1536 cell: 5,000 random
+  steps, 7,000 training steps (~2.5 min), the fresh probe and 2 checks
+  (~1.5 min), and 2 × 1,000 post-fork steps with the restore, Check 1 (FP32)
+  and evaluation 0 (~2 min), plus compile ≈ 8 min. Per D4W1024 cell ≈ 4 min.
 
 **Memory:** host ~4 GB, GPU ~5 GB (D6W1536). Disk ~4 GB per D6W1536 cell
 (the fork state and two snapshots, each holding a 1.8 GB agent), ~22 GB for
@@ -336,12 +354,12 @@ Exit 3 means STOP and consult: the run never triggered, L_trigger ≤ 0, or the
 probe noise (pooled SD of per-round L / L_trigger) is ≥ 0.10.
 
 **Estimates**
-- **Dev run:** ~10.5 h FP32 / ~3.5 h TF32. 500,000 interaction steps at
+- **Dev run:** ~3.5 h TF32 (was ~10.5 h FP32). 500,000 interaction steps at
   ~15 / ~50 it/s, plus 21 probes (~56 / ~12 min).
   - As launched, the run continues after its fork as the control, to the full
     budget. Only `FORK_READY` is needed for the script.
   - Memory: host ~4 GB (buffer up to 0.97 GB), GPU ~5 GB, disk ~6.2 GB.
-- **Script:** ~15 min FP32 / ~4 min TF32. One probe with 5 critics (≈ 2.5
+- **Script:** ~4 min TF32 (was ~15 min FP32). One probe with 5 critics (≈ 2.5
   checks) plus 3 shared-offset probes with 2 critics.
   - Memory: host ~4 GB, GPU ~10 GB (three injected critics of up to 3× the
     critic's parameters are held together).
@@ -361,7 +379,7 @@ One smoke run per critic size on the node type the grid will use (tiny probe
 settings, 4,000 env steps). The forking sizes also fork, run the injected arm
 and require Check 1 to pass on that device.
 
-**Estimates (FP32):** D2W512 ~2 min, D4W1024 ~4 min, D6W1536 ~8 min (2,000
+**Estimates (TF32; was 2/4/8 min under FP32):** D2W512 ~2 min, D4W1024 ~3 min, D6W1536 ~4 min (2,000
 training steps, the injected arm's 500 steps, 2 × 26 one-episode
 evaluations). Host ~3 GB; GPU ≤ ~5 GB.
 ```bash
@@ -384,8 +402,9 @@ python generate_manifest.py --grid exp12 --ckpt-root $GRID --results-root $RESUL
 python scripts/check_manifest_overlap.py exp12_exp1_jobs.txt exp2_arms_<device>.txt   # must print OK
 python scripts/claim_launcher.py --concurrency <n> --num-gpus <n> --phase-files exp2_arms_<device>.txt
 ```
-- Every grid job must run with the same `JAX_DEFAULT_MATMUL_PRECISION`
-  setting and `XLA_PYTHON_CLIENT_PREALLOCATE=false`.
+- Every grid job sets its own matmul precision (TF32 on GPU, amendment (v));
+  do not export `JAX_DEFAULT_MATMUL_PRECISION` or `NVIDIA_TF32_OVERRIDE`.
+  Run with `XLA_PYTHON_CLIENT_PREALLOCATE=false`.
 - Re-running generate_manifest.py is safe. Runs with DONE are skipped, and
   unfinished ones resume: from state/LATEST, from the saved fork state, or
   from scratch before their first save.

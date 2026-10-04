@@ -21,6 +21,7 @@ from experiments.angle_1 import DONE_MARKER
 from experiments.exp1 import compose_config, record_metadata, run_identity
 from experiments.exp12 import exp2_ledger, fork
 from experiments.exp12.injection import M_LABELS
+from experiments.exp12.precision import set_matmul_precision
 from experiments.exp12.probe import iqm, run_probe
 from experiments.exp12.run_probes import RunProbes
 from experiments.exp12.state import latest_state_dir
@@ -36,7 +37,7 @@ ARM_KEYS = {"fork.source", "fork.arm", "injection.m"}
 
 
 class Check1Failed(RuntimeError):
-    """Check 1 failed or TF32 matmuls were detected: the arm stops before training (decision 1, Phase 4)."""
+    """Check 1 failed: the arm stops before training (amendment (m))."""
 
 
 def check_matches_parent(cfg, source: Path) -> None:
@@ -83,6 +84,7 @@ def check2(trainer, probes, plan, pre_params) -> dict:
 
 @register_experiment("exp2_arm")
 def run(args: dict) -> None:
+    set_matmul_precision()
     args = DotMap(args)
     arm_dir = Path(require_absolute(args.checkpoint_dir or "", "checkpoint_dir"))
     if (arm_dir / DONE_MARKER).exists():
@@ -122,12 +124,12 @@ def run(args: dict) -> None:
         after = fork.panel_q_and_grad(trainer._sac_agent.critic, panel)
         control = fork.load_npz(fork.fork_dir(source) / "check1_control.npz")
         result = fork.check1(pre, after, control, float(cfg.checks.check1_tolerance_eps),
-                             injected=arm == "injected", precision=fork.matmul_precision_report())
+                             injected=arm == "injected")
         fork.save_npz(arm_dir / "check1_after.npz", after)
         exp2_ledger.write_json(run_key, f"check1_{arm}.json", result, cfg.results_root)
         if not result["pass"]:
             raise Check1Failed(f"Check 1 failed for the {arm} arm of {run_key} (max {result['max_eps_units']:.3g} "
-                               f"eps units, TF32 detected: {result['tf32_detected']}); stop and ask the "
+                               "eps units); stop and ask the "
                                "project lead. Details in check1_" + arm + ".json")
         if arm == "injected":
             exp2_ledger.write_json(run_key, "check2.json", check2(trainer, probes, plan, pre_params),

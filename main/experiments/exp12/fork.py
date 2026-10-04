@@ -18,6 +18,7 @@ import jax.numpy as jnp
 import numpy as np
 
 from experiments.exp12.envs import create_eval_env
+from experiments.exp12.precision import runtime_info
 from experiments.exp12.trainer import evaluate_episodes
 from utils.atomic_io import atomic_write_text
 
@@ -48,7 +49,7 @@ def is_ready(run_dir) -> bool:
 
 
 FORK_JSON_INFO = ("run_dir", "fresh_critic_dir", "device")
-TF32_REL_ERROR = 1e-4  # float32 matmul error is ~1e-6 here; TF32 (10-bit mantissa) gives ~1e-3
+CHECK1_PRECISION = "highest"
 
 
 def _read_fork_json(run_dir) -> Dict:
@@ -77,18 +78,12 @@ def check_same_device(run_dir) -> None:
 
 
 def matmul_precision_report() -> Dict:
-    """How float32 matmuls are computed here, configured and measured (TF32 makes Check 1 stop)."""
-    import os
-
+    """Measured float32 matmul error under the current precision setting (A0; for the record)."""
     rng = np.random.default_rng(0)
     a, b = rng.standard_normal((256, 256)), rng.standard_normal((256, 256))
     exact = a @ b
     got = np.asarray(jax.jit(jnp.matmul)(jnp.asarray(a, jnp.float32), jnp.asarray(b, jnp.float32)), np.float64)
-    rel = float(np.abs(got - exact).max() / np.abs(exact).max())
-    return {**device_info(), "jax_default_matmul_precision": jax.config.jax_default_matmul_precision,
-            "NVIDIA_TF32_OVERRIDE": os.environ.get("NVIDIA_TF32_OVERRIDE"),
-            "XLA_FLAGS": os.environ.get("XLA_FLAGS"), "float32_matmul_max_rel_error": rel,
-            "tf32_detected": rel > TF32_REL_ERROR}
+    return {**runtime_info(), "float32_matmul_max_rel_error": float(np.abs(got - exact).max() / np.abs(exact).max())}
 
 
 def fork_plan(cfg, fork_step: int, check_index: int) -> Dict:
@@ -115,20 +110,22 @@ def sample_panel(trainer, seed: int, check_index: int) -> Dict[str, np.ndarray]:
 
 
 def panel_q_and_grad(critic, panel) -> Dict[str, np.ndarray]:
+    """Q and dQ/da on the panel in full FP32 (Check 1 is the one place that does not use TF32)."""
     obs, act = jnp.asarray(panel["observation"]), jnp.asarray(panel["action"])
     q_fn = lambda a: critic.network_def.apply({"params": critic.params}, obs, a)
-    q, grad = jax.jit(lambda a: (q_fn(a), jax.grad(lambda b: q_fn(b).sum())(a)))(act)
+    with jax.default_matmul_precision(CHECK1_PRECISION):
+        q, grad = jax.jit(lambda a: (q_fn(a), jax.grad(lambda b: q_fn(b).sum())(a)))(act)
     return {"q": np.asarray(q).reshape(-1), "dq_da": np.asarray(grad)}
 
 
-def check1(pre: Dict, after: Dict, control: Dict, tolerance_eps: float, injected: bool,
-           precision: Optional[Dict] = None) -> Dict:
-    """Check 1 on the panel. The control (and an identity arm) must equal the pre-fork critic bit for
-    bit; an injected critic may differ by tolerance_eps * float32 eps * the pre-injection max magnitude
-    (the reverse-mode summation order of dQ/da changes). TF32 matmuls fail the check (stop and ask)."""
+def check1(pre: Dict, after: Dict, control: Dict, tolerance_eps: float, injected: bool) -> Dict:
+    """Check 1 on the panel (values from panel_q_and_grad, full FP32). The control (and an identity arm)
+    must equal the pre-fork critic bit for bit; an injected critic may differ by tolerance_eps * float32
+    eps * the pre-injection max magnitude (the reverse-mode summation order of dQ/da changes)."""
     eps = float(np.finfo(np.float32).eps)
     scale_q, scale_g = float(np.abs(pre["q"]).max()), float(np.abs(pre["dq_da"]).max())
-    out = {"tolerance_eps": tolerance_eps, "after_is_injected": injected, "precision": precision, "pairs": {}}
+    out = {"tolerance_eps": tolerance_eps, "after_is_injected": injected, "matmul_precision": CHECK1_PRECISION,
+           "pairs": {}}
     named = {"pre": pre, "after": after, "control": control}
     for a, b in (("pre", "after"), ("pre", "control"), ("after", "control")):
         tol = tolerance_eps if injected and "after" in (a, b) else 0.0
@@ -141,8 +138,7 @@ def check1(pre: Dict, after: Dict, control: Dict, tolerance_eps: float, injected
             "pass": dq <= tol * eps * scale_q and dg <= tol * eps * scale_g,
         }
     out["max_eps_units"] = max(max(p["dq_eps_units"], p["d_dq_da_eps_units"]) for p in out["pairs"].values())
-    out["tf32_detected"] = bool(precision and precision.get("tf32_detected"))
-    out["pass"] = all(p["pass"] for p in out["pairs"].values()) and not out["tf32_detected"]
+    out["pass"] = all(p["pass"] for p in out["pairs"].values())
     return out
 
 

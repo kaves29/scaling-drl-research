@@ -192,7 +192,7 @@ class PreflightTest(unittest.TestCase):
         r = self._preflight("--with-fork", overrides=["fork.architectures=[D1W8]"])
         self.assertEqual(r.returncode, 0, r.stdout[-2000:])
         self.assertIn("=== PASS ===", r.stdout)
-        self.assertRegex(r.stdout, re.compile(r"Check 1: pass=True .*tf32_detected=False"))
+        self.assertRegex(r.stdout, re.compile(r"Check 1: pass=True .*check1_precision=highest"))
 
     def test_fail_when_the_architecture_does_not_fork(self):
         r = self._preflight("--with-fork")  # D1W8 is not in fork.architectures

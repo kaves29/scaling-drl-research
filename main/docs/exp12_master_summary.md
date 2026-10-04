@@ -70,8 +70,8 @@ amendments:
 - (j) HumanoidBench with one Q critic (limitation).
 - (k) HumanoidBench limitations.
 - (l) Two consecutive firing checks.
-- (m) Check 1: control and identity arm bit-exact; injected arm ≤ 64 eps;
-  TF32 stops the arm.
+- (m) Check 1: control and identity arm bit-exact; injected arm ≤ 64 eps.
+  Its TF32 stop is superseded by (v).
 - (n) Check 2: paired difference with its interval; 5-round caveat.
 - (o) Superseded by (q).
 - (p) Both arms on the fork's GPU model.
@@ -83,6 +83,10 @@ amendments:
   limit is a limitation.
 - (t) Checkpoint retention.
 - (u) One GPU model for the whole grid.
+- (v) TF32 for every matmul on the GPU (`jax_default_matmul_precision =
+  "tensorfloat32"`, no-op on CPU); no bf16/fp16; x64 off. Check 1 and A0's
+  error measurement run under a local "highest" context. Metadata records
+  the precision, GPU model and JAX/jaxlib/CUDA versions.
 
 Routine engineering choices are listed under "Choices (routine, shown for veto)" in each phase section of the log. The main ones:
 
@@ -138,7 +142,7 @@ Phase 7 run, CPU, 2026-10-04: every test module in its own process, three at a t
 | test_exp12_probe | 9 | known-answer scores; current/fresh paired on identical inputs, targets and minibatches; per-critic offset; L sign; invalid checks; probes on = probes off for training |
 | test_exp12_phase3 | 19 | trigger settings from config; IQM bootstrap; lower bound > 0; edge cases (ties, zeros, NaN); synthetic null rate; c = 2 consecutive checks and eligibility to check 19; ledger round trip; dev excluded; rliable analysis on known effects, reproducible |
 | test_exp12_injection | 8 | Q bit-identical at injection, dQ/da within tolerance; parameter counts; head boundary; new = copy; frozen heads bit-identical over 50 steps incl. weight decay; optimizer state rules; gradients reach the trunk; target and Polyak |
-| test_exp12_fork | 23 (1 skipped here, passes in venv_hb) | fork plan and files; identity arm bit-identical to the control; Check 1 (bit-exact control and identity, 64 eps injected, TF32 stops, dQ/da compared); Check 2 paired difference; arm records; frozen head unchanged; fork invisible to the Exp 1 trajectory; refusals (config, m, missing fork, device model); post-fork evaluation isolation and seeding; identity-validation procedure and compare script; HumanoidBench Reach seeding; **kill matrix**: before a check, mid-interval, inside a routine save (previous checkpoint intact), inside the fork write, right after the fork, mid-post-fork control and arm, all bit-identical after resume |
+| test_exp12_fork | 23 (1 skipped here, passes in venv_hb) | fork plan and files; identity arm bit-identical to the control; Check 1 (bit-exact control and identity, 64 eps injected, run under full FP32, fails on a broken injection construction, dQ/da compared); Check 2 paired difference; arm records; frozen head unchanged; fork invisible to the Exp 1 trajectory; refusals (config, m, missing fork, device model); post-fork evaluation isolation and seeding; identity-validation procedure and compare script; HumanoidBench Reach seeding; **kill matrix**: before a check, mid-interval, inside a routine save (previous checkpoint intact), inside the fork write, right after the fork, mid-post-fork control and arm, all bit-identical after resume |
 | test_exp12_positive_control | 15 | recovery toward the fresh critic; m rule; pooled SD; stop rules (L_trigger ≤ 0, noise ≥ 0.10, at the boundary); shared offset modes; end to end on a forced dev run (trigger probe reproduced exactly; noise from the four real-settings series only) |
 | test_exp12_diagnostics | 8 | KL equals the closed form, direction KL(π_t ‖ π_{t−1}); saturation on the sampled actions; gnorm population SD; reference batch from a dedicated stream per window; update bit-identical with diagnostics on or off; metrics present every window |
 | test_exp12_exp2_analysis | 11 | bands (known answers, shared resamples, reproducible, IQM default); paired differences; incomplete forks and dev runs excluded; Check-2-success secondary; normalize hook per environment |
@@ -152,7 +156,7 @@ crash), and the test passes again once restored. They cover: probe pairing,
 offset, baseline, sign and validity; trigger tail, strictness, eligibility,
 statistic and consecutive rule; dev exclusion; SimBa warm-up; every
 injection invariant; the m rule, recovery and noise; the shared offset;
-Check 1 (dQ/da, bit-exact control, TF32, device); the fork plan; post-fork
+Check 1 (dQ/da, bit-exact control, tolerance, device); the fork plan; post-fork
 evaluation isolation; the diagnostics; the Exp 2 analysis; the manifests;
 and truncation (critic target, final observation, PenTwirl limit). Two
 further HumanoidBench Reach mutations were run by hand in venv_hb: both
@@ -160,31 +164,31 @@ fail the test, and the restored code passes.
 
 **NEEDS CUDA VERIFICATION:** every test above on the Linux + CUDA stack, with
 and without deterministic ops; the identity-fork gate per architecture ×
-suite; Check 1 tolerances and TF32 on the grid's GPU; all GPU performance
+suite; Check 1 tolerances on the grid's GPU; TF32 active at the run setting (A0); all GPU performance
 numbers in section 5.
 
 ## 5. Measured numbers
 
 | Quantity | Value | Where |
 |---|---|---|
-| Training it/s with probes off vs the current code (angle_1) | CPU: exp1/angle_1 wall-time ratio 0.96 (D2W512, humanoid-run); the real ratio **NEEDS CUDA VERIFICATION** (CUDA §4, `ratio_exp1_over_angle1`) | |
-| Probe overhead per critic size | CPU: D2W512 one check 413 s, projected 7.1% of a 500k-step run's wall-clock; all sizes **NEEDS CUDA VERIFICATION** (§4). Rule: if D6W1536 exceeds ~5%, I report and ask; the probe is never reduced | |
+| Training it/s with probes off vs the current code (angle_1) | CPU: exp1/angle_1 wall-time ratio 0.96 (D2W512, humanoid-run); the real ratio **NEEDS CUDA VERIFICATION** (CUDA B4, `ratio_exp1_over_angle1`) | |
+| Probe overhead per critic size | CPU: D2W512 one check 413 s, projected 7.1% of a 500k-step run's wall-clock; all sizes **NEEDS CUDA VERIFICATION** (A3, B4). Forecast under TF32 for D6W1536 dog-run ≈ 7% (CUDA sheet, an estimate). Rule: if D6W1536 exceeds ~5%, I report and ask; the probe is never reduced | |
 | Actor diagnostics overhead | CPU: within noise (−1.2%, D2W512, 60 steps); **NEEDS CUDA VERIFICATION** (`diagnostics_overhead_pct`) | |
 | Fork save / restore | CPU, local disk: D6W1536 dog-run complete state at a 95%-of-B fork = 2.62 GB, save 17.4 s, restore 18.4 s. D2W512 hopper-hop: 99 MB, 1.0 s / 0.8 s. Cluster disk **NEEDS CUDA VERIFICATION** | |
 | Post-fork evaluation cost (F1, 26 × 10 episodes per arm) | CPU: dog-run 41 s per evaluation (0.30 h per arm); hopper-hop 7.3 s; MyoSuite 1.7–2.8 s and h1-run 3.4 s (lower bounds: untrained policies end episodes early; full-length h1-run ≈ 49 s). As a share of arm training time: **NEEDS CUDA VERIFICATION** | |
 | Peak GPU memory per size, recommended concurrency | **NEEDS CUDA VERIFICATION** (`peak_device_bytes`, `recommended_jobs_per_gpu_upper_bound`) | |
 | Retained disk per run (worst case dog-run, fork at 95% of B) | D2W512 1.06 GB; D4W1024 5.03 GB (3.32 run + 1.71 arm); D6W1536 9.18 GB (6.19 + 2.99); whole-grid upper bound ≈ 734 GB. Estimate from parameter counts and measured bytes per transition, checked against the measured 2.62 GB fork state (estimate 2.75 GB) | |
-| Synthetic-null false-trigger rate per check (5 rounds, one check) | 4.93% (nominal one-sided 2.5%); the fresh-pair null with real probes **NEEDS CUDA VERIFICATION** (§3) | |
+| Synthetic-null false-trigger rate per check (5 rounds, one check) | 4.93% (nominal one-sided 2.5%); the fresh-pair null with real probes **NEEDS CUDA VERIFICATION** (B3) | |
 | Check 1 on CPU | identity and control 0 eps; injected Q exact, dQ/da up to 7.2 eps (D6W1536) | |
 
 ## 6. Risks, limitations, open points
 
 - The probe's dynamic range at the real critic sizes is unknown. On a small
   CPU critic, P sat near 0.008 of b ≈ 0.5. The range rule and fallback
-  ladder are pre-specified (CUDA §2).
+  ladder are pre-specified (CUDA A2, B2).
 - Run-level false-trigger rate. The per-check percentile bootstrap over 5
   rounds is anti-conservative (4.93% vs 2.5%). Two consecutive checks
-  reduce the run-level rate, but it is measured only on CUDA (§3, null).
+  reduce the run-level rate, but it is measured only on CUDA (B3, null).
   Check 2's interval has the same 5-round caveat (n).
 - KL churn is heavy-tailed. Near-deterministic action dimensions (σ ≈ 6e-5)
   gave 10–20 nats per update on a tiny CPU policy.
@@ -199,9 +203,11 @@ numbers in section 5.
   SimBa.
 - Bit-exactness on CUDA is unproven. If the identity fork passes only with
   deterministic GPU ops, the tolerance and flags are your decision.
-- TF32: if the grid's GPU uses TF32 for float32 matmuls (likely by default
-  on Ampere+), every injected arm stops at Check 1 by design. CUDA §0 reports
-  it before anything else.
+- Precision (v): every matmul runs in TF32 on the GPU; Check 1 and A0's
+  measurement run under full FP32. TF32 no longer stops anything. A0 must
+  show the run setting active (error ~1e-4 to 1e-3) and highest at ~1e-7;
+  NEEDS CUDA VERIFICATION. TF32 rounding changes results relative to FP32
+  runs, so all Exp 1/2 runs must use the same setting (they do: one helper).
 - Device pinning: every scaled run and both arms must stay on one GPU
   model (u). A control resumed on another model refuses to run.
 - Disk: the grid's upper bound is ≈ 734 GB of retained state (section 5).
@@ -229,25 +235,25 @@ numbers in section 5.
 
 The full ordered sheet is `docs/exp12_cuda_commands.md`. In order:
 
-1. **Setup and precision** (§0). Install the requirements and HumanoidBench,
-   export MUJOCO_GL=egl PYOPENGL_PLATFORM=egl, and save
-   `0_matmul_precision.json`. If `tf32_detected` is true, send it to me
-   first.
-2. **CUDA tests and break checks** (§1). Run them with default and with
+1. **Setup and precision** (Setup, A0). Install the requirements and
+   HumanoidBench, export MUJOCO_GL=egl PYOPENGL_PLATFORM=egl, and save
+   `A0_matmul_precision.json`. It must show `matmul_precision`
+   tensorfloat32 on gpu with error ~1e-4 to 1e-3, and highest at ~1e-7.
+2. **CUDA tests and break checks** (A1, B1). Run them with default and with
    deterministic XLA flags:
    `python -m unittest discover -s tests -p "test_exp12_*.py" -t .` and
    `python tests/exp12_break_checks.py`.
-3. **Calibration** (§2–§4). The fresh-critic range check (pre-specified
+3. **Calibration** (A2, A3, B2–B4). The fresh-critic range check (pre-specified
    10–90% of b rule), the fresh-pair null (≥ 100 pairs per size), and the
    profile per critic size and suite. Send me the JSON files; any rule that
    fails comes back to you.
-4. **Identity-fork gate** (§5). D4W1024 and D6W1536 × dog-run, myo-key-turn
+4. **Identity-fork gate** (Block C). D4W1024 and D6W1536 × dog-run, myo-key-turn
    and h1-run-v0, on the grid's GPU model. `compare_identity_fork.py` must
    exit 0 for all six.
-5. **Positive-control dev run** (§6). D6W1536 dog-run, seed 102, run_role=dev,
+5. **Positive-control dev run** (Block D). D6W1536 dog-run, seed 102, run_role=dev,
    then `scripts/positive_control.py`. You freeze m (`injection.m`) from its
    result.
-6. **Preflight** (§7) per critic size on the grid's GPU model, with
+6. **Preflight** (Block E) per critic size on the grid's GPU model, with
    `--with-fork` for D4W1024 and D6W1536.
 7. **Pilot** (your call; dev role, seeds outside 1–5, kept out of the
    confirmatory data). For example, dog-run with all three critics, seed 201:
@@ -260,7 +266,7 @@ The full ordered sheet is `docs/exp12_cuda_commands.md`. In order:
        --checkpoint_start_frac 0.0
    done
    ```
-8. **Main grid** (§8). Run
+8. **Main grid** (Block F). Run
    `python generate_manifest.py --grid exp12 --ckpt-root ABS --results-root ABS`
    (195 jobs), then `scripts/claim_launcher.py --phase-files
    exp12_exp1_jobs.txt`. Once m is frozen and forks exist, regenerate with
@@ -269,7 +275,7 @@ The full ordered sheet is `docs/exp12_cuda_commands.md`. In order:
 
 **Pre-deployment checklist** (every item from the steps above):
 
-- [ ] TF32 not detected, or your decision on it.
+- [ ] A0: TF32 active at the run setting, highest at FP32 level (Check 1's context).
 - [ ] CUDA tests and break checks pass; any deterministic-ops dependence decided.
 - [ ] Range rule passes at all three sizes; the round spread is reported.
 - [ ] Null fire rate ≤ 5% per size, or your decision on the p95 threshold.
