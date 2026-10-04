@@ -1,4 +1,4 @@
-"""Phase 4: positive control and m-selection (amendments (c)-(f)): arithmetic, shared offset, end to end."""
+"""Positive control and m-selection (amendments (c)-(e), (q)): arithmetic, shared offset, end to end."""
 
 import json
 import os
@@ -16,43 +16,21 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
 from exp12_helpers import CONFIG_PATH, patch_wandb, tiny_overrides  # noqa: E402
-from experiments.exp12.m_selection import (  # noqa: E402
-    HEALTHY_REFERENCES, Stop, evaluate, healthy_reference, loss_rounds, pooled_sd, recovery, select_m)
+from experiments.exp12.m_selection import evaluate, loss_rounds, pooled_sd, recovery, select_m  # noqa: E402
 from experiments.exp12.probe import iqm, probe_round  # noqa: E402
 from test_exp12_probe import CFG, LinearCritic, _pool  # noqa: E402
 
 
-def _record(k, rounds):
-    return {"check_index": k, "loss_iqm": iqm(rounds), **{f"loss_r{r}": v for r, v in enumerate(rounds)}}
-
-
 class MSelectionArithmeticTest(unittest.TestCase):
-    RECORDS = [_record(0, [0.0] * 5), _record(1, [0.1, 0.2, 0.3, 0.4, 0.5]),
-               _record(2, [0.0, 0.1, 0.1, 0.1, 0.9]), _record(3, [1.0] * 5), _record(4, [2.0] * 5)]
-
     def test_loss_rounds_ordered_numerically(self):
         r = {"check_index": 1, **{f"loss_r{i}": float(i) for i in range(12)}}
         np.testing.assert_array_equal(loss_rounds(r), np.arange(12.0))
 
-    def test_healthy_reference_definitions(self):
-        value, used = healthy_reference(self.RECORDS, 3, "last_pre_trigger")
-        self.assertEqual((value, used), (iqm([0.0, 0.1, 0.1, 0.1, 0.9]), [2]))
-        value, used = healthy_reference(self.RECORDS, 3, "iqm_pre_trigger")
-        pooled = [0.1, 0.2, 0.3, 0.4, 0.5, 0.0, 0.1, 0.1, 0.1, 0.9]
-        self.assertAlmostEqual(value, iqm(pooled))
-        self.assertEqual(used, [1, 2])  # check 0 (the fresh probe) and the trigger check and later are excluded
-
-    def test_no_pre_trigger_check_stops(self):
-        with self.assertRaises(Stop):
-            healthy_reference(self.RECORDS, 1, "last_pre_trigger")
-        with self.assertRaises(ValueError):
-            healthy_reference(self.RECORDS, 3, "median")
-
-    def test_recovery_endpoints(self):
-        self.assertEqual(recovery(1.0, 1.0, 0.2), 0.0)
-        self.assertEqual(recovery(1.0, 0.2, 0.2), 1.0)
-        self.assertAlmostEqual(recovery(1.0, 0.6, 0.2), 0.5)
-        self.assertLess(recovery(1.0, 1.4, 0.2), 0)  # worse than at the trigger
+    def test_recovery_toward_the_fresh_critic(self):
+        self.assertEqual(recovery(0.8, 0.8), 0.0)
+        self.assertEqual(recovery(0.8, 0.0), 1.0)  # back to the fresh critic's level, L = 0
+        self.assertAlmostEqual(recovery(0.8, 0.2), 0.75)
+        self.assertLess(recovery(0.8, 1.0), 0)  # worse than at the trigger
 
     def test_select_smallest_m_within_tolerance(self):
         self.assertEqual(select_m({"last": 0.5, "half": 0.85, "all": 0.9}, 0.10), "half")
@@ -60,9 +38,6 @@ class MSelectionArithmeticTest(unittest.TestCase):
         self.assertEqual(select_m({"last": 0.5, "half": 0.6, "all": 0.9}, 0.10), "all")
         self.assertEqual(select_m({"last": 0.9, "half": 0.2, "all": 0.1}, 0.10), "last")
         self.assertEqual(select_m({"last": 0.78, "half": 0.89, "all": 0.89}, 0.10), "half")
-
-    def test_primary_healthy_reference_is_the_iqm_of_pre_trigger_checks(self):
-        self.assertEqual(HEALTHY_REFERENCES[0], "iqm_pre_trigger")
 
     def test_pooled_sd(self):
         a, b = np.array([1.0, 2.0, 3.0]), np.array([10.0, 10.0, 13.0, 15.0])
@@ -76,54 +51,35 @@ class MSelectionArithmeticTest(unittest.TestCase):
                 "injected_half": np.array(half), "injected_all": np.array(full)}
 
     def test_evaluate_chooses_m(self):
-        loss = self._loss([1.0] * 5, [0.9] * 5, [0.3] * 5, [0.25, 0.25, 0.25, 0.25, 0.26])
-        out = evaluate(loss, 0.2, loss, 0.10, 0.10)
+        loss = self._loss([0.8] * 5, [0.7] * 5, [0.1] * 5, [0.05, 0.05, 0.05, 0.05, 0.06])
+        out = evaluate(loss, 0.10, 0.10)
         self.assertIsNone(out["stop"])
         self.assertEqual(out["chosen_m"], "half")
         self.assertAlmostEqual(out["recovery"]["half"], 0.875)
+        self.assertEqual(out["noise_series"], sorted(loss))  # the four real-settings evaluations
         self.assertAlmostEqual(out["noise_sd"], pooled_sd(loss))
         self.assertAlmostEqual(out["noise"], pooled_sd(loss) / 0.8)
 
-    def test_noise_pools_every_series_given(self):
-        loss = self._loss([1.0] * 5, [0.9] * 5, [0.3] * 5, [0.25] * 5)
-        extra = {"shared_offset_mean_degraded": np.array([1.0, 1.0, 1.0, 1.0, 1.5])}
-        out = evaluate(loss, 0.2, {**loss, **extra}, 0.10, 0.10)
-        self.assertAlmostEqual(out["noise_sd"], pooled_sd({**loss, **extra}))
-        self.assertGreater(out["noise_sd"], 0)
-        self.assertEqual(out["noise_series"], sorted({**loss, **extra}))
-
     def test_evaluate_stops_on_noise(self):
-        loss = self._loss([1.0, 1.0, 1.0, 1.0, 2.0], [0.9] * 5, [0.3] * 5, [0.25] * 5)
-        out = evaluate(loss, 0.2, loss, 0.10, 0.10)  # pooled SD sqrt(0.8 / 16) = 0.224; / 0.8 = 0.28
+        loss = self._loss([0.8, 0.8, 0.8, 0.8, 1.8], [0.7] * 5, [0.1] * 5, [0.05] * 5)
+        out = evaluate(loss, 0.10, 0.10)  # pooled SD sqrt(0.8 / 16) = 0.224; / 0.8 = 0.28
         self.assertIsNone(out["chosen_m"])
         self.assertIn("noise", out["stop"])
         self.assertAlmostEqual(out["noise"], pooled_sd(loss) / 0.8)
-        self.assertGreaterEqual(out["noise"], 0.10)
 
     def test_noise_exactly_at_the_threshold_stops(self):
-        loss = self._loss([1.0] * 5, [0.9] * 5, [0.3] * 5, [0.25] * 5)
-        noise = {"x": np.array([0.0, 0.08])}  # SD = 0.08 / sqrt(2)
-        sd = 0.08 / np.sqrt(2)
-        out = evaluate(loss, 1.0 - sd / 0.10, noise, 0.10, 0.10)  # denominator = sd / 0.10
-        self.assertAlmostEqual(out["noise"], 0.10)
-        self.assertIsNotNone(out["stop"])
-        out = evaluate(loss, 1.0 - sd / 0.0999, noise, 0.10, 0.10)
-        self.assertIsNone(out["stop"])
+        offsets = np.array([-0.5, 0.5, 0.0, -0.5, 0.5])  # IQM 0; within-series sum of squares 1.0
+        for l_trigger, stops in ((2.5, True), (0.25 / 0.0999, False)):  # pooled SD sqrt(1 / 16) = 0.25
+            out = evaluate(self._loss(l_trigger + offsets, [0.0] * 5, [0.0] * 5, [0.0] * 5), 0.10, 0.10)
+            self.assertAlmostEqual(out["noise_sd"], 0.25)
+            self.assertAlmostEqual(out["l_trigger"], l_trigger)
+            self.assertEqual(out["stop"] is not None, stops, out["noise"])
 
-    def test_evaluate_stops_when_trigger_not_above_healthy(self):
-        loss = self._loss([0.2] * 5, [0.1] * 5, [0.1] * 5, [0.1] * 5)
-        out = evaluate(loss, 0.3, loss, 0.10, 0.10)
-        self.assertIsNone(out["chosen_m"])
-        self.assertIn("undefined", out["stop"])
-        flat = self._loss([0.5] * 5, [0.1] * 5, [0.1] * 5, [0.1] * 5)
-        self.assertIn("undefined", evaluate(flat, 0.5, flat, 0.10, 0.10)["stop"])  # exactly zero
-
-    def test_evaluate_stops_when_gap_is_below_the_noise(self):
-        loss = self._loss([1.0] * 5, [0.9] * 5, [0.3] * 5, [0.25] * 5)
-        noise = {"x": np.array([0.0, 1.0, 0.0, 1.0, 0.0])}  # SD ~ 0.548
-        out = evaluate(loss, 0.6, noise, 10.0, 0.10)  # gap 0.4 < SD, even with a lax noise threshold
-        self.assertIsNone(out["chosen_m"])
-        self.assertIn("below the probe noise", out["stop"])
+    def test_evaluate_stops_when_l_trigger_is_not_positive(self):
+        for degraded in ([0.0] * 5, [-0.2] * 5):
+            out = evaluate(self._loss(degraded, [0.1] * 5, [0.1] * 5, [0.1] * 5), 0.10, 0.10)
+            self.assertIsNone(out["chosen_m"])
+            self.assertIn("undefined", out["stop"])
 
 
 class SharedOffsetTest(unittest.TestCase):
@@ -203,27 +159,16 @@ class PositiveControlEndToEndTest(unittest.TestCase):
         # The degraded critic on the trigger check's own streams reproduces the run's recorded probe exactly.
         self.assertEqual(report["trigger_reproduction_max_abs_diff"], 0.0)
         self.assertEqual(set(report["loss_rounds"]), {"degraded", "injected_last", "injected_half", "injected_all"})
-        # Primary healthy reference: IQM over all pre-trigger checks; the last one is a sensitivity only.
-        self.assertEqual(report["healthy_reference_definition"], "iqm_pre_trigger")
-        self.assertEqual(report["healthy_reference_checks"], [1, 2, 3, 4])
-        pooled = np.concatenate([c["loss_rounds"] for c in report["pre_trigger_checks"]])
-        self.assertAlmostEqual(report["selection"]["l_healthy"], iqm(pooled))
-        self.assertEqual(report["healthy_reference"]["last_pre_trigger"]["checks"], [4])
-        self.assertAlmostEqual(report["selection_sensitivity_last_pre_trigger"]["l_healthy"],
-                               report["pre_trigger_checks"][-1]["loss_iqm"])
-        self.assertEqual([c["check_index"] for c in report["pre_trigger_checks"]], [1, 2, 3, 4])
+        self.assertEqual(report["healthy_reference"], "fresh critic (check 0), L_healthy = 0")
         self.assertEqual(set(report["shared_offset_sensitivity"]), {"degraded", "fresh", "mean"})
         sel = report["selection"]
-        # Noise: pooled SD over every per-round L series the script probed (4 main + 3 shared-offset).
-        series = {**{n: np.array(v) for n, v in report["loss_rounds"].items()},
-                  **{f"shared_offset_{m}_degraded": np.array(v["loss_rounds"])
-                     for m, v in report["shared_offset_sensitivity"].items()}}
-        self.assertEqual(len(sel["noise_series"]), 7)
-        self.assertAlmostEqual(sel["noise_sd"], pooled_sd(series))
+        # Noise: pooled SD over the four real-settings evaluations only (shared-offset repeats excluded).
+        self.assertEqual(sel["noise_series"], ["degraded", "injected_all", "injected_half", "injected_last"])
+        self.assertAlmostEqual(sel["noise_sd"], pooled_sd({n: np.array(v) for n, v in report["loss_rounds"].items()}))
+        self.assertAlmostEqual(sel["l_trigger"], iqm(report["loss_rounds"]["degraded"]))
         if "recovery" in sel:
             for m in ("last", "half", "all"):
-                self.assertAlmostEqual(sel["recovery"][m], recovery(sel["l_trigger"], sel["l_injected"][m],
-                                                                    sel["l_healthy"]))
+                self.assertAlmostEqual(sel["recovery"][m], recovery(sel["l_trigger"], sel["l_injected"][m]))
         if report["status"] == "m_chosen":
             self.assertEqual(report["chosen_m"], select_m(sel["recovery"], 0.10))
             self.assertLess(sel["noise"], 0.10)

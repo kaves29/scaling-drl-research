@@ -449,8 +449,11 @@ class IdentityValidationTest(unittest.TestCase):
             fork.check_validation_flags(cfg)
 
 
-class KillAroundForkTest(unittest.TestCase):
-    """Interrupted at the fork or after it, exp1 and the injected arm resume to bit-identical results."""
+class KillMatrixTest(unittest.TestCase):
+    """Kill-and-resume matrix (requirement 10): killed before a check, mid-interval, inside a routine
+    save, at the fork and mid-post-fork, exp1 (the control) and the injected arm resume to results
+    bit-identical to an uninterrupted run. Checks every 20 steps, saves every 20, f*_run forced at
+    check 5 (step 100), arm end 200."""
 
     def setUp(self):
         self.tmp = tempfile.mkdtemp()
@@ -470,35 +473,49 @@ class KillAroundForkTest(unittest.TestCase):
         env = dict(os.environ, JAX_PLATFORMS="cpu", MUJOCO_GL=os.environ.get("MUJOCO_GL", "disable"))
         return subprocess.run([sys.executable, RUNNER, "exp1", path], env=env, capture_output=True, text=True)
 
-    def test_kill_points_around_the_fork(self):
+    def _reference(self):
         ref = os.path.join(self.tmp, "ref")
         r = self._run(ref)
         self.assertEqual(r.returncode, 0, r.stderr[-3000:])
-        final = latest_state_dir(Path(ref) / "state")
-        cases = {
-            "inside the fork write (state saved, FORK_READY missing)": dict(crash_inside_fork_write=True),
-            "right after the fork, before the control's first save": dict(crash_step=101),
-            "mid post-fork window": dict(crash_step=137),
-        }
-        for name, crash in cases.items():
-            with self.subTest(kill=name):
-                run_dir = os.path.join(self.tmp, name.split()[0] + str(len(name)))
-                r = self._run(run_dir, **crash)
-                self.assertNotEqual(r.returncode, 0)
-                r = self._run(run_dir)
-                self.assertEqual(r.returncode, 0, r.stderr[-3000:])
-                self.assertEqual(state_differences(final, latest_state_dir(Path(run_dir) / "state"),
-                                                   ignore_meta=("wandb_run_id",)), [])
+        return ref, latest_state_dir(Path(ref) / "state")
+
+    def _kill_and_resume(self, final, name, experiment="exp1", source=None, check=None, **crash):
+        with self.subTest(kill=name):
+            run_dir = os.path.join(self.tmp, "".join(c if c.isalnum() else "_" for c in name))
+            r = self._run(run_dir, experiment, source, **crash)
+            self.assertNotEqual(r.returncode, 0)
+            self.assertFalse((Path(run_dir) / "DONE").exists())
+            if check is not None:
+                check(run_dir)
+            r = self._run(run_dir, experiment, source)
+            self.assertEqual(r.returncode, 0, r.stderr[-3000:])
+            self.assertEqual(state_differences(final, latest_state_dir(Path(run_dir) / "state"),
+                                               ignore_meta=("wandb_run_id",)), [])
+
+    def test_exp1_before_the_fork(self):
+        _, final = self._reference()
+
+        def previous_state_intact(run_dir):
+            latest = latest_state_dir(Path(run_dir) / "state")
+            self.assertEqual(_meta(latest)["interaction_step"], 40)  # LATEST still names the save before
+            load_agent_tree(latest)
+
+        self._kill_and_resume(final, "before a check (check 4 at step 80)", crash_step=79)
+        self._kill_and_resume(final, "mid probe interval", crash_step=67)
+        self._kill_and_resume(final, "inside a routine save (step 60)", crash_inside_save_step=60,
+                              check=previous_state_intact)
+
+    def test_at_and_after_the_fork(self):
+        ref, final = self._reference()
+        self._kill_and_resume(final, "inside the fork write (state saved, FORK_READY missing)",
+                              crash_inside_fork_write=True)
+        self._kill_and_resume(final, "right after the fork, before the control's first save", crash_step=101)
+        self._kill_and_resume(final, "mid post-fork, control", crash_step=137)
         arm_ref = os.path.join(self.tmp, "arm_ref")
         r = self._run(arm_ref, "exp2_arm", source=ref)
         self.assertEqual(r.returncode, 0, r.stderr[-3000:])
-        arm = os.path.join(self.tmp, "arm_killed")
-        r = self._run(arm, "exp2_arm", source=ref, crash_step=153)
-        self.assertNotEqual(r.returncode, 0)
-        r = self._run(arm, "exp2_arm", source=ref)
-        self.assertEqual(r.returncode, 0, r.stderr[-3000:])
-        self.assertEqual(state_differences(latest_state_dir(Path(arm_ref) / "state"),
-                                           latest_state_dir(Path(arm) / "state"), ignore_meta=("wandb_run_id",)), [])
+        self._kill_and_resume(latest_state_dir(Path(arm_ref) / "state"), "mid post-fork, injected arm",
+                              "exp2_arm", ref, crash_step=153)
 
 
 if __name__ == "__main__":

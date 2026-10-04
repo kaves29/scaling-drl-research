@@ -88,6 +88,17 @@ def exp1_run(spec_path):
             return original_train(self, last_step, after_step=hook, **kwargs)
 
         Exp12Trainer.train = train
+    if spec.get("crash_inside_save_step") is not None:
+        from experiments.exp12 import trainer as trainer_module
+
+        original_commit = trainer_module.commit_state_dir
+
+        def commit_state_dir(root, path, keep_previous=False):
+            if path.name.startswith(f"step_{spec['crash_inside_save_step']:09d}_") and Path(root).name == "state":
+                os._exit(5)  # the new state is fully written, LATEST still names the previous one
+            original_commit(root, path, keep_previous=keep_previous)
+
+        trainer_module.commit_state_dir = commit_state_dir
     if spec.get("crash_inside_fork_write"):
         original_save_npz = fork.save_npz
 

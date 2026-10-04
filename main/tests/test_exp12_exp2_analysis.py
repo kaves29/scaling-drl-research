@@ -79,7 +79,10 @@ class BandTest(unittest.TestCase):
         self.assertEqual(ea.bootstrap_band(m, "iqm")["high"][0], ea.bootstrap_band(m, "iqm")["high"][0])
         self.assertLess(ea.bootstrap_band(m, "iqm")["point"][0], ea.bootstrap_band(m, "mean")["point"][0])
 
-    def test_statistic_must_be_chosen(self):
+    def test_iqm_is_the_default_and_unknown_statistics_are_refused(self):
+        import inspect
+
+        self.assertEqual(inspect.signature(ea.run_analysis).parameters["statistic"].default, "iqm")
         with self.assertRaises(ValueError):
             ea.run_analysis(tempfile.mkdtemp(), "median")
 

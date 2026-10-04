@@ -370,6 +370,60 @@ class DiscountAndHorizonTest(unittest.TestCase):
         self.assertTrue(any(length == 50 and trunc for length, trunc in lengths), lengths)
 
 
+    def test_pen_twirl_keeps_its_registered_50_step_limit_as_in_simba(self):
+        # SimBa builds MyoSuite envs with myo_gym.make (registry TimeLimit(50) for PenTwirl) and then
+        # wraps TimeLimit(max_episode_steps=100): the inner 50-raw-step limit ends the episode first.
+        env = exp12_envs.create_envs(
+            env_type="myosuite", seed=1, env_name="myo-pen-twirl", num_train_envs=1, num_eval_envs=1,
+            rescale_action=True, no_termination=False, action_repeat=2, reward_scale=1.0, max_episode_steps=100,
+        )[0]
+        inner = env.envs[0].unwrapped
+        step = inner.step
+        inner.step = lambda a: (lambda r: (r[0], r[1], False, *r[3:]))(step(a))  # never terminate (pen drop)
+        env.reset()
+        for n in range(1, 60):
+            _, _, term, trunc, _ = env.step(np.zeros((1,) + env.single_action_space.shape))
+            if term[0] or trunc[0]:
+                break
+        self.assertEqual((n, bool(term[0]), bool(trunc[0])), (25, False, True))  # 25 interaction = 50 raw steps
+
+    def test_truncation_bootstraps_and_termination_does_not(self):
+        # As in SimBa: the buffer stores the final observation and the truncated flag, and the critic
+        # target uses (1 - terminated) only, so a time-limit truncation is bootstrapped.
+        from scale_rl.agents.sac.sac_update import update_critic
+
+        cfg = compose(tiny_overrides(extra=["env.max_episode_steps=20", "buffer.min_length=1000"]))
+        trainer = Exp12Trainer(cfg, tempfile.mkdtemp())
+        patchers = patch_wandb()
+        self.addCleanup(lambda: [q.stop() for q in patchers])
+        trainer.start()
+        trainer.train(25)  # random warm-up only: episodes end at 10 interaction steps (20 raw)
+        b = trainer.buffer
+        self.assertEqual((b._truncateds[9], b._terminateds[9]), (1.0, 0.0))
+        self.assertFalse(np.array_equal(b._next_observations[9], b._observations[10]))  # final obs, not reset
+        np.testing.assert_array_equal(b._next_observations[8], b._observations[9])  # mid-episode
+        trainer.close()
+
+        agent = trainer._sac_agent
+        rng = np.random.default_rng(0)
+        batch = {"observation": rng.normal(size=(8, b._observations.shape[-1])).astype(np.float32),
+                 "action": rng.uniform(-1, 1, (8, b._actions.shape[-1])).astype(np.float32),
+                 "reward": rng.normal(size=8).astype(np.float32),
+                 "next_observation": rng.normal(size=(8, b._observations.shape[-1])).astype(np.float32)}
+
+        def critic_after(terminated, truncated):
+            new, _ = update_critic(key=jax.random.PRNGKey(0), actor=agent.actor, critic=agent.critic,
+                                   target_critic=agent._target_critic, temperature=agent.temperature,
+                                   batch={**batch, "terminated": np.full(8, terminated, np.float32),
+                                          "truncated": np.full(8, truncated, np.float32)},
+                                   gamma=0.99, n_step=1, critic_use_cdq=False)
+            return jax.tree_util.tree_leaves(new.params)
+
+        same = critic_after(0.0, 0.0)
+        for a, c in zip(same, critic_after(0.0, 1.0)):
+            np.testing.assert_array_equal(a, c)  # truncation: bootstrapped exactly like a mid-episode step
+        self.assertTrue(any(not np.array_equal(a, c) for a, c in zip(same, critic_after(1.0, 0.0))))
+
 class Angle1ParityTest(unittest.TestCase):
     """With probes off, exp1's loop reproduces experiments/angle_1.py's training bit-for-bit."""
 

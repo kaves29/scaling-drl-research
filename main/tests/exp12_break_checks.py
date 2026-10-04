@@ -187,14 +187,13 @@ MUTATIONS += [
      f"{INJ}.test_new_copies_identical_and_freshly_initialised"),
     ("m rule: best recovery instead of the smallest m within 0.10", m_selection, "select_m", argmax_select_m,
      f"{PC}.MSelectionArithmeticTest.test_select_smallest_m_within_tolerance"),
-    ("healthy reference includes the trigger check", m_selection, "healthy_reference",
-     source_mutation(m_selection, "healthy_reference", '1 <= r["check_index"] < trigger_check',
-                     '1 <= r["check_index"] <= trigger_check'),
-     f"{PC}.MSelectionArithmeticTest.test_healthy_reference_definitions"),
     ("probe noise not expressed in recovery units", m_selection, "evaluate",
-     source_mutation(m_selection, "evaluate", 'out["noise"] = noise_sd / denominator',
+     source_mutation(m_selection, "evaluate", 'out["noise"] = noise_sd / l_trigger',
                      'out["noise"] = noise_sd'),
      f"{PC}.MSelectionArithmeticTest.test_evaluate_stops_on_noise"),
+    ("recovery not relative to the fresh critic's level (L = 0)", m_selection, "recovery",
+     lambda l_trigger, l_injected: (l_trigger - l_injected) / (l_trigger - 0.1),
+     f"{PC}.MSelectionArithmeticTest.test_recovery_toward_the_fresh_critic"),
     ("probe noise: range instead of pooled SD", m_selection, "pooled_sd",
      lambda series: max(float(np.ptp(x)) for x in series.values()),
      f"{PC}.MSelectionArithmeticTest.test_pooled_sd"),
@@ -202,12 +201,6 @@ MUTATIONS += [
      source_mutation(m_selection, "evaluate", 'if out["noise"] >= noise_threshold:',
                      'if out["noise"] > noise_threshold + 1e-12:'),
      f"{PC}.MSelectionArithmeticTest.test_noise_exactly_at_the_threshold_stops"),
-    ("L_trigger - L_healthy below the noise does not stop", m_selection, "evaluate",
-     source_mutation(m_selection, "evaluate", "    if denominator < noise_sd:\n", "    if False:\n"),
-     f"{PC}.MSelectionArithmeticTest.test_evaluate_stops_when_gap_is_below_the_noise"),
-    ("primary healthy reference is the last pre-trigger check", m_selection, "HEALTHY_REFERENCES",
-     ("last_pre_trigger", "iqm_pre_trigger"),
-     f"{PC}.MSelectionArithmeticTest.test_primary_healthy_reference_is_the_iqm_of_pre_trigger_checks"),
     ("shared offset ignored (each critic keeps its own)", probe, "probe_round",
      source_mutation(probe, "probe_round", "    if shared_offset is not None:\n", "    if False:\n"),
      f"{PC}.SharedOffsetTest.test_shared_offset_modes"),
@@ -333,6 +326,27 @@ MUTATIONS += [
      source_mutation(generate_manifest, "add_exp12_grid", "arm_overrides = overrides + [",
                      "arm_overrides = overrides[:-1] + ["),
      f"{MAN}.test_arm_jobs_only_for_completed_forks_grouped_by_device"),
+]
+
+
+from experiments.exp12 import envs as exp12_envs  # noqa: E402
+
+HOR = "tests.test_exp12_foundations.DiscountAndHorizonTest"
+MUTATIONS += [
+    ("truncation treated as terminal in the critic target", sac_update, "update_critic",
+     source_mutation(sac_update, "update_critic",
+                     'target_q = batch["reward"] + (gamma**n_step) * (1 - batch["terminated"]) * next_q',
+                     'target_q = batch["reward"] + (gamma**n_step) * (1 - jnp.maximum(batch["terminated"], '
+                     'batch["truncated"])) * next_q'),
+     f"{HOR}.test_truncation_bootstraps_and_termination_does_not"),
+    ("the reset observation stored as next_observation on truncation", trainer_module, "Exp12Trainer",
+     source_mutation(trainer_module, "Exp12Trainer", "if terminateds[env_idx] or truncateds[env_idx]:",
+                     "if terminateds[env_idx]:"),
+     f"{HOR}.test_truncation_bootstraps_and_termination_does_not"),
+    ("PenTwirl's registered 50-step limit replaced", exp12_envs, "make_myosuite_env",
+     source_mutation(exp12_envs, "make_myosuite_env", "myo_gym.make(MYOSUITE_TASKS_DICT[env_name], seed=seed)",
+                     "myo_gym.make(MYOSUITE_TASKS_DICT[env_name], seed=seed, max_episode_steps=1000)"),
+     f"{HOR}.test_pen_twirl_keeps_its_registered_50_step_limit_as_in_simba"),
 ]
 
 

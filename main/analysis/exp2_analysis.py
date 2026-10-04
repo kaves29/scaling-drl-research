@@ -14,7 +14,7 @@ to identity). Per scaled architecture:
 Development runs and the identity (validation) arm are excluded by default. A fork
 enters the paired graphs only when both arms have every post-fork evaluation.
 
-    python -m analysis.exp2_analysis --out /abs/path/exp2_analysis --statistic <mean|iqm> [--include-dev]
+    python -m analysis.exp2_analysis --out /abs/path/exp2_analysis [--statistic iqm|mean] [--include-dev]
 """
 
 import argparse
@@ -228,8 +228,8 @@ def shared_time_axis(runs: pd.DataFrame, checks: pd.DataFrame, metrics: pd.DataF
     plt.close(fig)
 
 
-def run_analysis(out_dir: str, statistic: str, results_root=None, include_dev: bool = False,
-                 normalize: Callable[[str, np.ndarray], np.ndarray] = identity) -> Dict:
+def run_analysis(out_dir: str, statistic: str = "iqm", results_root=None, include_dev: bool = False,
+                 normalize: Callable[[str, np.ndarray], np.ndarray] = identity, scaled=SCALED) -> Dict:
     if statistic not in STATISTICS:
         raise ValueError(f"statistic must be one of {sorted(STATISTICS)}")
     out = Path(require_absolute(out_dir, "--out"))
@@ -254,7 +254,7 @@ def run_analysis(out_dir: str, statistic: str, results_root=None, include_dev: b
         bands.to_csv(out / f"paired_bands{label}.csv", index=False)
         outputs[f"bands{label}"] = bands
         kind = "SECONDARY (Check 2 passed only)" if label else "PRIMARY"
-        for arch in SCALED:
+        for arch in scaled:
             plot_paired(sub, bands, arch, out / f"paired_returns_{arch}{label}.png",
                         f"{arch}: {kind}, {statistic} over seeds, {int(CONFIDENCE * 100)}% percentile bootstrap band")
     post = data["checks"]
@@ -262,23 +262,24 @@ def run_analysis(out_dir: str, statistic: str, results_root=None, include_dev: b
         post.to_csv(out / "plasticity_post_fork.csv", index=False)
     if not data["metrics"].empty:
         data["metrics"].to_csv(out / "diagnostics_post_fork.csv", index=False)
-    for arch in SCALED:
+    for arch in scaled:
         plot_both_arms(post, arch, "loss_iqm", out / f"plasticity_post_fork_{arch}.png", "plasticity loss L (IQM)")
         for v in DIAGNOSTICS:
             plot_both_arms(data["metrics"], arch, v, out / f"diagnostics_{v.split('/')[-1]}_{arch}.png", v)
     _, exp1_checks = ledger.load(results_root, include_dev=include_dev, require_complete=False)
-    scaled = data["runs"][data["runs"].architecture.isin(SCALED)]
-    exp1_metrics = ledger.load_metrics(scaled.run_key, results_root)
-    for (arch, env), _ in scaled.groupby(["architecture", "environment"]):
-        shared_time_axis(scaled, exp1_checks, exp1_metrics, arch, env, out / f"shared_time_axis_{arch}_{env}.png")
+    scaled_runs = data["runs"][data["runs"].architecture.isin(scaled)]
+    exp1_metrics = ledger.load_metrics(scaled_runs.run_key, results_root)
+    for (arch, env), _ in scaled_runs.groupby(["architecture", "environment"]):
+        shared_time_axis(scaled_runs, exp1_checks, exp1_metrics, arch, env,
+                         out / f"shared_time_axis_{arch}_{env}.png")
     return outputs
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--out", required=True)
-    parser.add_argument("--statistic", required=True, choices=sorted(STATISTICS),
-                        help="statistic over seeds for the bands (pending the project lead's decision)")
+    parser.add_argument("--statistic", default="iqm", choices=sorted(STATISTICS),
+                        help="statistic over seeds for the bands (IQM, amendment (r))")
     parser.add_argument("--results-root", default=None)
     parser.add_argument("--include-dev", action="store_true")
     args = parser.parse_args()

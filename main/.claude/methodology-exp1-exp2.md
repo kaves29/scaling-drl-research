@@ -145,7 +145,7 @@ Positive control (run before the main experiment, and before the main runs of Ex
 1. Probe a fresh critic
 2. Probe a normally trained critic
 3. Obtain a naturally degraded scaled critic checkpoint from a preliminary SAC/SimBa development run using the Experiment 1 degradation criterion and probe it → the score should show clear plasticity loss
-4. Apply plasticity injection to the naturally degraded critic and probe it again → the score should recover toward the normally trained critic
+4. Apply plasticity injection to the naturally degraded critic and probe it again → the score should recover toward the fresh critic's level
 
 * Use one scaled critic architecture and one environment for the positive-control calibration
 * This validates the plasticity-injection intervention in SAC critics, SimBa, and continuous control; Lyle et al. 2023 establishes the plasticity probe in their value-learning settings, not ours
@@ -268,9 +268,9 @@ exceeds 0.10, stop and consult the project lead.
 a development seed outside 1-5. If it never triggers, stop and consult. The
 trigger is never loosened.
 
-(f) Healthy reference. The "normally trained critic" is the same critic's own
-earlier checks in the same development run, before it triggers. No separate
-D2W512 reference run is used.
+(f) [SUPERSEDED by (q), 2026-10-04] Healthy reference. The "normally trained
+critic" is the same critic's own earlier checks in the same development run,
+before it triggers. No separate D2W512 reference run is used.
 
 (g) No normalization in Experiment 2. No returns are normalized anywhere, and no
 scalar summary is reported. Experiment 2 outputs graphs only: per-environment
@@ -344,7 +344,7 @@ coarse (few distinct values), and percentile intervals from so few
 observations can be too narrow, so the nominal 95% coverage is not
 guaranteed.
 
-(o) Positive control.
+(o) Positive control. [SUPERSEDED by (q), 2026-10-04]
   - Healthy reference: the IQM of the per-round L pooled over all checks
     before f*_run. The last check before f*_run is reported as a sensitivity
     only and is never used to choose m.
@@ -358,3 +358,58 @@ guaranteed.
 fork state. The fork records it, and the control (on resume) and the arm jobs
 refuse to run on a different model. The identity-fork validation runs for
 D4W1024 and D6W1536 in each suite on the GPU model the grid will use.
+
+## Amendments from the Phase 5-6 decisions (2026-10-04)
+
+(q) Positive control: healthy reference, noise and stop rule (replaces (f), (o)
+and decision E7). The healthy reference is check 0, the fresh critic at
+initialization, before any critic training. Plasticity loss L is measured
+against the fresh critic, so L_healthy = 0 by definition and
+  recovery(m) = (L_trigger - L_after_injection(m)) / L_trigger.
+Steps 1 and 2 of the positive control therefore probe the same critic.
+Probe noise: the pooled SD of the per-round L over the script's evaluations
+made with the experiment's real settings (per-critic offsets: the degraded
+critic and the three injected critics), divided by L_trigger (recovery units).
+The shared-offset repeats of (c) are reported separately and play no part in
+the noise or the stop. Stop and consult (exit 3) if L_trigger <= 0, or if the
+noise in recovery units is 0.10 or more.
+
+(r) Experiment 2 bands. The per-environment bands of the paired return
+differences use the IQM over seeds (percentile bootstrap over seeds), and
+every seed's line stays visible.
+
+(s) Time limits and truncation, matching SimBa's released code
+(github.com/SonyResearch/simba @ 7d0358b).
+  (a) MyoSuite builds the registered task, keeping its own registered time
+      limit, and then applies one more TimeLimit with max_episode_steps = 100
+      raw steps, before action repeat:
+        scale_rl/envs/myosuite.py:  env = myo_gym.make(MYOSUITE_TASKS_DICT[env_name])
+        scale_rl/envs/__init__.py:  # limit max_steps before action_repeat.
+                                    env = TimeLimit(env, max_episode_steps)
+        configs/env/myosuite.yaml:  max_episode_steps: 100
+        configs/base.yaml:          gamma: max(min((eff_episode_len / 5 - 1) / (eff_episode_len / 5), 0.995), 0.95)
+      eff_episode_len = max_episode_steps / action_repeat = 50, so gamma = 0.95
+      for every MyoSuite task, myo-pen-twirl included. Our implementation does
+      the same; nothing changed.
+  (b) Time-limit truncation is bootstrapped and termination is not. The
+      buffer stores the final observation on termination or truncation
+      (run.py: "if terminateds[env_idx] or truncateds[env_idx]:
+      next_buffer_observations[env_idx] = env_infos["final_observation"][env_idx]"),
+      and the critic target uses (1 - terminated) only (sac_update.py:
+      "target_q = batch["reward"] + (gamma**n_step) * (1 - batch["terminated"]) * next_q").
+      Our implementation is identical; nothing changed.
+  Limitation: myoHandPenTwirlFixed-v0 is registered with a 50-raw-step time
+  limit, which stays in effect inside the 100-step limit. PenTwirl episodes
+  therefore end at 50 raw steps (25 interaction steps), while gamma = 0.95 is
+  derived from 100. myoHandKeyTurnFixed-v0 (registered at 200) is truncated
+  at 100 raw steps, as in (i).
+
+(t) Checkpoints. One routine save per probe check (every N/20 interaction
+steps). Each save is written to a new directory, and only then is the LATEST
+pointer atomically repointed and older routine states deleted. A run
+therefore keeps only its latest routine state, plus the complete fork state
+saved at the trigger, plus the stored fresh critic. A crash mid-save leaves the
+previous state as LATEST.
+
+(u) Limitation: the whole grid, including both arms of every fork, must run
+on one GPU model.

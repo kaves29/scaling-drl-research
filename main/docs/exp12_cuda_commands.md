@@ -135,12 +135,13 @@ with the unchanged trigger (2 consecutive firing checks). It forks at its own
 f*_run. Once `fork/FORK_READY` exists, the script does the following on the
 trigger check's own pool:
 - probes the fresh, degraded and injected critics (m = last, half, all);
-- applies amendment (d) with the healthy reference and noise rules of (o);
-- runs the one-time shared-offset check.
+- computes recovery = (L_trigger − L_injected) / L_trigger, the fresh critic
+  being the healthy reference (amendment (q));
+- applies the m rule (d);
+- reports the one-time shared-offset check separately.
 
-Exit 3 means STOP and consult: the run never triggered, there is no
-pre-trigger check, L_trigger − L_healthy ≤ 0 or below the noise SD, or the
-noise is ≥ 0.10.
+Exit 3 means STOP and consult: the run never triggered, L_trigger ≤ 0, or the
+probe noise (pooled SD of per-round L / L_trigger) is ≥ 0.10.
 ```bash
 PC=$OUT/6_positive_control
 python run.py --experiment exp1 --config_name base_exp12 --overrides env_name=dog-run --overrides env=dmc_hard \

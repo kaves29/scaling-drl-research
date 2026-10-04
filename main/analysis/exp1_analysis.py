@@ -170,14 +170,15 @@ def plot_learning_curves(run_key: str, path: Path, results_root=None, check_indi
     plt.close(fig)
 
 
-def run_analysis(out_dir: str, results_root=None, include_dev: bool = False, curves_for: Sequence[str] = ()) -> Dict:
+def run_analysis(out_dir: str, results_root=None, include_dev: bool = False, curves_for: Sequence[str] = (),
+                 default: str = DEFAULT, scaled: Sequence[str] = SCALED) -> Dict:
     out = Path(require_absolute(out_dir, "--out"))
     out.mkdir(parents=True, exist_ok=True)
     runs, checks = ledger.load(results_root, include_dev=include_dev)
     if runs.empty:
         raise ValueError("no complete runs in the ledger")
     outputs = {}
-    primary = primary_endpoint(runs)
+    primary = primary_endpoint(runs, default, scaled)
     primary.to_csv(out / "primary_endpoint.csv", index=False)
     per_architecture_iqm(runs).to_csv(out / "final_loss_by_architecture.csv", index=False)
     traj = trajectories(checks)

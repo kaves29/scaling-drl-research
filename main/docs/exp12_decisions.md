@@ -1004,3 +1004,62 @@ it is reported as specified.
   section 4.
 - Diagnostics overhead on CPU, D2W512, 60 steps: within noise (−1.2%). The
   real number comes from section 4.
+
+## Answers to the Phase 5-6 questions (received 2026-10-04)
+
+All are recorded as Methodology amendments (q)–(u).
+- P5-Q1 (replaces amendment (f), the healthy-reference part of (o), and
+  decision E7). The healthy reference is check 0, the fresh critic. L_healthy
+  = 0, and recovery = (L_trigger − L_injected) / L_trigger. The pre-trigger
+  IQM reference, its last-check sensitivity, and all f−1 / f−2 logic are
+  removed from `m_selection.py`, `scripts/positive_control.py`, their tests
+  and the break-and-restore mutations. Exit 3 if L_trigger ≤ 0, or if the
+  noise in recovery units is ≥ 0.10. The positive-control text now reads
+  "recovers toward the fresh critic's level".
+- P5-Q2. Noise = the pooled SD of per-round L over the four real-settings
+  evaluations (degraded and injected last/half/all), divided by L_trigger.
+  The shared-offset repeats are excluded from the noise and the stop, and
+  are reported separately. The "4-series-only" report is dropped.
+- P5-Q3. `analysis/exp2_analysis.py --statistic` defaults to `iqm`
+  (amendment (r)).
+- P5-Q4. Compared against SimBa's released code (quotes in amendment (s)).
+  - The MyoSuite time limit and discount match: the registered limit stays
+    inside the TimeLimit(100), and gamma is 0.95.
+  - Truncation handling matches: the final observation is stored, and the
+    target uses (1 − terminated) only, so truncation is bootstrapped.
+  Nothing changed; our buffer `add`, `RepeatAction`, wrapper order and
+  critic target match SimBa line for line. The 50-step PenTwirl behaviour is
+  recorded as a limitation. New tests
+  (`DiscountAndHorizonTest.test_pen_twirl_keeps_its_registered_50_step_limit_as_in_simba`
+  and `test_truncation_bootstraps_and_termination_does_not`) each have
+  break-and-restore mutations.
+- Checkpoints. One save per probe check, as before.
+  - Already retained: only the latest routine state (`commit_state_dir`
+    repoints LATEST atomically, then deletes older `step_*` directories),
+    plus the fork state, plus the fresh critic. Nothing changed.
+  - New kill-matrix case: a crash in the middle of a routine save, after the
+    new state is written and before LATEST is repointed, leaves the previous
+    state as LATEST and loadable, and the run resumes bit-exactly.
+  - Retained size per run (worst case: dog-run, the largest observation;
+    the fork at 95% of B; buffer capped at 1M transitions). The trained agent
+    ≈ 16 bytes per critic parameter (critic, target, two Adam moments; fresh
+    agents compress to less). Buffers are float32, 1,948 B per dog-run
+    transition. Check: the D6W1536 dog-run fork state is estimated at
+    2.75 GB and measured at 2.62 GB.
+    - D2W512: 1.06 GB (no fork).
+    - D4W1024: 3.32 GB run directory (final state + fork state + fresh
+      critic) + 1.71 GB injected-arm directory = 5.03 GB.
+    - D6W1536: 6.19 GB + 2.99 GB = 9.18 GB.
+    - Upper bound for the whole grid if every scaled run forks: 36 GB (D2) +
+      214 GB (D4) + 484 GB (D6) ≈ 734 GB.
+- Limitation recorded (amendment (u)): the whole grid, including both arms
+  of every fork, runs on one GPU model.
+
+Working rules from this message:
+- Scope: no features, scripts, tests or safeguards beyond what the
+  Methodology requires. Fine-print choices that change no measured
+  quantity, rule or visible result are taken as the simplest option and
+  logged here. The protections stay (probe isolation, exact restore,
+  identity fork, Check 1).
+- Branch: stay on `claude/eloquent-fermat-inxqlt`. No merge or push to main
+  until asked.
