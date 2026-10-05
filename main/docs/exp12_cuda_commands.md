@@ -9,7 +9,7 @@ Each step's pass/fail rule was pre-specified in `docs/exp12_decisions.md` on
 schedules a grid run.
 
 - **Block A** (one A100, 4 CPUs, ≤ 30 min): smoke tests, fresh-critic range
-  check, short profile.
+  check, short profile, optional GPU trace (A4).
 - **Blocks B–F**: everything longer, in order. B: full tests and calibration.
   C: the identity-fork gate. D: the positive control. E: preflight. F: the
   grid, which I never run.
@@ -52,10 +52,19 @@ schedules a grid run.
   fresh check) costs half.
 - **Sustained A100 throughput at batch 256:** FP32 ≈ 12 TFLOP/s (60% of the
   19.5 peak); TF32 ≈ 55 TFLOP/s (35% of 156).
-- **Environment and loop overhead:** ≈ 6 ms per interaction step for dog-run,
-  inferred from the CPU timing of a 10-episode evaluation (8 ms per step,
-  including actor inference). Cheaper for hopper and MyoSuite. h1-run is
-  ≈ 10 ms.
+- **Host overhead per training step** (measured 2026-10-05 on this machine's
+  4-core Xeon at 2.8 GHz, with the device work excluded; Delta's CPUs may
+  differ by ±30%). The GPU waits for it, because action selection needs the
+  previous update (no overlap without changing the algorithm). It comprises:
+  - the env step: dog-run 8.1 ms (MuJoCo 4.4 ms plus dm_control's Python),
+    myo-key-turn 7.7 ms, h1-run 4.2 ms;
+  - about 2.7 ms of loop work: sampling 2 batches, stacking, normalising,
+    host-to-device copies, the buffer add and the action read-back.
+  Total ≈ 11 ms (dog-run), ≈ 10.5 ms (MyoSuite), ≈ 7 ms (h1-run). The
+  earlier assumption of 6 ms was too low.
+- **Device time per training step** (2 updates, TF32): about 1.5 ms for
+  D2W512 (launch-bound), 3.8 ms for D4W1024 and 12.7 ms for D6W1536. It adds
+  to the host overhead.
 - **Compile:** ≈ 1–2 min per process for D6W1536 (update scan plus probe
   fit); less for smaller critics.
 - **Uncertainty:** treat every number as ±50% until Block A measures it.
@@ -64,18 +73,38 @@ schedules a grid run.
 
 | Critic | Train it/s, dog-run (FP32 / TF32) | One probe check, 2 critics (FP32 / TF32) | Peak GPU memory per process* | Host memory per process |
 |---|---|---|---|---|
-| D2W512 | ~150 / ~150 (env-bound) | ~6 s / ~2 s | < 1 GB | ~3 GB + buffer |
-| D4W1024 | ~42 / ~100 | ~48 s / ~11 s | ~2 GB | ~3 GB + buffer |
-| D6W1536 | ~15 / ~50 | ~160 s / ~35 s | ~5 GB (training state 1.8 GB + probe copy with Adam 1.4 GB + gradients + workspace) | ~3 GB + buffer |
+| D2W512 | ~70 / ~80 (host-bound) | ~6 s / ~2 s | < 1 GB | ~3 GB + buffer |
+| D4W1024 | ~35 / ~68 | ~48 s / ~11 s | ~2 GB | ~3 GB + buffer |
+| D6W1536 | ~15 / ~42 | ~160 s / ~35 s | ~5 GB (training state 1.8 GB + probe copy with Adam 1.4 GB + gradients + workspace) | ~3 GB + buffer |
 
 \* With `XLA_PYTHON_CLIENT_PREALLOCATE=false`. Without it, XLA reserves 75%
 of the GPU per process. Buffer host memory = filled transitions × bytes per
 transition: dog-run 1,948 B, i.e. 0.97 GB at 500k transitions; hopper 148 B;
 MyoSuite 832–1,088 B; HumanoidBench 496–544 B.
 
-Forecast from these numbers: under TF32 the probe takes ≈ 7% of a D6W1536
-dog-run's wall-clock (21 checks × ~35 s against 500,000 steps at ~50 it/s).
-That is above the ~5% rule; A3 and B4 measure it.
+Forecast from these numbers: under TF32 the probe takes ≈ 6% of a D6W1536
+dog-run's wall-clock (21 checks × ~36 s, including ~0.75 s of pool sampling,
+against 500,000 steps at ~42 it/s). That is above the ~5% rule; A3 and B4
+measure it.
+
+**Whole-run forecast, dog-run (1M env steps), TF32:**
+
+| Critic | Training | Probes | Training evaluations | Saves | Total per run | Post-fork arm (25% of B) |
+|---|---|---|---|---|---|---|
+| D2W512 | 1.7 h | 1 min | 7 min | 1 min | ~1.9 h | — (does not fork) |
+| D4W1024 | 2.1 h | 4 min | 7 min | 2 min | ~2.3 h | ~0.9 h |
+| D6W1536 | 3.3 h | 13 min | 7 min | 3 min | ~3.7 h | ~1.2 h |
+
+Training evaluations: 100 episodes × 500 steps × 8.7 ms. A post-fork arm is
+125,000 steps plus 26 × 10 evaluation episodes (~19 min on dog-run, about a
+quarter of the arm) plus 5 probe checks. Treat every figure as ±50%; B4
+measures the real ones.
+
+**What changed with the efficiency scan (2026-10-05):** the host overhead was
+measured instead of assumed (11 ms, not 6 ms, on dog-run). D2W512 is
+host-bound at ~80 it/s rather than ~150, D4W1024 ~68 rather than ~100, and
+D6W1536 ~42 rather than ~50. No code change came out of the scan, so the
+estimates move only because of the measurement.
 
 **What changed with TF32:** every per-step and per-check estimate now uses the
 TF32 column. The bigger critics get faster (D6W1536 training ~15 → ~50 it/s,
@@ -95,7 +124,7 @@ OUT=/abs/path/to/exp12_cuda_checks && mkdir -p $OUT
 
 ## Block A: one A100, 4 CPUs, ≤ 30 min in total
 
-Estimated total: ~20 min under TF32 (it was ~28 min under FP32). Peak host memory
+Estimated total: ~24 min under TF32, including the optional A4 trace (it was ~28 min under FP32). Peak host memory
 ~4 GB; peak GPU memory ~5 GB. Run the steps in order. If A1 fails, stop and
 send me the log.
 
@@ -169,6 +198,50 @@ python scripts/profile_exp12.py --env dog-run --env_group dmc_hard --archs D6W15
 Key fields: `train_it_per_s_probes_off`, `probe_check_s`,
 `probe_overhead_pct_of_wallclock`, `peak_device_bytes`. If the overhead
 exceeds ~5%, I report it and ask; the probe is never reduced.
+
+### A4. GPU trace of one D6W1536 dog-run job (~4 min; host ~3 GB, GPU ~5 GB) — NEEDS CUDA VERIFICATION
+- **What it gives:** a jax.profiler trace of 300 training steps after the
+  5,000 random steps and 200 trained warm-up steps, under the TF32 setting
+  (probes off). It shows the per-step split between the host (env step,
+  sampling, transfers) and the GPU (the update scan), and any gap between
+  them.
+- **Open the trace:** `trace.json.gz` at https://ui.perfetto.dev, or the
+  `.xplane.pb` with TensorBoard's profile plugin. "Can't import
+  tensorflow.python.profiler.trace" is harmless.
+- **What I need from it:** per training step, the GPU busy time against the
+  wall time; the time between the action read-back and the next update
+  launch (the host); and the host-to-device copies and the flush of the
+  update metrics every 2,000 steps (none fall inside this window unless you
+  raise the step count).
+- **Tested on CPU** with a tiny critic: the trace files are written and the
+  it/s is printed. The GPU trace itself is untested.
+```bash
+python - <<'PY' 2>&1 | tee $OUT/A4_trace.log
+import os, random, tempfile, time
+import jax, numpy as np
+from experiments.exp12.precision import set_matmul_precision
+set_matmul_precision()
+from experiments.exp1 import compose_config
+from experiments.exp12.trainer import Exp12Trainer
+cfg = compose_config(os.path.abspath("configs"), "base_exp12", [
+    "env_name=dog-run", "env=dmc_hard", "critic_num_blocks=6", "critic_hidden_dim=1536", "seed=990", "run_role=dev"])
+np.random.seed(cfg.seed); random.seed(cfg.seed)
+t = Exp12Trainer(cfg, tempfile.mkdtemp(prefix="trace_"))
+t.start()
+warm = int(cfg.buffer.min_length) + 200
+t.train(warm); jax.block_until_ready(t._sac_agent.critic.params)
+with jax.profiler.trace(os.environ["OUT"] + "/A4_trace_D6W1536_dog_run"):
+    t0 = time.perf_counter()
+    t.train(warm + 300); jax.block_until_ready(t._sac_agent.critic.params)
+    dt = time.perf_counter() - t0
+print({"it_per_s_traced": 300 / dt, "matmul_precision": jax.config.jax_default_matmul_precision})
+t.close()
+PY
+```
+Alternative with Nsight Systems (also NEEDS CUDA VERIFICATION; the file
+covers the whole script, warm-up included): put the same Python in
+`$OUT/a4.py` and run
+`nsys profile --trace=cuda,nvtx,osrt --sample=none -o $OUT/A4_nsys python $OUT/a4.py`.
 
 ## Block B: full tests and calibration (~4.4 h TF32; was ~10 h FP32)
 
@@ -354,8 +427,9 @@ Exit 3 means STOP and consult: the run never triggered, L_trigger ≤ 0, or the
 probe noise (pooled SD of per-round L / L_trigger) is ≥ 0.10.
 
 **Estimates**
-- **Dev run:** ~3.5 h TF32 (was ~10.5 h FP32). 500,000 interaction steps at
-  ~15 / ~50 it/s, plus 21 probes (~56 / ~12 min).
+- **Dev run:** ~3.7 h TF32 (was ~10.5 h FP32). 500,000 interaction steps at
+  ~15 / ~42 it/s, plus 21 probes (~56 / ~13 min) and the training
+  evaluations (~7 min).
   - As launched, the run continues after its fork as the control, to the full
     budget. Only `FORK_READY` is needed for the script.
   - Memory: host ~4 GB (buffer up to 0.97 GB), GPU ~5 GB, disk ~6.2 GB.

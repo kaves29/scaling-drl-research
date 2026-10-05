@@ -1185,3 +1185,87 @@ Your instruction replaces "FP32 everywhere". Implemented as follows.
     evaluation seeding) pass;
   - `tests/exp12_break_checks.py`: 55 of 55 mutations fail their test by
     assertion and pass again when restored, including the new Check 1 one.
+
+## Hot-path efficiency scan (2026-10-05)
+
+**How it was measured.** CPU only (4-core Xeon, 2.8 GHz). Scratch profilers
+outside the repo, nothing committed:
+- one tiny run per suite at D2W512 (dog-run, myo-key-turn, h1-run-v0 in
+  venv_hb), 150–300 steps after warm-up, each component timed;
+- sync mode isolates device compute from host work; cProfile shows the
+  Python frames;
+- separate timings of the probe check, post-fork evaluation, env build,
+  save, logging flush and window metrics;
+- compile counts per phase with `jax_log_compiles` and
+  `jax_explain_cache_misses` over a tiny exp1 → fork → injected arm;
+- compile cost per critic size (D2/D4/D6).
+
+GPU shares below combine the measured host costs with the FLOP-based TF32
+device estimates of the CUDA sheet. A training step is ≈ 12.5 ms (D2W512) to
+23.7 ms (D6W1536) on dog-run. They are **estimates**, and A4 checks them.
+
+| # | Location | Finding | Measured share (dog-run unless noted) | Proposed fix | Tier | Risk |
+|---|---|---|---|---|---|---|
+| 1 | env step (dm_control, MyoSuite, HumanoidBench) | Simulator plus dm_control's Python (MuJoCo 4.4 of 8.1 ms) | 8.1 ms/step: ~65% (D2), ~34% (D6); MyoSuite 7.7 ms, h1-run 4.2 ms | none (third-party simulator code) | — | — |
+| 2 | `Exp12Trainer.train`: action selection waits for the previous update | Host and GPU run in series | GPU time ~12% (D2) to ~54% (D6) of a step | overlap by acting with stale parameters | 3 (changes the algorithm's order) | not allowed |
+| 3 | `fork.post_fork_eval` (F1: 26 × 10 episodes per arm) | Env-bound; env built per evaluation (0.35 s) | 43.7 s per evaluation; ~27% of a D6 arm, ~37% of a D4 arm | parallel or vectorised evaluation envs | 2 (changes episode streams and batching) | changes a measured quantity's sampling |
+| 4 | train loop host work (`buffer.sample` ×2, `np.stack`, `_normalize`, host-to-device copies, `buffer.add`, read-back) | ~2.7 ms/step in total. Bit-identical pieces: the second copy in `buffer.sample` 0.05 ms, the KL-reference re-upload every step 0.08 ms | ~22% (D2), ~11% (D6) in total; bit-identical pieces < 1% each | normalise inside the jit or sample 512 indices at once (not bit-identical); remove the redundant copy and cache the KL reference on device (bit-identical) | 2 / 1 | Tier 1 parts are below the 3% threshold, so not applied |
+| 5 | probe check (`run_probe`, Methodology) | One compiled `_fit` per critic structure (one more after a restore, from argument sharding); pool sampling 0.15 s per round | ~6% of a D6 run (forecast) | run current and fresh in one vmapped launch | 2 (changes operation order) | changes FP results |
+| 6 | regular evaluations (every 50k steps, Methodology) | Env-bound | ~3% (D6) to ~6% (D2) | none | — | — |
+| 7 | `_update_sac_networks_scan` compiled 3× per process start, +1 after every restore | Weak-typed scalars in the initial state turn strong after the first updates; restored arrays are committed | CPU: +20 s (D2), +26 s (D4), +44 s (D6) per process start; < 1% of a run | strong-typed initial scalars in `scale_rl` init (bit-identical in float32) | 1 | below threshold and in shared code, so not applied |
+| 8 | checkpoint save (20 per run) and restore | `np.savez` plus Orbax; restore reads the agent checkpoint twice (`load_checkpoint`'s unconstrained restore for `churn_ref_batch`) | save 17.4 s at D6 fork size, ~1–2% of a run; double read < 0.1% | asynchronous saves; a single read | 2 (async) / 1 (double read) | async touches the crash-safety protection; double read below threshold |
+| 9 | logging window (`PendingUpdateMetrics.flush`, `get_metrics`) | 2,000 × 19 small device arrays fetched one by one; eager metrics with SVD | CPU 0.18 + 0.16 ms/step (~1.4% + 1.3% of a D2 step) | stack on device and fetch once (bit-identical) | 1 | below threshold on CPU; GPU per-transfer latency may raise it (A4) |
+| 10 | small recompiles | `_sample_sac_actions` twice after a restore; Check 1's `jit(lambda)` per call | seconds per process | none | — | — |
+| 11 | JAX persistent compilation cache | Not enabled | saves the compiles above per process start/resume (~1–3 min per D6 process, a GPU estimate) ≈ 0.5–1% | enable `jax_compilation_cache_dir` | 2 (JAX config) | none on outputs; a launch change |
+| 12 | thread settings | OMP/MKL/OPENBLAS=1 appear only in a comment in `generate_manifest.py`; the Exp 1/2 launch does not set them | the hot path uses no BLAS threads (mean/var only; MuJoCo single-threaded); the risk is oversubscription at 4 jobs per GPU | export the three at 1 in Block F | 2 (launch) | expected no output change |
+| 13 | update scan buffer donation | None, so the old and new training states coexist during an update | memory, not time (≈ 2× training state transiently) | donate the actor, critic and target inputs | 2 (memory affects jobs per GPU) | probes and Check 1 snapshots hold parameter references |
+| 14 | D2W512 update on GPU | Probably kernel-launch-bound (an estimate) | ~1.5 ms of 12.5 ms | XLA command buffers (CUDA graphs) flag | 2 (XLA flag) | verify in A4 first |
+
+**Result: nothing applied.** No Tier 1 candidate reaches ~3% of
+end-to-end wall-clock for any critic size or suite, and none is a defect
+that affects outputs. Per the threshold rule, no code was changed, so there
+are no before/after numbers. The scan's main consequence is the runtime
+estimate: host overhead was measured at ≈ 11 ms per dog-run step, not the
+assumed 6 ms. The CUDA sheet is refreshed (D2W512 ~80, D4W1024 ~68,
+D6W1536 ~42 it/s; whole-run table; probe share ~6%).
+
+**Tier 2 recommendations (awaiting your approval; nothing done):**
+- (11) Persistent compilation cache: enable for the grid only if A3/B4 show
+  ≥ ~1 min of compile per process and jobs restart often; otherwise skip.
+- (12) Export `OMP_NUM_THREADS=MKL_NUM_THREADS=OPENBLAS_NUM_THREADS=1` in
+  Block F: recommended (cheap; no output change expected). Confirm with the
+  identity fork under the same environment.
+- (8) Asynchronous checkpointing: not recommended (1–2% against the
+  crash-safety protection).
+- (13) Donation: not recommended unless B4's peak memory limits jobs per GPU.
+- (3) Parallel post-fork evaluation: not recommended (changes the episodes
+  the F1 quantity is measured on).
+- (4) Normalisation inside the jit, or fused sampling: not recommended
+  (changes FP results or the random stream for ≤ ~4% of the step).
+- (5) Vmapped current + fresh probe: not recommended (changes operation
+  order for ~5% of the probe's 6%).
+- (14) XLA command buffers: only if A4 shows D2W512 is launch-bound and you
+  want the gain; it changes XLA flags.
+
+**CPU-only findings:** every number above is from this CPU. The jit
+dispatch time seen here (2.6–3 ms) is the CPU backend starting execution,
+not Python overhead (cProfile shows no Python frames), so it does not
+transfer to GPU.
+
+**Re-verify on the GPU:**
+- A0: TF32 active at the run setting, highest at FP32 level.
+- A4 trace:
+  - GPU busy time against wall time per step;
+  - whether D2W512's update is launch-bound;
+  - the host-to-device copies;
+  - the cost of the window flush (item 9) when GPU transfer latency applies.
+- A3/B4:
+  - it/s per size (forecast 80/68/42 on dog-run) and the probe share
+    (forecast ~6%);
+  - compile time per process (decides item 11);
+  - peak memory (decides item 13);
+  - post-fork evaluation cost per suite.
+- B1 and Block C: all parity and identity tests under TF32. Angle 1 parity,
+  probes-on vs off identity, resume bit-exactness and the identity fork are
+  unchanged by the scan (no code changed), but they have not yet run on
+  CUDA.

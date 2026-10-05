@@ -172,13 +172,14 @@ numbers in section 5.
 | Quantity | Value | Where |
 |---|---|---|
 | Training it/s with probes off vs the current code (angle_1) | CPU: exp1/angle_1 wall-time ratio 0.96 (D2W512, humanoid-run); the real ratio **NEEDS CUDA VERIFICATION** (CUDA B4, `ratio_exp1_over_angle1`) | |
-| Probe overhead per critic size | CPU: D2W512 one check 413 s, projected 7.1% of a 500k-step run's wall-clock; all sizes **NEEDS CUDA VERIFICATION** (A3, B4). Forecast under TF32 for D6W1536 dog-run ≈ 7% (CUDA sheet, an estimate). Rule: if D6W1536 exceeds ~5%, I report and ask; the probe is never reduced | |
+| Probe overhead per critic size | CPU: D2W512 one check 413 s, projected 7.1% of a 500k-step run's wall-clock; all sizes **NEEDS CUDA VERIFICATION** (A3, B4). Forecast under TF32 for D6W1536 dog-run ≈ 6% (CUDA sheet, an estimate). Rule: if D6W1536 exceeds ~5%, I report and ask; the probe is never reduced | |
 | Actor diagnostics overhead | CPU: within noise (−1.2%, D2W512, 60 steps); **NEEDS CUDA VERIFICATION** (`diagnostics_overhead_pct`) | |
 | Fork save / restore | CPU, local disk: D6W1536 dog-run complete state at a 95%-of-B fork = 2.62 GB, save 17.4 s, restore 18.4 s. D2W512 hopper-hop: 99 MB, 1.0 s / 0.8 s. Cluster disk **NEEDS CUDA VERIFICATION** | |
 | Post-fork evaluation cost (F1, 26 × 10 episodes per arm) | CPU: dog-run 41 s per evaluation (0.30 h per arm); hopper-hop 7.3 s; MyoSuite 1.7–2.8 s and h1-run 3.4 s (lower bounds: untrained policies end episodes early; full-length h1-run ≈ 49 s). As a share of arm training time: **NEEDS CUDA VERIFICATION** | |
 | Peak GPU memory per size, recommended concurrency | **NEEDS CUDA VERIFICATION** (`peak_device_bytes`, `recommended_jobs_per_gpu_upper_bound`) | |
 | Retained disk per run (worst case dog-run, fork at 95% of B) | D2W512 1.06 GB; D4W1024 5.03 GB (3.32 run + 1.71 arm); D6W1536 9.18 GB (6.19 + 2.99); whole-grid upper bound ≈ 734 GB. Estimate from parameter counts and measured bytes per transition, checked against the measured 2.62 GB fork state (estimate 2.75 GB) | |
 | Synthetic-null false-trigger rate per check (5 rounds, one check) | 4.93% (nominal one-sided 2.5%); the fresh-pair null with real probes **NEEDS CUDA VERIFICATION** (B3) | |
+| Host overhead per training step (efficiency scan, 2026-10-05) | CPU-measured, waited on by the GPU: dog-run ≈ 11 ms (env 8.1), MyoSuite ≈ 10.5, h1-run ≈ 7. TF32 forecast for dog-run: D2W512 ~80, D4W1024 ~68, D6W1536 ~42 it/s; ~1.9 / 2.3 / 3.7 h per run. **Estimates**; no code change came out of the scan (docs/exp12_decisions.md) | |
 | Check 1 on CPU | identity and control 0 eps; injected Q exact, dQ/da up to 7.2 eps (D6W1536) | |
 
 ## 6. Risks, limitations, open points
