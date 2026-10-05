@@ -49,8 +49,11 @@ def _loss(trainer, batch):
 
 
 def _q_and_grad(trainer, obs, act):
-    q = trainer.network_def.apply({"params": trainer.params}, obs, act)
-    dq = jax.grad(lambda a: trainer.network_def.apply({"params": trainer.params}, obs, a).sum())(act)
+    # Full FP32, as Check 1 (fork.CHECK1_PRECISION): the construction is exact, but TF32 input rounding in
+    # the backward matmuls turns the ULP-level cotangent summation difference into TF32-level noise.
+    with jax.default_matmul_precision("highest"):
+        q = trainer.network_def.apply({"params": trainer.params}, obs, act)
+        dq = jax.grad(lambda a: trainer.network_def.apply({"params": trainer.params}, obs, a).sum())(act)
     return np.asarray(q), np.asarray(dq)
 
 

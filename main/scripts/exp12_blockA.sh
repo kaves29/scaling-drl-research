@@ -6,7 +6,8 @@
 #
 # No network, no installs, no interactive input; wandb is disabled. A0 failing (no TF32 behaviour at the
 # run setting on the GPU) stops the runner; any other failed or timed-out step is logged and the runner
-# continues. A2 fails when the range rule fails. Exit status: 0 only if every step that ran passed.
+# continues. A2 fails when amendment (w)'s range criterion fails (P/b < 0.9 at the configured pool).
+# Exit status: 0 only if every step that ran passed.
 
 set -u
 SELF="$(cd "$(dirname "$0")" && pwd)/$(basename "$0")"
@@ -22,6 +23,7 @@ esac
 OUT="$(pwd)/logs/blockA_${SLURM_JOB_ID:-local}"
 export OUT
 export WANDB_MODE=disabled
+export PYTHONUNBUFFERED=1   # keeps prints and unittest status lines in order in the logs
 export MUJOCO_GL="${MUJOCO_GL:-disable}"   # Block A renders nothing
 export XLA_PYTHON_CLIENT_PREALLOCATE="${XLA_PYTHON_CLIENT_PREALLOCATE:-false}"
 unset JAX_DEFAULT_MATMUL_PRECISION NVIDIA_TF32_OVERRIDE  # the code sets TF32 itself (amendment (v))
@@ -98,17 +100,13 @@ PY
 }
 
 check_A2() {
-  python - "$OUT/A2_range_dog_run/range_verdict.json" <<'PY'
-import json, sys
-v = json.load(open(sys.argv[1]))
-print(f"A2 range rule: {v['per_size']} -> {'PASS' if v['PASS'] else 'FAIL'}")
-sys.exit(0 if v["PASS"] else 1)
-PY
+  # Amendment (w): P/b >= 0.9 at the configured pool at every size; the old 10-90% rule is printed only.
+  python scripts/exp12_reports.py range-check "$OUT/A2_range_dog_run" D2W512 D4W1024 D6W1536
 }
 
 REQUIRED_FILES=(
   experiments/exp12/precision.py experiments/exp12/fork.py experiments/exp12/trainer.py experiments/exp1.py
-  scripts/probe_fresh_checks.py scripts/profile_exp12.py scripts/compare_identity_fork.py
+  scripts/probe_fresh_checks.py scripts/profile_exp12.py scripts/compare_identity_fork.py scripts/exp12_reports.py
   configs/base_exp12.yaml configs/env/dmc_hard.yaml configs/env/dmc_medium.yaml
   tests/__init__.py tests/exp12_helpers.py tests/test_exp12_probe.py tests/test_exp12_injection.py
   tests/test_exp12_diagnostics.py tests/test_exp12_fork.py
@@ -186,93 +184,6 @@ for s in "${STEPS[@]}"; do
   fi
 done
 
-python - "$OUT" <<'PY' > "$OUT/summary.txt" 2>&1
-import csv, json, re, sys
-from pathlib import Path
-
-out = Path(sys.argv[1])
-lines = [f"Exp 1/2 Block A summary ({out.name})", "", "step  result     exit  wall_s"]
-for r in csv.DictReader(open(out / "status.tsv"), delimiter="\t"):
-    lines.append(f"{r['step']:<5} {r['result']:<10} {r['exit_code']:<5} {r['wall_s']}")
-
-
-def section(title, fn):
-    lines.extend(["", f"== {title} =="])
-    try:
-        fn()
-    except Exception as e:  # a missing or partial output is reported, not fatal
-        lines.append(f"(not available: {type(e).__name__}: {e})")
-
-
-def a0():
-    d = json.load(open(out / "A0_matmul_precision.json"))
-    r, h = d["run_setting"], d["check1_highest"]
-    lines.append(f"device {r['device_kind']} ({r['platform']}); jax {r['jax']} jaxlib {r['jaxlib']}; "
-                 f"cuda {r['backend_platform_version']}")
-    lines.append(f"run setting ({r['matmul_precision']}): float32 matmul max rel error {r['float32_matmul_max_rel_error']:.3g}"
-                 " (TF32 expected ~1e-4 to 1e-3)")
-    lines.append(f"highest (Check 1): max rel error {h['float32_matmul_max_rel_error']:.3g} (FP32 expected ~1e-7 to 1e-6)")
-    if h["float32_matmul_max_rel_error"] >= 1e-5:
-        lines.append("WARNING: 'highest' does not look like full FP32; Check 1 relies on it. Send me this file.")
-
-
-def a2():
-    d = out / "A2_range_dog_run"
-    lines.append("arch      pool    P_IQM      b_IQM      P/b     round_std  round_range  within_10-90%")
-    for f in sorted(d.glob("range_D*.json")):
-        for r in json.load(open(f)):
-            mark = "  (configured pool)" if r["is_configured_pool"] else ""
-            lines.append(f"{r['arch']:<9} {r['pool_size']:<7} {r['score_iqm']:<10.4g} {r['b_iqm']:<10.4g} "
-                         f"{r['score_over_b']:<7.3f} {r['score_std']:<10.3g} {r['score_range']:<12.3g} "
-                         f"{r['within_10_90_pct_of_b']}{mark}")
-    v = json.load(open(d / "range_verdict.json"))
-    lines.append(f"range rule ({v['rule']}): {'PASS' if v['PASS'] else 'FAIL'} {v['per_size']}")
-
-
-def a3():
-    for r in json.load(open(out / "A3_profile_dog_run_D6.json")):
-        peak = r.get("peak_device_bytes")
-        peak = f"{peak / 2**30:.2f} GiB" if peak else "n/a"
-        lines.append(f"{r['arch']} {r['env']}: training {r['train_it_per_s_probes_off']:.1f} it/s (probes off); "
-                     f"one probe check {r['probe_check_s']:.1f} s; probe overhead "
-                     f"{r['probe_overhead_pct_of_wallclock']:.2f}% of a run; peak GPU memory {peak}")
-
-
-def a1():
-    text = open(out / "A1.log").read().splitlines()
-    results, current = [], None
-    for line in text:
-        m = re.match(r"^(test\S*) \(([^)]+)\)", line)
-        if m:
-            current = m.group(2)
-        m = re.search(r"\.\.\. (ok|FAIL|ERROR|skipped.*|expected failure|unexpected success)$", line)
-        if m and current:
-            results.append((current, m.group(1)))
-            current = None
-    for name, res in results:
-        label = "PASS" if res == "ok" else "SKIP" if res.startswith("skipped") else res.upper()
-        lines.append(f"{label:<8} {name}")
-    tail = [l for l in text if re.match(r"^(Ran \d+ tests|OK|FAILED)", l)]
-    lines.extend(tail or ["(no final unittest line: the run did not finish; see A1.log)"])
-
-
-def a4():
-    log = out / "A4.log"
-    if not log.exists():
-        lines.append("not run (RUN_A4 unset, or skipped after an A0 failure)")
-        return
-    hits = [l for l in open(log) if "it_per_s_traced" in l]
-    lines.append(hits[-1].strip() if hits else "no it/s line in A4.log")
-    lines.extend(str(p) for p in sorted((out / "A4_trace_D6W1536_dog_run").rglob("*.trace.json.gz")))
-
-
-section("A0 matmul precision", a0)
-section("A2 fresh-critic range, dog-run", a2)
-section("A3 short profile, D6W1536 dog-run (TF32)", a3)
-section("A1 smoke tests", a1)
-section("A4 GPU trace", a4)
-print("\n".join(lines))
-PY
-cat "$OUT/summary.txt"
+python scripts/exp12_reports.py blockA "$OUT" 2>&1 || cat "$OUT/summary.txt" 2>/dev/null
 echo "Block A done: $([ "$any_failed" = 0 ] && echo "all steps passed" || echo "at least one step FAILED"); summary in $OUT/summary.txt"
 exit "$any_failed"

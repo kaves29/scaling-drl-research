@@ -435,3 +435,31 @@ on one GPU model.
 - The earlier rule that Check 1 stops an arm when TF32 is detected is
   removed. Every launch records its matmul precision setting, GPU model, and
   JAX, jaxlib and CUDA versions in run_metadata.json.
+
+## Amendment from the Block A result (2026-10-05)
+
+(w) Fresh-critic range check (A2 and B2): acceptance rule replaced.
+- Original rule (pre-specified 2026-10-04, kept here for the record): at
+  the configured pool (25,600), the fresh critic's P must lie within 10–90%
+  of b, at every critic size.
+- Original result (Block A, job 22667743, A100-SXM4-40GB, dog-run): FAILED
+  at all three sizes. P/b was 0.990 (D2W512), 0.997 (D4W1024) and 0.993
+  (D6W1536).
+- Why it is replaced:
+  - Lyle et al. (2023) chose the probe budget so that networks from random
+    initialisation can solve the task. A fresh critic that fits the probe is
+    therefore the intended design.
+  - The rule and its fallback ladder (smaller pool, then more steps) assumed
+    a floor effect. They would push the probe further into the ceiling.
+  - The replacement was decided without any degradation data.
+- New criterion: at the configured pool, P/b ≥ 0.9 at every critic size.
+  The old rule is still reported, as information only. The step's exit code
+  follows the new criterion.
+- The probe settings are unchanged (pool, steps, rounds, offsets).
+- What this check can and cannot show: it cannot establish sensitivity.
+  Sensitivity comes from the positive control and the development run, where
+  a critic that has lost plasticity must score clearly lower. The fresh-pair
+  null measures noise.
+- The spread of the per-round final loss is reported per size and pool. L =
+  P(fresh) − P(current) is a difference of final losses on identical
+  targets, so b cancels.

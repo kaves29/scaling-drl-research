@@ -1269,3 +1269,216 @@ transfer to GPU.
   probes-on vs off identity, resume bit-exactness and the identity fork are
   unchanged by the scan (no code changed), but they have not yet run on
   CUDA.
+
+## Block A result and follow-up (2026-10-05; job 22667743, A100-SXM4-40GB, commit 7812b17)
+
+### Numbers (from the job's summary.txt)
+- **Stack:** jax 0.4.34, jaxlib 0.4.34, PJRT C API, CUDA 12030.
+- **A0:** float32 matmul max relative error 3.05e-4 at the run setting
+  (tensorfloat32) and 2.16e-7 at highest.
+- **A3, D6W1536 dog-run, TF32, probes off:** 34.6 it/s; one two-critic probe
+  check 50.0 s; probe overhead 6.77% of a run (accepted, R2; probe
+  unchanged); peak GPU memory 4.01 GiB.
+- **A4:** 31.8 it/s under the profiler.
+- **Wall times:** A0 24 s, A2 238 s, A3 181 s, A1 300 s, A4 87 s.
+- **Runtime table:** refreshed in docs/exp12_cuda_commands.md from this
+  point. The device took ~17.9 ms per step (not 12.7 ms) and a probe check
+  1.4× the forecast; the unmeasured sizes are scaled by these factors.
+- **Still unmeasured:** D2W512 and D4W1024 speeds, MyoSuite, HumanoidBench,
+  deterministic ops, Delta's host overhead, and the packing slowdown.
+
+### A1: why the summary showed 3 failures and 30 tests when unittest reported 8 and 34
+- **Subtests (5 of the 8):** `test_predictions_unchanged_..._within_dtype_tolerance`
+  failed in 5 of its 6 (blocks, m) subtests. unittest counts each failing
+  subtest; the old parser kept only the first status of that test.
+- **Parser (4 tests lost):** when a test writes output while it runs
+  (warnings, progress lines), unittest's status lands on a later line. The
+  old parser only accepted "... ok" on the same line, so those tests were
+  dropped:
+  - `test_exp12_probe.ProbeDoesNotChangeTrainingTest.test_breaking_probe_isolation_is_detected` (passed);
+  - `test_exp12_probe.ProbeDoesNotChangeTrainingTest.test_probes_on_equals_probes_off` (passed);
+  - `test_exp12_diagnostics.TrainingRunTest.test_training_is_identical_with_diagnostics_on_and_off` (**failed**);
+  - `test_exp12_fork.IdentityValidationTest.test_compare_script_passes_and_detects_a_difference` (passed).
+
+  These statuses follow from the totals: 34 ran, 8 failures, 0 errors, 0
+  skips, and the 8 FAIL headers name exactly 5 subtests plus 3 tests.
+- **Fix:**
+  - The report code moved to `scripts/exp12_reports.py` (no jax), used by
+    the Block A runner and by Block B.
+  - Every test is listed; a status on a later line is attributed to the
+    pending test, and failing subtests come from the FAIL/ERROR headers.
+  - A test with no status is inferred to have passed only when the totals
+    leave no alternative; otherwise it is UNKNOWN with a warning.
+  - The runner also sets `PYTHONUNBUFFERED=1`.
+- **New test:** `tests/test_exp12_reports.py` runs a real `unittest -v`
+  subprocess with every failure mode seen on Delta and asserts that all 8
+  tests and both failing subtests are listed. The old parser listed 6 of the
+  8 on that log (checked by hand).
+- **Test-order effect found on the way:** `ProbeDoesNotChangeTrainingTest`
+  calls `exp1.run`, which sets the matmul precision process-wide. Every A1
+  test after it ran under the explicit tensorfloat32 setting.
+
+### A1 failures: details and classification
+Evidence used:
+- **(E1)** A CPU emulation of TF32 (scratch, not committed): every
+  `lax.dot_general` rounds its inputs to a 10-bit mantissa (forward and both
+  backward matmuls) and accumulates in float32, unless the precision is
+  "highest". Calibrated on A0's measurement: emulated 3.0517e-4 against the
+  A100's 3.05e-4.
+- **(E2)** Same-executable determinism on the GPU:
+  `test_probes_on_equals_probes_off` passed in A1, under TF32. Two exp1 runs
+  in one process with the same compiled training program gave a
+  bit-identical full state.
+- **(E3)** `ForkUnitTest.test_check1_fails_when_the_injection_construction_is_broken`
+  passed on the GPU. Its correct-construction half requires dQ/da within 64
+  eps under "highest" for the same `_critic(2)`/`_inject` construction.
+
+1–5. **`test_predictions_unchanged_bit_for_bit_and_action_gradients_within_dtype_tolerance`**,
+   line 77: `assertLessEqual(max|g0 − g1|, 64·eps·max|g0|)`.
+   - **Discrepancy per subtest** (deviation relative to max|dQ/da|; TF32 u = 2^-11):
+
+     | Subtest | Observed | Bound | × bound | eps units | TF32 u |
+     |---|---|---|---|---|---|
+     | blocks=2, last | 4.8846e-5 | 1.1937e-5 | 4.09 | 262 | 0.064 |
+     | blocks=2, half | 4.8846e-5 | 1.1937e-5 | 4.09 | 262 | 0.064 |
+     | blocks=2, all | 3.9428e-5 | 1.2644e-5 | 3.12 | 200 | 0.049 |
+     | blocks=4, half | 1.1277e-4 | 1.6483e-5 | 6.84 | 438 | 0.107 |
+     | blocks=4, all | 2.5719e-5 | 2.1663e-5 | 1.19 | 76 | 0.019 |
+
+     blocks=4, last passed. With 2 blocks, "last" and "half" are the same
+     construction (one head block), hence identical numbers.
+   - **Class (i):** a test written for CPU float32, run under TF32 without
+     Check 1's local "highest". Evidence:
+     - The run setting was tensorfloat32 (test-order effect above).
+     - Under E1, the unmodified test fails in 5 subtests with 3.5–6.5e-5,
+       and passes with the emulation off.
+     - E3: the same construction passes within 64 eps under "highest" on
+       the same GPU.
+     - Mechanism: (a + b) − b differs from a by one float32 ULP in the summed
+       cotangents. TF32 rounding of that input in the downstream backward
+       matmuls turns it into TF32-level noise (0.02–0.11 u).
+   - **Task 1c:**
+     - Q before and after injection is **bit-identical under TF32** on the
+       GPU for every pair that was compared. The Q assertion precedes the
+       failing line and never failed; in the 5 failing subtests the target
+       pair was not reached.
+     - dQ/da deviation: under TF32, 76–438 eps (table). Under "highest" on
+       the GPU, only the bound ≤ 64 eps is known (E3); the exact size is
+       measured in Block B's A1 follow-up step. On CPU FP32 it was ≤ 7.2 eps
+       (Phase 4, D6W1536).
+   - **Fix (test only, allowed by the scope rule):** `_q_and_grad` computes
+     Q and dQ/da inside `jax.default_matmul_precision("highest")`, as Check 1
+     does.
+     - Why this is precision-independent: new and copy have identical
+       parameters and inputs, so new(z) − copy(z) = 0 under any
+       deterministic precision (seen bit-identical even under TF32). The
+       64-eps tolerance concerns float32 summation order only.
+     - Before: fails on the A100, and fails under E1. After: passes under E1
+       and on plain CPU. The A100 result after the fix is **NEEDS CUDA
+       VERIFICATION** (Block B lane GPU 2).
+     - Still able to fail:
+       - existing break check: dropping the frozen copy → fails on Q;
+       - a value-preserving mutation applied by hand (`old(stop_gradient(z))`:
+         Q unchanged, dQ/da wrong) → fails at 1.57 against a bound of
+         1.2e-5, and passes again once restored.
+
+6. **`test_diagnostics_never_change_the_update`**, line 92:
+   `assert_array_equal` on the agent state after 4 updates, diagnostics off
+   vs on.
+   - **Discrepancy:** the first differing leaf (8 elements, actor width 8)
+     differs in all 8 elements. Max abs 1.17e-6; max element-wise relative
+     2.7% (on an element of 4.2e-5). Relative to the leaf's max |value|
+     (3.93e-4) that is 3.0e-3: about 6 TF32 u, not float32-ULP level.
+   - **Class (iv):** other — GPU program-dependent rounding.
+     - Not (iii): the update math is identical, and the state is
+       bit-identical on CPU both with and without E1. So TF32 rounding alone
+       does not cause it.
+     - Not (ii) as far as can be shown: E2, the same executable gives
+       identical results.
+     - The two calls compile different programs (the diagnostics add inputs
+       and outputs), and XLA's GPU backend can fuse and choose kernels
+       differently for each.
+   - **Task 1d:**
+     - On the GPU, parameters and optimizer state after N = 4 updates
+       **differ** between diagnostics on and off.
+     - Max deviation 1.17e-6 absolute (3.0e-3 of the leaf's max): TF32
+       level, not float32-ULP level.
+     - Whether it shrinks to float32 level under "highest", or disappears
+       with deterministic ops, is measured in Block B.
+     - The diagnostics code is unchanged.
+
+7. **`test_policy_kl_is_the_closed_form_gaussian_kl_new_vs_old`**, line 58:
+   `assert_allclose(diagnostic KL, closed form, rtol=1e-4)`.
+   - **Discrepancy:** 403.7256 vs 387.5590; abs 16.17, rel 4.17%.
+   - **Class (iv):** program-dependent GPU numerics, amplified by an
+     ill-conditioned quantity.
+     - The test passes on CPU, and under E1 too, because consistent TF32
+       rounding in both paths cancels.
+     - The KL is ~390 nats because the fresh tiny actor has σ down to
+       4.8e-5. KL ∝ (Δμ)²/σ² then amplifies any difference between μ computed
+       inside the update scan and μ recomputed eagerly by the test.
+     - On the GPU these are different programs.
+     - Whether "highest" restores rtol 1e-4 is measured in Block B (I expect
+       it to be borderline).
+   - Not changed: a "highest" context is not shown to be sufficient here.
+
+8. **`test_training_is_identical_with_diagnostics_on_and_off`**, line 161:
+   - **Discrepancy:** after a 400-step tiny exp1 run, 103 state components
+     differ between diagnostics on and off. The first is the actor's Adam
+     first moment of `encoder/Dense_0/bias`.
+   - **Class (iv):** same mechanism as 6, compounded over 400 steps. The
+     same-executable run pair (E2) is bit-identical, and the CPU is
+     bit-identical with and without E1.
+
+### Decisions needed from the lead (nothing changed)
+- **D1 — tests 6 and 8 (bitwise diagnostics-isolation protections) on GPU:**
+  - (A) Keep them as CPU gates (CPU proves logical isolation: no RNG use,
+    no state mutation) and report the GPU deviation as information.
+  - (B) Gate on the GPU only under deterministic ops + "highest", if Block B
+    shows bit-identity there.
+  - (C) Code change: compute the diagnostics in a separate compiled call, so
+    the update program does not depend on them.
+
+  Recommendation: (A) now, revisit with Block B's numbers. Every Exp 1/2 run
+  has diagnostics on, so compared runs are never confounded by this.
+- **D2 — test 7:** keep it as is until Block B shows whether it passes under
+  "highest". If it does, add the local context (test only).
+- **D3 — production effect on diagnostic I1 (KL):** under E1, TF32 changed
+  the KL computed for the same parameter pair by 9.6% (test actor 1×8) and
+  0.7% (actor 1×128, dog-run shapes) against FP32. Both actors were freshly
+  initialised with σ as small as 4.6e-5. The existing churn metric has the
+  same, weaker sensitivity.
+  - (a) Accept, and record it as a limitation of amendment (v).
+  - (b) Compute the diagnostics' actor forward passes (KL, churn reference)
+    under a local "highest" context. Training is unchanged and the cost is
+    negligible.
+
+  Recommendation: (b). It changes the computation of a Methodology
+  diagnostic, so it needs your approval.
+
+### A2 rule replaced (amendment (w), the lead's decision)
+- Recorded in .claude/methodology-exp1-exp2.md as (w). The original rule and
+  result are kept there and above (the 2026-10-04 entry is not edited).
+- Runner: A2's exit code follows P/b ≥ 0.9 at the configured pool at every
+  size (`scripts/exp12_reports.py range-check`); the old rule is printed as
+  information.
+- On Block A's numbers, (w) passes: P/b 0.990, 0.997 and 0.993.
+- Probe settings are unchanged.
+- **Per-round final-loss spread** (from A2.log; the quantity that matters for
+  L, since b cancels):
+
+  | Critic | Pool | Final loss IQM | SD | Range | P SD (for comparison) |
+  |---|---|---|---|---|---|
+  | D2W512 | 1,600 | 0.00296 | 0.00446 | 0.0109 | 0.00947 |
+  | D2W512 | 6,400 | 0.0145 | 0.0144 | 0.0335 | 0.0167 |
+  | D2W512 | 25,600 | 0.00346 | 0.00778 | 0.0189 | 0.00764 |
+  | D4W1024 | 1,600 | 4.95e-08 | 8.19e-09 | 1.94e-08 | 0.00823 |
+  | D4W1024 | 6,400 | 2.18e-06 | 4.27e-06 | 1.03e-05 | 0.00138 |
+  | D4W1024 | 25,600 | 0.00133 | 0.00226 | 0.00485 | 0.00133 |
+  | D6W1536 | 1,600 | 3.49e-08 | 7.74e-09 | 1.86e-08 | 0.00975 |
+  | D6W1536 | 6,400 | 0.00019 | 5.93e-05 | 0.000135 | 0.0104 |
+  | D6W1536 | 25,600 | 0.00384 | 0.00157 | 0.00416 | 0.00614 |
+
+  At the small pools, the larger critics drive the final loss to ~1e-8, so
+  P's round-to-round SD there is almost entirely b's variation between
+  rounds, which cancels in L.

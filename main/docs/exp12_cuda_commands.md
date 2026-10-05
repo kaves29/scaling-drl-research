@@ -38,7 +38,35 @@ schedules a grid run.
   precision itself) or `NVIDIA_TF32_OVERRIDE=0` (it would disable TF32 inside
   cuBLAS).
 
-## How the runtime and memory estimates were made (no GPU measurement exists yet)
+## Measured on the A100 (Block A, job 22667743, 2026-10-04, commit 7812b17)
+
+- **Node and stack:** NVIDIA A100-SXM4-40GB; jax 0.4.34, jaxlib 0.4.34; PJRT
+  C API, CUDA 12030 (12.3).
+- **A0:** float32 matmul max relative error 3.05e-4 at the run setting
+  (tensorfloat32, so TF32 is active) and 2.16e-7 at highest (full FP32).
+- **A3, D6W1536 dog-run, TF32, probes off:**
+  - training 34.6 it/s (300 steps after 100 warm-up steps);
+  - one two-critic probe check 50.0 s;
+  - projected probe overhead 6.77% of a run (accepted, decision R2; the
+    probe is unchanged);
+  - peak GPU memory 4.01 GiB.
+- **A4:** 31.8 it/s under the profiler (the trace adds overhead).
+- **A2:** the old 10–90% rule failed at every size; replaced by amendment
+  (w). See A2 below.
+- **A1:** 34 tests, 8 failures (5 of them subtests of one test). See A1
+  below and docs/exp12_decisions.md (2026-10-05).
+- **Wall times:** A0 24 s, A2 238 s, A3 181 s, A1 300 s, A4 87 s.
+
+**Still unmeasured:**
+- D2W512 and D4W1024 training speed and probe time;
+- MyoSuite and HumanoidBench speed;
+- behaviour under deterministic ops;
+- Delta's host overhead per step;
+- post-fork evaluation cost on the GPU;
+- slowdown when jobs share a GPU (the packing test, Block B).
+
+## How the remaining estimates are made
+
 
 **Assumptions**
 
@@ -67,38 +95,48 @@ schedules a grid run.
   to the host overhead.
 - **Compile:** ≈ 1–2 min per process for D6W1536 (update scan plus probe
   fit); less for smaller critics.
-- **Uncertainty:** treat every number as ±50% until Block A measures it.
+- **Calibration to Block A:**
+  - D6W1536 ran 28.9 ms per step against the 23.7 ms forecast. With ~11 ms
+    of host overhead (assumed equal on Delta), the device took ~17.9 ms
+    (≈ 39 TFLOP/s effective, not 55).
+  - A probe check took 50 s against ~36 s, a factor of 1.4.
+  - The unmeasured sizes are scaled by these two factors.
+- **Uncertainty:** D6W1536's training speed and probe time are measured; the
+  other sizes are ±50% until Block B's packing test and profile.
 - **Which figures apply:** the TF32 ones (amendment (v), revised). The FP32
   figures are kept only for comparison.
 
-| Critic | Train it/s, dog-run (FP32 / TF32) | One probe check, 2 critics (FP32 / TF32) | Peak GPU memory per process* | Host memory per process |
+| Critic | Train it/s, dog-run, TF32 | One probe check, 2 critics, TF32 | Peak GPU memory per process* | Host memory per process |
 |---|---|---|---|---|
-| D2W512 | ~70 / ~80 (host-bound) | ~6 s / ~2 s | < 1 GB | ~3 GB + buffer |
-| D4W1024 | ~35 / ~68 | ~48 s / ~11 s | ~2 GB | ~3 GB + buffer |
-| D6W1536 | ~15 / ~42 | ~160 s / ~35 s | ~5 GB (training state 1.8 GB + probe copy with Adam 1.4 GB + gradients + workspace) | ~3 GB + buffer |
+| D2W512 | ~76 (estimate; host-bound) | ~3 s (estimate) | < 1 GB (estimate) | ~3 GB + buffer |
+| D4W1024 | ~61 (estimate) | ~16 s (estimate) | ~2 GB (estimate) | ~3 GB + buffer |
+| D6W1536 | **34.6 (measured, A3)** | **50.0 s (measured, A3)** | **4.01 GiB (measured, A3)** | ~3 GB + buffer |
+
+FP32 figures from the earlier plan (for comparison only): ~70, ~35 and ~15 it/s;
+probe checks ~6, ~48 and ~160 s.
 
 \* With `XLA_PYTHON_CLIENT_PREALLOCATE=false`. Without it, XLA reserves 75%
 of the GPU per process. Buffer host memory = filled transitions × bytes per
 transition: dog-run 1,948 B, i.e. 0.97 GB at 500k transitions; hopper 148 B;
 MyoSuite 832–1,088 B; HumanoidBench 496–544 B.
 
-Forecast from these numbers: under TF32 the probe takes ≈ 6% of a D6W1536
-dog-run's wall-clock (21 checks × ~36 s, including ~0.75 s of pool sampling,
-against 500,000 steps at ~42 it/s). That is above the ~5% rule; A3 and B4
-measure it.
+The probe takes 6.77% of a D6W1536 dog-run's wall-clock (A3, measured). It
+is above the ~5% rule; the overhead was accepted (decision R2) and the probe
+is unchanged.
 
-**Whole-run forecast, dog-run (1M env steps), TF32:**
+**Whole-run forecast, dog-run (1M env steps), TF32, refreshed from Block A:**
 
-| Critic | Training | Probes | Training evaluations | Saves | Total per run | Post-fork arm (25% of B) |
+| Critic | Training | Probes (21 checks) | Training evaluations | Saves | Total per run | Post-fork arm (25% of B) |
 |---|---|---|---|---|---|---|
-| D2W512 | 1.7 h | 1 min | 7 min | 1 min | ~1.9 h | — (does not fork) |
-| D4W1024 | 2.1 h | 4 min | 7 min | 2 min | ~2.3 h | ~0.9 h |
-| D6W1536 | 3.3 h | 13 min | 7 min | 3 min | ~3.7 h | ~1.2 h |
+| D2W512 | 1.8 h (est.) | 1 min | 7 min | 1 min | ~2.0 h | — (does not fork) |
+| D4W1024 | 2.3 h (est.) | 6 min | 7 min | 2 min | ~2.5 h | ~0.9 h |
+| D6W1536 | 4.0 h (measured speed) | 18 min (measured) | 7 min | 3 min | ~4.5 h | ~1.4 h |
 
-Training evaluations: 100 episodes × 500 steps × 8.7 ms. A post-fork arm is
-125,000 steps plus 26 × 10 evaluation episodes (~19 min on dog-run, about a
-quarter of the arm) plus 5 probe checks. Treat every figure as ±50%; B4
-measures the real ones.
+Training evaluations: 100 episodes × 500 steps × 8.7 ms (CPU-measured). A
+post-fork arm is 125,000 steps plus 26 × 10 evaluation episodes (~19 min on
+dog-run) plus 5 probe checks. A run that forks late (check 19) continues as
+the control to fork + 25% of B, i.e. 120% of B: the D6W1536 control then
+trains ~4.8 h plus its post-fork evaluations, ~5.8 h in all.
 
 **What changed with the efficiency scan (2026-10-05):** the host overhead was
 measured instead of assumed (11 ms, not 6 ms, on dog-run). D2W512 is
@@ -138,10 +176,13 @@ EXPECTED_COMMIT=<commit hash I give you> sbatch scripts/sbatch_exp12_blockA.sh  
   Each step writes `$OUT/<step>.log`. At the end, `$OUT/summary.txt` holds:
   - each step's result, exit code and wall time;
   - A0's matmul error at the run setting and at highest;
-  - A2's fresh score, b and round-to-round spread (SD and range) per size
-    and pool, with the range-rule verdict;
+  - A2's fresh score, b, round-to-round spread of P and of the final loss
+    per size and pool, the (w) verdict and the old rule (information only);
   - A3's training it/s, probe-check time, probe overhead % and peak GPU memory;
-  - A1's pass/fail list.
+  - A1's pass/fail list. Every test is listed with its status, and each
+    failing subtest separately. A status pushed onto a later line by other
+    output is still attributed to its test; anything that cannot be
+    reconciled with unittest's totals is flagged.
 
   Send me the `summary.txt` file and the logs.
 - **Timeouts:** A0 5 min, A2 20, A3 15, A1 25, A4 10 (each killed with its
@@ -149,9 +190,11 @@ EXPECTED_COMMIT=<commit hash I give you> sbatch scripts/sbatch_exp12_blockA.sh  
 - **Failures:**
   - A0 failing stops the runner, and the remaining steps are marked
     SKIPPED.
-  - A2 fails (exit 3, `FAIL_RULE`) when the range rule fails, not only when
-    it crashes. `probe_fresh_checks.py` itself exits 0; the runner reads
-    `range_verdict.json`.
+  - A2 fails (exit 3, `FAIL_RULE`) when amendment (w)'s criterion fails
+    (P/b < 0.9 at the configured pool at any size), not only when it
+    crashes. `probe_fresh_checks.py` itself exits 0 (its `range_verdict.json`
+    still holds the old 10–90% rule). The runner applies (w) through
+    `scripts/exp12_reports.py range-check`.
   - Any other failure or timeout is logged, and the runner continues.
   - The runner exits nonzero if any step failed.
 - **Environment the runner sets:**
@@ -202,16 +245,22 @@ PY
 - **Also expected:** `check1_highest` at about 1e-7 to 1e-6. If it is not,
   `summary.txt` prints a warning, because Check 1 relies on it.
 
-### A2. Fresh-critic dynamic range, dog-run (timeout 20 min; ~5 min TF32; host ~3 GB, GPU ~4 GB for D6W1536)
-- **Rule (pre-specified):** PASS if, at all three sizes, 0.1·b ≤ IQM(P) ≤
-  0.9·b at the configured pool (25,600). The round-to-round spread is always
-  reported, and the verdict goes to `range_verdict.json`. A failed rule
-  fails the step.
-- **If it fails:** the fallback ladder is a smaller pool first, then more
-  probe steps; each step is proposed to you, not applied.
-- **Estimate:** per size, a 5,000-step random buffer fill (~0.5 min), plus
-  compile, plus 3 pool sizes × one single-critic probe (5 rounds × 1,000
-  steps; D6W1536 ≈ 18 s each under TF32).
+### A2. Fresh-critic dynamic range, dog-run (timeout 20 min; ~4 min measured; host ~3 GB, GPU ~4 GB for D6W1536)
+- **Criterion, amendment (w), from 2026-10-05:** PASS if P/b ≥ 0.9 at the
+  configured pool (25,600) at every size. A failed criterion fails the step.
+- **Superseded rule (information only):** 0.1·b ≤ IQM(P) ≤ 0.9·b. It failed
+  at every size in Block A (P/b 0.990, 0.997 and 0.993 at 25,600), which is
+  why (w) replaced it. Its fallback ladder (smaller pool, more steps) is
+  withdrawn.
+- **What it cannot show:** sensitivity. A fresh critic fitting the probe is
+  the intended design (Lyle et al. 2023). Sensitivity comes from the positive
+  control and the dev run, where a critic that has lost plasticity must
+  score clearly lower; the fresh-pair null measures noise.
+- **Reported:** per size and pool, P, b, P/b, the round-to-round SD and range
+  of P, and the same for the per-round final loss. L = P(fresh) − P(current)
+  is a difference of final losses on identical targets, so b cancels; the
+  final-loss spread is the one that matters for L.
+- **Probe settings:** unchanged (pool, steps, rounds, offsets).
 ```bash
 python scripts/probe_fresh_checks.py --mode range --env dog-run --env_group dmc_hard \
   --archs D2W512 D4W1024 D6W1536 --pools 1600 6400 25600 --out_dir "$OUT/A2_range_dog_run"
@@ -248,6 +297,20 @@ measured CPU time (7.4 min for these tests). Output: `$OUT/A1.log`.
 ```bash
 python -m unittest -v tests.test_exp12_probe tests.test_exp12_injection \
   tests.test_exp12_diagnostics tests.test_exp12_fork.ForkUnitTest tests.test_exp12_fork.IdentityValidationTest
+```
+**Block A result:** 34 tests, 8 failures. Five are subtests of the injection
+test; three are diagnostics tests. Details and classification:
+docs/exp12_decisions.md (2026-10-05).
+
+**Rerun only the four failing tests with deterministic ops** (exact command;
+the injection test now computes Q and dQ/da under "highest", as Check 1 does):
+```bash
+XLA_FLAGS=--xla_gpu_deterministic_ops=true python -m unittest -v \
+  tests.test_exp12_injection.InjectionInvariantsTest.test_predictions_unchanged_bit_for_bit_and_action_gradients_within_dtype_tolerance \
+  tests.test_exp12_diagnostics.KnownAnswerTest.test_diagnostics_never_change_the_update \
+  tests.test_exp12_diagnostics.KnownAnswerTest.test_policy_kl_is_the_closed_form_gaussian_kl_new_vs_old \
+  tests.test_exp12_diagnostics.TrainingRunTest.test_training_is_identical_with_diagnostics_on_and_off \
+  2>&1 | tee $OUT/A1_rerun_deterministic.log
 ```
 
 ### A4. GPU trace of one D6W1536 dog-run job (optional, RUN_A4=1, run last; timeout 10 min; ~4 min; host ~3 GB, GPU ~5 GB) — NEEDS CUDA VERIFICATION
