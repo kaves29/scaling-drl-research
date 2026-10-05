@@ -9,7 +9,7 @@ Each step's pass/fail rule was pre-specified in `docs/exp12_decisions.md` on
 schedules a grid run.
 
 - **Block A** (one A100, 4 CPUs, ≤ 30 min): smoke tests, fresh-critic range
-  check, short profile, optional GPU trace (A4).
+  check, short profile, optional GPU trace (A4); run by scripts/exp12_blockA.sh.
 - **Blocks B–F**: everything longer, in order. B: full tests and calibration.
   C: the identity-fork gate. D: the positive control. E: preflight. F: the
   grid, which I never run.
@@ -124,14 +124,62 @@ OUT=/abs/path/to/exp12_cuda_checks && mkdir -p $OUT
 
 ## Block A: one A100, 4 CPUs, ≤ 30 min in total
 
-Estimated total: ~24 min under TF32, including the optional A4 trace (it was ~28 min under FP32). Peak host memory
-~4 GB; peak GPU memory ~5 GB. Run the steps in order. If A1 fails, stop and
-send me the log.
+Block A runs unattended through `scripts/exp12_blockA.sh`, in this order:
+A0, A2, A3, A1, then A4 only if `RUN_A4=1`. On Delta, submit
+`scripts/sbatch_exp12_blockA.sh` from `main/`; `logs/` must exist first,
+because Slurm opens `logs/%x_%j.out` before the job starts:
+```bash
+mkdir -p logs
+bash scripts/exp12_blockA.sh --dry-run          # prints each command and timeout, checks every file; no jax
+EXPECTED_COMMIT=<commit hash I give you> sbatch scripts/sbatch_exp12_blockA.sh   # sbatch exports the environment by default
+# with the optional trace:  RUN_A4=1 EXPECTED_COMMIT=<hash> sbatch scripts/sbatch_exp12_blockA.sh
+```
+- **Where the output goes:** `$OUT` = `main/logs/blockA_${SLURM_JOB_ID:-local}/`.
+  Each step writes `$OUT/<step>.log`. At the end, `$OUT/summary.txt` holds:
+  - each step's result, exit code and wall time;
+  - A0's matmul error at the run setting and at highest;
+  - A2's fresh score, b and round-to-round spread (SD and range) per size
+    and pool, with the range-rule verdict;
+  - A3's training it/s, probe-check time, probe overhead % and peak GPU memory;
+  - A1's pass/fail list.
 
-### A0. Matmul precision report (< 1 min; host ~2 GB, GPU < 1 GB) — NEEDS CUDA VERIFICATION
+  Send me the `summary.txt` file and the logs.
+- **Timeouts:** A0 5 min, A2 20, A3 15, A1 25, A4 10 (each killed with its
+  process group).
+- **Failures:**
+  - A0 failing stops the runner, and the remaining steps are marked
+    SKIPPED.
+  - A2 fails (exit 3, `FAIL_RULE`) when the range rule fails, not only when
+    it crashes. `probe_fresh_checks.py` itself exits 0; the runner reads
+    `range_verdict.json`.
+  - Any other failure or timeout is logged, and the runner continues.
+  - The runner exits nonzero if any step failed.
+- **Environment the runner sets:**
+  - `WANDB_MODE=disabled`;
+  - `XLA_PYTHON_CLIENT_PREALLOCATE=false` unless already set;
+  - `MUJOCO_GL=disable` unless already set (Block A renders nothing;
+    HumanoidBench in later blocks still needs the Setup's `egl`);
+  - it unsets `JAX_DEFAULT_MATMUL_PRECISION` and `NVIDIA_TF32_OVERRIDE`.
+
+  Nothing in Block A sets a matmul precision except the code's own
+  `set_matmul_precision()` (TF32 on GPU), plus the local "highest" context
+  inside A0 and Check 1.
+- **Unattended:** no step reads input, downloads, installs or needs the
+  network:
+  - wandb is disabled or stubbed;
+  - dm_control's assets are in the package;
+  - A1 uses DMC only (no MyoSuite, no HumanoidBench, no rliable).
+
+  The Setup's `pip install` must have been done beforehand on a node with
+  internet; Block A itself needs nothing beyond the pinned requirements.
+
+Estimated total: ~20 min under TF32 (~24 min with A4); the timeouts add up
+to 65 min (75 with A4). Peak host memory ~4 GB; peak GPU memory ~5 GB.
+
+### A0. Matmul precision report (timeout 5 min; < 1 min; host ~2 GB, GPU < 1 GB) — NEEDS CUDA VERIFICATION
 It measures the float32 matmul error (256×256, against float64) under the run
 setting (what training uses) and under `highest` (what Check 1 uses), and
-records the device and versions.
+records the device and versions. Output: `$OUT/A0_matmul_precision.json`.
 ```bash
 python - <<'PY' | tee $OUT/A0_matmul_precision.json
 import json, jax
@@ -144,15 +192,49 @@ with jax.default_matmul_precision("highest"):
 print(json.dumps(out, indent=2))
 PY
 ```
-Expect:
-- `run_setting.matmul_precision == "tensorfloat32"`, `platform == "gpu"`, and
-  a relative error of about 1e-4 to 1e-3 (TF32 active);
-- `check1_highest` at about 1e-7 to 1e-6 (full FP32).
+- **Pass rule (applied by the runner):** `run_setting.platform == "gpu"`,
+  `run_setting.matmul_precision == "tensorfloat32"`, and a relative error
+  ≥ 1e-5. TF32 is expected at about 1e-4 to 1e-3; full FP32 gives about
+  1e-7 to 1e-6.
+- **On failure:** if `run_setting` shows FP32-level error, TF32 is not
+  active with `"tensorfloat32"` on this jaxlib. The runner stops; send me
+  the file. The fallback is `"default"`.
+- **Also expected:** `check1_highest` at about 1e-7 to 1e-6. If it is not,
+  `summary.txt` prints a warning, because Check 1 relies on it.
 
-If `run_setting` shows about 1e-7–1e-6, TF32 is not active with
-`"tensorfloat32"` on this jaxlib. Send me the file; the fallback is `"default"`.
+### A2. Fresh-critic dynamic range, dog-run (timeout 20 min; ~5 min TF32; host ~3 GB, GPU ~4 GB for D6W1536)
+- **Rule (pre-specified):** PASS if, at all three sizes, 0.1·b ≤ IQM(P) ≤
+  0.9·b at the configured pool (25,600). The round-to-round spread is always
+  reported, and the verdict goes to `range_verdict.json`. A failed rule
+  fails the step.
+- **If it fails:** the fallback ladder is a smaller pool first, then more
+  probe steps; each step is proposed to you, not applied.
+- **Estimate:** per size, a 5,000-step random buffer fill (~0.5 min), plus
+  compile, plus 3 pool sizes × one single-critic probe (5 rounds × 1,000
+  steps; D6W1536 ≈ 18 s each under TF32).
+```bash
+python scripts/probe_fresh_checks.py --mode range --env dog-run --env_group dmc_hard \
+  --archs D2W512 D4W1024 D6W1536 --pools 1600 6400 25600 --out_dir "$OUT/A2_range_dog_run"
+```
 
-### A1. Smoke tests on the GPU (~10 min; host ~4 GB, GPU < 1 GB per process)
+### A3. Short profile, D6W1536 on dog-run, TF32 setting only (timeout 15 min; ~4 min; host ~3 GB, GPU ~5 GB)
+- **Measures:** training it/s, the time of one full probe check, the
+  projected probe overhead for a whole run, and peak GPU memory, all for the
+  critic that decides the 5% rule.
+- **Steps timed:** 300 training steps after 100 warm-up steps; 1 probe check
+  after a compile warm-up check.
+- **Estimate:** 5,000 random steps (~0.75 min), compile (~1.5 min), 300
+  steps (~0.1 min), 2 probe checks (~1.2 min). The script sets the TF32
+  precision itself.
+```bash
+python scripts/profile_exp12.py --env dog-run --env_group dmc_hard --archs D6W1536 \
+  --train_steps 300 --warmup_steps 100 --probe_repeats 1 --out "$OUT/A3_profile_dog_run_D6.json"
+```
+Key fields: `train_it_per_s_probes_off`, `probe_check_s`,
+`probe_overhead_pct_of_wallclock`, `peak_device_bytes`. If the overhead
+exceeds ~5%, I report it and ask; the probe is never reduced.
+
+### A1. Smoke tests on the GPU (timeout 25 min; ~10 min; host ~4 GB, GPU < 1 GB)
 These are the tests whose result could differ on a GPU:
 - probe isolation and pairing;
 - injection Check 1 tolerances;
@@ -162,61 +244,33 @@ These are the tests whose result could differ on a GPU:
 - the identity-validation procedure end to end.
 
 The estimate assumes compile- and env-bound tiny networks at about 1.3× the
-measured CPU time (7.4 min for these tests).
+measured CPU time (7.4 min for these tests). Output: `$OUT/A1.log`.
 ```bash
-python -m unittest -v tests.test_exp12_probe tests.test_exp12_injection tests.test_exp12_diagnostics \
-  tests.test_exp12_fork.ForkUnitTest tests.test_exp12_fork.IdentityValidationTest 2>&1 | tee $OUT/A1_smoke.log
+python -m unittest -v tests.test_exp12_probe tests.test_exp12_injection \
+  tests.test_exp12_diagnostics tests.test_exp12_fork.ForkUnitTest tests.test_exp12_fork.IdentityValidationTest
 ```
 
-### A2. Fresh-critic dynamic range, dog-run (~5 min TF32; was ~10 min FP32; host ~3 GB, GPU ~4 GB for D6W1536)
-- **Rule (pre-specified):** PASS if, at all three sizes, 0.1·b ≤ IQM(P) ≤
-  0.9·b at the configured pool (25,600). The round-to-round spread is always
-  reported, and the verdict goes to `range_verdict.json`.
-- **If it fails:** the fallback ladder is a smaller pool first, then more
-  probe steps; each step is proposed to you, not applied.
-- **Estimate:** per size, a 5,000-step random buffer fill (~0.5 min), plus
-  compile, plus 3 pool sizes × one single-critic probe (5 rounds × 1,000
-  steps; D6W1536 ≈ 18 s each under TF32).
-```bash
-python scripts/probe_fresh_checks.py --mode range --env dog-run --env_group dmc_hard \
-  --archs D2W512 D4W1024 D6W1536 --pools 1600 6400 25600 --out_dir $OUT/A2_range_dog_run
-```
-
-### A3. Short profile, D6W1536 on dog-run, TF32 setting only (~4 min; was ~8 min FP32; host ~3 GB, GPU ~5 GB)
-- **Measures:** training it/s, the time of one full probe check, the
-  projected probe overhead for a whole run, and peak GPU memory, all for the
-  critic that decides the 5% rule.
-- **Steps timed:** 300 training steps after 100 warm-up steps; 1 probe check
-  after a compile warm-up check.
-- **Estimate:** 5,000 random steps (~0.5 min), compile (~1.5 min), 300 steps
-  (~0.1 min), 2 probe checks (~1.2 min). The script sets the TF32 precision
-  itself.
-```bash
-python scripts/profile_exp12.py --env dog-run --env_group dmc_hard --archs D6W1536 \
-  --train_steps 300 --warmup_steps 100 --probe_repeats 1 --out $OUT/A3_profile_dog_run_D6.json
-```
-Key fields: `train_it_per_s_probes_off`, `probe_check_s`,
-`probe_overhead_pct_of_wallclock`, `peak_device_bytes`. If the overhead
-exceeds ~5%, I report it and ask; the probe is never reduced.
-
-### A4. GPU trace of one D6W1536 dog-run job (~4 min; host ~3 GB, GPU ~5 GB) — NEEDS CUDA VERIFICATION
+### A4. GPU trace of one D6W1536 dog-run job (optional, RUN_A4=1, run last; timeout 10 min; ~4 min; host ~3 GB, GPU ~5 GB) — NEEDS CUDA VERIFICATION
 - **What it gives:** a jax.profiler trace of 300 training steps after the
   5,000 random steps and 200 trained warm-up steps, under the TF32 setting
   (probes off). It shows the per-step split between the host (env step,
   sampling, transfers) and the GPU (the update scan), and any gap between
-  them.
+  them. Output: `$OUT/A4.log` (the traced it/s) and
+  `$OUT/A4_trace_D6W1536_dog_run/`.
 - **Open the trace:** `trace.json.gz` at https://ui.perfetto.dev, or the
   `.xplane.pb` with TensorBoard's profile plugin. "Can't import
   tensorflow.python.profiler.trace" is harmless.
-- **What I need from it:** per training step, the GPU busy time against the
-  wall time; the time between the action read-back and the next update
-  launch (the host); and the host-to-device copies and the flush of the
-  update metrics every 2,000 steps (none fall inside this window unless you
-  raise the step count).
+- **What I need from it:**
+  - per training step, the GPU busy time against the wall time;
+  - the time between the action read-back and the next update launch (the
+    host);
+  - the host-to-device copies;
+  - the flush of the update metrics every 2,000 steps (none falls inside
+    this window unless you raise the step count).
 - **Tested on CPU** with a tiny critic: the trace files are written and the
   it/s is printed. The GPU trace itself is untested.
 ```bash
-python - <<'PY' 2>&1 | tee $OUT/A4_trace.log
+python - <<'PY'
 import os, random, tempfile, time
 import jax, numpy as np
 from experiments.exp12.precision import set_matmul_precision
@@ -238,9 +292,9 @@ print({"it_per_s_traced": 300 / dt, "matmul_precision": jax.config.jax_default_m
 t.close()
 PY
 ```
-Alternative with Nsight Systems (also NEEDS CUDA VERIFICATION; the file
-covers the whole script, warm-up included): put the same Python in
-`$OUT/a4.py` and run
+Alternative with Nsight Systems (outside the runner; also NEEDS CUDA
+VERIFICATION; the file covers the whole script, warm-up included): put the
+same Python in `$OUT/a4.py` and run
 `nsys profile --trace=cuda,nvtx,osrt --sample=none -o $OUT/A4_nsys python $OUT/a4.py`.
 
 ## Block B: full tests and calibration (~4.4 h TF32; was ~10 h FP32)
