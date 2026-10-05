@@ -10,9 +10,11 @@ schedules a grid run.
 
 - **Block A** (one A100, 4 CPUs, ≤ 30 min): smoke tests, fresh-critic range
   check, short profile, optional GPU trace (A4); run by scripts/exp12_blockA.sh.
-- **Blocks B–F**: everything longer, in order. B: full tests and calibration.
-  C: the identity-fork gate. D: the positive control. E: preflight. F: the
-  grid, which I never run.
+- **Block B** (one A100x4 node, unattended, ~7.6 h): the dev run, positive
+  control and injected arm, preflight, packing test, GPU test suites, range
+  check, identity forks and the fresh-pair null, one lane per GPU.
+  Blocks C–E describe the same steps for manual reruns. F: the grid, which I
+  never run.
 
 ## Matmul precision: TF32 for every matmul that can use it (amendment (v), revised 2026-10-04)
 
@@ -360,49 +362,125 @@ VERIFICATION; the file covers the whole script, warm-up included): put the
 same Python in `$OUT/a4.py` and run
 `nsys profile --trace=cuda,nvtx,osrt --sample=none -o $OUT/A4_nsys python $OUT/a4.py`.
 
-## Block B: full tests and calibration (~4.4 h TF32; was ~10 h FP32)
+## Block B: one A100x4 node, unattended (replaces the earlier single-GPU B1–B4 sequence)
 
-### B1. Full Exp 1/2 tests and break checks (~2 h for both passes; host ~6 GB, GPU < 1 GB per process)
-- Run the tests twice: once with default XLA flags and once with
-  deterministic GPU ops. If only the deterministic run passes, GPU reductions
-  are non-deterministic from run to run. That decides whether the identity
-  fork can be bit-exact on CUDA, and it needs your decision on a tolerance;
-  nothing is loosened silently.
-- **Estimate:** the same modules took 50 min on CPU, mostly env stepping and
-  subprocess runs; ~60 min per pass on the GPU.
-- The kill-matrix tests run a child process while the parent holds the GPU,
-  so `XLA_PYTHON_CLIENT_PREALLOCATE=false` (in Setup) is required.
+Run with `scripts/sbatch_exp12_blockB.sh`, which calls the driver `scripts/exp12_blockB.sh`. It needs
+one gpuA100x4 node (4 × A100 of one model, 64 CPUs, 16 per GPU lane):
 ```bash
-python -m unittest discover -s tests -p "test_exp12_*.py" -t . -v 2>&1 | tee $OUT/B1_tests_default.log
-XLA_FLAGS=--xla_gpu_deterministic_ops=true \
-  python -m unittest discover -s tests -p "test_exp12_*.py" -t . -v 2>&1 | tee $OUT/B1_tests_deterministic.log
-python tests/exp12_break_checks.py 2>&1 | tee $OUT/B1_break_checks.log        # ~6 min (4.5 min on CPU)
+cd /work/hdd/biqc/skaveti1/exp12/main && git pull && mkdir -p logs
+bash scripts/exp12_blockB.sh --dry-run                  # layout, commands, timeouts, files; no jax
+ARM_M=pc EXPECTED_COMMIT=<hash I give you> sbatch scripts/sbatch_exp12_blockB.sh
+bash scripts/collect_report.sh logs/blockB_<jobid>      # (also run at the end of the job) -> paste_me.txt
 ```
 
-### B2. Fresh-critic dynamic range, hopper-hop (~4 min TF32; was ~8 min FP32; host ~3 GB, GPU ~4 GB)
-The same rule as A2. hopper-hop has the 500k-step budget, so it is the worst
-case for the overhead share.
-```bash
-python scripts/probe_fresh_checks.py --mode range --env hopper-hop --env_group dmc_medium \
-  --archs D2W512 D4W1024 D6W1536 --pools 1600 6400 25600 --out_dir $OUT/B2_range_hopper_hop
-```
+**Lanes** (each with its own GPU, by UUID, and its own 16 CPUs; nothing in one lane stops another):
 
-### B3. Fresh-pair null, at least 100 pairs per size (~1.3 h TF32; was ~6 h FP32; host ~3 GB, GPU ~5 GB)
-- **What it saves:** every pair's per-round P, b and L, its IQM and its
-  bootstrap interval, appended to `null_pairs_<arch>.jsonl` as each pair
-  finishes. Re-running the same command resumes.
-- **Summary:** the per-check fire rate and the 95th percentile of L.
-- **Rule (pre-specified):** if the fire rate exceeds 5% at any size, you
-  decide whether to adopt a null-calibrated threshold; nothing is adopted
-  automatically.
-- **Estimate:** one full two-critic probe check per pair. D6W1536 100 ×
-  ~160 s ≈ 4.4 h; D4W1024 ≈ 1.3 h; D2W512 ≈ 10 min (FP32).
-```bash
-python scripts/probe_fresh_checks.py --mode null --env dog-run --env_group dmc_hard \
-  --archs D2W512 D4W1024 D6W1536 --null_pairs 100 --out_dir $OUT/B3_null_dog_run
-```
+| Lane | Steps, in order (timeout) |
+|---|---|
+| GPU 0 | dev run: D6W1536 dog-run, seed 102, run_role=dev (7.5 h) → positive control (30 min) → preflight D2W512, D4W1024, D6W1536 (30 min each) |
+| GPU 1 | watcher: once `dev_run/fork/FORK_READY` exists, it runs the dev run's injected arm (3 h). With `ARM_M=pc` it first waits for the positive control's m; with `ARM_M=last\|half\|all` it starts at the fork. Same node, same GPU model |
+| GPU 2 | packing test (15 min per configuration) → A1 follow-up measurements, default and deterministic ops (20 min each) → GPU test suite, default ops (2 h) → break checks (30 min) → GPU test suite, deterministic ops (2 h) → hopper-hop range check (30 min) → identity forks, reduced budget, D4W1024 and D6W1536 per suite that this install can run (1 h per cell) |
+| GPU 3 | fresh-pair null, 100 pairs per size, dog-run (4 h) |
 
-### B4. Full compute profile (~1 h TF32; was ~2.1 h FP32; host ~8 GB, GPU ~7 GB)
+**Rules**
+- Every step has its own log (`logs/blockB_<id>/<lane>/<step>.log`) and a
+  status line (`status/<lane>.tsv`: result, exit code, wall time).
+- A step that fails or times out does not stop the rest.
+- Exit-3 stops skip only what depends on them:
+  - **the dev run never triggers:** the positive control is skipped
+    (`SKIPPED_NO_TRIGGER`), and the watcher exits cleanly and records the
+    same;
+  - **the positive control stops** (L_trigger ≤ 0, or noise ≥ 0.10;
+    `STOP_EXIT3`): with `ARM_M=pc` the arm is skipped (`SKIPPED_EXIT3`).
+    Preflight runs regardless.
+- No network, installs or interactive input inside the job; wandb is
+  disabled.
+- HumanoidBench steps use `MUJOCO_GL=egl` only when HumanoidBench is
+  installed and EGL loads; otherwise the HumanoidBench identity cells are
+  recorded as `SKIPPED_UNAVAILABLE`. The same check, an import test,
+  applies to MyoSuite.
+- The driver keeps its own deadline (9.5 h of the 10 h limit) so that the
+  report is always written. On SIGTERM it writes the report too.
+
+**Packing test** (approved design):
+- **Configurations:** D6W1536 at 1, 2 and 3 concurrent jobs; D4W1024 at
+  1, 2 and 4; D2W512 at 1, 3 and 4. All run on GPU 2's A100.
+- **Each job:** dog-run with probes off; 5,000 random steps and 100
+  trained warm-up steps, then a start barrier, then 600 timed steps.
+- **CPUs:** `taskset` gives each job exactly 4 cores of the lane, with
+  thread caps at 1, including the 1-job baselines.
+- **Report:** per size and job count:
+  - each job's it/s;
+  - slowdown against 1 job;
+  - total throughput;
+  - each job's peak GPU memory;
+  - the GPU's total memory (nvidia-smi maximum);
+  - the overlap of the timed windows (flag at ≥ 90%);
+  - cores per job, and the host CPU model.
+- **Scope:** dog-run with probes off only, so probe overhead and post-fork
+  evaluation are not included. No acceptable-slowdown threshold is chosen.
+
+**A1 follow-up measurements** (evidence for the A1 classification,
+docs/exp12_decisions.md 2026-10-05). Under TF32 and under "highest", with
+default and with deterministic ops:
+- injection: Q bit-identity, and the dQ/da deviation in eps units;
+- diagnostics on vs off after 4 updates: max deviation, and off vs off
+  (same program);
+- policy KL: the diagnostic against the closed form.
+
+**report.txt** opens with one PASS/FAIL/NOT RUN line per gate and an
+OVERALL line (the driver's exit code follows it):
+- GPU test suite (default ops; deterministic ops);
+- break checks;
+- hopper-hop range, amendment (w);
+- identity fork per cell;
+- fresh-pair null per size (fire rate ≤ 5%);
+- dev run triggered;
+- positive control m chosen;
+- injected arm Check 1 and Check 2;
+- preflight per size.
+
+Then come all the numbers: the packing table, the A1 follow-up, the dev
+run's checks (L IQM and interval per check, f*_run, the fork), the positive
+control (L_trigger, recovery per m, noise, shared-offset check), the arm
+(Check 1 maximum, Check 2 interval, last post-fork evaluation per arm), the
+range table with final-loss spreads, the null per size, the identity cells
+and the node.
+
+**Time limit and resources** (from Block A's measured D6W1536 point: 34.6
+it/s, 50 s per probe check):
+
+| Item | Estimate |
+|---|---|
+| Dev run, fork late (check 19), control to 120% of B | 600,000 steps / 34.6 = 4.8 h, + 25 probe checks × 50 s = 0.35 h, + training evaluations (200 episodes) 0.25 h, + 26 post-fork evaluations 0.33 h, + saves and compile 0.15 h ≈ **5.9 h** (≈ 4.5 h if it never forks) |
+| Positive control | ≈ 0.2 h |
+| Preflight, 3 sizes | ≈ 0.25 h |
+| Injected arm | 125,000 / 34.6 = 1.0 h, + 26 evaluations 0.33 h, + 5 probe checks and restore 0.15 h ≈ **1.5 h** |
+| Critical path, `ARM_M=pc` | dev run 5.9 h → positive control 0.2 h → arm 1.5 h ≈ **7.6 h** |
+| Critical path, fixed `ARM_M` | the arm starts at the fork (≤ 4.2 h) and ends by ~5.7 h, so GPU 0's 6.4 h is the critical path |
+| GPU 2 | packing ~0.7 h, follow-up 0.1 h, tests 2 × ~0.75 h, break checks 0.1 h, range 0.1 h, identity ~0.75 h ≈ **3.2 h** |
+| GPU 3 | 100 pairs × (3 + 16 + 50 s) + fills ≈ **2 h** |
+
+The request is `--time=10:00:00`, which is ~30% over the 7.6 h critical path
+for what Block A did not measure (Delta's host speed, GPU evaluations). The
+rest of the request:
+- `--gpus=4` and `--cpus-per-task=64` (16 per lane, 4 per packing job);
+- `--mem=128G` (estimated peak ~33 GB: dev run 5, positive control 6, arm 5,
+  packing 4 × 3.5, null 3);
+- disk ~45 GB under `logs/blockB_<id>` (dev run ~7, arm ~3, identity ~22,
+  preflight ~10).
+
+**Not in this job:** the old B4 full compute profile below:
+- angle_1 vs exp1 ratio;
+- diagnostics overhead;
+- fork save/restore timing at full buffer size;
+- post-fork evaluation cost per suite;
+- hopper-hop probe share.
+
+Schedule it separately if you want it. The packing test's 1-job baselines
+give D2W512 and D4W1024 dog-run speeds.
+
+### Old B4 (not scheduled). Full compute profile (~1 h TF32; was ~2.1 h FP32; host ~8 GB, GPU ~7 GB)
 - **What each run adds:**
   - dog-run (1M env steps) also times angle_1 against exp1 with probes off;
   - hopper-hop (500k) is the worst case for the probe's share;
@@ -441,6 +519,8 @@ The probe rule (stop and ask if the largest critic's overhead exceeds about
 5%) applies to these numbers.
 
 ## Block C: identity-fork gate (D2), per forking architecture × suite, before any Exp 1 grid launch
+
+**Now run by Block B's GPU 2 lane, with the reduced budget.** The commands below are for a manual rerun.
 
 **Setup of the test**
 - Run this on the GPU model the grid will use (amendment (p)). Only D4W1024
@@ -528,6 +608,8 @@ done; done
 
 ## Block D: positive control and m-selection (after Blocks A–C pass)
 
+**Now run by Block B's GPU 0 lane** (dev run, then the positive control), with the dev run's injected arm on GPU 1. The commands below are for a manual rerun.
+
 **The run.** A development run: D6W1536 on dog-run, seed 102 (outside 1–5),
 run_role=dev, with the unchanged trigger (2 consecutive firing checks). It
 forks at its own f*_run.
@@ -565,6 +647,8 @@ The chosen m is not applied automatically. You freeze it by setting
 `injection.m` for the Exp 2 injected arms.
 
 ## Block E: preflight on the grid's GPU model (after Blocks A–D, before the grid)
+
+**Now run by Block B's GPU 0 lane after the positive control.** The commands below are for a manual rerun.
 
 One smoke run per critic size on the node type the grid will use (tiny probe
 settings, 4,000 env steps). The forking sizes also fork, run the injected arm

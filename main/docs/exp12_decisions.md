@@ -1482,3 +1482,44 @@ Evidence used:
   At the small pools, the larger critics drive the final loss to ~1e-8, so
   P's round-to-round SD there is almost entirely b's variation between
   rounds, which cancels in L.
+
+### Block B: the 4-GPU job (built and CPU-tested, not submitted)
+- **Files:**
+  - `scripts/sbatch_exp12_blockB.sh`: the Slurm wrapper;
+  - `scripts/exp12_blockB.sh`: the driver, with `--dry-run`;
+  - `scripts/collect_report.sh`: one file to paste (report + failing logs and
+    tracebacks);
+  - the report logic in `scripts/exp12_reports.py`.
+- **Layout, as decided:**
+  - GPU 0: dev run → positive control → preflight;
+  - GPU 1: injected-arm watcher;
+  - GPU 2: packing → A1 follow-up measurements → test suite (default, then
+    deterministic, with the break checks between) → hopper-hop range →
+    identity forks (reduced budget);
+  - GPU 3: fresh-pair null.
+
+  It replaces the old B1–B4 sequence. The old B4 compute profile is not in
+  the layout and stays in the sheet as "not scheduled".
+- **Fine-print choices (simplest option, no effect on any measured quantity
+  or rule):**
+  - The arm's m comes from `ARM_M` (default `pc`: wait for this job's
+    positive control and use its m). A fixed value starts the arm at the
+    fork. This is listed for your decision.
+  - GPUs are addressed by UUID with `CUDA_DEVICE_ORDER=PCI_BUS_ID`. CPUs are
+    the allocation's own set, split into 4 equal groups; packing jobs take 4
+    consecutive cores of GPU 2's group each.
+  - Packing jobs:
+    - use seeds 990 + job index;
+    - set `num_eval_episodes=1`, which only shortens the start-up
+      evaluation, outside the timed window;
+    - have a 600 s start-barrier timeout;
+    - get an overlap flag at ≥ 90%, descriptive only.
+  - `MUJOCO_GL=egl` is set only for HumanoidBench steps, and only when
+    HumanoidBench imports and EGL loads; otherwise `disable`.
+  - Internal deadline 9.5 h (5 min kept for the report); the report is also
+    written on SIGTERM.
+  - The A1 follow-up measurement is one heredoc run under default and
+    deterministic ops. It reuses the test modules' helpers.
+- **Time and resources:** derived in the sheet's Block B section from
+  Block A's measured point. The critical path is ~7.6 h with `ARM_M=pc` and a
+  late fork; the request is 10 h, 4 GPUs, 64 CPUs and 128G.

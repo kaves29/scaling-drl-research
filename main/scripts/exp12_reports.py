@@ -2,6 +2,7 @@
 """Summaries for the unattended Exp 1/2 GPU jobs (docs/exp12_cuda_commands.md). Never imports jax.
 
     python scripts/exp12_reports.py blockA <out_dir>                 # writes <out_dir>/summary.txt
+    python scripts/exp12_reports.py blockB <out_dir>                 # writes <out_dir>/report.txt
     python scripts/exp12_reports.py range-check <range_dir> ARCH...  # exit 0 iff P/b >= 0.9 at the configured pool
 """
 
@@ -225,6 +226,249 @@ def blockA_summary(out):
     return "\n".join(lines) + "\n"
 
 
+STATUS_COLUMNS = ("lane", "step", "result", "exit_code", "wall_s", "start")
+
+
+def blockB_status(out):
+    rows = []
+    for f in sorted(Path(out, "status").glob("*.tsv")):
+        for line in f.read_text().splitlines():
+            if line.strip():
+                rows.append(dict(zip(STATUS_COLUMNS, line.split("\t"))))
+    return rows
+
+
+def _glob1(base, pattern):
+    hits = sorted(Path(base).glob(pattern))
+    return hits[0] if hits else None
+
+
+def packing_table(out):
+    """Per critic size and job count: it/s per job, slowdown vs 1 job, total throughput, memory, overlap."""
+    rows = []
+    for d in sorted(Path(out, "gpu2", "packing").glob("*_x*")):
+        jobs = [json.loads(f.read_text()) for f in sorted(d.glob("job_*.json"))]
+        arch, n = d.name.rsplit("_x", 1)
+        mem = [int(x) for x in (d / "gpu_mem_mib.txt").read_text().split()] if (d / "gpu_mem_mib.txt").exists() else []
+        common = (min(j["end"] for j in jobs) - max(j["start"] for j in jobs)) if jobs else 0.0
+        rows.append({"arch": arch, "jobs": int(n), "completed": len(jobs), "it_per_s": [j["it_per_s"] for j in jobs],
+                     "peak_gib": [(j["peak_bytes"] or 0) / 2**30 for j in jobs],
+                     "gpu_total_gib": max(mem) / 1024 if mem else None,
+                     "overlap": min(max(common, 0.0) / (j["end"] - j["start"]) for j in jobs) if jobs else 0.0,
+                     "cores": [len(j["cores"]) for j in jobs]})
+    lines = ["dog-run, probes off: probe overhead and post-fork evaluation are NOT included.",
+             "arch      jobs  per-job it/s                 mean it/s  slowdown vs 1  total it/s  per-job peak GiB        "
+             "GPU total GiB  overlap  cores/job"]
+    base = {r["arch"]: float(np.mean(r["it_per_s"])) for r in rows if r["jobs"] == 1 and r["it_per_s"]}
+    for r in rows:
+        if not r["it_per_s"]:
+            lines.append(f"{r['arch']:<9} {r['jobs']:<5} (no job finished; see gpu2/packing_{r['arch']}_x{r['jobs']}.log)")
+            continue
+        mean = float(np.mean(r["it_per_s"]))
+        slow = f"{base[r['arch']] / mean:.2f}x" if r["arch"] in base else "n/a"
+        total = f"{r['gpu_total_gib']:.2f}" if r["gpu_total_gib"] is not None else "n/a"
+        flag = "yes" if r["overlap"] >= 0.9 else "NO"
+        lines.append(f"{r['arch']:<9} {r['jobs']:<5} {', '.join(f'{x:.1f}' for x in r['it_per_s']):<28} {mean:<10.1f} "
+                     f"{slow:<14} {sum(r['it_per_s']):<11.1f} {', '.join(f'{x:.2f}' for x in r['peak_gib']):<23} "
+                     f"{total:<14} {r['overlap']:.2f} {flag:<3} {','.join(map(str, r['cores']))}"
+                     + ("" if r["completed"] == r["jobs"] else f"  ONLY {r['completed']} of {r['jobs']} jobs finished"))
+    lines.append("slowdown = 1-job it/s / mean it/s; overlap = share of each job's timed window during which all "
+                 "jobs were timing (flag 'yes' at >= 0.9); GPU total = nvidia-smi maximum during the configuration.")
+    return lines
+
+
+def _a1_followup(out, mode):
+    d = json.loads(Path(out, "gpu2", f"a1_followup_{mode}.json").read_text())
+    lines = [f"[{mode}] device {d['device']}, XLA_FLAGS={d['XLA_FLAGS']}, run setting {d['run_setting']}",
+             "  injection (blocks, m, pair): Q bit-identical TF32/highest; dQ/da deviation in eps units TF32/highest"]
+    for r in d["injection"]:
+        t, h = r["tensorfloat32"], r["highest"]
+        lines.append(f"    {r['blocks']}, {r['m']:<4}, {r['pair']:<6}: {t['q_bit_identical']}/{h['q_bit_identical']}; "
+                     f"{t['dq_da_dev_eps_units']:.1f}/{h['dq_da_dev_eps_units']:.1f}")
+    for prec, v in d["diagnostics_on_off"].items():
+        for k, c in v.items():
+            lines.append(f"  diagnostics {k} [{prec}]: {c['leaves_differing']}/{c['leaves']} leaves differ, max abs "
+                         f"{c['max_abs_dev']:.3g}, max dev/leaf max {c['max_dev_over_leaf_max']:.3g}")
+    for prec, v in d["policy_kl"].items():
+        lines.append(f"  policy KL [{prec}]: diagnostic {v['diagnostic']:.6g} vs closed form {v['closed_form']:.6g} "
+                     f"(rel diff {v['rel_diff']:.3g}; min sigma {v['min_sigma']:.3g})")
+    return lines
+
+
+def blockB_report(out):
+    import pandas as pd
+
+    out = Path(out)
+    status = blockB_status(out)
+    by_step = {r["step"]: r for r in status}
+    lines = [f"Exp 1/2 Block B report ({out.name})"]
+    gates = []
+
+    def gate(name, ok, detail):
+        gates.append((name, "PASS" if ok is True else ("FAIL" if ok is False else ok), detail))
+
+    def info():
+        for f in ("commit.txt", "host.tsv", "gpus.csv"):
+            if (out / f).exists():
+                lines.extend(l for l in (out / f).read_text().splitlines() if l.strip())
+    _section(lines, "Node", info)
+
+    def steps():
+        lines.append("lane  step                          result               exit  wall_s")
+        for r in status:
+            lines.append(f"{r['lane']:<5} {r['step']:<29} {r['result']:<20} {r['exit_code']:<5} {r['wall_s']}")
+    _section(lines, "Steps", steps)
+
+    # GPU 2: tests
+    for mode in ("default", "deterministic"):
+        log = out / "gpu2" / f"tests_{mode}.log"
+        if log.exists():
+            p = parse_unittest_log(log.read_text())
+            bad = [(t, s) for t, s in p["tests"] if s not in ("PASS", "SKIP")]
+            gate(f"GPU test suite, {mode} ops", (p["final"] or "").startswith("OK") and not p["warnings"],
+                 f"{len(p['tests'])} tests; {p['final']}; not passed: {len(bad)}")
+
+            def tests(p=p, bad=bad, mode=mode):
+                lines.append(f"[{mode}] " + format_unittest(p)[-1])
+                lines.extend(f"  {s:<8} {t}" + "".join(f"\n      {k} subtest ({q})" for k, q in p["failures"].get(t, []) if q)
+                             for t, s in bad)
+                lines.extend(f"  WARNING: {w}" for w in p["warnings"])
+            _section(lines, f"GPU test suite ({mode} ops)", tests)
+        else:
+            gate(f"GPU test suite, {mode} ops", "NOT RUN", by_step.get(f"tests_{mode}", {}).get("result", "no log"))
+    blog = out / "gpu2" / "break_checks.log"
+    if blog.exists():
+        text = blog.read_text().splitlines()
+        ok, total = sum(1 for l in text if l.startswith("[OK]")), sum(1 for l in text if l.startswith("["))
+        gate("break checks (default ops)", total > 0 and ok == total, f"{ok} of {total} OK")
+    else:
+        gate("break checks (default ops)", "NOT RUN", by_step.get("break_checks", {}).get("result", "no log"))
+
+    for mode in ("default", "deterministic"):
+        _section(lines, f"A1 follow-up measurements ({mode} ops)", lambda m=mode: lines.extend(_a1_followup(out, m)))
+
+    _section(lines, "Packing test (GPU 2)", lambda: lines.extend(packing_table(out)))
+
+    rng = out / "gpu2" / "range_hopper_hop"
+    archs = ["D2W512", "D4W1024", "D6W1536"]
+    if list(rng.glob("range_D*.json")):
+        c = range_criterion(rng, sorted({r["arch"] for r in range_rows(rng)}) or archs)
+        gate("hopper-hop range, amendment (w)", c["pass"], str(c["per_size"]))
+        _section(lines, "hopper-hop fresh-critic range (B2)",
+                 lambda: lines.extend(format_range(rng, sorted({r["arch"] for r in range_rows(rng)}))))
+    else:
+        gate("hopper-hop range, amendment (w)", "NOT RUN", by_step.get("range_hopper", {}).get("result", "no output"))
+
+    def identity():
+        for r in status:
+            if r["step"].startswith("identity_"):
+                j = out / "gpu2" / "identity" / f"{r['step'][len('identity_'):]}.json"
+                if r["result"] == "SKIPPED_UNAVAILABLE":
+                    lines.append(f"{r['step']}: not available on this install (see gpu2/suite_*.log)")
+                    continue
+                d = json.loads(j.read_text()) if j.exists() else {}
+                ok = d.get("pass") if d else False
+                gate(f"identity fork {r['step'][len('identity_'):]}", bool(ok), r["result"])
+                what = (d.get("differences", [])[:8] or d.get("error", "")) if d else "no compare output"
+                lines.append(f"{r['step']}: pass={d.get('pass')} fork_step={d.get('fork_step')} differences/error: {what}")
+    _section(lines, "Identity forks (reduced budget, Block C)", identity)
+
+    def null():
+        for f in sorted((out / "gpu3" / "null_dog_run").glob("null_summary_*.json")):
+            d = json.loads(f.read_text())
+            gate(f"fresh-pair null {d['arch']} (fire rate <= 5%)", not d["fire_rate_exceeds_5pct"],
+                 f"{d['per_check_fire_rate']:.3f}")
+            lines.append(f"{d['arch']}: pairs {d['null_pairs']}, per-check fire rate {d['per_check_fire_rate']:.3f}, "
+                         f"p95 of L {d['would_be_null_threshold_p95_of_L']:.4g}, IQM of L {d['iqm_of_L']:.4g}, "
+                         f"SD of L {d['std_of_L']:.4g}")
+        if not list((out / "gpu3" / "null_dog_run").glob("null_summary_*.json")):
+            gate("fresh-pair null", "NOT RUN", by_step.get("null_dog_run", {}).get("result", "no output"))
+    _section(lines, "Fresh-pair null (GPU 3)", null)
+
+    results = out / "gpu0" / "results"
+
+    def dev():
+        run = _glob1(results, "exp12/exp1/runs/*/run.csv")
+        r = pd.read_csv(run).iloc[0] if run else None
+        triggered = r is not None and pd.notna(r["f_star_check"])
+        gate("dev run triggered (f*_run exists)", True if triggered else "NO TRIGGER",
+             f"check {r['f_star_check']}, step {r['f_star_interaction_step']}" if triggered else
+             f"no f*_run (dev run step: {by_step.get('dev_run', {}).get('result', 'not run')})")
+        if r is not None:
+            lines.append(f"run {r['run_key']}: status {r['status']}, f*_run check {r['f_star_check']} "
+                         f"(step {r['f_star_interaction_step']}, fraction {r['f_star_fraction']}), fork step "
+                         f"{r['fork_interaction_step']}, initial fresh score IQM {r['initial_fresh_score_iqm']:.4g}")
+            chk = pd.read_csv(run.parent / "checks.csv")
+            lines.append("check  step      L_IQM       CI_low      CI_high     triggered")
+            for _, c in chk.iterrows():
+                lines.append(f"{int(c['check_index']):<6} {int(c['interaction_step']):<9} {c['loss_iqm']:<11.4g} "
+                             f"{c['ci_low']:<11.4g} {c['ci_high']:<11.4g} {c['triggered']}")
+        fj = out / "gpu0" / "dev_run" / "fork" / "fork.json"
+        if fj.exists():
+            f = json.loads(fj.read_text())
+            lines.append(f"fork: step {f['fork_step']} (check {f['fork_check_index']}), arm end {f['arm_end_step']}, "
+                         f"control end {f['control_end_step']}, device {f['device'].get('device_kind')}")
+    _section(lines, "Development run (GPU 0)", dev)
+
+    def pc():
+        p = json.loads((out / "gpu0" / "positive_control" / "positive_control.json").read_text())
+        s = p.get("selection") or {}
+        gate("positive control: m chosen", True if p["status"] == "m_chosen" else "STOP (exit 3)",
+             f"m={p['chosen_m']}" if p["status"] == "m_chosen" else str(p.get("stop")))
+        lines.append(f"status {p['status']}; stop: {p.get('stop')}; chosen m: {p['chosen_m']}")
+        for k in ("l_trigger", "l_injected", "recovery", "noise", "noise_sd"):
+            if k in s:
+                lines.append(f"{k}: {s[k]}")
+        for k in ("trigger_reproduction_max_abs_diff", "loss_iqm", "shared_offset_sensitivity"):
+            if k in p:
+                lines.append(f"{k}: {p[k]}")
+    if by_step.get("positive_control", {}).get("result", "").startswith("SKIPPED"):
+        gate("positive control: m chosen", "SKIPPED", by_step["positive_control"]["result"])
+    else:
+        _section(lines, "Positive control (GPU 0)", pc)
+
+    def arm():
+        m = (out / "gpu1" / "arm_m.txt").read_text().strip() if (out / "gpu1" / "arm_m.txt").exists() else None
+        lines.append(f"injected arm m: {m}; step result {by_step.get('arm_injected', {}).get('result')}")
+        c1 = _glob1(results, "exp12/exp2/*/check1_injected.json")
+        c2 = _glob1(results, "exp12/exp2/*/check2.json")
+        if c1:
+            d = json.loads(c1.read_text())
+            gate("injected arm Check 1", d["pass"], f"max {d['max_eps_units']:.3g} eps units ({d['matmul_precision']})")
+            lines.append(f"Check 1: pass {d['pass']}, max {d['max_eps_units']:.4g} eps units, precision {d['matmul_precision']}")
+        if c2:
+            d = json.loads(c2.read_text())
+            gate("injected arm Check 2", d["pass"], f"paired diff IQM {d['paired_difference_iqm']:.4g}, "
+                 f"CI [{d['paired_difference_ci_low']:.4g}, {d['paired_difference_ci_high']:.4g}]")
+            lines.append(f"Check 2: pass {d['pass']}, paired difference IQM {d['paired_difference_iqm']:.4g}, 95% CI "
+                         f"[{d['paired_difference_ci_low']:.4g}, {d['paired_difference_ci_high']:.4g}]")
+        for arm_name in ("control", "injected"):
+            ev = _glob1(results, f"exp12/exp2/*/arm_{arm_name}/eval_episodes.csv")
+            if ev:
+                e = pd.read_csv(ev)
+                last = e[e["eval_index"] == e["eval_index"].max()]
+                lines.append(f"post-fork evaluations, {arm_name}: {e['eval_index'].nunique()} evaluations; last "
+                             f"(index {int(last['eval_index'].iloc[0])}) mean return {last['return'].mean():.2f}")
+    arm_status = by_step.get("arm_injected", {}).get("result", "NOT RUN")
+    if arm_status.startswith("SKIPPED"):
+        gate("injected arm", "SKIPPED", arm_status)
+    _section(lines, "Injected arm (GPU 1)", arm)
+
+    def preflight():
+        for r in status:
+            if r["step"].startswith("preflight_"):
+                gate(r["step"], r["result"] == "PASS", r["result"])
+                log = out / "gpu0" / f"{r['step']}.log"
+                c1 = [l for l in log.read_text().splitlines() if "Check 1:" in l] if log.exists() else []
+                lines.append(f"{r['step']}: {r['result']}" + (f"; {c1[-1].strip()}" if c1 else ""))
+    _section(lines, "Preflight (GPU 0)", preflight)
+
+    gate_lines = ["", "== Gates =="] + [f"{res:<14} {name}: {detail}" for name, res, detail in gates]
+    overall = gates and all(res == "PASS" for _, res, _ in gates)
+    gate_lines.append(f"OVERALL: {'PASS' if overall else 'NOT PASS (see the gates above)'}")
+    return "\n".join(lines[:1] + gate_lines + lines[1:]) + "\n"
+
+
 def main(argv):
     if len(argv) >= 2 and argv[0] == "range-check":
         c = range_criterion(argv[1], argv[2:])
@@ -234,6 +478,11 @@ def main(argv):
     if len(argv) == 2 and argv[0] == "blockA":
         text = blockA_summary(argv[1])
         (Path(argv[1]) / "summary.txt").write_text(text)
+        print(text, end="")
+        return 0
+    if len(argv) == 2 and argv[0] == "blockB":
+        text = blockB_report(argv[1])
+        (Path(argv[1]) / "report.txt").write_text(text)
         print(text, end="")
         return 0
     print(__doc__, file=sys.stderr)
