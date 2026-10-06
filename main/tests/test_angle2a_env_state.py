@@ -289,6 +289,24 @@ class TestCaptureRestoreMyosuiteEnvState(unittest.TestCase):
         # must not raise on restore either
         restore_env_state(env, captured)
 
+    def test_task_counter_zero_is_restored_exactly(self):
+        env, _, _ = self._make_env()
+        env.unwrapped.counter = 0
+        captured = capture_env_state(env, "myosuite")
+        env.unwrapped.counter = 17
+        restore_env_state(env, captured)
+        self.assertEqual(env.unwrapped.counter, 0)
+
+    def test_legacy_capture_missing_required_counter_is_refused_before_mutation(self):
+        env, data, _ = self._make_env()
+        env.unwrapped.counter = 5
+        captured = capture_env_state(env, "myosuite")
+        del captured["counter"]
+        data.time = 42.0
+        with self.assertRaisesRegex(Angle2AEnvironmentError, "counter"):
+            restore_env_state(env, captured)
+        self.assertEqual(data.time, 42.0)
+
     def test_missing_mj_data_raises_clear_error(self):
         class _NoMjDataEnv(gym.Env):
             observation_space = gym.spaces.Box(low=-1, high=1, shape=(2,))

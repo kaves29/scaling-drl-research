@@ -89,6 +89,45 @@ class TestMyosuiteDeterminism(unittest.TestCase):
     pass
 
 
+class TestBaodingCounterRestore(unittest.TestCase):
+    def test_repeated_restore_replays_exactly(self):
+        self._check_replays(fresh_instance=False)
+
+    def test_fresh_instance_replays_exactly_with_same_episode_parameters(self):
+        self._check_replays(fresh_instance=True)
+
+    def _check_replays(self, fresh_instance):
+        vectors = []
+        try:
+            def make():
+                vector = create_vec_env(env_type="myosuite", env_name="myo-baoding-p1", num_envs=1, seed=0)
+                vectors.append(vector)
+                env = vector.envs[0]
+                env.reset(seed=0)
+                return env
+
+            source = make()
+            for _ in range(NUM_WARMUP_STEPS):
+                source.step(source.action_space.sample())
+            state = capture_env_state(source, "myosuite")
+            self.assertEqual(state["counter"], NUM_WARMUP_STEPS)
+            actions = [source.action_space.sample() for _ in range(NUM_ROLLOUT_STEPS)]
+            expected = _rollout_from_restored_state(source, state, actions)
+            target = make() if fresh_instance else source
+            for _ in range(3):
+                restore_env_state(target, state)
+                self.assertEqual(target.unwrapped.counter, state["counter"])
+                observed = _rollout_from_restored_state(target, state, actions)
+                self.assertEqual(len(expected), len(observed))
+                for first, second in zip(expected, observed):
+                    np.testing.assert_array_equal(first[0], second[0])
+                    self.assertEqual(first[1:], second[1:])
+                self.assertEqual(target.unwrapped.counter, state["counter"] + len(actions))
+        finally:
+            for vector in vectors:
+                vector.close()
+
+
 def _make_test(env_type, env_name):
     def test(self):
         _assert_determinism(self, env_type, env_name)

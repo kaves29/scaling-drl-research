@@ -68,20 +68,12 @@ MyoSuite-specific notes (confirmed empirically, 2026-09-07):
    defensively (only if the attribute exists), since not every MyoSuite
    task has it and this module has no reliable way to enumerate every
    possible task-specific non-physics attribute a future task might add.
-   Verified bit-exact for 5 of the 6 MyoSuite environments in this study,
-   including all 4 core (myo-elbow-pose-random, myo-reach, myo-key-turn,
-   myo-leg-walk) plus held-out myo-pen-twirl. myo-baoding-p1 (the other
-   held-out env) has its own analogous task-specific counter
-   (self.counter, indexing a precomputed goal trajectory - see
-   myosuite/envs/myo/myochallenge/baoding_v1.py) that this module does not
-   capture/restore, producing a small (~1e-3 magnitude) residual
-   divergence - diagnosed but deliberately not fixed, since Angle 2A never
-   trains/evaluates on held-out environments (Angle-3-only; see
-   validate_myosuite_core4) and generically enumerating every possible
-   task-specific counter name is not a tractable strategy. Would need
-   fixing (adding self.counter alongside self.steps, or a more general
-   mechanism) before this module could be trusted for Angle 3's eventual
-   use of the held-out set, if that use ever needs exact-state rollouts.
+   Baoding has a distinct `counter` indexing its precomputed goal trajectory.
+   Both optional counters are captured/restored. The Baoding omission found in
+   the original helper was repaired with project-lead approval on 2026-10-06;
+   the permanent exact replay assertion is unchanged. A legacy capture missing
+   a required task counter is refused rather than silently restored inexactly.
+   This does not enumerate or guarantee other task-specific state for future tasks.
 
 Only env_type in {'dmc', 'myosuite'} is supported. Anything else is an
 explicit, loud failure rather than a silent inexact fallback.
@@ -189,6 +181,7 @@ def _capture_myosuite_state(env) -> Dict[str, Any]:
         "mocap_pos": d.mocap_pos.copy() if m.nmocap > 0 else None,
         "mocap_quat": d.mocap_quat.copy() if m.nmocap > 0 else None,
         "steps": getattr(base, "steps", None),
+        "counter": getattr(base, "counter", None),
     }
 
 
@@ -200,6 +193,8 @@ def _restore_myosuite_state(env, captured: Dict[str, Any]) -> None:
     physics.forward() instead of physics.step(). Only robot.mj_data needs
     writing (not env.mj_data too - see module docstring, note 2)."""
     base, robot = _get_myosuite_robot(env)
+    if hasattr(base, "counter") and "counter" not in captured:
+        raise Angle2AEnvironmentError("Captured MyoSuite state lacks its task counter; recapture the state.")
     d, m = robot.mj_data, robot.mj_model
     d.time = captured["time"]
     d.qpos[:] = captured["qpos"]
@@ -214,6 +209,8 @@ def _restore_myosuite_state(env, captured: Dict[str, Any]) -> None:
     mujoco.mj_forward(m, d)
     if captured["steps"] is not None:
         base.steps = captured["steps"]
+    if captured.get("counter") is not None:
+        base.counter = captured["counter"]
 
 
 def capture_env_state(env, env_type: str) -> Dict[str, Any]:
