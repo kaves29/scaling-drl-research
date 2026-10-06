@@ -409,7 +409,8 @@ lane_gpu3() {
 # ---- layout: GPUs by UUID, 4 CPU groups (16 each on a 64-CPU allocation) ----
 CPUS=($(python -c "import os; print(' '.join(map(str, sorted(os.sched_getaffinity(0)))))"))
 GPUS=()
-if command -v nvidia-smi >/dev/null; then GPUS=($(nvidia-smi --query-gpu=uuid --format=csv,noheader 2>/dev/null)); fi
+# Only UUID lines: without a driver, nvidia-smi prints its error message to stdout.
+if command -v nvidia-smi >/dev/null; then GPUS=($(nvidia-smi --query-gpu=uuid --format=csv,noheader 2>/dev/null | grep '^GPU-')); fi
 per_lane=$(( ${#CPUS[@]} / 4 )); [ "$per_lane" -lt 1 ] && per_lane=1
 lane_cpus() { local k=$1; local g=("${CPUS[@]:$(( (k * per_lane) % ${#CPUS[@]} )):$per_lane}"); (IFS=,; echo "${g[*]}"); }
 
