@@ -1730,3 +1730,32 @@ GPU 0 critical path ~5.1 h (dev run to 120% of B after a late fork ~4.8 h),
 GPU 2 ~3.9 h, GPU 3 ~2.0 h; the request drops from 10 h to 8 h (~57% over
 the critical path, as 10 h was ~55% over 6.4 h). 4 GPUs, 64 CPUs, 128G
 unchanged.
+
+## Decisions Block B will drive (written 2026-10-06, before any Block B result; job 22706349 on b4a90cb)
+
+No new thresholds. "Rule" quotes where a rule already exists; "needs your
+decision" marks where none does. "Log" = this file.
+
+| # | Decision | Block B evidence | Pre-specified rule (where) | Needs your decision |
+|---|---|---|---|---|
+| 1 | GPU tolerances for the diagnostics on/off comparisons (4 values: update and training × highest+deterministic and TF32) | `NUMERICS` lines, report "GPU numerics" | A fine-print rule of mine, not yours: 10× the largest measured deviation, one significant digit (log, "Block B decisions (received 2026-10-05)", item 2). The tolerances are `None` until set | Yes: approve or replace the values before they are committed |
+| 2 | KL closed-form test on the GPU | GPU test suites | Gate at rtol 1e-4 on the well-conditioned actor; the near-deterministic actor is information only (log, "Block B decisions", item 3) | Only if it fails on the GPU |
+| 3 | Any other GPU test failure (default or deterministic ops) | GPU test suites, A1 follow-up | All tests must pass; no rule for classifying a GPU-only failure | Yes, per failure |
+| 4 | Break checks on the GPU | break-check log | Every mutation must fail and the restore must pass (master prompt, break-and-restore) | Only if a `[PROBLEM]` appears |
+| 5 | Hopper-hop fresh-critic range | `range_hopper` | P/b ≥ 0.9 at the configured pool at every size (Methodology, amendment (w)) | What to do if it fails: (w) gives no next step, and the old fallback ladder is withdrawn |
+| 6 | False-trigger rate from the fresh-pair null | `null`, per size | If the per-check fire rate exceeds 5% at any size, you decide whether to adopt the null's 95th percentile of L as the threshold; I do not adopt it (log, "Pre-specified rules for the CUDA calibration checks", NULL rule) | Yes, if the rate exceeds 5% at any size |
+| 7 | Dev run never triggers (never forks) | `dev_run` (status `SKIPPED_NO_TRIGGER` downstream) | Stop and consult; the trigger is never loosened (Methodology (e)); the positive control and the arm are skipped (CUDA sheet, Block B "Rules") | Yes: what to run next |
+| 8 | Positive control stops: L_trigger ≤ 0, or probe noise ≥ 0.10 | `positive_control` (exit 3) | Stop and consult (Methodology (q), (d)) | Yes: what to run next |
+| 9 | m for the Exp 2 injected arms | positive control's recovery for last / half / all (1 / 2 / 4 blocks at depth 4) | The smallest m whose recovery is within 0.10 of the best (Methodology (d), with (q)'s recovery) | Freezing `injection.m` is your action (CUDA sheet, Block D); no judgement is left in the rule |
+| 10 | The Block B arm ran with m = half | `arm_injected` | Block B is development, not confirmatory; m is chosen by the positive control (log, "Block B decisions", item 1) | No |
+| 11 | Injected-arm Check 1 | `check1_injected.json` | Control bit-exact; injected ≤ 64 float32 eps × the pre-injection maximum, Q and dQ/da separately; on failure the arm stops and you decide (Methodology (m); approved in log, "Answers to Phase 4", item 1; the "PROPOSED" comment in `configs/base_exp12.yaml` predates that approval) | Only if it fails |
+| 12 | Check 2 | `check2.json` | Reported only: paired difference P(injected) − P(control), pass = interval above 0, 5-round caveat (Methodology (n); log, "Answers to Phase 4", item 2) | No |
+| 13 | Identity fork per cell (cold cache) | `identity_cold_*` | Bit-identical on every compared item (CUDA sheet, Block C "What must match"). If it passes only with deterministic ops, the decision comes to you (same section) | Yes, if any cell fails, or passes only under deterministic ops |
+| 14 | Identity fork, cold vs warm cache disagree | `identity_cold_*` vs `identity_warm_*` | None | Yes: whether the grid must run each fork's arms on a shared warm cache |
+| 15 | Deterministic ops for the grid | tests, A1 follow-up, identity | None | Yes, if anything passes only under deterministic ops |
+| 16 | Preflight per size (D2W512, D4W1024, D4W1536) | `preflight_*` | PASS on the grid's GPU model before the grid, including Check 1 for the forking sizes (CUDA sheet, Block E; master summary checklist) | Only if one fails |
+| 17 | D4W1536 probe overhead (measured from the dev run's probe and training times) | `dev_run` | R2: accepted; measure on CUDA and never reduce the probe (log, "Answers from the project lead (received 2026-10-03)"); above ~5% I report it (CUDA sheet, A3) | No change is possible under R2; I only report |
+| 18 | Jobs per GPU for the grid | packing table, per-job and total GPU memory | None: "No threshold is chosen" (CUDA sheet, Block B, packing test) | Yes |
+| 19 | Grid time limits and node-hours | per-suite speed, dev-run speed, fork save/restore and post-fork evaluation times | None. The D4W1536 figures in the sheet are estimates to be replaced | Yes |
+| 20 | HumanoidBench | `tests_humanoid_bench`, HumanoidBench identity and speed cells (unavailable without `HB_ENV`) | Recorded UNAVAILABLE without `HB_ENV`; that does not fail OVERALL (CUDA sheet, Block B "Rules") | Yes: when to run the separate HumanoidBench job |
+| 21 | Disk for the grid | fork-state and checkpoint sizes on the cluster | None; the ≈ 631 GB upper bound is an estimate (master summary, section 5) | Yes, if the measured sizes change the plan |
