@@ -429,6 +429,10 @@ class Angle1ParityTest(unittest.TestCase):
     """With probes off, exp1's loop reproduces experiments/angle_1.py's training bit-for-bit."""
 
     def setUp(self):
+        from hydra.core.global_hydra import GlobalHydra
+
+        # Earlier Exp 1/2 tests compose configs; angle_1 expects a fresh Hydra singleton.
+        GlobalHydra.instance().clear()
         self.tmp = tempfile.mkdtemp()
         self.patchers = patch_wandb()
 
