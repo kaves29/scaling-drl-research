@@ -103,6 +103,7 @@ def update_critic(
 
             # compute mse loss
             critic_loss = ((pred_q1 - target_q) ** 2 + (pred_q2 - target_q) ** 2).mean()
+            td_vars = (jnp.var(pred_q1 - target_q), jnp.var(pred_q2 - target_q))
         else:
             pred_q = critic.apply(
                 variables={"params": critic_params},
@@ -116,12 +117,14 @@ def update_critic(
 
         critic_info = {
             "train/critic_loss": critic_loss,
-            "train/td_error_var": jnp.var(td_error),
+            "train/td_error_var": (td_vars[0] + td_vars[1]) / 2 if critic_use_cdq else jnp.var(td_error),
             "train/q1_mean": pred_q1.mean(),
             "train/q2_mean": pred_q2.mean(),
             "train/rew_mean": batch["reward"].mean(),
             "train/critic_pnorm": tree_norm(critic_params),
         }
+        if critic_use_cdq:
+            critic_info["train/td_error_q1_var"], critic_info["train/td_error_q2_var"] = td_vars
 
         return critic_loss, critic_info
 
@@ -286,6 +289,8 @@ def compute_actor_gradient_cosine(
         log_prob = dist.log_prob(action)                  # shape [1]
         q_val = critic(observations=obs[None, ...],
                     actions=action)                    # shape [1]
+        if critic_use_cdq:  # the actor loss's min(Q1, Q2), as in update_actor
+            q_val = jnp.minimum(q_val[0], q_val[1])
 
         # Now both log_prob, q_val are shape [1], so do either:
         log_prob = jnp.squeeze(log_prob)  # shape ()

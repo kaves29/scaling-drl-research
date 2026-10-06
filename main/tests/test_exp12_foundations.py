@@ -341,7 +341,8 @@ class SimbaRandomWarmupTest(unittest.TestCase):
 
 
 class DiscountAndHorizonTest(unittest.TestCase):
-    """G2: SimBa's per-suite horizon gives gamma 0.95 for MyoSuite (TimeLimit 100) and 0.99 elsewhere."""
+    """G2: SimBa's per-suite horizon gives gamma 0.95 for MyoSuite (TimeLimit 100) and 0.99 elsewhere;
+    clipped double Q on HumanoidBench only, as in SimBa."""
 
     def test_gamma_per_suite(self):
         cases = [("myo-key-turn", "myosuite_simba", 0.95, 100), ("dog-run", "dmc_hard", 0.99, 1000),
@@ -351,7 +352,7 @@ class DiscountAndHorizonTest(unittest.TestCase):
                 cfg = compose([f"env_name={env_name}", f"env={group}"])
                 self.assertAlmostEqual(cfg.gamma, gamma)
                 self.assertEqual(cfg.env.max_episode_steps, horizon)
-                self.assertFalse(cfg.agent.critic_use_cdq)
+                self.assertEqual(cfg.agent.critic_use_cdq, group == "humanoid_bench")  # amendment (z)
 
     def test_keyturn_is_truncated_at_100_raw_steps(self):
         env = exp12_envs.create_envs(

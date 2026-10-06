@@ -360,6 +360,42 @@ MUTATIONS += [
 ]
 
 
+from scale_rl.agents.sac import sac_network  # noqa: E402
+
+TWIN = "tests.test_exp12_twin_critic"
+TD_LINE = '"train/td_error_var": (td_vars[0] + td_vars[1]) / 2 if critic_use_cdq else jnp.var(td_error),'
+MUTATIONS += [
+    # The twin-critic tests call sac_network / sac_update directly (not through a jitted scan).
+    ("twin critic: vmap with in_axes=None (the pre-fix form)", sac_network, "SACClippedDoubleCritic",
+     source_mutation(sac_network, "SACClippedDoubleCritic", [("in_axes=0,", "in_axes=None,"),
+                                                            ("(tile(observations), tile(actions))", "(observations, actions)")]),
+     f"{TWIN}.TwinCriticDefectTest.test_twin_critic_initialises_with_two_independent_networks"),
+    ("twin critic: td_error never set in the clipped-double-Q branch (the pre-fix form)", sac_update, "update_critic",
+     source_mutation(sac_update, "update_critic", [(TD_LINE, '"train/td_error_var": jnp.var(td_error),'),
+                                                   ("        if critic_use_cdq:\n            critic_info[", "        if False:\n            critic_info[")]),
+     f"{TWIN}.TwinCriticDefectTest.test_td_error_var_is_the_mean_of_the_two_networks"),
+    ("twin critic: td_error_var pooled over both networks instead of their mean", sac_update, "update_critic",
+     source_mutation(sac_update, "update_critic", "(td_vars[0] + td_vars[1]) / 2",
+                     "jnp.var(jnp.concatenate([pred_q1 - target_q, pred_q2 - target_q]))"),
+     f"{TWIN}.TwinCriticDefectTest.test_td_error_var_is_the_mean_of_the_two_networks"),
+    ("twin critic: grad cosine ignores critic_use_cdq (the pre-fix form)", sac_update, "compute_actor_gradient_cosine",
+     source_mutation(sac_update, "compute_actor_gradient_cosine",
+                     "        if critic_use_cdq:  # the actor loss's min(Q1, Q2), as in update_actor\n"
+                     "            q_val = jnp.minimum(q_val[0], q_val[1])\n", ""),
+     f"{TWIN}.TwinCriticDefectTest.test_actor_grad_cosine_uses_min_of_the_two_networks"),
+    ("twin critic: grad cosine on Q1 only", sac_update, "compute_actor_gradient_cosine",
+     source_mutation(sac_update, "compute_actor_gradient_cosine", "q_val = jnp.minimum(q_val[0], q_val[1])",
+                     "q_val = q_val[0]"),
+     f"{TWIN}.TwinCriticDefectTest.test_actor_grad_cosine_uses_min_of_the_two_networks"),
+    ("twin critic: Q2's structural metrics read from network 0", sac_update, "get_critic_with_metrics",
+     source_mutation(sac_update, "get_critic_with_metrics", "jnp.array(activi)[:,1,:,:]", "jnp.array(activi)[:,0,:,:]"),
+     f"{TWIN}.TwinCriticPathTest.test_structural_metrics_are_per_network"),
+    ("twin critic: target computed from Q1's target only", sac_update, "update_critic",
+     source_mutation(sac_update, "update_critic", "next_q = jnp.minimum(next_q1, next_q2).reshape(-1)",
+                     "next_q = next_q1.reshape(-1)"),
+     f"{TWIN}.TwinCriticPathTest.test_critic_loss_uses_the_shared_min_target_and_each_network_its_own_term"),
+]
+
 def _run(test_id):
     suite = unittest.defaultTestLoader.loadTestsFromName(test_id)
     result = unittest.TextTestRunner(stream=open("/dev/null", "w"), verbosity=0).run(suite)

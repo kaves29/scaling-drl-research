@@ -128,17 +128,20 @@ class SACClippedDoubleCritic(nn.Module):
             SACCritic,
             variable_axes={"params": 0,'intermediates': 0},
             split_rngs={"params": True},
-            in_axes=None,
+            in_axes=0,
             out_axes=0,
             axis_size=self.num_qs,
         )
 
+        # Every Q gets the same inputs. Broadcast explicitly: flax 0.8.4's vmap rejects in_axes=None
+        # under jax 0.4.34 ("Expected None, got Array"), so the original form never initialised here.
+        tile = lambda x: jnp.broadcast_to(x, (self.num_qs, *x.shape))
         qs = VmapCritic(
             block_type=self.block_type,
             num_blocks=self.num_blocks,
             hidden_dim=self.hidden_dim,
             dtype=self.dtype,
-        )(observations, actions)
+        )(tile(observations), tile(actions))
 
         return qs
 
