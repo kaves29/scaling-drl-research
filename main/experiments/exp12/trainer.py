@@ -271,10 +271,11 @@ class Exp12Trainer:
 
     def inject(self, m_label: str, seed: int) -> None:
         """Plasticity injection into the online and target critic (experiments/exp12/injection.py)."""
-        from experiments.exp12.injection import inject, injection_key
+        from experiments.exp12.injection import inject, inject_twin, injection_key
+        from experiments.exp12.twin import is_twin
 
         a = self._sac_agent
-        a._critic, a._target_critic = inject(
+        a._critic, a._target_critic = (inject_twin if is_twin(a._critic.params) else inject)(
             a._critic, a._target_critic, m_label, injection_key(seed),
             float(self.cfg.agent.critic_learning_rate), float(self.cfg.agent.critic_weight_decay),
         )

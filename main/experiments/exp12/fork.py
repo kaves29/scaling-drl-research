@@ -21,6 +21,7 @@ import numpy as np
 from experiments.exp12.envs import create_eval_env
 from experiments.exp12.precision import runtime_info
 from experiments.exp12.trainer import evaluate_episodes
+from experiments.exp12.twin import is_twin
 from utils.atomic_io import atomic_write_text
 
 PANEL_STREAM = 0x50414E4C  # "PANL"
@@ -114,6 +115,10 @@ def panel_q_and_grad(critic, panel) -> Dict[str, np.ndarray]:
     """Q and dQ/da on the panel in full FP32 (Check 1 is the one place that does not use TF32)."""
     obs, act = jnp.asarray(panel["observation"]), jnp.asarray(panel["action"])
     q_fn = lambda a: critic.network_def.apply({"params": critic.params}, obs, a)
+    if is_twin(critic.params):  # Q of both networks and dQ/da of min(Q1, Q2) (amendment (z))
+        with jax.default_matmul_precision(CHECK1_PRECISION):
+            q, grad = jax.jit(lambda a: (q_fn(a), jax.grad(lambda b: jnp.minimum(*q_fn(b)).sum())(a)))(act)
+        return {"q": np.asarray(q).reshape(-1), "dq_da": np.asarray(grad)}
     with jax.default_matmul_precision(CHECK1_PRECISION):
         q, grad = jax.jit(lambda a: (q_fn(a), jax.grad(lambda b: q_fn(b).sum())(a)))(act)
     return {"q": np.asarray(q).reshape(-1), "dq_da": np.asarray(grad)}

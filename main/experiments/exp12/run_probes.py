@@ -7,6 +7,7 @@ import numpy as np
 import orbax.checkpoint
 import pandas as pd
 
+from experiments.exp12 import twin
 from experiments.exp12.injection import InjectedSACCritic, injected_optimizer
 from experiments.exp12.probe import check_steps, critic_optimizer, iqm, probe_config, run_probe, summarize
 from experiments.exp12.trigger import bootstrap_interval, f_star, trigger_config, triggered
@@ -76,12 +77,14 @@ class RunProbes:
             return
         self.fresh = trainer._sac_agent.critic.params
         orbax.checkpoint.PyTreeCheckpointer().save(str(self.fresh_path), {"params": self.fresh}, force=True)
-        score = self._probe(0, {"fresh": (self.critic_def, self.fresh)})["fresh"]["score"]
+        result = self._probe(0, {"fresh": (self.critic_def, self.fresh)})
+        score = result["fresh"]["score"]
         self.records.append({
             "check_index": 0,
             "interaction_step": trainer.interaction_step,
             **{f"score_fresh_r{r}": float(v) for r, v in enumerate(score)},
             "score_fresh_iqm": iqm(score) if np.all(np.isfinite(score)) else float("nan"),
+            **per_network_fields(result, fresh_only=True),
         })
 
     def maybe_check(self, trainer) -> None:
@@ -113,6 +116,7 @@ class RunProbes:
             "ci_high": high,
             "triggered": triggered(low, tc.null_threshold) and s["valid"],
             "valid": s["valid"],
+            **per_network_fields(result),
         }
         if self.forced_check is not None and self.forced_check - tc.consecutive_checks < k <= self.forced_check:
             row["triggered"] = True  # TEST-ONLY hook (testing.force_trigger_check, run_role=dev only)
@@ -126,7 +130,8 @@ class RunProbes:
 
     def _probe(self, k: int, critics: Dict) -> Dict:
         t = self.trainer
-        result = run_probe(t.agent, t.buffer, self.critic_def, critics, self.tx, self.seed, k, self.cfg)
+        result = run_probe_networks(t.agent, t.buffer, self.critic_def, critics, self.tx, self.injected_tx,
+                                    self.seed, k, self.cfg)
         self.dir.mkdir(parents=True, exist_ok=True)
         np.savez_compressed(
             self.dir / f"check_{k:02d}.npz",
@@ -137,6 +142,30 @@ class RunProbes:
     def write_csv(self) -> None:
         self.dir.mkdir(parents=True, exist_ok=True)
         atomic_write_text(self.dir / "probe_checks.csv", pd.DataFrame(self.records).to_csv(index=False))
+
+
+def run_probe_networks(agent, buffer, target_def, critics, tx, injected_tx, seed, k, cfg, shared_offset=None):
+    """run_probe, with every twin critic probed as its two networks (amendment (z)); others unchanged."""
+    critics, twins = twin.expand(critics, injected_tx)
+    result = run_probe(agent, buffer, target_def, critics, tx, seed, k, cfg, shared_offset)
+    return twin.combine(result, twins) if twins else result
+
+
+def per_network_fields(result: Dict, fresh_only: bool = False) -> Dict:
+    """Twin critics: each network's paired L = P(fresh_qn) - P(current_qn) per round, and its scores."""
+    if "fresh_q1" not in result:
+        return {}
+    if fresh_only:
+        return {f"score_fresh_q{n}_r{r}": float(v) for n in range(1, twin.NUM_QS + 1)
+                for r, v in enumerate(result[f"fresh_q{n}"]["score"])}
+    out = {}
+    for n in range(1, twin.NUM_QS + 1):
+        s = summarize(result, f"current_q{n}", f"fresh_q{n}")
+        out.update({f"score_current_q{n}_r{r}": float(v) for r, v in enumerate(s["score_current_rounds"])})
+        out.update({f"score_fresh_q{n}_r{r}": float(v) for r, v in enumerate(s["score_fresh_rounds"])})
+        out.update({f"loss_q{n}_r{r}": float(v) for r, v in enumerate(s["loss_rounds"])})
+        out[f"loss_q{n}_iqm"] = s["loss_iqm"]
+    return out
 
 
 def original_critic_def(cfg):

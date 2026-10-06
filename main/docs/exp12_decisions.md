@@ -1759,3 +1759,103 @@ decision" marks where none does. "Log" = this file.
 | 19 | Grid time limits and node-hours | per-suite speed, dev-run speed, fork save/restore and post-fork evaluation times | None. The D4W1536 figures in the sheet are estimates to be replaced | Yes |
 | 20 | HumanoidBench | `tests_humanoid_bench`, HumanoidBench identity and speed cells (unavailable without `HB_ENV`) | Recorded UNAVAILABLE without `HB_ENV`; that does not fail OVERALL (CUDA sheet, Block B "Rules") | Yes: when to run the separate HumanoidBench job |
 | 21 | Disk for the grid | fork-state and checkpoint sizes on the cluster | None; the ≈ 631 GB upper bound is an estimate (master summary, section 5) | Yes, if the measured sizes change the plan |
+
+## Stage 2: twin critics for HumanoidBench (received 2026-10-06; amendment (z))
+
+**Your decision.** Follow SimBa per suite: DMC and MyoSuite single Q
+(episodic false), HumanoidBench clipped double Q (episodic true). Reverses H3
+for HumanoidBench only. Sizes are per Q network. Part 4 defaults confirmed as
+written. No known double-Q defect. Nothing changes on the single-critic path.
+
+**Part 1a, SimBa (github.com/SonyResearch/simba @ 7d0358b), quoted:**
+- `configs/env/hb_locomotion.yaml`: `episodic: true` (DMC `dmc_hard.yaml`,
+  `dmc_em.yaml` and `myosuite.yaml`: `episodic: false`);
+- `configs/agent/sac_simba.yaml`: `critic_use_cdq: ${env.episodic}`;
+- no other file reads `episodic`.
+So SimBa's HumanoidBench setting is clipped double Q.
+
+**Part 1b, every use here.** `episodic` is read only by
+`configs/agent/sac_simba.yaml` (`critic_use_cdq: ${env.episodic}`); no
+Python reads it. It has no effect on termination, bootstrapping (that uses
+`terminated`, set by the env), evaluation or logging. `critic_use_cdq` is
+read by `sac_agent.py` (twin network, `get_q_value` min) and `sac_update.py`
+(actor loss min, target min, critic loss, metrics, gradient cosine); the
+Angle 2B/2C code reads it from their own configs and is untouched. What
+changes for HumanoidBench: the critic becomes two networks, everything else
+(termination, γ 0.99, budget, horizon, action repeat) is unchanged.
+
+**Part 2.** `configs/env/humanoid_bench.yaml`: `episodic: true` (differs
+from SimBa's `hb_locomotion.yaml` only in `env_name`, which is templated).
+Resolved `critic_use_cdq`: true for h1-reach-v0 and h1-run-v0, false for the
+other 11 Exp 1/2 environments (printed by composing every config).
+
+**Part 3, defects found and fixed** (each with a CPU test that fails on the
+old code and a break-and-restore check):
+1. `SACClippedDoubleCritic` could not be built at all on the pinned jax
+   0.4.34 / flax 0.8.4: flax's `nn.vmap` tree-maps `in_axes=None` against the
+   arguments and jax now treats None as an empty subtree ("Expected None, got
+   Array"). Known before (a comment in `tests/test_angle_2b_smoke.py`). Fix:
+   broadcast the inputs to both networks explicitly (`in_axes=0`). Same
+   mathematics (each network equals a standalone SACCritic on its slice, bit
+   for bit) and the same parameter layout. Effect: without it, twin critics
+   cannot run.
+2. `update_critic`, twin branch: `td_error` never set, so every update raised
+   UnboundLocalError (`train/td_error_var` was added in this repo; SimBa has
+   none). Fix (your choice): mean of the two networks' TD-error variances;
+   `train/td_error_q1_var` and `train/td_error_q2_var` are logged too.
+3. `compute_actor_gradient_cosine` ignored `critic_use_cdq`: its per-sample
+   loss had shape (2,), so `jax.grad` failed at trace time, and because
+   `lax.cond` traces both branches every update failed, even when the cosine
+   was not due. Fix (your choice): min(Q1, Q2), as the actor loss.
+Not defects (checked against independent references): the vmapped networks
+are initialised independently; the shared min target; each network's loss
+term and gradient; the actor loss on the min; Polyak over both targets; the
+per-network metrics. Your suspects: `sac_update.py` ~229-238 reads the same
+key name from two dicts already sliced per network, and each matches its own
+network; `metrics.py` ~57 gives the joint L2 norm over both networks (not a
+sum, despite its docstring), and ~112 stacks only after the per-network
+slicing. The Orbax checkpoint round trip keeps both networks, both targets
+and the Adam state bit-exactly. Single-critic path: the lowered update
+programs (scan with and without diagnostics, single update) are
+byte-identical before and after; angle_1 parity, probes on = off and resume
+bit-exactness pass unchanged.
+
+**Part 4, Exp 1/2 machinery** (your defaults):
+- `experiments/exp12/twin.py`: per-network views. The probe splits a twin
+  critic into its two networks (each a SACCritic, or an InjectedSACCritic
+  probed with the injected optimizer), each paired with its own network of
+  the fresh copy on the shared pool, targets and minibatches, each with its
+  own offset; P per name is the mean of the two, so L is the mean of the two
+  networks' L. Records add `loss_qn_r*`, `score_current_qn_r*`,
+  `score_fresh_qn_r*`, `loss_qn_iqm`; check 0 adds `score_fresh_qn_r*`.
+- `injection.inject_twin` and `InjectedClippedDoubleCritic`: the same head
+  (last m blocks, post-LayerNorm, output) in both networks and both targets,
+  same m; frozen heads stopped in both; optimizer per network (AdamW is
+  elementwise). Fine print (logged, not asked): each network's new head is
+  initialised from its own key (`jax.random.split`), as the twin's networks
+  are; its copy and the target's new and copy take the same values.
+- Check 1: Q of both networks (512 values on the 256-pair panel) and dQ/da
+  of min(Q1, Q2), tolerances of (m). Check 2: the mean of the two networks'
+  P, with `score_<critic>_qn_rounds` recorded.
+- Run metadata: `critic_count: 2` in each launch record of a twin run. Fine
+  print: it is written only for twin runs (absent means one), so
+  single-critic metadata is unchanged; the resolved config already records
+  `agent.critic_use_cdq`.
+- Injected twin critics report their structural metrics as NaN, as an
+  injected single critic does.
+- `profile_exp12.py` probes both networks of a twin critic, so it times the
+  real twin probe.
+- Tests (`tests/test_exp12_twin_critic.py`, 23): probe split and mean,
+  injection invariants per m, Check 1 values, an end-to-end twin fork
+  (identity fork bit-identical, Checks 1-2, probe records, injected arm,
+  metadata), probes on = off, diagnostics on = off. 14 break checks.
+
+**Part 4e, parameter counts (twin):** see the CUDA sheet, Block HB. D4W1536
+on h1-run-v0: 75,654,145 per network, 151,308,290 for the twin (×1,052 the
+actor).
+
+**Part 5.** `scripts/sbatch_exp12_hb.sh` (Block HB): HumanoidBench and
+twin-critic tests, the identity-fork gate on the final commit (D4W1024 and
+D4W1536 on dog-run, myo-key-turn and h1-run-v0) and h1-run-v0 twin speed,
+probe time and memory. Compute effect (estimates): HumanoidBench runs ~1.2×
+(D2W512) to ~1.6× (D4W1536) longer; probe checks and critic memory double.

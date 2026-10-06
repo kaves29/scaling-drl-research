@@ -396,6 +396,44 @@ MUTATIONS += [
      f"{TWIN}.TwinCriticPathTest.test_critic_loss_uses_the_shared_min_target_and_each_network_its_own_term"),
 ]
 
+from experiments import exp1 as exp1_module  # noqa: E402
+from experiments.exp12 import twin as twin_module  # noqa: E402
+
+
+def metadata_without_critic_count(resolved_cfg, identity, launch):
+    return exp1_module.__dict__["_real_build_run_metadata"](resolved_cfg, identity,
+                                                           {k: v for k, v in launch.items() if k != "critic_count"})
+
+
+exp1_module._real_build_run_metadata = exp1_module.build_run_metadata
+
+MUTATIONS += [
+    ("twin probe: per-round L from network 1 only", twin_module, "combine",
+     source_mutation(twin_module, "combine", 'np.mean([p["score"] for p in parts], axis=0)', 'parts[0]["score"]'),
+     f"{TWIN}.TwinProbeTest.test_combined_loss_is_the_mean_of_the_two_networks"),
+    ("twin probe: both views take network 1's parameters", twin_module, "expand",
+     source_mutation(twin_module, "expand", "view = (single, network_params(critic[1], k))",
+                     "view = (single, network_params(critic[1], 0))"),
+     f"{TWIN}.TwinProbeTest.test_expand_gives_each_network_its_own_slice"),
+    ("twin injection: target trunk and frozen head taken from the online critic", injection, "inject_twin",
+     source_mutation(injection, "inject_twin", "split_params(target_critic.params[TWIN], num_blocks, m)",
+                     "split_params(critic.params[TWIN], num_blocks, m)"),
+     f"{TWIN}.TwinInjectionTest.test_same_head_in_both_networks_and_targets"),
+    ("twin injection: one new head shared by both networks", injection, "inject_twin",
+     source_mutation(injection, "inject_twin", "for k in jax.random.split(key, n)]", "for k in [key] * n]"),
+     f"{TWIN}.TwinInjectionTest.test_same_head_in_both_networks_and_targets"),
+    ("twin injection: trunk Adam state reset instead of carried", injection, "inject_twin",
+     source_mutation(injection, "inject_twin",
+                     '"trunk": _carry_trunk_state(per_network, trunk, num_blocks, m, learning_rate, weight_decay),',
+                     '"trunk": optax.adamw(learning_rate=learning_rate, weight_decay=weight_decay).init(trunk),'),
+     f"{TWIN}.TwinInjectionTest.test_training_keeps_frozen_heads_and_optimizer_rules"),
+    ("twin Check 1: dQ/da of Q1 instead of min(Q1, Q2)", fork, "panel_q_and_grad",
+     source_mutation(fork, "panel_q_and_grad", "jnp.minimum(*q_fn(b)).sum()", "q_fn(b)[0].sum()"),
+     f"{TWIN}.TwinCheck1Test.test_panel_values"),
+    ("twin metadata: critic count not recorded", exp1_module, "build_run_metadata", metadata_without_critic_count,
+     f"{TWIN}.TwinForkEndToEndTest.test_runs_are_twin_and_record_the_critic_count"),
+]
+
 def _run(test_id):
     suite = unittest.defaultTestLoader.loadTestsFromName(test_id)
     result = unittest.TextTestRunner(stream=open("/dev/null", "w"), verbosity=0).run(suite)

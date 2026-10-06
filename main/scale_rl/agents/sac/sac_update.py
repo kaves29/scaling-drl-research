@@ -220,7 +220,13 @@ def get_critic_with_metrics(
 
     newintermediates = flatten_dict(intermediates)
 
-    if critic_use_cdq:
+    if critic_use_cdq and 'intermediates_VmapSACCritic_0_encoder___call__' not in newintermediates:
+        # Exp 2 injected twin critic (experiments/exp12/injection.py): reported as not computed, as for one critic.
+        critic_info = {k: float("nan") for k in (
+            "train/critic_q1_DR0.1", "train/critic_q1_DR0.2", "train/critic_q2_DR0.1", "train/critic_q2_DR0.2",
+            "train/critic_q1_fnorm", "train/critic_q2_fnorm", "train/critic_wnorm", "train/critic_q1_srank",
+            "train/critic_q2_srank")}
+    elif critic_use_cdq:
         q1_intermediates = {}
         q2_intermediates = {}
         for layer_name, activi in list(newintermediates.items()):

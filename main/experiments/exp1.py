@@ -72,7 +72,8 @@ def record_metadata(cfg, run_dir: Path, resumed: bool, experiment: str = EXPERIM
         omegaconf.OmegaConf.to_container(cfg, resolve=True),
         identity={**vars(identity), "run_key": identity.run_key, "run_role": cfg.run_role},
         launch={"started_at": datetime.now(timezone.utc).isoformat(), "resumed": resumed,
-                "device": fork.device_info(), "runtime": runtime_info()},
+                "device": fork.device_info(), "runtime": runtime_info(),
+                **({"critic_count": 2} if cfg.agent.critic_use_cdq else {})},  # twin critics, amendment (z)
     )
     path = run_dir / RUN_METADATA_FILENAME
     stored = load_run_metadata(path)

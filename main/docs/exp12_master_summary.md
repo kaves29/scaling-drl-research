@@ -1,7 +1,7 @@
 # Experiments 1 and 2: master summary (Phase 8)
 
 Branch `claude/eloquent-fermat-inxqlt` (not merged; nothing pushed to main).
-Source of truth: `.claude/methodology-exp1-exp2.md`, with Amendments (a)–(y).
+Source of truth: `.claude/methodology-exp1-exp2.md`, with Amendments (a)–(z).
 Critic grid (amendment (y), 2026-10-06): D2W512, D4W1024, D4W1536 per Q network; actor D1W128.
 D6W1536 is dropped; where it appears below it is a measured Block A record or the estimates' anchor.
 Decision log: `docs/exp12_decisions.md`. CUDA command sheet:
@@ -46,6 +46,8 @@ dev run or pilot has been launched or scheduled by me.
 | `scripts/preflight_checkpoint_check.py` | `--experiment exp1 [--with-fork]` | preflight for the new grid |
 | `experiments/exp12/precision.py` | `set_matmul_precision`, `configure_compilation_cache`, `runtime_info` | (v) TF32 at every GPU entry point; persistent compilation cache per GPU model; run metadata |
 | `scripts/exp12_blockA.sh`, `scripts/sbatch_exp12_blockA.sh` | Block A runner and its Delta sbatch | A0–A4, unattended, `--dry-run` |
+| `experiments/exp12/twin.py`, `injection.inject_twin` | `expand`, `combine`, `InjectedClippedDoubleCritic` | twin critics (amendment (z)): per-network probe views, the mean L, injection into both networks and targets |
+| `scripts/sbatch_exp12_hb.sh` | Block HB job (one A100) | HumanoidBench and twin-critic tests, identity-fork gate on the final commit, h1-run-v0 twin speed and memory |
 | `scripts/exp12_blockB.sh`, `scripts/sbatch_exp12_blockB.sh` | Block B driver (one lane per GPU) and its sbatch | dev run, positive control, injected arm, preflight, packing test, GPU test suites, range check, identity forks (cold and warm cache), null, per-suite speed; `--dry-run` |
 | `scripts/exp12_reports.py` | `parse_unittest_log`, `range_criterion`, `blockA_summary`, `blockB_report` | the jobs' summaries and gates; (w) |
 | `scripts/collect_report.sh` | — | one file to paste: the report plus failing steps' logs and tracebacks |
@@ -81,7 +83,7 @@ amendments:
 - (g) No normalisation; graphs only.
 - (h) SimBa random warm-up until 5,000 transitions.
 - (i) MyoSuite max_episode_steps 100, γ 0.95.
-- (j) HumanoidBench with one Q critic (limitation).
+- (j) Superseded by (z).
 - (k) HumanoidBench limitations.
 - (l) Two consecutive firing checks.
 - (m) Check 1: control and identity arm bit-exact; injected arm ≤ 64 eps.
@@ -111,6 +113,12 @@ amendments:
 - (y) Critic grid D2W512, D4W1024, D4W1536 (D4W1536 replaces D6W1536: the
   largest critic was too large relative to the actor, and the change cuts
   compute). m candidates for depth 4: 1 / 2 / 4 blocks. Nothing else changes.
+- (z) Critic per suite as in SimBa: DMC and MyoSuite one Q critic,
+  HumanoidBench clipped double Q (twin critics; sizes per network). Probe:
+  each network against its own fresh copy, L = mean of the two. Injection:
+  the same head in both networks and both targets. Check 1: Q of both and
+  dQ/da of the min. Limitation: the min may add value underestimation with a
+  small fixed actor (Mastikhina et al. 2025).
 
 Routine engineering choices are listed under "Choices (routine, shown for veto)" in each phase section of the log. The main ones:
 
@@ -285,7 +293,8 @@ numbers in section 5.
 | CUDA prep | `a8ca346` TF32 everywhere (v); `92b488a` efficiency scan; `7812b17` Block A runner |
 | Block A follow-up | `5ffce58` A1 parser, injection test under "highest", amendment (w), Block A numbers; `4314170` Block B driver |
 | Block B decisions | `9198e33` ARM_M=half; GPU tolerance pattern; well-conditioned KL test; amendment (x); compilation cache; cold/warm identity; per-suite speed; HB_ENV; memory flags |
-| Critic sizes | this commit: D4W1536 replaces D6W1536 (amendment (y)); Block B 8 h |
+| Critic sizes | `b4a90cb` D4W1536 replaces D6W1536 (amendment (y)); Block B 8 h; `cae5fd5` GPU UUID filter; `1f30a13` Block B decision table |
+| Twin critics | `c293b9a` HumanoidBench episodic true, three twin-critic defects fixed; this commit: Exp 1/2 twin support (amendment (z)), Block HB |
 
 ## 8. What to run next (all on the CUDA stack, from `main/`)
 
@@ -293,9 +302,12 @@ The full sheet is `docs/exp12_cuda_commands.md`.
 
 1. **Block A:** done (job 22667743). The A1 follow-up is in the decisions
    log, and A2 now uses (w).
-2. **Optional, for HumanoidBench:** create the cloned `HB_ENV` environment
+2. **For HumanoidBench:** create the cloned `HB_ENV` environment
    (the sheet's Setup). Its last step must print
-   `MAIN ENVIRONMENT UNCHANGED`.
+   `MAIN ENVIRONMENT UNCHANGED`. Then **Block HB** (one A100, ~1.5 h,
+   `scripts/sbatch_exp12_hb.sh`): HumanoidBench and twin-critic tests, the
+   identity-fork gate on the final commit for every forking size × suite, and
+   h1-run-v0 twin speed and memory.
 3. **Block B** (one A100x4 node, 8 h): the dev run, positive control,
    injected arm (m = half), preflight, packing test, GPU test suites (default
    and deterministic), A1 follow-up measurements, hopper-hop range, identity
@@ -322,7 +334,7 @@ The full sheet is `docs/exp12_cuda_commands.md`.
 - [ ] GPU test suites (default, deterministic) and break checks pass; GPU tolerances set from Block B's measurements.
 - [ ] Null fire rate ≤ 5% per size, or your decision on the p95 threshold.
 - [x] Probe overhead for D6W1536: 6.77%, accepted (R2). D4W1536 (~5.7%, estimate) is measured in Block B.
-- [ ] Identity fork bit-identical for every available architecture × suite cell (cold and warm cache), or your decision.
+- [ ] Identity fork bit-identical for every architecture × suite cell (Block B: cold and warm cache; Block HB: on the final commit, h1-run-v0 with twin critics), or your decision.
 - [ ] Positive control: m chosen and frozen in `injection.m`.
 - [ ] Preflight PASS per size on the grid's GPU model.
 - [ ] Jobs per GPU set from the packing test (per-job peak and total memory, slowdown), with `XLA_PYTHON_CLIENT_PREALLOCATE=false` and no memory fraction.

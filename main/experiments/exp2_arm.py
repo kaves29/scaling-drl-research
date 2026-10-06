@@ -23,8 +23,8 @@ from experiments.exp1 import compose_config, record_metadata, run_identity
 from experiments.exp12 import exp2_ledger, fork
 from experiments.exp12.injection import M_LABELS
 from experiments.exp12.precision import configure_compilation_cache, set_matmul_precision
-from experiments.exp12.probe import iqm, run_probe
-from experiments.exp12.run_probes import RunProbes
+from experiments.exp12.probe import iqm
+from experiments.exp12.run_probes import RunProbes, run_probe_networks
 from experiments.exp12.state import latest_state_dir
 from experiments.exp12.trainer import Exp12Trainer
 from experiments.exp12.trigger import bootstrap_interval, trigger_config
@@ -58,8 +58,8 @@ def check2(trainer, probes, plan, pre_params) -> dict:
     critics = {"injected": probes.current_critic(trainer), "control": (probes.critic_def, pre_params),
                "fresh": (probes.critic_def, probes.fresh)}
     k = plan["fork_check_index"]
-    result = run_probe(trainer.agent, trainer.buffer, probes.critic_def, critics, probes.tx,
-                       int(trainer.cfg.seed), k, probes.cfg)
+    result = run_probe_networks(trainer.agent, trainer.buffer, probes.critic_def, critics, probes.tx,
+                                probes.injected_tx, int(trainer.cfg.seed), k, probes.cfg)
     tc = trigger_config(trainer.cfg)
     diff = result["injected"]["score"] - result["control"]["score"]
     low, high = bootstrap_interval(diff, int(trainer.cfg.seed), k, tc.resamples, tc.confidence)
@@ -76,6 +76,8 @@ def check2(trainer, probes, plan, pre_params) -> dict:
         "confidence": tc.confidence, "bootstrap_resamples": tc.resamples,
         # Check 2 passes when the interval lies above 0 (approved 2026-10-04). Reported only.
         "pass": bool(np.isfinite(low) and low > 0),
+        # Twin critics (amendment (z)): each network's scores; the paired difference above uses their mean.
+        **{f"score_{n}_rounds": result[n]["score"].tolist() for n in result if n not in critics},
     }
     probes.dir.mkdir(parents=True, exist_ok=True)
     np.savez_compressed(probes.dir / "check2_curves.npz",

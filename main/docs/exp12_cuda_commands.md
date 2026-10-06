@@ -10,6 +10,8 @@ schedules a grid run.
 
 - **Block A** (one A100, 4 CPUs, ≤ 30 min): smoke tests, fresh-critic range
   check, short profile, optional GPU trace (A4); run by scripts/exp12_blockA.sh.
+- **Block HB** (one A100, ~1.5 h): HumanoidBench with twin critics (amendment (z)) and the
+  identity-fork gate on the final commit.
 - **Block B** (one A100x4 node, unattended, 8 h limit, ~5.1 h critical path): the dev run, positive
   control and injected arm, preflight, packing test, GPU test suites, range
   check, identity forks and the fresh-pair null, one lane per GPU.
@@ -585,6 +587,75 @@ The request fits if `CPUTot` ≥ 64, `RealMemory` minus any `MemSpecLimit` ≥
 131072 (MB), and `Gres` shows 4 A100s. My understanding is that Delta's
 A100x4 nodes have 64 cores, ~256 GB and 4 × A100-40GB, but that is from
 memory, not checked.
+
+## Block HB: HumanoidBench with twin critics, and the identity-fork gate on the final commit (one A100, ~1.5 h)
+
+**Why.** Amendment (z): HumanoidBench now uses SimBa's clipped double Q
+(twin critics); DMC and MyoSuite keep one Q critic. Block B (job 22706349,
+commit b4a90cb) predates this: it ran without `HB_ENV`, so its HumanoidBench
+steps were recorded unavailable, and its identity cells ran on code that has
+since changed (twin-critic support in the probe, injection, Check 1 and fork
+code; the single-critic programs are byte-identical, but the gate is re-run
+on the final commit, as the grid needs).
+
+**The job** (`scripts/sbatch_exp12_hb.sh`; 1 GPU, 16 CPUs, 64G, 4 h requested):
+1. HumanoidBench tests (h1-run-v0 pipeline, h1-reach-v0 evaluation seeding)
+   and `tests.test_exp12_twin_critic`, under `HB_ENV`.
+2. Identity forks, reduced budget (Block C), D4W1024 and D4W1536, on dog-run
+   and myo-key-turn (main environment, one Q) and h1-run-v0 (`HB_ENV`, twin
+   critics). Each cell must be bit-identical (Block C "What must match").
+3. h1-run-v0 with twin critics, per size (D2W512, D4W1024, D4W1536): training
+   it/s with probes off, one probe-check time (4 fits: each network and its
+   fresh copy), the projected probe overhead, and peak GPU memory
+   (`profile_exp12.py`).
+
+It needs the cloned `HB_ENV` from Setup. Submit from `main/`:
+```bash
+cd /work/hdd/biqc/skaveti1/exp12/main && git pull && mkdir -p logs
+HB_ENV=/work/hdd/biqc/skaveti1/envs/exp12-hb EXPECTED_COMMIT=<hash I give you> sbatch scripts/sbatch_exp12_hb.sh
+cat logs/hb_<jobid>/summary.txt                         # paste this, and the log of any step that did not exit 0
+```
+Do not `git pull` in this checkout while Block B (or any job) is running from it: the running job reads its
+code from the working tree.
+
+**Tested on CPU** (tiny networks, `HB_TEST_HOOKS`): every step ran; the three
+identity cells passed (dog-run and myo-key-turn with one Q, h1-run-v0 with
+twin critics on the real HumanoidBench env); the speed step wrote its JSON.
+On the GPU: **NEEDS CUDA VERIFICATION** (EGL rendering, twin speed and memory).
+
+**Time (estimate):** tests ~20 min; identity cells ~50 min (D4W1536 on
+h1-run-v0 ~15 min with twin critics); speed ~15 min; ~1.5 h in all.
+
+**Parameter counts with twin critics** (per Q network; the twin total is two
+networks, plus two target networks of the same size):
+
+| | h1-run-v0 (51/19) | h1-reach-v0 (57/19) |
+|---|---|---|
+| actor D1W128 | 143,782 | 144,550 |
+| D2W512 | 4,239,361 per network; 8,478,722 twin (×59) | 4,242,433; 8,484,866 (×59) |
+| D4W1024 | 33,658,881; 67,317,762 (×468) | 33,665,025; 67,330,050 (×466) |
+| D4W1536 | 75,654,145; 151,308,290 (×1,052) | 75,663,361; 151,326,722 (×1,047) |
+
+(×n = twin critic / actor parameters.)
+
+**Compute effect of twin critics on HumanoidBench (all estimates,
+unmeasured).** The critic's device work per update doubles (both networks in
+the critic loss, both targets, and both in the actor loss); the host work
+(h1-run env step ~4.2 ms, ~7 ms per step in all) does not. Device time per
+step is taken from the single-critic estimates above (D2W512 ~2.2 ms,
+D4W1024 ~5.4 ms, D4W1536 ~12.0 ms) and doubled, which is an upper bound
+(vmap may run the pair more efficiently than twice). A probe check fits 4
+critics instead of 2, so it doubles. Budget 1,000,000 interaction steps:
+
+| Size | Single it/s | Twin it/s | Single run (train + probes) | Twin run | Ratio | Probe check |
+|---|---|---|---|---|---|---|
+| D2W512 | ~109 | ~88 | ~2.6 h | ~3.2 h | 1.24 | ~3 → ~6 s |
+| D4W1024 | ~81 | ~56 | ~3.5 h | ~5.1 h | 1.45 | ~16 → ~32 s |
+| D4W1536 | ~53 | ~32 | ~5.5 h | ~9.0 h | 1.64 | ~33 → ~67 s |
+
+Peak GPU memory for D4W1536 roughly doubles (~2.7 → ~5.4 GiB, estimate).
+HumanoidBench is 30 of the 195 Exp 1 runs; the rest are unchanged.
+Unmeasured: all of the above until the job's step 3 reports.
 
 ## Block C: identity-fork gate (D2), per forking architecture × suite, before any Exp 1 grid launch
 

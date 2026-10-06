@@ -91,8 +91,7 @@ def _overrides(args, blocks, width, extra=()):
 
 def profile_arch(args, name, blocks, width):
     from experiments.exp1 import compose_config
-    from experiments.exp12.probe import run_probe
-    from experiments.exp12.run_probes import RunProbes
+    from experiments.exp12.run_probes import RunProbes, run_probe_networks
     from experiments.exp12.trainer import Exp12Trainer
 
     config_path = str(Path(__file__).resolve().parents[1] / "configs")
@@ -113,11 +112,13 @@ def profile_arch(args, name, blocks, width):
     probes = RunProbes(trainer, tempfile.mkdtemp(prefix="profile_probe_"))
     fresh = trainer._sac_agent.critic.params
     critics = {"current": (probes.critic_def, trainer._sac_agent.critic.params), "fresh": (probes.critic_def, fresh)}
-    run_probe(trainer.agent, trainer.buffer, probes.critic_def, critics, probes.tx, cfg.seed, 1, probes.cfg)
+    probe = lambda k: run_probe_networks(trainer.agent, trainer.buffer, probes.critic_def, critics, probes.tx,
+                                         probes.injected_tx, cfg.seed, k, probes.cfg)  # twin critics: both networks
+    probe(1)
     times = []
     for rep in range(args.probe_repeats):
         t0 = time.perf_counter()
-        run_probe(trainer.agent, trainer.buffer, probes.critic_def, critics, probes.tx, cfg.seed, 2 + rep, probes.cfg)
+        probe(2 + rep)
         times.append(time.perf_counter() - t0)
     check_s = float(np.median(times))
     n = int(cfg.num_interaction_steps)

@@ -178,7 +178,8 @@ Main experiment:
 * SimBa has no dedicated encoder, so the head is defined by choice → head = [last m residual blocks + post-layer-norm + output layer]
 * The target critic is also injected using the same construction, and the normal SAC Polyak target update continues from the post-injection state
 * New trainable injection parameters continue with newly created optimizer state while existing trainable parameters keep their existing AdamW state; frozen parameters are excluded from the optimizer and do not receive weight-decay updates
-* Inject the single Q critic used by this SAC implementation
+* Inject the single Q critic used by this SAC implementation [DMC and MyoSuite; on HumanoidBench both
+  networks of the twin critic, amendment (z)]
 * Use a fixed panel of 256 state-action pairs sampled once from the replay buffer at the fork and fixed thereafter for the injection correctness checks
 * All injected/control forks remain in the primary analysis regardless of whether the immediate plasticity-rescue check succeeds
 
@@ -303,7 +304,8 @@ double-Q on HumanoidBench (paper Table 7: "Clipped Double Q: HumanoidBench:
 True, Other Envs: False"; configs/env/hb_locomotion.yaml sets episodic: true,
 and sac_simba.yaml sets critic_use_cdq: ${env.episodic}). The Methodology's
 single Q critic is used everywhere. Limitation: on HumanoidBench this departs
-from SimBa's configuration.
+from SimBa's configuration. [SUPERSEDED by (z), 2026-10-06: HumanoidBench uses
+SimBa's clipped double Q.]
 
 ## Amendments from the Phase 3 approval (2026-10-04)
 
@@ -507,3 +509,41 @@ checkpoints, precision).
   results of (w)) are kept as measured; they describe the size measured
   then. The amended acceptance rule of (w) applies to the new sizes
   unchanged.
+
+## Amendment on twin critics for HumanoidBench (2026-10-06)
+
+(z) Critic per suite, following SimBa (replaces (j)). DMC and MyoSuite keep the
+single Q critic exactly as before (episodic: false, so critic_use_cdq is
+false). HumanoidBench (h1-reach-v0, h1-run-v0) uses clipped double Q, as in
+SimBa's released code (configs/env/hb_locomotion.yaml sets episodic: true,
+and sac_simba.yaml sets critic_use_cdq: ${env.episodic}) and paper (Table 7).
+- Critic sizes (D2W512, D4W1024, D4W1536) are per Q network; a twin critic is
+  two such networks (and two target networks). The actor loss uses
+  min(Q1, Q2); each network regresses to the shared target built from the
+  minimum of the two target networks.
+- Probe: each network is probed against its own fresh copy, on the shared
+  pool, targets and minibatch order, each with its own offset as before. The
+  per-round plasticity loss is the mean of the two networks' L; both are
+  recorded. The trigger, f*_run and the bootstrap use the mean.
+- Injection: the same head (the last m residual blocks, the post-LayerNorm
+  and the output layer) is injected into both networks and both target
+  networks, with the same m. Each network's new head is initialised from
+  its own key, as the twin's networks are.
+- Check 1: Q of both networks, and dQ/da of min(Q1, Q2), with the
+  tolerances of (m). Check 2: the paired difference uses the mean of the
+  two networks' P; both are recorded.
+- The fork state, restore, run metadata (critic count 2) and the identity
+  fork cover both networks.
+- Logged twin metrics: td_error_var is the mean of the two networks'
+  TD-error variances (td_error_q1_var and td_error_q2_var are logged too);
+  the actor-gradient cosine uses min(Q1, Q2), as the actor loss does;
+  critic_wnorm, critic_pnorm and critic_gnorm are joint L2 norms over both
+  networks.
+- Limitation: with a small fixed actor, twin critics (the minimum) may add
+  value underestimation (Mastikhina et al. 2025), so HumanoidBench's critic
+  pathology is measured under a different critic estimator from DMC's and
+  MyoSuite's.
+- Implementation note: on the pinned jax 0.4.34 / flax 0.8.4 the twin critic
+  could not be built at all (nn.vmap with in_axes=None); it now broadcasts
+  its inputs explicitly, with the same mathematics and parameter layout.
+

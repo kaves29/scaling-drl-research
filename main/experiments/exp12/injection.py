@@ -184,3 +184,82 @@ def count_params(tree) -> int:
 
 def trainable_count(injected_params) -> int:
     return count_params(injected_params["trunk"]) + count_params(injected_params["new"])
+
+
+INJECTED_TWIN = "VmapInjectedSACCritic_0"
+
+
+class InjectedClippedDoubleCritic(nn.Module):
+    """A twin critic after injection (amendment (z)): InjectedSACCritic vmapped as SACClippedDoubleCritic."""
+
+    num_blocks: int
+    hidden_dim: int
+    head_blocks: int
+    dtype: Any
+    num_qs: int = 2
+
+    def apply(self, variables, *args, **kwargs):
+        """Frozen heads of both networks: their parameters get no gradient, but inputs still do."""
+        params = dict(variables["params"])
+        inner = dict(params[INJECTED_TWIN])
+        inner["old"] = jax.lax.stop_gradient(inner["old"])
+        inner["copy"] = jax.lax.stop_gradient(inner["copy"])
+        params[INJECTED_TWIN] = inner
+        return super().apply({**variables, "params": params}, *args, **kwargs)
+
+    @nn.compact
+    def __call__(self, observations, actions):
+        vmapped = nn.vmap(InjectedSACCritic, variable_axes={"params": 0}, split_rngs={"params": True},
+                          in_axes=0, out_axes=0, axis_size=self.num_qs)
+        tile = lambda x: jnp.broadcast_to(x, (self.num_qs, *x.shape))
+        return vmapped(self.num_blocks, self.hidden_dim, self.head_blocks, self.dtype)(tile(observations),
+                                                                                       tile(actions))
+
+
+def injected_twin_optimizer(learning_rate: float, weight_decay: float) -> optax.GradientTransformation:
+    """injected_optimizer on both networks at once; AdamW is elementwise, so each network is updated as alone."""
+    inner = injected_optimizer(learning_rate, weight_decay)
+
+    def update(grads, state, params):
+        updates, state = inner.update(grads[INJECTED_TWIN], state, params[INJECTED_TWIN])
+        return {INJECTED_TWIN: updates}, state
+
+    return optax.GradientTransformation(lambda params: inner.init(params[INJECTED_TWIN]), update)
+
+
+def inject_twin(critic: Trainer, target_critic: Trainer, m_label: str, key, learning_rate: float,
+                weight_decay: float) -> Tuple[Trainer, Trainer]:
+    """inject() for a twin critic: the same head (last m blocks, post-LayerNorm, output layer) in both networks
+    and both target networks. Each network's new head is initialised from its own key, as the twin's networks
+    are; its frozen copy and the target's new and copy take the same values."""
+    from experiments.exp12.twin import TWIN
+
+    original = critic.network_def
+    num_blocks, hidden, n = original.num_blocks, original.hidden_dim, original.num_qs
+    m = head_blocks(m_label, num_blocks)
+    network_def = InjectedClippedDoubleCritic(num_blocks, hidden, m, original.dtype, n)
+    heads = [_Head(m, hidden, original.dtype).init(k, jnp.zeros((1, hidden), original.dtype))["params"]
+             for k in jax.random.split(key, n)]
+    twin_new = jax.tree_util.tree_map(lambda *x: jnp.stack(x), *heads)
+    twin_copy = jax.tree_util.tree_map(lambda x: jnp.array(x, copy=True), twin_new)
+
+    trunk, old = split_params(critic.params[TWIN], num_blocks, m)
+    params = {INJECTED_TWIN: {"trunk": trunk, "old": old, "new": twin_new, "copy": twin_copy}}
+    target_trunk, target_old = split_params(target_critic.params[TWIN], num_blocks, m)
+    target_params = {INJECTED_TWIN: {"trunk": target_trunk, "old": target_old,
+                                     "new": jax.tree_util.tree_map(jnp.array, twin_new),
+                                     "copy": jax.tree_util.tree_map(jnp.array, twin_new)}}
+
+    adam_state, *rest = critic.opt_state
+    per_network = (adam_state._replace(mu=adam_state.mu[TWIN], nu=adam_state.nu[TWIN]), *rest)
+    twin_opt_state = {
+        "trunk": _carry_trunk_state(per_network, trunk, num_blocks, m, learning_rate, weight_decay),
+        "new": optax.adamw(learning_rate=learning_rate, weight_decay=weight_decay).init(twin_new),
+    }
+    injected = Trainer(network_def=network_def, params=params, tx=injected_twin_optimizer(learning_rate, weight_decay),
+                       opt_state=twin_opt_state, update_step=critic.update_step, dynamic_scale=None, sparse=False,
+                       network_mask=None)
+    injected_target = Trainer(network_def=network_def, params=target_params, tx=None, opt_state=None,
+                              update_step=target_critic.update_step, dynamic_scale=None, sparse=False,
+                              network_mask=None)
+    return injected, injected_target
