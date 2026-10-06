@@ -174,3 +174,5 @@ check_points/
 # cache
 *.ipynb_checkpoints
 *.nfs*
+# Exp 1/2 persistent XLA compilation cache (experiments/exp12/precision.py)
+jax_cache/

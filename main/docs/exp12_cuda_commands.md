@@ -152,15 +152,52 @@ one probe check ~160 → ~35 s; D4W1024 ~42 → ~100 it/s). D2W512 is
 environment-bound and unchanged. Block totals are refreshed below. Tiny-network
 test runs (A1, B1) do not change.
 
-## Setup (once per node; not timed in Block A)
+## Setup (once; not timed in Block A)
 ```bash
 python -c "import jax; print(jax.devices()); import jaxlib; print(jaxlib.__version__)"
 pip install -r requirements.txt                                     # adds rliable + pinned deps; no existing pin changes
-bash scripts/install_humanoid_bench.sh /abs/path/to/humanoid-bench  # pinned commit, --no-deps, editable
-export MUJOCO_GL=egl PYOPENGL_PLATFORM=egl                          # HumanoidBench builds an offscreen renderer
 export XLA_PYTHON_CLIENT_PREALLOCATE=false                          # several processes share the GPU in the tests
 OUT=/abs/path/to/exp12_cuda_checks && mkdir -p $OUT
 ```
+
+**HumanoidBench environment (item 6; optional, for `HB_ENV`).** On a login
+node (the clone and `git clone` need the network). This is a separate clone;
+the main environment's pins are not touched:
+```bash
+module reset; source /sw/rh9.4/python/miniforge3/etc/profile.d/conda.sh
+cd /work/hdd/biqc/skaveti1/exp12/main && git pull
+conda activate scaling-drl-py31213                                   # 1. record the main environment
+conda list --explicit --md5 > ~/py31213.conda.before.txt && pip freeze --all > ~/py31213.pip.before.txt
+conda deactivate
+conda create --yes --prefix /work/hdd/biqc/skaveti1/envs/exp12-hb --clone scaling-drl-py31213   # 2. clone it
+conda activate /work/hdd/biqc/skaveti1/envs/exp12-hb                 # 3. install HumanoidBench into the clone only
+python -c "import sys; print(sys.prefix)"; which pip                 #    both must point into .../envs/exp12-hb
+MUJOCO_GL=egl PYOPENGL_PLATFORM=egl bash scripts/install_humanoid_bench.sh /work/hdd/biqc/skaveti1/humanoid-bench
+conda deactivate
+conda activate scaling-drl-py31213                                   # 4. the main environment must be unchanged
+conda list --explicit --md5 | diff ~/py31213.conda.before.txt - && pip freeze --all | diff ~/py31213.pip.before.txt - \
+  && echo "MAIN ENVIRONMENT UNCHANGED"
+python -c "import importlib.util; print('humanoid_bench importable in the main env:', importlib.util.find_spec('humanoid_bench') is not None)"
+conda deactivate
+```
+- `install_humanoid_bench.sh` ends with a smoke test that builds the two
+  tasks with EGL. Login nodes may have no EGL; if only that step fails, the
+  `pip install` before it has finished, and Block B's HumanoidBench check
+  runs on the GPU node.
+- Step 4 must print `MAIN ENVIRONMENT UNCHANGED`, and `False` for
+  `humanoid_bench` in the main environment.
+- Submit Block B with `HB_ENV=/work/hdd/biqc/skaveti1/envs/exp12-hb`.
+
+**Deterministic GPU ops (item 8d).** jaxlib 0.4.34 accepts both flag names,
+tested on CPU with a tiny jit; an unknown name aborts with "Unknown flags in
+XLA_FLAGS". Its built-in help text gives:
+- `--xla_gpu_deterministic_ops`: "Guarantees run-to-run determinism on
+  GPU". This is the one the sheet uses.
+- `--xla_gpu_exclude_nondeterministic_ops`: "Excludes non-deterministic ops
+  from compiled executables".
+
+That the name is recognised on CPU does not show the flag works on the GPU:
+**NEEDS CUDA VERIFICATION** (Block B's deterministic-ops pass).
 
 ## Block A: one A100, 4 CPUs, ≤ 30 min in total
 
@@ -364,88 +401,132 @@ same Python in `$OUT/a4.py` and run
 
 ## Block B: one A100x4 node, unattended (replaces the earlier single-GPU B1–B4 sequence)
 
-Run with `scripts/sbatch_exp12_blockB.sh`, which calls the driver `scripts/exp12_blockB.sh`. It needs
-one gpuA100x4 node (4 × A100 of one model, 64 CPUs, 16 per GPU lane):
+Run with `scripts/sbatch_exp12_blockB.sh`, which calls the driver
+`scripts/exp12_blockB.sh`. It needs one gpuA100x4 node (4 × A100 of one
+model, 64 CPUs, 16 per GPU lane). Block B is a development job, not
+confirmatory.
 ```bash
 cd /work/hdd/biqc/skaveti1/exp12/main && git pull && mkdir -p logs
 bash scripts/exp12_blockB.sh --dry-run                  # layout, commands, timeouts, files; no jax
-ARM_M=pc EXPECTED_COMMIT=<hash I give you> sbatch scripts/sbatch_exp12_blockB.sh
+EXPECTED_COMMIT=<hash I give you> sbatch scripts/sbatch_exp12_blockB.sh
+# with HumanoidBench: HB_ENV=/work/hdd/biqc/skaveti1/envs/exp12-hb EXPECTED_COMMIT=<hash> sbatch scripts/sbatch_exp12_blockB.sh
 bash scripts/collect_report.sh logs/blockB_<jobid>      # (also run at the end of the job) -> paste_me.txt
 ```
 
-**Lanes** (each with its own GPU, by UUID, and its own 16 CPUs; nothing in one lane stops another):
+**Lanes** (each with its own GPU, by UUID, and its own 16 CPUs; nothing in
+one lane stops another):
 
 | Lane | Steps, in order (timeout) |
 |---|---|
 | GPU 0 | dev run: D6W1536 dog-run, seed 102, run_role=dev (7.5 h) → positive control (30 min) → preflight D2W512, D4W1024, D6W1536 (30 min each) |
-| GPU 1 | watcher: once `dev_run/fork/FORK_READY` exists, it runs the dev run's injected arm (3 h). With `ARM_M=pc` it first waits for the positive control's m; with `ARM_M=last\|half\|all` it starts at the fork. Same node, same GPU model |
-| GPU 2 | packing test (15 min per configuration) → A1 follow-up measurements, default and deterministic ops (20 min each) → GPU test suite, default ops (2 h) → break checks (30 min) → GPU test suite, deterministic ops (2 h) → hopper-hop range check (30 min) → identity forks, reduced budget, D4W1024 and D6W1536 per suite that this install can run (1 h per cell) |
-| GPU 3 | fresh-pair null, 100 pairs per size, dog-run (4 h) |
+| GPU 1 | watcher: once `dev_run/fork/FORK_READY` exists, it runs the dev run's injected arm with `ARM_M=half` (the default; 3 h). The positive control chooses m separately and you freeze it. `ARM_M=pc` instead waits for the positive control's m |
+| GPU 2 | packing test (15 min per configuration) → A1 follow-up measurements, default and deterministic ops (20 min each) → GPU test suite, default ops (2 h) → break checks (30 min) → GPU test suite, deterministic ops (2 h) → HumanoidBench tests under `HB_ENV` (30 min) → hopper-hop range check (30 min) → identity forks, reduced budget, D4W1024 and D6W1536 per suite, first with a cold compilation cache per process and then with one shared warm cache (1 h per cell) |
+| GPU 3 | fresh-pair null, 100 pairs per size, dog-run (4 h) → per-suite training speed: myo-key-turn and h1-run-v0 × D2W512, D4W1024, D6W1536, one job each, 4 cores, probes off, 600 timed steps (15 min each). Dog-run comes from the packing test's 1-job runs |
 
 **Rules**
 - Every step has its own log (`logs/blockB_<id>/<lane>/<step>.log`) and a
-  status line (`status/<lane>.tsv`: result, exit code, wall time).
+  status line (`status/<lane>.tsv`).
 - A step that fails or times out does not stop the rest.
 - Exit-3 stops skip only what depends on them:
-  - **the dev run never triggers:** the positive control is skipped
-    (`SKIPPED_NO_TRIGGER`), and the watcher exits cleanly and records the
-    same;
-  - **the positive control stops** (L_trigger ≤ 0, or noise ≥ 0.10;
-    `STOP_EXIT3`): with `ARM_M=pc` the arm is skipped (`SKIPPED_EXIT3`).
-    Preflight runs regardless.
+  - **the dev run never triggers:** the positive control is skipped, and
+    the watcher exits cleanly; both are recorded `SKIPPED_NO_TRIGGER`;
+  - **the positive control stops** (`STOP_EXIT3`): with `ARM_M=pc` the arm
+    is skipped. Preflight runs regardless.
 - No network, installs or interactive input inside the job; wandb is
   disabled.
-- HumanoidBench steps use `MUJOCO_GL=egl` only when HumanoidBench is
-  installed and EGL loads; otherwise the HumanoidBench identity cells are
-  recorded as `SKIPPED_UNAVAILABLE`. The same check, an import test,
-  applies to MyoSuite.
+- **HumanoidBench** runs only through `HB_ENV`, a conda environment
+  cloned from `scaling-drl-py31213` with HumanoidBench added (see Setup). Its
+  steps run with that environment's Python and `MUJOCO_GL=egl`. Without
+  `HB_ENV`, they are recorded `SKIPPED_UNAVAILABLE`, which does not fail
+  OVERALL. MyoSuite uses an import test in the main environment.
 - The driver keeps its own deadline (9.5 h of the 10 h limit) so that the
   report is always written. On SIGTERM it writes the report too.
+
+**Persistent compilation cache (item 8a).** Every Exp 1/2 job enables JAX's
+persistent compilation cache:
+- one directory per GPU model, `main/jax_cache/<device kind>` (gitignored),
+  with small compiles cached too;
+- `run_metadata.json` records the path;
+- each process prints its cache hits and misses at exit;
+- `EXP12_JAX_CACHE_DIR` overrides the path (`off` disables it).
+
+Why: separately compiled processes can pick different GEMM kernels.
+
+**Identity forks, cold and warm (item 8b).**
+- **Cold:** the parent and the identity arm each start from their own empty
+  cache, so each compiles for itself.
+- **Warm:** both use one shared cache, so the arm reuses the parent's
+  executables.
+
+Both comparisons are reported per cell, with each process's wall time and
+cache hits; the arm's cold-vs-warm wall time is the cache's effect on
+start-up (item 8c). This tests whether identical executables matter; it does
+not assume they do.
 
 **Packing test** (approved design):
 - **Configurations:** D6W1536 at 1, 2 and 3 concurrent jobs; D4W1024 at
   1, 2 and 4; D2W512 at 1, 3 and 4. All run on GPU 2's A100.
-- **Each job:** dog-run with probes off; 5,000 random steps and 100
-  trained warm-up steps, then a start barrier, then 600 timed steps.
-- **CPUs:** `taskset` gives each job exactly 4 cores of the lane, with
-  thread caps at 1, including the 1-job baselines.
+- **Each job:** dog-run with probes off; 5,000 random steps and 100 trained
+  warm-up steps, then a start barrier, then 600 timed steps.
+- **CPUs:** `taskset` gives each job exactly 4 cores, with thread caps at 1.
 - **Report:** per size and job count:
   - each job's it/s;
   - slowdown against 1 job;
   - total throughput;
-  - each job's peak GPU memory;
-  - the GPU's total memory (nvidia-smi maximum);
-  - the overlap of the timed windows (flag at ≥ 90%);
-  - cores per job, and the host CPU model.
+  - per-job peak GPU memory and the GPU's total (nvidia-smi maximum);
+  - the overlap flag;
+  - cores per job and the host CPU model.
 - **Scope:** dog-run with probes off only, so probe overhead and post-fork
-  evaluation are not included. No acceptable-slowdown threshold is chosen.
+  evaluation are not included. No threshold is chosen.
 
-**A1 follow-up measurements** (evidence for the A1 classification,
-docs/exp12_decisions.md 2026-10-05). Under TF32 and under "highest", with
-default and with deterministic ops:
-- injection: Q bit-identity, and the dQ/da deviation in eps units;
-- diagnostics on vs off after 4 updates: max deviation, and off vs off
-  (same program);
-- policy KL: the diagnostic against the closed form.
+**GPU numerics in the test suite** (items 2 and 3).
+- **Diagnostics isolation tests** (diagnostics on vs off; training
+  identical): bit-exact on CPU, as before. On the GPU they follow PyTorch's
+  TF32 on/off pattern:
+  - in the deterministic-ops pass, both sides run under a local "highest",
+    at a tight tolerance;
+  - in the default pass, the side under test runs at the run setting (TF32)
+    against a reference run under "highest", at a loose tolerance.
+- **Tolerances:** each is set from a measured GPU deviation, at 10× the
+  largest measured value. None is measured yet, so on the GPU these tests
+  record the deviation and skip. The report lists every deviation next to
+  its tolerance.
+- **KL test:** uses a well-conditioned actor (σ 0.13–0.88, learning rate
+  1e-3, KL ≈ 0.02) and a float64 numpy reference on FP32 forward passes, at
+  rtol 1e-4. The near-deterministic actor (σ ≈ 5e-5) is reported, not gated.
 
-**report.txt** opens with one PASS/FAIL/NOT RUN line per gate and an
-OVERALL line (the driver's exit code follows it):
+**A1 follow-up measurements** (evidence for the A1 classification). Under
+TF32 and under "highest", with default and with deterministic ops:
+- injection Q bit-identity and dQ/da deviation;
+- diagnostics on vs off, and off vs off;
+- policy KL against the closed form.
+
+**report.txt** opens with one line per gate (PASS, FAIL, NOT RUN, SKIPPED or
+UNAVAILABLE) and an OVERALL line, which sets the driver's exit code:
 - GPU test suite (default ops; deterministic ops);
 - break checks;
+- HumanoidBench tests;
 - hopper-hop range, amendment (w);
-- identity fork per cell;
+- identity fork per cell and cache mode;
 - fresh-pair null per size (fire rate ≤ 5%);
 - dev run triggered;
 - positive control m chosen;
 - injected arm Check 1 and Check 2;
 - preflight per size.
 
-Then come all the numbers: the packing table, the A1 follow-up, the dev
-run's checks (L IQM and interval per check, f*_run, the fork), the positive
-control (L_trigger, recovery per m, noise, shared-offset check), the arm
-(Check 1 maximum, Check 2 interval, last post-fork evaluation per arm), the
-range table with final-loss spreads, the null per size, the identity cells
-and the node.
+Then come the numbers:
+- the packing table and per-suite speeds;
+- the GPU numerics with their tolerances;
+- the A1 follow-up;
+- the dev run's checks (L IQM and interval, f*_run, the fork);
+- the fork save and restore times, and the wall time per post-fork
+  evaluation (dev run and arm);
+- the positive control (L_trigger, recovery per m, noise, shared-offset
+  check);
+- the arm (Check 1, Check 2, last post-fork evaluation);
+- the range table with final-loss spreads;
+- the null per size;
+- the identity cells (cold and warm) and the node.
 
 **Time limit and resources** (from Block A's measured D6W1536 point: 34.6
 it/s, 50 s per probe check):
@@ -455,68 +536,28 @@ it/s, 50 s per probe check):
 | Dev run, fork late (check 19), control to 120% of B | 600,000 steps / 34.6 = 4.8 h, + 25 probe checks × 50 s = 0.35 h, + training evaluations (200 episodes) 0.25 h, + 26 post-fork evaluations 0.33 h, + saves and compile 0.15 h ≈ **5.9 h** (≈ 4.5 h if it never forks) |
 | Positive control | ≈ 0.2 h |
 | Preflight, 3 sizes | ≈ 0.25 h |
-| Injected arm | 125,000 / 34.6 = 1.0 h, + 26 evaluations 0.33 h, + 5 probe checks and restore 0.15 h ≈ **1.5 h** |
-| Critical path, `ARM_M=pc` | dev run 5.9 h → positive control 0.2 h → arm 1.5 h ≈ **7.6 h** |
-| Critical path, fixed `ARM_M` | the arm starts at the fork (≤ 4.2 h) and ends by ~5.7 h, so GPU 0's 6.4 h is the critical path |
-| GPU 2 | packing ~0.7 h, follow-up 0.1 h, tests 2 × ~0.75 h, break checks 0.1 h, range 0.1 h, identity ~0.75 h ≈ **3.2 h** |
-| GPU 3 | 100 pairs × (3 + 16 + 50 s) + fills ≈ **2 h** |
+| GPU 0 in all (critical path) | ≈ **6.4 h** |
+| Injected arm (`ARM_M=half`, starts at the fork, ≤ 4.2 h) | 125,000 / 34.6 = 1.0 h, + 26 evaluations 0.33 h, + 5 probe checks and restore 0.15 h ≈ 1.5 h, so it ends by **~5.7 h** |
+| GPU 2 | packing ~0.7 h, follow-up 0.1 h, tests 2 × ~0.75 h, HumanoidBench tests 0.1 h, break checks 0.1 h, range 0.1 h, identity 2 × ~0.75 h ≈ **4.1 h** |
+| GPU 3 | null 100 pairs × (3 + 16 + 50 s) + fills ≈ 2 h, + per-suite speed 6 × ~4 min ≈ **2.4 h** |
 
-The request is `--time=10:00:00`, which is ~30% over the 7.6 h critical path
-for what Block A did not measure (Delta's host speed, GPU evaluations). The
-rest of the request:
+The request is `--time=10:00:00`, which leaves ~55% over the 6.4 h critical
+path for what Block A did not measure (Delta's host speed, GPU evaluations,
+compile times). The rest of the request:
 - `--gpus=4` and `--cpus-per-task=64` (16 per lane, 4 per packing job);
-- `--mem=128G` (estimated peak ~33 GB: dev run 5, positive control 6, arm 5,
-  packing 4 × 3.5, null 3);
-- disk ~45 GB under `logs/blockB_<id>` (dev run ~7, arm ~3, identity ~22,
-  preflight ~10).
+- `--mem=128G` (estimated peak ~33 GB);
+- disk ~70 GB under `logs/blockB_<id>`: dev run ~7, arm ~3, identity forks
+  2 × ~22, preflight ~10, and the compilation caches of the identity cells.
 
-**Not in this job:** the old B4 full compute profile below:
-- angle_1 vs exp1 ratio;
-- diagnostics overhead;
-- fork save/restore timing at full buffer size;
-- post-fork evaluation cost per suite;
-- hopper-hop probe share.
-
-Schedule it separately if you want it. The packing test's 1-job baselines
-give D2W512 and D4W1024 dog-run speeds.
-
-### Old B4 (not scheduled). Full compute profile (~1 h TF32; was ~2.1 h FP32; host ~8 GB, GPU ~7 GB)
-- **What each run adds:**
-  - dog-run (1M env steps) also times angle_1 against exp1 with probes off;
-  - hopper-hop (500k) is the worst case for the probe's share;
-  - myo-key-turn and h1-run-v0 give the post-fork evaluation cost of their
-    suites.
-- **Steps timed:** 3,000 training steps per size; 2 probe checks (1 for the
-  single-size runs); 8,000-step angle_1 vs exp1 comparisons on dog-run.
-- **Memory:** host peaks during `--fork_timing`, which holds two
-  475,000-transition dog-run buffers and reads a 1.8 GB agent. GPU peaks
-  when two D6W1536 trainers are live.
-- **Estimate (FP32):** dog-run ~64 min (D6W1536 ~41 min, of which the
-  angle_1 comparison is ~18 min), hopper-hop ~28 min, MyoSuite ~16 min,
-  h1-run ~18 min.
+**Check the node before submitting** (no job is started):
 ```bash
-python scripts/profile_exp12.py --env dog-run --env_group dmc_hard \
-  --archs D2W512 D4W1024 D6W1536 --train_steps 3000 --probe_repeats 2 \
-  --angle1 --compare_steps 8000 --diagnostics_off --fork_timing --eval_cost --out $OUT/B4_profile_dog_run.json
-python scripts/profile_exp12.py --env hopper-hop --env_group dmc_medium \
-  --archs D2W512 D4W1024 D6W1536 --train_steps 3000 --probe_repeats 2 --eval_cost --out $OUT/B4_profile_hopper_hop.json
-python scripts/profile_exp12.py --env myo-key-turn --env_group myosuite_simba \
-  --archs D6W1536 --train_steps 3000 --probe_repeats 1 --eval_cost --out $OUT/B4_profile_myo_key_turn.json
-python scripts/profile_exp12.py --env h1-run-v0 --env_group humanoid_bench \
-  --archs D6W1536 --train_steps 3000 --probe_repeats 1 --eval_cost --out $OUT/B4_profile_h1_run.json
+sinfo -p gpuA100x4 -N -o "%N %c %m %G" | sort -u | head            # CPUs, memory (MB), GPUs per node
+scontrol show node $(sinfo -p gpuA100x4 -h -N -o %N | head -1) | grep -E "CPUTot|RealMemory|Gres|CfgTRES|MemSpecLimit"
 ```
-Key fields:
-- `train_it_per_s_probes_off`, `probe_check_s`, `probe_overhead_pct_of_wallclock`
-- `diagnostics_overhead_pct`: training it/s cost of the I1–I4 diagnostics
-- `fork_save_s`, `fork_restore_s`, `fork_state_bytes`: complete state with
-  the buffer at a 95%-of-budget fork
-- `post_fork_eval_s`, `post_fork_eval_overhead_pct`: the F1 cost of 26
-  evaluations against the arm's 25%-of-budget training
-- `peak_device_bytes` and `recommended_jobs_per_gpu_upper_bound`: per process
-- `ratio_exp1_over_angle1`
-
-The probe rule (stop and ask if the largest critic's overhead exceeds about
-5%) applies to these numbers.
+The request fits if `CPUTot` ≥ 64, `RealMemory` minus any `MemSpecLimit` ≥
+131072 (MB), and `Gres` shows 4 A100s. My understanding is that Delta's
+A100x4 nodes have 64 cores, ~256 GB and 4 × A100-40GB, but that is from
+memory, not checked.
 
 ## Block C: identity-fork gate (D2), per forking architecture × suite, before any Exp 1 grid launch
 
@@ -574,7 +615,7 @@ the test:
 What it does not cover: the buffer at the fork holds 12,000 transitions
 instead of 50,000–100,000. Saving and restoring it is the same
 size-independent code path (np.savez of the filled part). Full-size save and
-restore is timed in B4 (`--fork_timing`).
+restore is timed on the dev run in Block B (its fork state save and restore, in report.txt).
 
 **Runtime estimates (TF32), for the six cells run sequentially:**
 - **Full budget:** ~2 h (was ~6 h FP32). The D6W1536 parents dominate:
@@ -671,7 +712,7 @@ done
 ```bash
 GRID=/abs/path/exp12_grid; RESULTS=/abs/path/exp12_results
 python generate_manifest.py --grid exp12 --ckpt-root $GRID --results-root $RESULTS   # 195 Exp 1 jobs
-python scripts/claim_launcher.py --concurrency <from B4> --num-gpus <n> --phase-files exp12_exp1_jobs.txt
+python scripts/claim_launcher.py --concurrency <from the packing test> --num-gpus <n> --phase-files exp12_exp1_jobs.txt
 # once the positive control froze m, and as forks complete; on the GPU model each file is named after:
 python generate_manifest.py --grid exp12 --ckpt-root $GRID --results-root $RESULTS --injection-m <m>
 python scripts/check_manifest_overlap.py exp12_exp1_jobs.txt exp2_arms_<device>.txt   # must print OK
@@ -679,7 +720,13 @@ python scripts/claim_launcher.py --concurrency <n> --num-gpus <n> --phase-files 
 ```
 - Every grid job sets its own matmul precision (TF32 on GPU, amendment (v));
   do not export `JAX_DEFAULT_MATMUL_PRECISION` or `NVIDIA_TF32_OVERRIDE`.
-  Run with `XLA_PYTHON_CLIENT_PREALLOCATE=false`.
+- GPU memory, for jobs that share a GPU: `XLA_PYTHON_CLIENT_PREALLOCATE=false`
+  and no `XLA_PYTHON_CLIENT_MEM_FRACTION`. The old Angle 1 launch scripts
+  carried `.10`, which is about 4.0 GiB of a 40 GB A100, while D6W1536 peaks
+  at 4.01 GiB (A3). They now unset it (2026-10-05). Set the jobs per GPU
+  from the packing test's measured per-job and total memory.
+- Every job uses the persistent compilation cache under
+  `main/jax_cache/<GPU model>` (shared by all jobs on that model).
 - Re-running generate_manifest.py is safe. Runs with DONE are skipped, and
   unfinished ones resume: from state/LATEST, from the saved fork state, or
   from scratch before their first save.

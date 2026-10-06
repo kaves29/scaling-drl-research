@@ -245,13 +245,22 @@ from scale_rl.agents.sac import sac_agent, sac_update  # noqa: E402
 
 DIAG = "tests.test_exp12_diagnostics"
 EA = "tests.test_exp12_exp2_analysis.SyntheticResultsTest"
-KL_LINE = "jnp.mean(pre_tanh(new_actor).kl_divergence(pre_tanh(actor)))"
+KL_LINE = "jnp.mean(new_dist.kl_divergence(old_dist))"
 MUTATIONS += [
     # The scanned update is jitted: each mutation rebuilds it, so no compiled version is reused.
     ("I1: KL(pi_{t-1} || pi_t) instead of KL(pi_t || pi_{t-1})", sac_agent, "_update_sac_networks_scan",
-     source_mutation(sac_agent, "_update_sac_networks_scan", KL_LINE,
-                     "jnp.mean(pre_tanh(actor).kl_divergence(pre_tanh(new_actor)))"),
+     source_mutation(sac_agent, "_update_sac_networks_scan", KL_LINE, "jnp.mean(old_dist.kl_divergence(new_dist))"),
      f"{DIAG}.KnownAnswerTest.test_policy_kl_is_the_closed_form_gaussian_kl_new_vs_old"),
+    ("I1: wrong KL formula (mean term only, no variance terms)", sac_agent, "_update_sac_networks_scan",
+     source_mutation(sac_agent, "_update_sac_networks_scan", KL_LINE,
+                     "jnp.mean(0.5 * jnp.sum(((new_dist.mean() - old_dist.mean()) / old_dist.stddev()) ** 2, axis=-1))"),
+     f"{DIAG}.KnownAnswerTest.test_policy_kl_is_the_closed_form_gaussian_kl_new_vs_old"),
+    ("(x): diagnostic forward passes left at the job's precision (TF32 on the GPU)", sac_agent,
+     "_update_sac_networks_scan",
+     source_mutation(sac_agent, "_update_sac_networks_scan",
+                     "        return jax.default_matmul_precision(DIAGNOSTICS_PRECISION)",
+                     "        return contextlib.nullcontext()"),
+     f"{DIAG}.DiagnosticsPrecisionTest.test_diagnostic_forward_passes_are_highest_and_training_matmuls_keep_the_run_setting"),
     ("diagnostics perturb the actor update", sac_agent, "_update_sac_networks_scan",
      source_mutation(sac_agent, "_update_sac_networks_scan", "    if kl_ref_observations is not None:\n",
                      "    if kl_ref_observations is not None:\n        new_actor = new_actor.replace(params="

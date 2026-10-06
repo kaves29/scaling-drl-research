@@ -11,6 +11,7 @@ unless the parent's fork is complete and its config equals the parent's.
 """
 
 import json
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -21,7 +22,7 @@ from experiments.angle_1 import DONE_MARKER
 from experiments.exp1 import compose_config, record_metadata, run_identity
 from experiments.exp12 import exp2_ledger, fork
 from experiments.exp12.injection import M_LABELS
-from experiments.exp12.precision import set_matmul_precision
+from experiments.exp12.precision import configure_compilation_cache, set_matmul_precision
 from experiments.exp12.probe import iqm, run_probe
 from experiments.exp12.run_probes import RunProbes
 from experiments.exp12.state import latest_state_dir
@@ -85,6 +86,7 @@ def check2(trainer, probes, plan, pre_params) -> dict:
 @register_experiment("exp2_arm")
 def run(args: dict) -> None:
     set_matmul_precision()
+    configure_compilation_cache()
     args = DotMap(args)
     arm_dir = Path(require_absolute(args.checkpoint_dir or "", "checkpoint_dir"))
     if (arm_dir / DONE_MARKER).exists():
@@ -114,7 +116,9 @@ def run(args: dict) -> None:
         trainer.restore(latest)
         probes = RunProbes(trainer, str(arm_dir), fresh_dir=fresh_dir)
     else:
+        t0 = time.perf_counter()
         trainer.restore(latest_state_dir(fork.fork_dir(source) / "state"), new_wandb_run=True)
+        print(f"[exp2_arm] fork state restored in {time.perf_counter() - t0:.1f} s", flush=True)
         probes = RunProbes(trainer, str(arm_dir), fresh_dir=fresh_dir)
         panel = fork.load_npz(fork.fork_dir(source) / "panel.npz")
         pre_params = trainer._sac_agent.critic.params

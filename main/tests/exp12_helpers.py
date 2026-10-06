@@ -1,5 +1,9 @@
 """Shared fixtures for the Exp 1/2 tests: fake WandB, tiny configs, state comparison."""
 
+import contextlib
+import json
+import os
+import sys
 from pathlib import Path
 from unittest import mock
 
@@ -62,3 +66,66 @@ def compose(overrides, config_name="base_exp12"):
     from experiments.exp1 import compose_config
 
     return compose_config(CONFIG_PATH, config_name, overrides)
+
+
+# GPU numerics, as in PyTorch's tf32 "on and off" tests. On the GPU a bit-exact CPU comparison runs in one of two modes:
+#  - "highest_deterministic" (the process has DETERMINISTIC_FLAG): both sides under a local 'highest', tight tolerance;
+#  - "tf32": the side under test at the run setting (TF32), the reference under 'highest', loose tolerance.
+# Each tolerance is set from a measured GPU deviation (rule: 10x the largest measured value, one significant digit,
+# decisions log 2026-10-05). None = not measured yet: the test records the deviation and skips.
+DETERMINISTIC_FLAG = "--xla_gpu_deterministic_ops=true"
+GPU_TOLERANCES = {
+    "diagnostics_update/highest_deterministic": None,
+    "diagnostics_update/tf32": None,
+    "diagnostics_training/highest_deterministic": None,
+    "diagnostics_training/tf32": None,
+}
+
+
+def on_gpu():
+    import jax
+
+    return jax.default_backend() == "gpu"
+
+
+def gpu_mode():
+    return "highest_deterministic" if DETERMINISTIC_FLAG in os.environ.get("XLA_FLAGS", "") else "tf32"
+
+
+def precision(name):
+    """A local matmul-precision context; None leaves the job's setting alone."""
+    import jax
+
+    return contextlib.nullcontext() if name is None else jax.default_matmul_precision(name)
+
+
+def record_numerics(name, **values):
+    """Prints a measured deviation and appends it to $EXP12_NUMERICS_OUT (read by Block B's report)."""
+    line = json.dumps({"name": name, **values}, default=float)
+    print("NUMERICS " + line, file=sys.stderr, flush=True)
+    path = os.environ.get("EXP12_NUMERICS_OUT")
+    if path:
+        with open(path, "a") as f:
+            f.write(line + "\n")
+
+
+def max_relative_deviation(xs, ys):
+    """Largest |x - y| / max|y| over pairs of float arrays (y is the reference)."""
+    import numpy as np
+
+    worst = 0.0
+    for x, y in zip(xs, ys):
+        x, y = np.asarray(x, np.float64), np.asarray(y, np.float64)
+        if x.dtype.kind != "f" or x.size == 0:
+            continue
+        scale = np.abs(y).max()
+        worst = max(worst, float(np.abs(x - y).max() / scale) if scale > 0 else float(np.abs(x - y).max()))
+    return worst
+
+
+def check_gpu_tolerance(testcase, name, deviation, **context):
+    tolerance = GPU_TOLERANCES.get(name)
+    record_numerics(name, deviation=deviation, tolerance=tolerance, **context)
+    if tolerance is None:
+        testcase.skipTest(f"{name}: measured deviation {deviation:.3g}; no tolerance yet (set from a GPU measurement)")
+    testcase.assertLessEqual(deviation, tolerance, f"{name}: deviation {deviation:.3g} > tolerance {tolerance:.3g}")

@@ -336,10 +336,18 @@ def blockB_report(out):
             _section(lines, f"GPU test suite ({mode} ops)", tests)
         else:
             gate(f"GPU test suite, {mode} ops", "NOT RUN", by_step.get(f"tests_{mode}", {}).get("result", "no log"))
+    hb = out / "gpu2" / "tests_humanoid_bench.log"
+    if hb.exists():
+        p = parse_unittest_log(hb.read_text())
+        gate("HumanoidBench tests (HB_ENV)", (p["final"] or "").startswith("OK") and not p["warnings"],
+             f"{len(p['tests'])} tests; {p['final']}")
+    else:
+        gate("HumanoidBench tests (HB_ENV)", "UNAVAILABLE", by_step.get("tests_humanoid_bench", {}).get("result", "no log"))
     blog = out / "gpu2" / "break_checks.log"
     if blog.exists():
         text = blog.read_text().splitlines()
-        ok, total = sum(1 for l in text if l.startswith("[OK]")), sum(1 for l in text if l.startswith("["))
+        ok = sum(1 for l in text if l.startswith("[OK] "))
+        total = ok + sum(1 for l in text if l.startswith("[PROBLEM] "))  # the script's two result labels
         gate("break checks (default ops)", total > 0 and ok == total, f"{ok} of {total} OK")
     else:
         gate("break checks (default ops)", "NOT RUN", by_step.get("break_checks", {}).get("result", "no log"))
@@ -348,6 +356,49 @@ def blockB_report(out):
         _section(lines, f"A1 follow-up measurements ({mode} ops)", lambda m=mode: lines.extend(_a1_followup(out, m)))
 
     _section(lines, "Packing test (GPU 2)", lambda: lines.extend(packing_table(out)))
+
+    def speed():
+        lines.append("probes off, 1 job, 4 cores, 600 timed steps; dog-run: the packing test's 1-job rows above")
+        for r in status:
+            if r["step"].startswith("speed_"):
+                j = out / "gpu3" / "speed" / r["step"][len("speed_"):] / "job_0.json"
+                if j.exists():
+                    d = json.loads(j.read_text())
+                    peak = f"{d['peak_bytes'] / 2**30:.2f} GiB" if d.get("peak_bytes") else "n/a"
+                    lines.append(f"{d['env']:<14} {d['arch']:<9} {d['it_per_s']:.1f} it/s, peak GPU memory {peak}")
+                else:
+                    lines.append(f"{r['step']}: {r['result']}")
+    _section(lines, "Per-suite training speed (GPU 3)", speed)
+
+    def numerics():
+        lines.append("name                                              mode / context                      deviation   tolerance")
+        for f in sorted((out / "gpu2").glob("numerics_*.jsonl")):
+            for line in f.read_text().splitlines():
+                d = json.loads(line)
+                dev = d.get("deviation", d.get("rel_diff"))
+                ctx = {k: v for k, v in d.items() if k not in ("name", "deviation", "tolerance", "rel_diff")}
+                lines.append(f"{d['name']:<49} [{f.stem[len('numerics_'):]}] {str(ctx)[:60]:<36} {dev:<11.3g} "
+                             f"{d.get('tolerance', 'information')}")
+        lines.append("A tolerance of None means not measured yet: the test skips and records the deviation; set each "
+                     "tolerance from these numbers (10x the largest, one significant digit).")
+    _section(lines, "GPU numerics measured by the test suite", numerics)
+
+    def timings():
+        for log, who in ((out / "gpu0" / "dev_run.log", "dev run (control)"), (out / "gpu1" / "arm_injected.log", "injected arm")):
+            if not log.exists():
+                continue
+            text = log.read_text()
+            for m in re.findall(r"\[exp1\] fork state saved at interaction_step \d+ in ([\d.]+) s", text):
+                lines.append(f"{who}: fork state save {m} s")
+            for m in re.findall(r"restored interaction_step \d+ from \S+ in ([\d.]+) s", text):
+                lines.append(f"{who}: state restore {m} s")
+            for m in re.findall(r"\[exp2_arm\] fork state restored in ([\d.]+) s", text):
+                lines.append(f"{who}: fork state restore {m} s")
+            evals = [float(x) for x in re.findall(r"post-fork evaluation \d+: ([\d.]+) s", text)]
+            if evals:
+                lines.append(f"{who}: {len(evals)} post-fork evaluations, wall per evaluation mean {np.mean(evals):.1f} s, "
+                             f"max {max(evals):.1f} s, total {sum(evals) / 60:.1f} min")
+    _section(lines, "Fork save/restore and post-fork evaluation wall times", timings)
 
     rng = out / "gpu2" / "range_hopper_hop"
     archs = ["D2W512", "D4W1024", "D6W1536"]
@@ -360,17 +411,28 @@ def blockB_report(out):
         gate("hopper-hop range, amendment (w)", "NOT RUN", by_step.get("range_hopper", {}).get("result", "no output"))
 
     def identity():
+        lines.append("cell (cache mode)                      pass   parent wall s  arm wall s  arm cache hits/misses  differences/error")
         for r in status:
-            if r["step"].startswith("identity_"):
-                j = out / "gpu2" / "identity" / f"{r['step'][len('identity_'):]}.json"
-                if r["result"] == "SKIPPED_UNAVAILABLE":
-                    lines.append(f"{r['step']}: not available on this install (see gpu2/suite_*.log)")
-                    continue
-                d = json.loads(j.read_text()) if j.exists() else {}
-                ok = d.get("pass") if d else False
-                gate(f"identity fork {r['step'][len('identity_'):]}", bool(ok), r["result"])
-                what = (d.get("differences", [])[:8] or d.get("error", "")) if d else "no compare output"
-                lines.append(f"{r['step']}: pass={d.get('pass')} fork_step={d.get('fork_step')} differences/error: {what}")
+            if not r["step"].startswith("identity_"):
+                continue
+            mode, cell = r["step"][len("identity_"):].split("_", 1)
+            if r["result"] == "SKIPPED_UNAVAILABLE":
+                lines.append(f"{cell} ({mode}): not available on this install (see gpu2/suite_*.log)")
+                continue
+            j = out / "gpu2" / "identity" / mode / f"{cell}.json"
+            d = json.loads(j.read_text()) if j.exists() else {}
+            gate(f"identity fork {cell} ({mode} cache)", bool(d.get("pass")), r["result"])
+            log = out / "gpu2" / f"{r['step']}.log"
+            text = log.read_text() if log.exists() else ""
+            walls = re.findall(r"\[identity\] (parent|identity-arm) process wall (\d+) s", text)
+            wall = dict(walls)
+            caches = re.findall(r"persistent compilation cache \S+: hits (\d+), misses (\d+)", text)
+            arm_cache = f"{caches[1][0]}/{caches[1][1]}" if len(caches) > 1 else "n/a"
+            what = (d.get("differences", [])[:8] or d.get("error", "")) if d else "no compare output"
+            lines.append(f"{cell + ' (' + mode + ')':<38} {str(d.get('pass')):<6} {wall.get('parent', 'n/a'):<14} "
+                         f"{wall.get('identity-arm', 'n/a'):<11} {arm_cache:<22} {what}")
+        lines.append("cold: parent and arm compile separately (separate empty caches); warm: the arm reuses the parent's "
+                     "executables from one shared cache. The arm's wall time difference is the cache's effect on start-up.")
     _section(lines, "Identity forks (reduced budget, Block C)", identity)
 
     def null():
@@ -464,7 +526,7 @@ def blockB_report(out):
     _section(lines, "Preflight (GPU 0)", preflight)
 
     gate_lines = ["", "== Gates =="] + [f"{res:<14} {name}: {detail}" for name, res, detail in gates]
-    overall = gates and all(res == "PASS" for _, res, _ in gates)
+    overall = gates and all(res in ("PASS", "UNAVAILABLE") for _, res, _ in gates)  # unavailable suites do not fail it
     gate_lines.append(f"OVERALL: {'PASS' if overall else 'NOT PASS (see the gates above)'}")
     return "\n".join(lines[:1] + gate_lines + lines[1:]) + "\n"
 

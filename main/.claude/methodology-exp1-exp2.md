@@ -463,3 +463,24 @@ on one GPU model.
 - The spread of the per-round final loss is reported per size and pool. L =
   P(fresh) − P(current) is a difference of final losses on identical
   targets, so b cancels.
+
+## Amendment on diagnostic precision (2026-10-05)
+
+(x) Precision of the actor diagnostics. In every Experiment 1 and 2 job, the
+actor forward passes behind the policy-churn and policy-KL diagnostics run in
+full FP32, inside a local `jax.default_matmul_precision("highest")` context.
+These are the churn reference before and after each update, and the KL's new
+and old policies.
+- Everything else keeps amendment (v)'s TF32: training updates, action
+  selection, probes and evaluations.
+- Training is unchanged. The Angle 1 path, which has no diagnostics, is
+  unchanged.
+- Reason: a per-update parameter change is often below TF32's resolution, so
+  TF32 rounding biases these diagnostics. Under a CPU emulation of TF32,
+  calibrated to the A100's measured matmul error, the KL computed for the
+  same parameter pair changed by 9.6% (a 1×8 test actor) and by 0.7% (the
+  1×128 actor) against FP32.
+- Checked by `DiagnosticsPrecisionTest`: under the TF32 run setting the
+  compiled update has exactly the diagnostics' forward passes at "highest",
+  and its training matmuls stay TF32. A break-and-restore check removes the
+  context.

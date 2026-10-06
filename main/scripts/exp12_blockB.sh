@@ -1,11 +1,11 @@
 #!/bin/bash
 # Exp 1/2 Block B (docs/exp12_cuda_commands.md) on one 4-GPU node, unattended, one lane per GPU:
 #   GPU 0  dev run (D6W1536 dog-run, seed 102) -> positive control -> preflight (D2/D4/D6)
-#   GPU 1  watcher: the dev run's injected arm, once its fork state (and, with ARM_M=pc, the m from
-#          the positive control) exists
+#   GPU 1  watcher: the dev run's injected arm (m = ARM_M, default half), once its fork state exists
 #   GPU 2  packing test -> A1 follow-up measurements -> GPU test suite (default, deterministic ops)
-#          + break checks -> hopper-hop range check -> identity forks (reduced budget)
-#   GPU 3  fresh-pair null
+#          + break checks + HumanoidBench tests -> hopper-hop range check -> identity forks (reduced
+#          budget), once with a cold compilation cache per process and once with a shared warm cache
+#   GPU 3  fresh-pair null -> per-suite training speed (myo-key-turn, h1-run-v0; dog-run comes from packing)
 #
 #   bash scripts/exp12_blockB.sh             # run; everything under logs/blockB_${SLURM_JOB_ID:-local}/
 #   bash scripts/exp12_blockB.sh --dry-run   # print the layout, commands and timeouts; check files; no jax
@@ -14,6 +14,8 @@
 # and status line; a failing step never stops another lane. Exit-3 stops (no trigger, L_trigger <= 0,
 # probe noise) skip only the steps that depend on them. A final step writes report.txt.
 # ARM_M=last|half|all|pc picks the injected arm's m (pc: the m this job's positive control chooses).
+# HB_ENV=<path of a conda env with HumanoidBench>: used only by the HumanoidBench steps; unset, they are
+# recorded SKIPPED_UNAVAILABLE.
 
 set -u
 SELF="$(cd "$(dirname "$0")" && pwd)/$(basename "$0")"
@@ -34,7 +36,8 @@ export OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1
 unset JAX_DEFAULT_MATMUL_PRECISION NVIDIA_TF32_OVERRIDE  # the code sets TF32 itself (amendment (v))
 
 # ---- settings (the CPU plumbing test shrinks them through BLOCKB_TEST_HOOKS; never needed on the GPU) ----
-export ARM_M="${ARM_M:-pc}"
+export ARM_M="${ARM_M:-half}"
+export HB_ENV="${HB_ENV:-}"
 export DEV_OVERRIDES="env_name=dog-run env=dmc_hard seed=102 critic_num_blocks=6 critic_hidden_dim=1536 run_role=dev"
 export DEV_CKPT_INTERVAL=25000          # one save per probe check (dog-run: 500,000 interaction steps / 20)
 export EXTRA_OVERRIDES=""               # appended to every run.py job
@@ -47,6 +50,9 @@ export RANGE_ARCHS="D2W512 D4W1024 D6W1536" RANGE_POOLS="1600 6400 25600"
 export NULL_ARCHS="D2W512 D4W1024 D6W1536" NULL_PAIRS=100
 export IDENTITY_ARCHS="4:1024 6:1536" IDENTITY_SUITES="dog-run:dmc_hard myo-key-turn:myosuite_simba h1-run-v0:humanoid_bench"
 export IDENTITY_BUDGET=240000           # reduced, equivalent budget (Block C)
+export IDENTITY_CACHE_MODES="cold warm" # item 8b: separate cold caches per process, then one shared warm cache
+export SPEED_SUITES="myo-key-turn:myosuite_simba h1-run-v0:humanoid_bench" SPEED_ARCHS="D2W512 D4W1024 D6W1536"
+export HB_TESTS="tests.test_exp12_pipeline.PipelinePerSuiteTest.test_humanoid_bench tests.test_exp12_fork.HumanoidBenchReachEvalSeedingTest"
 export PREFLIGHT_ARCHS="2:512 4:1024 6:1536" PREFLIGHT_EXTRA=""
 export LANES="0 1 2 3"
 export WATCH_POLL=60
@@ -54,7 +60,7 @@ export BLOCKB_WALL="${BLOCKB_WALL:-34200}"   # 9.5 h: internal deadline inside t
 declare -A TIMEOUT=(
   [dev_run]=27000 [positive_control]=1800 [preflight]=1800 [arm]=10800
   [pack]=900 [a1_followup]=1200 [tests]=7200 [break_checks]=1800 [range_hopper]=1800
-  [identity]=3600 [null]=14400
+  [identity]=3600 [null]=14400 [speed]=900 [tests_hb]=1800
 )
 [ -n "${BLOCKB_TEST_HOOKS:-}" ] && source "$BLOCKB_TEST_HOOKS"
 
@@ -86,10 +92,10 @@ step_arm() {  # $1 m
     --checkpoint_interval "$DEV_CKPT_INTERVAL" --checkpoint_start_frac 0.0
 }
 
-step_pack() {  # $1 arch, $2 concurrent jobs, $3 the lane's CPU list (comma-separated)
-  local arch=$1 n=$2 dir="$OUT/gpu2/packing/$1_x$2" i pids=() cores
+step_pack() {  # $1 output dir, $2 arch, $3 concurrent jobs, $4 the lane's CPU list (comma-separated), $5 env, $6 group
+  local dir=$1 arch=$2 n=$3 env=$5 group=$6 i pids=() cores
   mkdir -p "$dir"
-  IFS=, read -r -a cpus <<< "$3"
+  IFS=, read -r -a cpus <<< "$4"
   if [ -n "${LANE_GPU:-}" ] && command -v nvidia-smi >/dev/null; then
     ( while [ ! -e "$dir/done" ]; do
         nvidia-smi --query-gpu=memory.used --format=csv,noheader,nounits -i "$LANE_GPU" >> "$dir/gpu_mem_mib.txt" 2>/dev/null
@@ -98,21 +104,23 @@ step_pack() {  # $1 arch, $2 concurrent jobs, $3 the lane's CPU list (comma-sepa
   fi
   for ((i = 0; i < n; i++)); do
     cores=$(for ((j = 0; j < PACK_CORES; j++)); do echo "${cpus[$(( (i * PACK_CORES + j) % ${#cpus[@]} ))]}"; done | paste -sd,)
-    taskset -c "$cores" python - "$arch" "$n" "$i" "$PACK_STEPS" "$PACK_WARMUP" "$dir" $PACK_EXTRA \
+    taskset -c "$cores" python - "$arch" "$n" "$i" "$PACK_STEPS" "$PACK_WARMUP" "$dir" "$env" "$group" $PACK_EXTRA \
       > "$dir/job_$i.log" 2>&1 <<'PY' &
 import json, os, random, sys, tempfile, time
 from pathlib import Path
 import jax, numpy as np
-from experiments.exp12.precision import set_matmul_precision
+from experiments.exp12.precision import configure_compilation_cache, set_matmul_precision
 set_matmul_precision()
+configure_compilation_cache()
 from experiments.exp1 import compose_config
 from experiments.exp12.trainer import Exp12Trainer
 
 arch, n, i, steps, warmup, d = sys.argv[1], int(sys.argv[2]), int(sys.argv[3]), int(sys.argv[4]), int(sys.argv[5]), Path(sys.argv[6])
+env, group = sys.argv[7], sys.argv[8]
 blocks, width = {"D2W512": (2, 512), "D4W1024": (4, 1024), "D6W1536": (6, 1536)}[arch]
 cfg = compose_config(os.path.abspath("configs"), "base_exp12", [
-    "env_name=dog-run", "env=dmc_hard", f"critic_num_blocks={blocks}", f"critic_hidden_dim={width}",
-    f"seed={990 + i}", "run_role=dev", "num_eval_episodes=1", *sys.argv[7:]])
+    f"env_name={env}", f"env={group}", f"critic_num_blocks={blocks}", f"critic_hidden_dim={width}",
+    f"seed={990 + i}", "run_role=dev", "num_eval_episodes=1", *sys.argv[9:]])
 np.random.seed(cfg.seed); random.seed(cfg.seed)
 t = Exp12Trainer(cfg, tempfile.mkdtemp(prefix="pack_"))
 t.start()
@@ -128,7 +136,7 @@ start, p0 = time.time(), time.perf_counter()
 t.train(warm + steps); jax.block_until_ready(t._sac_agent.critic.params)
 elapsed, end = time.perf_counter() - p0, time.time()
 stats = jax.devices()[0].memory_stats() or {}
-json.dump({"arch": arch, "jobs": n, "job": i, "timed_steps": steps, "it_per_s": steps / elapsed, "start": start,
+json.dump({"arch": arch, "env": env, "jobs": n, "job": i, "timed_steps": steps, "it_per_s": steps / elapsed, "start": start,
            "end": end, "peak_bytes": stats.get("peak_bytes_in_use"), "bytes_limit": stats.get("bytes_limit"),
            "cores": sorted(os.sched_getaffinity(0)), "device": jax.devices()[0].device_kind,
            "matmul_precision": jax.config.jax_default_matmul_precision}, open(d / f"job_{i}.json", "w"), indent=2)
@@ -211,8 +219,11 @@ PY
 
 step_tests() {  # $1 default|deterministic
   if [ "$1" = deterministic ]; then export XLA_FLAGS=--xla_gpu_deterministic_ops=true; fi
+  export EXP12_NUMERICS_OUT="$OUT/gpu2/numerics_$1.jsonl"   # measured GPU deviations (tests/exp12_helpers.py)
   python -m unittest discover -s tests -p "$TEST_PATTERN" -t . -v
 }
+
+step_tests_hb() { python -m unittest -v $HB_TESTS; }  # under HB_ENV (PATH), MUJOCO_GL=egl
 
 step_break_checks() { python tests/exp12_break_checks.py; }
 
@@ -223,17 +234,23 @@ step_range_hopper() {
   python scripts/exp12_reports.py range-check "$OUT/gpu2/range_hopper_hop" $RANGE_ARCHS || return 4  # amendment (w)
 }
 
-step_identity() {  # $1 blocks, $2 width, $3 env, $4 group (Block C, reduced budget)
-  local name="D$1W$2_$3" base="$OUT/gpu2/identity/D$1W$2_$3"
+step_identity() {  # $1 blocks, $2 width, $3 env, $4 group, $5 cache mode (Block C, reduced budget; item 8b)
+  local name="D$1W$2_$3" base="$OUT/gpu2/identity/$5/D$1W$2_$3" t
   local common="--config_name base_exp12 $(ov env_name=$3 env=$4 seed=101 critic_num_blocks=$1 critic_hidden_dim=$2 \
     run_role=dev testing.force_trigger_check=2 fork.identity_snapshot_steps=1000 testing.stop_after_identity_snapshot=true \
     results_root=$base/results num_env_steps=$IDENTITY_BUDGET $EXTRA_OVERRIDES)"
-  mkdir -p "$OUT/gpu2/identity"
-  python run.py --experiment exp1 $common --checkpoint_dir "$base/parent" &&
-  python run.py --experiment exp2_arm $common --overrides fork.source="$base/parent" --overrides fork.arm=identity \
-    --checkpoint_dir "$base/identity" &&
+  local parent_cache="$base/cache_parent" arm_cache="$base/cache_arm"   # cold: each process compiles for itself
+  [ "$5" = warm ] && parent_cache="$base/cache_shared" && arm_cache="$base/cache_shared"  # warm: the arm reuses
+  mkdir -p "$base"
+  t=$SECONDS
+  EXP12_JAX_CACHE_DIR="$parent_cache" python run.py --experiment exp1 $common --checkpoint_dir "$base/parent" || return 1
+  echo "[identity] parent process wall $((SECONDS - t)) s (cache $parent_cache)"
+  t=$SECONDS
+  EXP12_JAX_CACHE_DIR="$arm_cache" python run.py --experiment exp2_arm $common --overrides fork.source="$base/parent" \
+    --overrides fork.arm=identity --checkpoint_dir "$base/identity" || return 1
+  echo "[identity] identity-arm process wall $((SECONDS - t)) s (cache $arm_cache)"
   python scripts/compare_identity_fork.py --run_dir "$base/parent" --arm_dir "$base/identity" \
-    --out "$OUT/gpu2/identity/$name.json"
+    --out "$OUT/gpu2/identity/$5/$name.json"
 }
 
 step_null() {
@@ -246,14 +263,25 @@ suite_available() {  # $1 group: exits 0 if this install can run the suite (no j
   case "$1" in
     dmc_*) python -c "import dm_control.suite" ;;
     myosuite_*) python -c "import importlib.util, sys; sys.exit(importlib.util.find_spec('myosuite') is None)" ;;
-    humanoid_bench) python -c "import importlib.util, sys; sys.exit(importlib.util.find_spec('humanoid_bench') is None)" &&
-                    MUJOCO_GL=egl PYOPENGL_PLATFORM=egl python -c "from dm_control import _render; assert _render.BACKEND == 'egl'" ;;
+    humanoid_bench)  # only through HB_ENV (item 6); the main environment is never used for HumanoidBench
+      [ -n "$HB_ENV" ] && [ -x "$HB_ENV/bin/python" ] || { echo "HB_ENV is not set or has no bin/python"; return 1; }
+      "$HB_ENV/bin/python" -c "import importlib.util, sys; sys.exit(importlib.util.find_spec('humanoid_bench') is None)" &&
+      MUJOCO_GL=egl PYOPENGL_PLATFORM=egl "$HB_ENV/bin/python" -c "from dm_control import _render; assert _render.BACKEND == 'egl'" ;;
     *) return 1 ;;
   esac
 }
 
 export -f ov step_dev_run step_positive_control step_preflight step_arm step_pack step_a1_followup step_tests \
-  step_break_checks step_range_hopper step_identity step_null suite_available
+  step_tests_hb step_break_checks step_range_hopper step_identity step_null suite_available
+
+suite_run() {  # group run_step-args...: run_step in the environment the suite needs (HumanoidBench: HB_ENV, EGL)
+  local group=$1; shift
+  if [ "$group" = humanoid_bench ]; then
+    PATH="$HB_ENV/bin:$PATH" MUJOCO_GL=egl PYOPENGL_PLATFORM=egl run_step "$@"
+  else
+    run_step "$@"
+  fi
+}
 
 # ---- runner helpers ----
 START=$(date +%s); export START
@@ -326,7 +354,9 @@ lane_gpu2() {
   local cfg arch n
   for cfg in $PACK_CONFIGS; do
     arch=${cfg%%:*}
-    for n in $(echo "${cfg#*:}" | tr , ' '); do run_step gpu2 "pack_${arch}_x$n" pack step_pack "$arch" "$n" "$LANE_CPUS"; done
+    for n in $(echo "${cfg#*:}" | tr , ' '); do
+      run_step gpu2 "pack_${arch}_x$n" pack step_pack "$OUT/gpu2/packing/${arch}_x$n" "$arch" "$n" "$LANE_CPUS" dog-run dmc_hard
+    done
   done
   run_step gpu2 a1_followup_default a1_followup step_a1_followup default
   XLA_FLAGS=--xla_gpu_deterministic_ops=true run_step gpu2 a1_followup_deterministic a1_followup step_a1_followup deterministic
@@ -337,25 +367,44 @@ lane_gpu2() {
   [ "$RUN_BREAK_CHECKS" = 1 ] && run_step gpu2 break_checks break_checks step_break_checks
   run_step gpu2 tests_deterministic tests step_tests deterministic
   export MUJOCO_GL=disable; unset PYOPENGL_PLATFORM
+  if suite_available humanoid_bench > "$OUT/gpu2/suite_humanoid_bench.log" 2>&1; then
+    suite_run humanoid_bench gpu2 tests_humanoid_bench tests_hb step_tests_hb
+  else
+    record gpu2 tests_humanoid_bench SKIPPED_UNAVAILABLE - - "$(date +%s)"
+  fi
   run_step gpu2 range_hopper range_hopper step_range_hopper
-  local a s env group
-  for s in $IDENTITY_SUITES; do
-    env=${s%%:*}; group=${s##*:}
-    if ! suite_available "$group" > "$OUT/gpu2/suite_$group.log" 2>&1; then
-      for a in $IDENTITY_ARCHS; do record gpu2 "identity_D${a%%:*}W${a##*:}_$env" SKIPPED_UNAVAILABLE - - "$(date +%s)"; done
-      continue
-    fi
-    for a in $IDENTITY_ARCHS; do
-      if [ "$group" = humanoid_bench ]; then
-        MUJOCO_GL=egl PYOPENGL_PLATFORM=egl run_step gpu2 "identity_D${a%%:*}W${a##*:}_$env" identity step_identity "${a%%:*}" "${a##*:}" "$env" "$group"
-      else
-        run_step gpu2 "identity_D${a%%:*}W${a##*:}_$env" identity step_identity "${a%%:*}" "${a##*:}" "$env" "$group"
+  local a s env group mode
+  for mode in $IDENTITY_CACHE_MODES; do
+    for s in $IDENTITY_SUITES; do
+      env=${s%%:*}; group=${s##*:}
+      if ! suite_available "$group" > "$OUT/gpu2/suite_$group.log" 2>&1; then
+        for a in $IDENTITY_ARCHS; do
+          record gpu2 "identity_${mode}_D${a%%:*}W${a##*:}_$env" SKIPPED_UNAVAILABLE - - "$(date +%s)"
+        done
+        continue
       fi
+      for a in $IDENTITY_ARCHS; do
+        suite_run "$group" gpu2 "identity_${mode}_D${a%%:*}W${a##*:}_$env" identity step_identity \
+          "${a%%:*}" "${a##*:}" "$env" "$group" "$mode"
+      done
     done
   done
 }
 
-lane_gpu3() { run_step gpu3 null_dog_run null step_null; }
+lane_gpu3() {
+  run_step gpu3 null_dog_run null step_null
+  local s env group arch  # per-suite training speed, one job, 4 cores (dog-run: the packing test's 1-job runs)
+  for s in $SPEED_SUITES; do
+    env=${s%%:*}; group=${s##*:}
+    if ! suite_available "$group" > "$OUT/gpu3/suite_$group.log" 2>&1; then
+      for arch in $SPEED_ARCHS; do record gpu3 "speed_${env}_$arch" SKIPPED_UNAVAILABLE - - "$(date +%s)"; done
+      continue
+    fi
+    for arch in $SPEED_ARCHS; do
+      suite_run "$group" gpu3 "speed_${env}_$arch" speed step_pack "$OUT/gpu3/speed/${env}_$arch" "$arch" 1 "$LANE_CPUS" "$env" "$group"
+    done
+  done
+}
 
 # ---- layout: GPUs by UUID, 4 CPU groups (16 each on a 64-CPU allocation) ----
 CPUS=($(python -c "import os; print(' '.join(map(str, sorted(os.sched_getaffinity(0)))))"))
@@ -368,11 +417,14 @@ dry_run() {
   local fail=0 f k
   echo "Block B dry run from $(pwd); output would go to $OUT"
   echo "ARM_M=$ARM_M  internal deadline ${BLOCKB_WALL}s  CPUs visible ${#CPUS[@]} (${per_lane} per lane)  GPUs visible ${#GPUS[@]}"
+  if suite_available humanoid_bench >/dev/null 2>&1; then echo "HB_ENV=$HB_ENV: HumanoidBench and EGL load"
+  else echo "HB_ENV=${HB_ENV:-<unset>}: HumanoidBench steps will be recorded SKIPPED_UNAVAILABLE"; fi
   for k in 0 1 2 3; do echo "  lane gpu$k: GPU ${GPUS[$k]:-<none visible here>}  CPUs $(lane_cpus $k)"; done
   echo; echo "settings:"
   for k in DEV_OVERRIDES DEV_CKPT_INTERVAL EXTRA_OVERRIDES PROBE_EXTRA PC_EXTRA PACK_CONFIGS PACK_STEPS PACK_WARMUP \
            PACK_CORES PACK_EXTRA TEST_PATTERN RUN_BREAK_CHECKS RANGE_ARCHS RANGE_POOLS NULL_ARCHS NULL_PAIRS \
-           IDENTITY_ARCHS IDENTITY_SUITES IDENTITY_BUDGET PREFLIGHT_ARCHS PREFLIGHT_EXTRA LANES WATCH_POLL; do
+           IDENTITY_ARCHS IDENTITY_SUITES IDENTITY_BUDGET IDENTITY_CACHE_MODES SPEED_SUITES SPEED_ARCHS HB_TESTS \
+           PREFLIGHT_ARCHS PREFLIGHT_EXTRA LANES WATCH_POLL; do
     echo "  $k=${!k}"
   done
   echo; echo "timeouts (s):"; for k in "${!TIMEOUT[@]}"; do echo "  $k ${TIMEOUT[$k]}"; done | sort
@@ -402,7 +454,7 @@ mkdir -p "$OUT"/{status,gpu0,gpu1,gpu2,gpu3}
 { echo "cpu_model	$(lscpu | sed -n 's/^Model name: *//p' | head -1)"
   echo "cpus_visible	${#CPUS[@]}"
   for k in 0 1 2 3; do echo "lane_gpu${k}	${GPUS[$k]:-none}	$(lane_cpus $k)"; done
-  echo "arm_m	$ARM_M"; echo "started	$(date -Is)"; } > "$OUT/host.tsv"
+  echo "arm_m	$ARM_M"; echo "hb_env	${HB_ENV:-unset}"; echo "started	$(date -Is)"; } > "$OUT/host.tsv"
 command -v nvidia-smi >/dev/null && nvidia-smi --query-gpu=index,name,uuid,memory.total,driver_version --format=csv > "$OUT/gpus.csv" 2>&1
 git rev-parse HEAD > "$OUT/commit.txt" 2>/dev/null
 

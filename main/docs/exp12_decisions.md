@@ -1523,3 +1523,133 @@ Evidence used:
 - **Time and resources:** derived in the sheet's Block B section from
   Block A's measured point. The critical path is ~7.6 h with `ARM_M=pc` and a
   late fork; the request is 10 h, 4 GPUs, 64 CPUs and 128G.
+
+## Block B decisions (received 2026-10-05) and how they are implemented
+
+None of these changes the Methodology except (x), which the lead approved.
+Block B is a development job, not confirmatory.
+
+1. **Injected arm: `ARM_M=half`** (the driver's default). The positive
+   control chooses m separately, and the lead freezes it. The arm starts at
+   the fork. `ARM_M=pc` remains available.
+2. **Diagnostics-isolation tests on the GPU** (`test_diagnostics_never_change_the_update`,
+   `test_training_is_identical_with_diagnostics_on_and_off`):
+   - CPU stays bit-exact, unchanged.
+   - On the GPU they follow PyTorch's TF32 on/off pattern
+     (`tests/exp12_helpers.py`):
+     - in a deterministic-ops process (`XLA_FLAGS` has
+       `--xla_gpu_deterministic_ops=true`), both sides run under a local
+       "highest", at a tight tolerance;
+     - otherwise the diagnostics-on side runs at the run setting (TF32)
+       against a diagnostics-off reference under "highest", at a loose
+       tolerance.
+   - The reference side never runs under TF32.
+   - Deviation: max over state leaves (and update outputs) of
+     |x − ref| / max|ref|.
+   - **Tolerances are set only from measured GPU deviations.** Rule (fine
+     print): 10× the largest measured value, one significant digit. None
+     has been measured, so all four are `None`. On the GPU each test then
+     records its deviation (`NUMERICS` line and
+     `$EXP12_NUMERICS_OUT`) and skips. Block B's report lists each deviation
+     next to its tolerance; the tolerances get set from those numbers in a
+     follow-up commit.
+   - The diagnostics code is not changed for this.
+   - Note: the 400-step training comparison includes environment feedback,
+     so any per-step difference can grow along the trajectory. If the
+     measured deviation turns out large, a tolerance there would be
+     uninformative, and I will say so with the numbers.
+3. **KL closed-form test (test only).**
+   - A well-conditioned actor: log-std head bias 0.55, kernel × 0.1, σ
+     0.13–0.88, actor learning rate 1e-3. That gives a per-update KL of
+     0.0192, large enough that the float32 KL is not dominated by
+     cancellation (at lr 1e-4 the KL is 1.2e-4 and float32 cancellation
+     alone gives 2.5e-4 relative).
+   - The reference is the float64 numpy closed form on FP32 ("highest")
+     forward passes; the gate is rtol 1e-4. Measured on CPU: relative
+     difference 3.0e-6. A direction check requires |KL − reverse KL| / KL >
+     10 × rtol (measured 3.9e-3).
+   - The near-deterministic actor (σ ≈ 5e-5) is a separate test that
+     reports and does not gate (CPU: relative difference 5.6e-6).
+   - **Break-and-restore:** the direction swap (re-anchored) and a wrong KL
+     formula (the mean term only, no variance terms) each fail the test and
+     pass again once restored. Production KL code is unchanged.
+4. **Diagnostics precision, amendment (x)** (approved).
+   - In `scale_rl/agents/sac/sac_agent.py:_sac_update`, the churn reference
+     forward passes (before and after the update) and the KL's two forward
+     passes run under `jax.default_matmul_precision("highest")`, but only
+     when the Exp 1/2 diagnostics are on (`kl_ref_observations` given).
+     Otherwise the code uses a no-op context.
+   - `jax.default_matmul_precision(None)` was rejected: inside a TF32 job it
+     resets to DEFAULT (seen in the lowered HLO).
+   - Training matmuls are unchanged. On CPU the context is a no-op, so CPU
+     results are bit-identical.
+   - **Test:** `DiagnosticsPrecisionTest` lowers the scanned update under
+     the TF32 run setting and requires:
+     - exactly 2·n_mean + 2·n_full matmuls at HIGHEST (the churn forward
+       passes use 4 matmuls, the compiler dropping the unused log-std head;
+       the KL's use 5);
+     - none with diagnostics off;
+     - the HIGH (TF32) count lower by exactly the churn passes.
+   - **Break check:** returning a no-op context instead of "highest" fails
+     the test.
+5. **Old B4 dropped.** Kept:
+   - per-suite training speed (myo-key-turn, h1-run-v0 × D2W512, D4W1024,
+     D6W1536; one job, 4 cores, probes off, 600 timed steps) on GPU 3 after
+     the null; dog-run comes from the packing test's 1-job runs;
+   - the dev run's fork save and restore times and the wall time of every
+     post-fork evaluation, now printed by `exp1.py`, `exp2_arm.py` and
+     `fork.post_fork_eval` (print only) and collected in report.txt.
+6. **HumanoidBench through `HB_ENV`.**
+   - The HumanoidBench steps (identity cells, h1-run speed, the two
+     HumanoidBench tests) run with `$HB_ENV/bin` first on PATH and
+     `MUJOCO_GL=egl`, only if HumanoidBench and EGL load there.
+   - Unset, they are recorded `SKIPPED_UNAVAILABLE`, which does not fail
+     OVERALL.
+   - The main environment is never used for HumanoidBench. The clone
+     commands and the unchanged-main-environment check are in the sheet's
+     Setup.
+7. **Request:** 10 h, 4 GPUs, 64 CPUs, 128G. The node check (`sinfo`,
+   `scontrol show node`) is in the sheet. The critical path is now GPU 0's
+   ~6.4 h, since the arm starts at the fork.
+8. **Cross-process numerics.**
+   - **(a) Persistent compilation cache:**
+     `experiments/exp12/precision.py:configure_compilation_cache()`.
+     - One directory per GPU model: `main/jax_cache/<device kind>`
+       (gitignored; `EXP12_JAX_CACHE_ROOT` or `EXP12_JAX_CACHE_DIR` override
+       it, and `off` disables it).
+     - `jax_persistent_cache_min_compile_time_secs=0` and
+       `min_entry_size_bytes=0`, so small compiles are cached too.
+     - It is called at the start of every Exp 1/2 entry point and in the
+       packing jobs; the path goes into `run_metadata.json`, and each
+       process prints its cache hits and misses at exit.
+     - Found on the way: in jax 0.4.34 the cache is fixed at a process's
+       first compile, so a later configuration is ignored (0 files written).
+       The helper therefore calls `compilation_cache.reset_cache()` after
+       configuring. That is a private API of the pinned jax; with it, a late
+       configuration works (checked on CPU).
+   - **(b) Identity forks run twice:** cold (separate empty caches for the
+     parent and the arm) and warm (one shared cache). Both comparisons are
+     reported.
+   - **(c) Start-up effect:** the arm's process wall time, cold vs warm,
+     plus its cache hits and misses, in report.txt.
+   - **(d) Flag names:** both names are accepted by jaxlib 0.4.34 on CPU; an
+     unknown one aborts. Help text: `xla_gpu_deterministic_ops` "Guarantees
+     run-to-run determinism on GPU"; `xla_gpu_exclude_nondeterministic_ops`
+     "Excludes non-deterministic ops from compiled executables". The sheet's
+     flag is the right one; it is NEEDS CUDA VERIFICATION on the GPU.
+9. **GPU memory flags.**
+   - Grep of launch scripts, sbatch files, `claim_launcher.py`, the sheet
+     and the old Angle 1 scripts:
+     - `XLA_PYTHON_CLIENT_MEM_FRACTION=.10` was only in
+       `scripts/run_angle1_a100x8.sh` and `scripts/run_angle1_a40x4.sh`;
+       both now unset it, with a comment;
+     - `PREALLOCATE=false` stays everywhere it was (both Angle 1 scripts,
+       both Block sbatch files, both drivers' defaults, the sheet);
+     - `claim_launcher.py` sets neither; no `XLA_CLIENT_MEM_FRACTION`
+       anywhere.
+   - No fraction is kept: the packing test measures per-job peaks.
+   - Not verified here (the CUDA plugin is not installed on this machine):
+     whether the fraction caps memory when preallocation is off. I believe
+     XLA sizes its GPU allocator as fraction × free memory either way.
+   - Editing the scripts does not affect jobs already submitted (Slurm
+     copies the script at submission).

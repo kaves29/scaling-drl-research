@@ -41,7 +41,9 @@ module reset
 source /sw/rh9.4/python/miniforge3/etc/profile.d/conda.sh
 conda activate scaling-drl-py31213
 export XLA_PYTHON_CLIENT_PREALLOCATE=false
-export XLA_PYTHON_CLIENT_MEM_FRACTION=.10
+# No memory fraction (2026-10-05): .10 capped each process at ~4 GB of a 40 GB A100, and D6W1536 peaks at
+# 4.01 GiB (Block A). Jobs sharing a GPU rely on PREALLOCATE=false alone.
+unset XLA_PYTHON_CLIENT_MEM_FRACTION
 
 cd /work/hdd/biqc/skaveti1/scaling-drl-research/main
 

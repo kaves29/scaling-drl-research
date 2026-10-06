@@ -1,3 +1,4 @@
+import contextlib
 import functools
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple
@@ -211,6 +212,10 @@ def _init_sac_networks(
     return rng, actor, critic, target_critic, temperature, actor_loss_buffer, actor_entropy_buffer, churn_buffer, churn_ref_batch
 
 
+# Matmul precision of the Exp 1/2 actor-diagnostic forward passes (churn reference, policy KL).
+DIAGNOSTICS_PRECISION = "highest"
+
+
 @jax.jit
 def _sample_sac_actions(
     rng: PRNGKey,
@@ -242,8 +247,16 @@ def _sac_update(
     saturation_threshold: Optional[float] = None,
     kl_ref_observations: Optional[jnp.ndarray] = None,
 ) -> Tuple[Trainer, Trainer, Trainer, Trainer, Dict[str, float]]:
+    # Exp 1/2 (diagnostics on): the churn and KL forward passes run in full FP32, not TF32 (amendment (x));
+    # the training computation and the Angle 1 path (no kl_ref_observations) are unchanged.
+    def diagnostics_precision():
+        if kl_ref_observations is None:
+            return contextlib.nullcontext()  # leaves the job's setting alone (None would reset it to DEFAULT)
+        return jax.default_matmul_precision(DIAGNOSTICS_PRECISION)
+
     def get_deterministic_actions(actor_params, actor, observations):
-        dist = actor.apply(variables={"params": actor_params}, observations=observations)
+        with diagnostics_precision():
+            dist = actor.apply(variables={"params": actor_params}, observations=observations)
         pre_squash_mean = dist.distribution.mean()
         return jnp.tanh(pre_squash_mean)
 
@@ -263,7 +276,9 @@ def _sac_update(
         # Tang & Berseth's SAC churn, KL(pi_t || pi_{t-1}) per update. Tanh is a bijection, so this
         # equals the KL of the pre-tanh diagonal Gaussians (Exp 1/2 diagnostic I1).
         pre_tanh = lambda a: a.apply(variables={"params": a.params}, observations=kl_ref_observations).distribution
-        actor_info["train/policy_kl"] = jnp.mean(pre_tanh(new_actor).kl_divergence(pre_tanh(actor)))
+        with diagnostics_precision():
+            new_dist, old_dist = pre_tanh(new_actor), pre_tanh(actor)
+        actor_info["train/policy_kl"] = jnp.mean(new_dist.kl_divergence(old_dist))
 
     new_temperature, temperature_info = update_temperature(
         temperature=temperature,

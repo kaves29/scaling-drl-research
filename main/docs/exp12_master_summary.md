@@ -1,13 +1,15 @@
 # Experiments 1 and 2: master summary (Phase 8)
 
 Branch `claude/eloquent-fermat-inxqlt` (not merged; nothing pushed to main).
-Source of truth: `.claude/methodology-exp1-exp2.md`, with Amendments (a)–(u).
+Source of truth: `.claude/methodology-exp1-exp2.md`, with Amendments (a)–(x).
 Decision log: `docs/exp12_decisions.md`. CUDA command sheet:
 `docs/exp12_cuda_commands.md`.
 
 Everything below was verified on CPU (Linux, jax/jaxlib 0.4.34) unless marked
-**NEEDS CUDA VERIFICATION**. No grid run, dev run, pilot or CUDA job has been
-launched or scheduled.
+**NEEDS CUDA VERIFICATION**. The only GPU job so far is Block A (Delta job
+22667743, A100-SXM4-40GB, commit 7812b17; numbers in section 5), which you
+submitted. Block B is built and CPU-tested but not submitted. No grid run,
+dev run or pilot has been launched or scheduled by me.
 
 ## 1. What was built
 
@@ -40,12 +42,22 @@ launched or scheduled.
 | `generate_manifest.py` (`--grid exp12`) | `add_exp12_grid`, `classify_exp12` | R-PERSIST: 195-run grid, absolute paths, DONE/resume; arm jobs per GPU model once m is frozen |
 | `scripts/claim_launcher.py` | `--phase-files` | launcher compatibility |
 | `scripts/preflight_checkpoint_check.py` | `--experiment exp1 [--with-fork]` | preflight for the new grid |
+| `experiments/exp12/precision.py` | `set_matmul_precision`, `configure_compilation_cache`, `runtime_info` | (v) TF32 at every GPU entry point; persistent compilation cache per GPU model; run metadata |
+| `scripts/exp12_blockA.sh`, `scripts/sbatch_exp12_blockA.sh` | Block A runner and its Delta sbatch | A0–A4, unattended, `--dry-run` |
+| `scripts/exp12_blockB.sh`, `scripts/sbatch_exp12_blockB.sh` | Block B driver (one lane per GPU) and its sbatch | dev run, positive control, injected arm, preflight, packing test, GPU test suites, range check, identity forks (cold and warm cache), null, per-suite speed; `--dry-run` |
+| `scripts/exp12_reports.py` | `parse_unittest_log`, `range_criterion`, `blockA_summary`, `blockB_report` | the jobs' summaries and gates; (w) |
+| `scripts/collect_report.sh` | — | one file to paste: the report plus failing steps' logs and tracebacks |
 
 Small edits outside the Exp 1/2 paths, each with no change to existing behaviour (Angle 1 parity and the existing suite are tested):
 
 - `scale_rl/agents/sac/sac_agent.py`, `sac_update.py` and
   `agents/wrappers/normalization.py`: the optional diagnostics arguments,
-  default off.
+  default off. With the diagnostics on (Exp 1/2 only), `_sac_update` runs the
+  churn and KL forward passes under "highest" (x); with them off (Angle 1)
+  nothing changes, and on CPU the context is a no-op.
+- `scripts/run_angle1_a100x8.sh`, `scripts/run_angle1_a40x4.sh`: the `.10`
+  memory fraction is removed (`PREALLOCATE=false` stays), 2026-10-05.
+- `.gitignore`: `jax_cache/`.
 - `utils/run_metadata.py`: humanoid_bench is added to the simulator-version
   list.
 - `experiments/__init__.py`: registers exp1 and exp2_arm.
@@ -87,6 +99,13 @@ amendments:
   "tensorfloat32"`, no-op on CPU); no bf16/fp16; x64 off. Check 1 and A0's
   error measurement run under a local "highest" context. Metadata records
   the precision, GPU model and JAX/jaxlib/CUDA versions.
+- (w) The A2/B2 fresh-critic range rule is replaced. The old 10–90%-of-b
+  rule failed at every size (P/b 0.990, 0.997, 0.993). The new criterion is
+  P/b ≥ 0.9 at the configured pool; the old rule is reported for
+  information. The check cannot show sensitivity: that comes from the
+  positive control and the dev run, and the null measures noise.
+- (x) The churn and KL diagnostics' actor forward passes run under
+  "highest"; training stays TF32.
 
 Routine engineering choices are listed under "Choices (routine, shown for veto)" in each phase section of the log. The main ones:
 
@@ -121,6 +140,9 @@ Routine engineering choices are listed under "Choices (routine, shown for veto)"
 
 Phase 7 run, CPU, 2026-10-04: every test module in its own process, three at a time.
 
+Rerun after the Block B decisions round (2026-10-05): existing tests 258, 257 pass, the same single
+pre-existing failure; Exp 1/2 tests 124 OK; break checks 57 OK.
+
 - **Full suite:** 375 tests. 374 pass, 1 fails, and 2 are skipped (the
   HumanoidBench ones; both pass in venv_hb).
 - **Existing tests:** 258, the same set as the Phase 2 baseline; 257 pass.
@@ -144,14 +166,16 @@ Phase 7 run, CPU, 2026-10-04: every test module in its own process, three at a t
 | test_exp12_injection | 8 | Q bit-identical at injection, dQ/da within tolerance; parameter counts; head boundary; new = copy; frozen heads bit-identical over 50 steps incl. weight decay; optimizer state rules; gradients reach the trunk; target and Polyak |
 | test_exp12_fork | 23 (1 skipped here, passes in venv_hb) | fork plan and files; identity arm bit-identical to the control; Check 1 (bit-exact control and identity, 64 eps injected, run under full FP32, fails on a broken injection construction, dQ/da compared); Check 2 paired difference; arm records; frozen head unchanged; fork invisible to the Exp 1 trajectory; refusals (config, m, missing fork, device model); post-fork evaluation isolation and seeding; identity-validation procedure and compare script; HumanoidBench Reach seeding; **kill matrix**: before a check, mid-interval, inside a routine save (previous checkpoint intact), inside the fork write, right after the fork, mid-post-fork control and arm, all bit-identical after resume |
 | test_exp12_positive_control | 15 | recovery toward the fresh critic; m rule; pooled SD; stop rules (L_trigger ≤ 0, noise ≥ 0.10, at the boundary); shared offset modes; end to end on a forced dev run (trigger probe reproduced exactly; noise from the four real-settings series only) |
-| test_exp12_diagnostics | 8 | KL equals the closed form, direction KL(π_t ‖ π_{t−1}); saturation on the sampled actions; gnorm population SD; reference batch from a dedicated stream per window; update bit-identical with diagnostics on or off; metrics present every window |
+| test_exp12_diagnostics | 10 | KL equals the float64 closed form on a well-conditioned actor (σ 0.13–0.88), direction KL(π_t ‖ π_{t−1}); near-deterministic actor reported, not gated; diagnostic forward passes at "highest" and training matmuls at the run setting (x); saturation on the sampled actions; gnorm population SD; reference batch from a dedicated stream per window; update and training bit-identical with diagnostics on or off on CPU (GPU: TF32 on/off pattern, tolerances from measurement); metrics present every window |
+| test_exp12_reports | 5 | the unittest log parser lists every test and failing subtest (statuses after interleaved output); the (w) range criterion |
 | test_exp12_exp2_analysis | 11 | bands (known answers, shared resamples, reproducible, IQM default); paired differences; incomplete forks and dev runs excluded; Check-2-success secondary; normalize hook per environment |
 | test_exp12_manifest | 9 | 195 jobs, unique absolute paths, budgets and composed configs; DONE/resume; arm jobs per fork and device, config equal to the parent except the arm keys; no overlap; launcher dry run; preflight PASS and FAIL |
 | test_exp12_pipeline | 3 (1 skipped here, passes in venv_hb) | tiny end-to-end per suite (DMC, MyoSuite, HumanoidBench): 20 checks, forced trigger, fork, both arms, Checks 1–2, post-fork probes and evaluations, both ledgers, both analysis scripts |
-| **Total Exp 1/2** | **117** | |
+| **Total Exp 1/2** | **124** (2026-10-05 rerun: all pass on CPU; 2 HumanoidBench skips) | |
 
-**Break-and-restore evidence** (`python tests/exp12_break_checks.py`): 55
-mutations. Each one makes its named test fail by an assertion (never by a
+**Break-and-restore evidence** (`python tests/exp12_break_checks.py`): 57
+mutations (2026-10-05; including a wrong KL formula and the removed
+"highest" context of (x)). Each one makes its named test fail by an assertion (never by a
 crash), and the test passes again once restored. They cover: probe pairing,
 offset, baseline, sign and validity; trigger tail, strictness, eligibility,
 statistic and consecutive rule; dev exclusion; SimBa warm-up; every
@@ -171,6 +195,12 @@ numbers in section 5.
 
 | Quantity | Value | Where |
 |---|---|---|
+| **A100 (Block A, job 22667743)**: stack | A100-SXM4-40GB; jax/jaxlib 0.4.34; CUDA 12.3 (PJRT) | summary.txt |
+| A0: float32 matmul error | 3.05e-4 at the run setting (TF32 active); 2.16e-7 under "highest" | A0 |
+| A3: D6W1536 dog-run, TF32 | 34.6 it/s (probes off); one probe check 50.0 s; probe overhead 6.77% of a run (accepted, R2); peak GPU memory 4.01 GiB | A3 |
+| A4: traced | 31.8 it/s under the profiler | A4 |
+| A2: fresh critic, P/b at pool 25,600 | 0.990 (D2W512), 0.997 (D4W1024), 0.993 (D6W1536). The old 10–90% rule fails at every size, and (w) passes. Final-loss SD across rounds 0.0078 / 0.0023 / 0.0016 | A2 |
+| A1 | 34 tests, 8 failures: 5 subtests of the injection test, from TF32 (fixed in the test); 3 diagnostics tests, from GPU program-dependent rounding (now the GPU tolerance pattern, measured in Block B) | decisions log 2026-10-05 |
 | Training it/s with probes off vs the current code (angle_1) | CPU: exp1/angle_1 wall-time ratio 0.96 (D2W512, humanoid-run); the real ratio **NEEDS CUDA VERIFICATION** (CUDA B4, `ratio_exp1_over_angle1`) | |
 | Probe overhead per critic size | CPU: D2W512 one check 413 s, projected 7.1% of a 500k-step run's wall-clock; all sizes **NEEDS CUDA VERIFICATION** (A3, B4). Forecast under TF32 for D6W1536 dog-run ≈ 6% (CUDA sheet, an estimate). Rule: if D6W1536 exceeds ~5%, I report and ask; the probe is never reduced | |
 | Actor diagnostics overhead | CPU: within noise (−1.2%, D2W512, 60 steps); **NEEDS CUDA VERIFICATION** (`diagnostics_overhead_pct`) | |
@@ -184,9 +214,10 @@ numbers in section 5.
 
 ## 6. Risks, limitations, open points
 
-- The probe's dynamic range at the real critic sizes is unknown. On a small
-  CPU critic, P sat near 0.008 of b ≈ 0.5. The range rule and fallback
-  ladder are pre-specified (CUDA A2, B2).
+- The probe's range: a fresh critic fits the probe almost completely at
+  every size (P/b ≥ 0.99, A2). That is the intended design under (w).
+  Whether a critic that has lost plasticity scores clearly lower is shown
+  only by the dev run and the positive control (Block B).
 - Run-level false-trigger rate. The per-check percentile bootstrap over 5
   rounds is anti-conservative (4.93% vs 2.5%). Two consecutive checks
   reduce the run-level rate, but it is measured only on CUDA (B3, null).
@@ -202,8 +233,14 @@ numbers in section 5.
 - MyoSuite: KeyTurn is truncated at 100 raw steps (registered 200), and
   PenTwirl at its registered 50, while γ is derived from 100. Both match
   SimBa.
-- Bit-exactness on CUDA is unproven. If the identity fork passes only with
-  deterministic GPU ops, the tolerance and flags are your decision.
+- Bit-exactness on CUDA is unproven. Block B runs the identity fork with
+  separate cold compilation caches and with one shared warm cache (8b). If
+  it passes only with shared executables or deterministic ops, the
+  tolerance and flags are your decision.
+- GPU numerics of the diagnostics-isolation tests: on the GPU they follow
+  the TF32 on/off pattern. Their tolerances are set only from measured
+  deviations; until Block B measures them, these tests skip on the GPU and
+  record the numbers.
 - Precision (v): every matmul runs in TF32 on the GPU; Check 1 and A0's
   measurement run under full FP32. TF32 no longer stops anything. A0 must
   show the run setting active (error ~1e-4 to 1e-3) and highest at ~1e-7;
@@ -215,8 +252,13 @@ numbers in section 5.
 - The positive control may stop: the dev run may never trigger, L_trigger
   may be ≤ 0, or the noise may be ≥ 0.10. Each stops and consults by
   design; the trigger is never loosened.
-- I am unsure whether the probe overhead for D6W1536 on the 500k-step tasks
-  stays under ~5%; the CPU forecast suggested it may not.
+- The probe overhead for D6W1536 is 6.77% (A3), above the ~5% rule; you
+  accepted it (R2), and the probe is unchanged.
+- HumanoidBench runs only through a separate cloned environment (`HB_ENV`);
+  without it, its Block B steps are recorded as unavailable.
+- The persistent compilation cache depends on a private jax 0.4.34 function
+  (`compilation_cache.reset_cache`), so that the cache also works after an
+  earlier compile. A jax upgrade would need a recheck.
 
 ## 7. Commits per phase
 
@@ -231,61 +273,48 @@ numbers in section 5.
 | 6 | `e79a9fa` manifests, launch plumbing, profiling |
 | 7 | `6063411` Phase 5–6 decisions, per-suite pipeline and kill matrix |
 | 8 | `2b9ccc3` summary draft; the final commit carries the Phase 7 results |
+| CUDA prep | `a8ca346` TF32 everywhere (v); `92b488a` efficiency scan; `7812b17` Block A runner |
+| Block A follow-up | `5ffce58` A1 parser, injection test under "highest", amendment (w), Block A numbers; `4314170` Block B driver |
+| Block B decisions | this commit: ARM_M=half; GPU tolerance pattern; well-conditioned KL test; amendment (x); compilation cache; cold/warm identity; per-suite speed; HB_ENV; memory flags |
 
 ## 8. What to run next (all on the CUDA stack, from `main/`)
 
-The full ordered sheet is `docs/exp12_cuda_commands.md`. In order:
+The full sheet is `docs/exp12_cuda_commands.md`.
 
-1. **Setup and precision** (Setup, A0). Install the requirements and
-   HumanoidBench, export MUJOCO_GL=egl PYOPENGL_PLATFORM=egl, and save
-   `A0_matmul_precision.json`. It must show `matmul_precision`
-   tensorfloat32 on gpu with error ~1e-4 to 1e-3, and highest at ~1e-7.
-2. **CUDA tests and break checks** (A1, B1). Run them with default and with
-   deterministic XLA flags:
-   `python -m unittest discover -s tests -p "test_exp12_*.py" -t .` and
-   `python tests/exp12_break_checks.py`.
-3. **Calibration** (A2, A3, B2–B4). The fresh-critic range check (pre-specified
-   10–90% of b rule), the fresh-pair null (≥ 100 pairs per size), and the
-   profile per critic size and suite. Send me the JSON files; any rule that
-   fails comes back to you.
-4. **Identity-fork gate** (Block C). D4W1024 and D6W1536 × dog-run, myo-key-turn
-   and h1-run-v0, on the grid's GPU model. `compare_identity_fork.py` must
-   exit 0 for all six.
-5. **Positive-control dev run** (Block D). D6W1536 dog-run, seed 102, run_role=dev,
-   then `scripts/positive_control.py`. You freeze m (`injection.m`) from its
-   result.
-6. **Preflight** (Block E) per critic size on the grid's GPU model, with
-   `--with-fork` for D4W1024 and D6W1536.
-7. **Pilot** (your call; dev role, seeds outside 1–5, kept out of the
-   confirmatory data). For example, dog-run with all three critics, seed 201:
-
+1. **Block A:** done (job 22667743). The A1 follow-up is in the decisions
+   log, and A2 now uses (w).
+2. **Optional, for HumanoidBench:** create the cloned `HB_ENV` environment
+   (the sheet's Setup). Its last step must print
+   `MAIN ENVIRONMENT UNCHANGED`.
+3. **Block B** (one A100x4 node, 10 h): the dev run, positive control,
+   injected arm (m = half), preflight, packing test, GPU test suites (default
+   and deterministic), A1 follow-up measurements, hopper-hop range, identity
+   forks (cold and warm cache), the fresh-pair null, and per-suite speeds:
    ```bash
-   for A in "2 512" "4 1024" "6 1536"; do set -- $A
-     python run.py --experiment exp1 --config_name base_exp12 --overrides env_name=dog-run --overrides env=dmc_hard \
-       --overrides critic_num_blocks=$1 --overrides critic_hidden_dim=$2 --overrides seed=201 --overrides run_role=dev \
-       --overrides results_root=/abs/pilot_results --checkpoint_dir /abs/pilot/D$1W$2 --checkpoint_interval 25000 \
-       --checkpoint_start_frac 0.0
-   done
+   cd /work/hdd/biqc/skaveti1/exp12/main && git pull && mkdir -p logs
+   bash scripts/exp12_blockB.sh --dry-run
+   EXPECTED_COMMIT=<head commit> sbatch scripts/sbatch_exp12_blockB.sh      # add HB_ENV=... for HumanoidBench
    ```
-8. **Main grid** (Block F). Run
-   `python generate_manifest.py --grid exp12 --ckpt-root ABS --results-root ABS`
-   (195 jobs), then `scripts/claim_launcher.py --phase-files
-   exp12_exp1_jobs.txt`. Once m is frozen and forks exist, regenerate with
-   `--injection-m <m>`, run `check_manifest_overlap.py`, then launch
-   `exp2_arms_<device>.txt` on that GPU model.
+   Send me `logs/blockB_<jobid>/paste_me.txt`.
+4. **After Block B:**
+   - set the GPU tolerances from the measured deviations;
+   - you freeze m (`injection.m`) from the positive control;
+   - set the jobs per GPU from the packing table;
+   - decide on any identity-fork or null outcome that needs it.
+5. **Main grid** (Block F): `generate_manifest.py --grid exp12`, then
+   `claim_launcher.py` with `PREALLOCATE=false`, no memory fraction, and the
+   shared compilation cache. Arms go per GPU model once m is frozen.
 
-**Pre-deployment checklist** (every item from the steps above):
+**Pre-deployment checklist:**
 
-- [ ] A0: TF32 active at the run setting, highest at FP32 level (Check 1's context).
-- [ ] CUDA tests and break checks pass; any deterministic-ops dependence decided.
-- [ ] Range rule passes at all three sizes; the round spread is reported.
+- [x] A0: TF32 active at the run setting (3.05e-4), "highest" at FP32 level (2.16e-7).
+- [x] A2 under (w): P/b ≥ 0.9 at all three sizes (dog-run). B2 (hopper-hop) is in Block B.
+- [ ] GPU test suites (default, deterministic) and break checks pass; GPU tolerances set from Block B's measurements.
 - [ ] Null fire rate ≤ 5% per size, or your decision on the p95 threshold.
-- [ ] Probe overhead for D6W1536 ≤ ~5%, or your decision.
-- [ ] Identity fork is bit-identical for all six architecture × suite cells.
+- [x] Probe overhead for D6W1536: 6.77%, accepted (R2).
+- [ ] Identity fork bit-identical for every available architecture × suite cell (cold and warm cache), or your decision.
 - [ ] Positive control: m chosen and frozen in `injection.m`.
 - [ ] Preflight PASS per size on the grid's GPU model.
+- [ ] Jobs per GPU set from the packing test (per-job peak and total memory, slowdown), with `XLA_PYTHON_CLIENT_PREALLOCATE=false` and no memory fraction.
 - [ ] All grid jobs pinned to one GPU model; disk ≥ ~734 GB free.
-- [ ] Concurrency per GPU set from the measured peak memory, with
-  `XLA_PYTHON_CLIENT_PREALLOCATE=false`.
-- [ ] `WANDB_API_KEY` exported. Unique joblog per launch. Overlap check OK
-  before arms run alongside the grid.
+- [ ] `WANDB_API_KEY` exported. Unique joblog per launch. Overlap check OK before arms run alongside the grid.

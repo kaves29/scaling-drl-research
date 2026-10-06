@@ -36,9 +36,10 @@ from utils.hardware import configure_hardware_env  # noqa: E402
 
 configure_hardware_env()
 
-from experiments.exp12.precision import set_matmul_precision  # noqa: E402
+from experiments.exp12.precision import configure_compilation_cache, set_matmul_precision  # noqa: E402
 
 set_matmul_precision()
+configure_compilation_cache()
 
 import numpy as np  # noqa: E402
 

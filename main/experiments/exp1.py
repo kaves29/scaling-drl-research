@@ -7,6 +7,7 @@ the latest complete state in `<checkpoint_dir>/state`.
 import json
 import os
 import random
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -19,7 +20,7 @@ from hydra.core.global_hydra import GlobalHydra
 from analysis.metrics_store import RunIdentity
 from experiments.angle_1 import DONE_MARKER
 from experiments.exp12 import exp2_ledger, fork, ledger
-from experiments.exp12.precision import runtime_info, set_matmul_precision
+from experiments.exp12.precision import configure_compilation_cache, runtime_info, set_matmul_precision
 from experiments.exp12.run_probes import RunProbes
 from experiments.exp12.state import latest_state_dir, load_meta
 from experiments.exp12.trainer import Exp12Trainer
@@ -84,6 +85,7 @@ def record_metadata(cfg, run_dir: Path, resumed: bool, experiment: str = EXPERIM
 @register_experiment(EXPERIMENT)
 def run(args: dict) -> None:
     set_matmul_precision()
+    configure_compilation_cache()
     args = DotMap(args)
     run_dir = Path(require_absolute(args.checkpoint_dir or "", "checkpoint_dir"))
     if (run_dir / DONE_MARKER).exists():
@@ -122,8 +124,10 @@ def run(args: dict) -> None:
     def build(state_dir=None):
         trainer = Exp12Trainer(cfg, str(run_dir))
         if state_dir is not None:
+            t0 = time.perf_counter()
             trainer.restore(state_dir)
-            print(f"[exp1] restored interaction_step {trainer.interaction_step} from {state_dir}")
+            print(f"[exp1] restored interaction_step {trainer.interaction_step} from {state_dir} "
+                  f"in {time.perf_counter() - t0:.1f} s", flush=True)
         else:
             trainer.start()
         live["trainer"] = trainer
@@ -172,8 +176,10 @@ def run(args: dict) -> None:
                     raise fork.ValidationDone
         elif forks_here and probes.f_star is not None and probes.f_star["interaction_step"] == step:
             plan = fork.fork_plan(cfg, step, probes.f_star["check_index"])
+            t0 = time.perf_counter()
             fork.write_fork(t, run_dir, {**plan, "run_key": identity.run_key}, identity.run_key,
                             str(probes.fresh_path))
+            print(f"[exp1] fork state saved at interaction_step {step} in {time.perf_counter() - t0:.1f} s", flush=True)
             raise ForkNow(plan)
         last = t.extra_state["fork"]["control_end_step"] if t.extra_state.get("fork") else num_steps
         if step >= checkpoint_start and step % args.checkpoint_interval == 0 and step < last:

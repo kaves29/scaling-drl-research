@@ -10,6 +10,7 @@ Layout under the Exp 1 run directory:
 """
 
 import json
+import time
 from pathlib import Path
 from typing import Dict, Optional
 
@@ -184,6 +185,7 @@ def post_fork_eval(trainer, plan: Dict, eval_index: int, arm: str) -> list:
     core = trainer._sac_agent
     saved_key, np_state, py_state = core._rng, np.random.get_state(), random.getstate()
     env = None
+    t0 = time.perf_counter()
     try:
         np.random.seed(env_seed)
         random.seed(env_seed)
@@ -196,6 +198,8 @@ def post_fork_eval(trainer, plan: Dict, eval_index: int, arm: str) -> list:
         random.setstate(py_state)
         if env is not None:
             env.close()
+    print(f"[{arm}] post-fork evaluation {eval_index}: {time.perf_counter() - t0:.1f} s for "
+          f"{plan['eval_episodes']} episodes", flush=True)
     steps_since = eval_index * plan["eval_every_steps"]
     return [{"arm": arm, "eval_index": eval_index, "steps_since_fork": steps_since,
              "interaction_step": plan["fork_step"] + steps_since, "episode": i, "return": float(r),
