@@ -113,11 +113,15 @@ class ForkEndToEndTest(unittest.TestCase):
         self.assertEqual(_without_arm(a["post_fork_evals"]), _without_arm(b["post_fork_evals"]))
 
     def test_check1(self):
+        with open(self.exp2 / "check1_control.json") as f:
+            control = json.load(f)
         with open(self.exp2 / "check1_identity.json") as f:
             identity = json.load(f)
         with open(self.exp2 / "check1_injected.json") as f:
             injected = json.load(f)
-        self.assertTrue(identity["pass"] and injected["pass"])
+        self.assertTrue(control["pass"] and identity["pass"] and injected["pass"])
+        for pair in control["pairs"].values():
+            self.assertEqual((pair["max_abs_dq"], pair["max_abs_d_dq_da"], pair["tolerance_eps"]), (0.0, 0.0, 0.0))
         for pair in identity["pairs"].values():
             self.assertEqual((pair["max_abs_dq"], pair["max_abs_d_dq_da"], pair["tolerance_eps"]), (0.0, 0.0, 0.0))
         self.assertEqual(injected["pairs"]["pre_vs_after"]["max_abs_dq"], 0.0)
@@ -237,6 +241,45 @@ class ForkEndToEndTest(unittest.TestCase):
         finally:
             record.write_text(kept)
         self.assertIsNone(latest_state_dir(Path(arm_dir) / "state"))  # stopped before its first save
+
+
+    def test_control_stops_before_ready_if_restore_changes_panel(self):
+        real = fork.panel_q_and_grad
+        for field in ("q", "dq_da"):
+            with self.subTest(field=field):
+                calls = []
+
+                def common_restore_error(critic, panel):
+                    out = real(critic, panel)
+                    calls.append(1)
+                    if len(calls) > 1:  # every restored branch agrees, but differs from the original
+                        out[field] = np.nextafter(out[field], np.float32(np.inf))
+                    return out
+
+                run_dir = os.path.join(self.tmp, f"bad_restore_{field}")
+                results = run_dir + "_results"
+                with mock.patch.object(fork, "panel_q_and_grad", common_restore_error):
+                    with self.assertRaisesRegex(fork.Check1Failed, "original pre-fork panel"):
+                        run_exp1(run_dir, fork_overrides(results))
+                self.assertFalse(fork.is_ready(run_dir))
+                plan = fork.read_fork(run_dir)
+                record = exp2_ledger.run_root(plan["run_key"], results) / "check1_control.json"
+                self.assertFalse(json.loads(record.read_text())["pass"])
+
+    def test_arm_rechecks_original_panel_for_existing_forks(self):
+        path = fork.fork_dir(self.run_dir) / "check1_pre.npz"
+        original = fork.load_npz(path)
+        changed = {k: v.copy() for k, v in original.items()}
+        changed["q"] = np.nextafter(changed["q"], np.float32(np.inf))
+        arm_dir = os.path.join(self.tmp, "old_bad_restore_arm")
+        try:
+            fork.save_npz(path, changed)
+            with self.assertRaisesRegex(fork.Check1Failed, "original pre-fork panel"):
+                run_arm(arm_dir, self.overrides, self.run_dir, "identity")
+            self.assertIsNone(latest_state_dir(Path(arm_dir) / "state"))
+        finally:
+            fork.save_npz(path, original)
+            fork.validate_control_restore(self.run_dir, self.results)
 
 
 class ForkUnitTest(unittest.TestCase):

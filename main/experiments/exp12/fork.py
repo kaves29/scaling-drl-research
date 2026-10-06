@@ -18,6 +18,7 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 
+from experiments.exp12 import exp2_ledger
 from experiments.exp12.envs import create_eval_env
 from experiments.exp12.precision import runtime_info
 from experiments.exp12.trainer import evaluate_episodes
@@ -32,6 +33,10 @@ FORK_DIR, READY = "fork", "FORK_READY"
 
 class ValidationDone(Exception):
     """The identity snapshot is saved and testing.stop_after_identity_snapshot asks to stop."""
+
+
+class Check1Failed(RuntimeError):
+    """Check 1 failed: stop before training (amendment (m))."""
 
 
 def check_validation_flags(cfg) -> None:
@@ -156,6 +161,22 @@ def save_npz(path: Path, arrays: Dict) -> None:
 def load_npz(path: Path) -> Dict[str, np.ndarray]:
     with np.load(path) as d:
         return {k: d[k] for k in d.files}
+
+
+def validate_control_restore(run_dir, results_root: Optional[str] = None) -> Dict:
+    """Compare the original fork panel with the restored control, including older ready forks.
+
+    The arm's existing pre/after/control comparison cannot detect a restore error common to
+    both branches. This independent zero-tolerance comparison preserves the original boundary.
+    """
+    d = fork_dir(run_dir)
+    pre, control = load_npz(d / "check1_pre.npz"), load_npz(d / "check1_control.npz")
+    result = check1(pre, control, control, tolerance_eps=0.0, injected=False)
+    exp2_ledger.write_json(read_fork(run_dir)["run_key"], "check1_control.json", result, results_root)
+    if not result["pass"]:
+        raise Check1Failed("Check 1 failed: restored control differs from the original pre-fork panel; "
+                           "stop and ask the project lead. Details in check1_control.json")
+    return result
 
 
 def write_fork(trainer, run_dir, plan: Dict, run_key: str, fresh_critic_dir: str) -> Path:

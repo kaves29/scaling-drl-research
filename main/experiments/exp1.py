@@ -100,6 +100,7 @@ def run(args: dict) -> None:
     plan = fork.read_fork(run_dir) if fork.is_ready(run_dir) else None
     if plan is not None:
         fork.check_same_device(run_dir)  # the control continues on the fork's device model
+        fork.validate_control_restore(run_dir, cfg.results_root)
     enter_control_on_restore = False
     if plan is not None and (latest is None or load_meta(latest)["interaction_step"] < plan["fork_step"]):
         latest = latest_state_dir(fork.fork_dir(run_dir) / "state")  # control restarts from the fork state
@@ -140,6 +141,7 @@ def run(args: dict) -> None:
         t.extra_state["fork"] = plan
         fork.save_npz(d / "check1_control.npz",
                       fork.panel_q_and_grad(t._sac_agent.critic, fork.load_npz(d / "panel.npz")))
+        fork.validate_control_restore(run_dir, cfg.results_root)
         t.extra_state["post_fork_evals"] = fork.post_fork_eval(t, plan, 0, "control")
         live["probes"].extend_to(plan["control_end_step"])
         atomic_write_text(d / fork.READY, plan["run_key"])

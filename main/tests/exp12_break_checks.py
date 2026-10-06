@@ -432,6 +432,9 @@ MUTATIONS += [
      f"{TWIN}.TwinCheck1Test.test_panel_values"),
     ("twin metadata: critic count not recorded", exp1_module, "build_run_metadata", metadata_without_critic_count,
      f"{TWIN}.TwinForkEndToEndTest.test_runs_are_twin_and_record_the_critic_count"),
+    ("Check 1: original-to-restored control comparison skipped", fork, "validate_control_restore",
+     lambda *args, **kwargs: None,
+     "tests.test_exp12_fork.ForkEndToEndTest.test_control_stops_before_ready_if_restore_changes_panel"),
 ]
 
 def _run(test_id):

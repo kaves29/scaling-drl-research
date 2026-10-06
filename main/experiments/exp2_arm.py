@@ -21,6 +21,7 @@ from dotmap import DotMap
 from experiments.angle_1 import DONE_MARKER
 from experiments.exp1 import compose_config, record_metadata, run_identity
 from experiments.exp12 import exp2_ledger, fork
+from experiments.exp12.fork import Check1Failed
 from experiments.exp12.injection import M_LABELS
 from experiments.exp12.precision import configure_compilation_cache, set_matmul_precision
 from experiments.exp12.probe import iqm
@@ -35,10 +36,6 @@ from utils.run_metadata import RUN_METADATA_FILENAME, differing_keys, load_run_m
 from utils.run_metadata import _strip_locations as strip_locations
 
 ARM_KEYS = {"fork.source", "fork.arm", "injection.m"}
-
-
-class Check1Failed(RuntimeError):
-    """Check 1 failed: the arm stops before training (amendment (m))."""
 
 
 def check_matches_parent(cfg, source: Path) -> None:
@@ -106,6 +103,7 @@ def run(args: dict) -> None:
     fork.check_validation_flags(cfg)
     fork.check_same_device(source)
     plan = fork.read_fork(source)
+    fork.validate_control_restore(source, cfg.results_root)
     run_key = run_identity(cfg).run_key
     arm_dir.mkdir(parents=True, exist_ok=True)
     state_root = arm_dir / "state"
