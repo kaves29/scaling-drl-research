@@ -21,7 +21,7 @@ Also (each optional):
 
 Example (CUDA):
     python scripts/profile_exp12.py --env dog-run --env_group dmc_hard \\
-        --archs D2W512 D4W1024 D6W1536 --train_steps 2000 --angle1 --out profile_dog_run.json
+        --archs D2W512 D4W1024 D4W1536 --train_steps 2000 --angle1 --out profile_dog_run.json
 """
 
 import argparse
@@ -48,7 +48,7 @@ configure_compilation_cache()
 import jax  # noqa: E402
 import numpy as np  # noqa: E402
 
-ARCHS = {"D2W512": (2, 512), "D4W1024": (4, 1024), "D6W1536": (6, 1536)}
+ARCHS = {"D2W512": (2, 512), "D4W1024": (4, 1024), "D4W1536": (4, 1536)}
 
 
 class _Run:

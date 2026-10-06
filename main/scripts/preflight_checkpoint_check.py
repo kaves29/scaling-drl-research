@@ -29,7 +29,7 @@ forced at check 2 (test hook, dev only), the run must fork, and the injected arm
 (exp2_arm) must then complete with Check 1 passing on this device:
 
     python scripts/preflight_checkpoint_check.py --experiment exp1 --with-fork \\
-        --override critic_num_blocks=6 --override critic_hidden_dim=1536 \\
+        --override critic_num_blocks=4 --override critic_hidden_dim=1536 \\
         --override env_name=dog-run --override env=dmc_hard --override seed=999
 """
 import argparse

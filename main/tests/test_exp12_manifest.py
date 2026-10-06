@@ -102,7 +102,7 @@ class Exp12GridTest(unittest.TestCase):
         return run_dir
 
     def test_arm_jobs_only_for_completed_forks_grouped_by_device(self):
-        a100 = self._fork("D6W1536", "dog-run", 3, "NVIDIA A100-SXM4-40GB")
+        a100 = self._fork("D4W1536", "dog-run", 3, "NVIDIA A100-SXM4-40GB")
         a40 = self._fork("D4W1024", "myo-reach", 1, "NVIDIA A40")
         self._fork("D2W512", "dog-run", 3, "NVIDIA A100-SXM4-40GB")  # the default critic never forks
         manifests, status = self._grid()
@@ -130,7 +130,7 @@ class Exp12GridTest(unittest.TestCase):
             self._grid("most")
 
     def test_manifests_never_share_a_checkpoint_dir(self):
-        self._fork("D6W1536", "dog-run", 3, "GPU A")
+        self._fork("D4W1536", "dog-run", 3, "GPU A")
         manifests, _ = self._grid("last")
         paths = []
         for name, jobs in manifests.items():

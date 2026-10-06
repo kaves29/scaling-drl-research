@@ -32,7 +32,8 @@ Where actor architecture is held constant at depth=1 and width=128
 
 1. depth=2 & width=512 → 4.2 million parameters
 2. depth=4 & width=1024 → 33.6 million parameters
-3. depth=6 & width=1536 → 113 million parameters
+3. depth=4 & width=1536 → 76 million parameters [changed from depth=6 & width=1536
+   (113 million) by amendment (y), 2026-10-06]
 
 UTD Ratio:
 
@@ -264,7 +265,7 @@ expressed by these labels so it transfers across architectures. Measure the
 probe's own noise (the spread across the 5 rounds on the same critic). If it
 exceeds 0.10, stop and consult the project lead.
 
-(e) Positive control. D6W1536 on dog-run (DMC hard, 1M environment steps), with
+(e) Positive control. D4W1536 (was D6W1536; amendment (y)) on dog-run (DMC hard, 1M environment steps), with
 a development seed outside 1-5. If it never triggers, stop and consult. The
 trigger is never loosened.
 
@@ -359,7 +360,7 @@ guaranteed.
 (p) Device model. Both arms of a fork run on the GPU model that produced the
 fork state. The fork records it, and the control (on resume) and the arm jobs
 refuse to run on a different model. The identity-fork validation runs for
-D4W1024 and D6W1536 in each suite on the GPU model the grid will use.
+D4W1024 and D4W1536 (was D6W1536; amendment (y)) in each suite on the GPU model the grid will use.
 
 ## Amendments from the Phase 5-6 decisions (2026-10-04)
 
@@ -484,3 +485,25 @@ and old policies.
   compiled update has exactly the diagnostics' forward passes at "highest",
   and its training matmuls stay TF32. A break-and-restore check removes the
   context.
+
+## Amendment on the critic sizes (2026-10-06)
+
+(y) Critic grid. The three critic sizes are D2W512, D4W1024 and D4W1536
+(depth × width, per Q network). D4W1536 replaces D6W1536 everywhere: the
+grid, the forking architectures (D4W1024, D4W1536), the positive control
+((e), D4W1536 on dog-run, the same development seed), the identity-fork
+validation ((p)), the range check and the fresh-pair null. The actor stays
+D1W128, and nothing else changes (probe, trigger, injection, UTD,
+checkpoints, precision).
+- Reason: the largest critic was too large relative to the actor, and the
+  change cuts compute.
+- Parameters per Q network (dog-run, 223 observation and 38 action
+  dimensions): D2W512 4.34M, D4W1024 33.85M, D4W1536 75.95M (D6W1536 was
+  113.72M). The D1W128 actor has 0.17M, so the largest critic/actor ratio is
+  445 on dog-run (was 666).
+- m candidates for depth 4: last = 1 block, half = 2 blocks, all = 4 blocks
+  (the labels in (d) are unchanged).
+- Earlier records that name D6W1536 (Block A's measurements, the original
+  results of (w)) are kept as measured; they describe the size measured
+  then. The amended acceptance rule of (w) applies to the new sizes
+  unchanged.

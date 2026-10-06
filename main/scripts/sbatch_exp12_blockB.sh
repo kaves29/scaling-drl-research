@@ -7,16 +7,18 @@
 #SBATCH --gpus=4
 #SBATCH --cpus-per-task=64
 #SBATCH --mem=128G
-#SBATCH --time=10:00:00
+#SBATCH --time=08:00:00
 #SBATCH --output=logs/%x_%j.out
 #SBATCH --error=logs/%x_%j.err
-# Request, from Block A's measured D6W1536 point (34.6 it/s, 50 s per probe check; docs/exp12_cuda_commands.md):
-#  - GPU 0, the critical path: dev run to 120% of B after a late fork ~5.9 h -> positive control ~0.2 h ->
-#    preflight ~0.25 h = ~6.4 h. The injected arm (ARM_M=half, the default) starts at the fork and ends by ~5.7 h;
-#  - GPU 2 ~4.6 h (identity forks run twice, cold and warm cache), GPU 3 ~2.4 h (null, then per-suite speed);
-#  - 10 h leaves ~55% over the critical path for what Block A did not measure (Delta's host speed, GPU
-#    evaluations, compile times), and the driver's own 9.5 h deadline keeps time for the report;
-#  - memory: ~33 GB peak estimated, so 128G; CPUs: 64 = 16 per GPU lane (4 per packing job).
+# Request, anchored on Block A's measured D6W1536 point (34.6 it/s, 50 s per probe check); D4W1536 figures are
+# unmeasured estimates scaled by parameter count (docs/exp12_cuda_commands.md):
+#  - GPU 0, the critical path: D4W1536 dev run to 120% of B after a late fork ~4.8 h -> positive control ~0.15 h ->
+#    preflight ~0.2 h = ~5.1 h. The injected arm (ARM_M=half, the default) starts at the fork and ends by ~4.6 h;
+#  - GPU 2 ~3.9 h (identity forks run twice, cold and warm cache), GPU 3 ~2.0 h (null, then per-suite speed);
+#  - 8 h leaves ~57% over the critical path (the 10 h request left ~55% over D6W1536's 6.4 h) for what is not
+#    measured (D4W1536 itself, Delta's host speed, GPU evaluations, compile times); the driver's own 7.5 h
+#    deadline keeps time for the report;
+#  - memory: ~30 GB peak estimated, so 128G; CPUs: 64 = 16 per GPU lane (4 per packing job).
 # Submit from main/ after `mkdir -p logs`: Slurm opens logs/%x_%j.out before the job starts.
 # Optional: HB_ENV=<conda env with HumanoidBench> for the HumanoidBench steps (unset: recorded unavailable).
 set -e

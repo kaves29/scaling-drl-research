@@ -181,7 +181,7 @@ class LedgerTest(unittest.TestCase):
         shutil.rmtree(self.root, ignore_errors=True)
 
     def test_round_trip_and_dev_excluded_by_default(self):
-        write_synthetic_grid(self.root, {"D2W512": 0.0}, dev_runs=[("D6W1536", "e1", 1001)])
+        write_synthetic_grid(self.root, {"D2W512": 0.0}, dev_runs=[("D4W1536", "e1", 1001)])
         runs, checks = ledger.load(self.root)
         self.assertEqual(len(runs), 15)
         self.assertEqual(set(runs.run_role), {"confirmatory"})
@@ -218,10 +218,10 @@ class Exp1AnalysisTest(unittest.TestCase):
     def test_known_effect_is_recovered_and_null_effect_is_not(self):
         from analysis.exp1_analysis import primary_endpoint
 
-        write_synthetic_grid(self.root, {"D2W512": 0.0, "D4W1024": 0.5, "D6W1536": 0.0})
+        write_synthetic_grid(self.root, {"D2W512": 0.0, "D4W1024": 0.5, "D4W1536": 0.0})
         runs, _ = ledger.load(self.root)
         res = primary_endpoint(runs, reps=5_000).set_index("comparison")
-        big, null = res.loc["D4W1024 - D2W512"], res.loc["D6W1536 - D2W512"]
+        big, null = res.loc["D4W1024 - D2W512"], res.loc["D4W1536 - D2W512"]
         self.assertGreater(big.ci_low, 0)
         self.assertLess(big.ci_low, 0.5)
         self.assertGreater(big.ci_high, 0.5)
@@ -232,35 +232,35 @@ class Exp1AnalysisTest(unittest.TestCase):
     def test_missing_run_is_refused(self):
         from analysis.exp1_analysis import primary_endpoint
 
-        write_synthetic_grid(self.root, {"D2W512": 0.0, "D4W1024": 0.5, "D6W1536": 0.0})
-        shutil.rmtree(ledger.ledger_root(self.root) / "exp1_D6W1536_e2_seed3")
+        write_synthetic_grid(self.root, {"D2W512": 0.0, "D4W1024": 0.5, "D4W1536": 0.0})
+        shutil.rmtree(ledger.ledger_root(self.root) / "exp1_D4W1536_e2_seed3")
         runs, _ = ledger.load(self.root)
-        with self.assertRaisesRegex(ValueError, "D6W1536"):
+        with self.assertRaisesRegex(ValueError, "D4W1536"):
             primary_endpoint(runs, reps=1_000)
 
     def test_analysis_is_reproducible(self):
         from analysis.exp1_analysis import primary_endpoint
 
-        write_synthetic_grid(self.root, {"D2W512": 0.0, "D4W1024": 0.5, "D6W1536": 0.0})
+        write_synthetic_grid(self.root, {"D2W512": 0.0, "D4W1024": 0.5, "D4W1536": 0.0})
         runs, _ = ledger.load(self.root)
         pd.testing.assert_frame_equal(primary_endpoint(runs, reps=2_000), primary_endpoint(runs, reps=2_000))
 
     def test_dev_runs_do_not_change_the_confirmatory_result(self):
         from analysis.exp1_analysis import primary_endpoint
 
-        write_synthetic_grid(self.root, {"D2W512": 0.0, "D4W1024": 0.5, "D6W1536": 0.0},
-                             dev_runs=[("D6W1536", "e1", 1001)])
+        write_synthetic_grid(self.root, {"D2W512": 0.0, "D4W1024": 0.5, "D4W1536": 0.0},
+                             dev_runs=[("D4W1536", "e1", 1001)])
         runs, _ = ledger.load(self.root)
         self.assertNotIn(1001, set(runs.seed))
         a = primary_endpoint(runs, reps=2_000)
-        shutil.rmtree(ledger.ledger_root(self.root) / "exp1_D6W1536_e1_seed1001")
+        shutil.rmtree(ledger.ledger_root(self.root) / "exp1_D4W1536_e1_seed1001")
         b = primary_endpoint(ledger.load(self.root)[0], reps=2_000)
         pd.testing.assert_frame_equal(a, b)
 
     def test_full_analysis_writes_outputs(self):
         from analysis.exp1_analysis import run_analysis
 
-        write_synthetic_grid(self.root, {"D2W512": 0.0, "D4W1024": 0.5, "D6W1536": 0.2})
+        write_synthetic_grid(self.root, {"D2W512": 0.0, "D4W1024": 0.5, "D4W1536": 0.2})
         out = os.path.join(self.root, "analysis")
         run_analysis(out, self.root)
         for name in ("primary_endpoint.csv", "final_loss_by_architecture.csv", "trajectories.csv",

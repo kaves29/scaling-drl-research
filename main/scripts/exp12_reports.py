@@ -200,7 +200,7 @@ def blockA_summary(out):
             lines.append("WARNING: 'highest' does not look like full FP32; Check 1 relies on it. Send me this file.")
 
     def a3():
-        for r in json.loads((out / "A3_profile_dog_run_D6.json").read_text()):
+        for r in json.loads((out / "A3_profile_dog_run_D4W1536.json").read_text()):
             peak = r.get("peak_device_bytes")
             peak = f"{peak / 2**30:.2f} GiB" if peak else "n/a"
             lines.append(f"{r['arch']} {r['env']}: training {r['train_it_per_s_probes_off']:.1f} it/s (probes off); "
@@ -214,12 +214,12 @@ def blockA_summary(out):
             return
         hits = [l for l in log.read_text().splitlines() if "it_per_s_traced" in l]
         lines.append(hits[-1].strip() if hits else "no it/s line in A4.log")
-        lines.extend(str(p) for p in sorted((out / "A4_trace_D6W1536_dog_run").rglob("*.trace.json.gz")))
+        lines.extend(str(p) for p in sorted((out / "A4_trace_D4W1536_dog_run").rglob("*.trace.json.gz")))
 
     _section(lines, "A0 matmul precision", a0)
     _section(lines, "A2 fresh-critic range, dog-run",
-             lambda: lines.extend(format_range(out / "A2_range_dog_run", ["D2W512", "D4W1024", "D6W1536"])))
-    _section(lines, "A3 short profile, D6W1536 dog-run (TF32)", a3)
+             lambda: lines.extend(format_range(out / "A2_range_dog_run", ["D2W512", "D4W1024", "D4W1536"])))
+    _section(lines, "A3 short profile, D4W1536 dog-run (TF32)", a3)
     _section(lines, "A1 smoke tests",
              lambda: lines.extend(format_unittest(parse_unittest_log((out / "A1.log").read_text()))))
     _section(lines, "A4 GPU trace", a4)
@@ -401,7 +401,7 @@ def blockB_report(out):
     _section(lines, "Fork save/restore and post-fork evaluation wall times", timings)
 
     rng = out / "gpu2" / "range_hopper_hop"
-    archs = ["D2W512", "D4W1024", "D6W1536"]
+    archs = ["D2W512", "D4W1024", "D4W1536"]
     if list(rng.glob("range_D*.json")):
         c = range_criterion(rng, sorted({r["arch"] for r in range_rows(rng)}) or archs)
         gate("hopper-hop range, amendment (w)", c["pass"], str(c["per_size"]))

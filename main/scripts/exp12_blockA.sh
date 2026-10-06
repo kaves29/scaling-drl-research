@@ -49,12 +49,12 @@ PY
 
 step_A2() {
   timeout -k 30 "$1" python scripts/probe_fresh_checks.py --mode range --env dog-run --env_group dmc_hard \
-    --archs D2W512 D4W1024 D6W1536 --pools 1600 6400 25600 --out_dir "$OUT/A2_range_dog_run"
+    --archs D2W512 D4W1024 D4W1536 --pools 1600 6400 25600 --out_dir "$OUT/A2_range_dog_run"
 }
 
 step_A3() {
-  timeout -k 30 "$1" python scripts/profile_exp12.py --env dog-run --env_group dmc_hard --archs D6W1536 \
-    --train_steps 300 --warmup_steps 100 --probe_repeats 1 --out "$OUT/A3_profile_dog_run_D6.json"
+  timeout -k 30 "$1" python scripts/profile_exp12.py --env dog-run --env_group dmc_hard --archs D4W1536 \
+    --train_steps 300 --warmup_steps 100 --probe_repeats 1 --out "$OUT/A3_profile_dog_run_D4W1536.json"
 }
 
 step_A1() {
@@ -71,13 +71,13 @@ set_matmul_precision()
 from experiments.exp1 import compose_config
 from experiments.exp12.trainer import Exp12Trainer
 cfg = compose_config(os.path.abspath("configs"), "base_exp12", [
-    "env_name=dog-run", "env=dmc_hard", "critic_num_blocks=6", "critic_hidden_dim=1536", "seed=990", "run_role=dev"])
+    "env_name=dog-run", "env=dmc_hard", "critic_num_blocks=4", "critic_hidden_dim=1536", "seed=990", "run_role=dev"])
 np.random.seed(cfg.seed); random.seed(cfg.seed)
 t = Exp12Trainer(cfg, tempfile.mkdtemp(prefix="trace_"))
 t.start()
 warm = int(cfg.buffer.min_length) + 200
 t.train(warm); jax.block_until_ready(t._sac_agent.critic.params)
-with jax.profiler.trace(os.environ["OUT"] + "/A4_trace_D6W1536_dog_run"):
+with jax.profiler.trace(os.environ["OUT"] + "/A4_trace_D4W1536_dog_run"):
     t0 = time.perf_counter()
     t.train(warm + 300); jax.block_until_ready(t._sac_agent.critic.params)
     dt = time.perf_counter() - t0
@@ -101,7 +101,7 @@ PY
 
 check_A2() {
   # Amendment (w): P/b >= 0.9 at the configured pool at every size; the old 10-90% rule is printed only.
-  python scripts/exp12_reports.py range-check "$OUT/A2_range_dog_run" D2W512 D4W1024 D6W1536
+  python scripts/exp12_reports.py range-check "$OUT/A2_range_dog_run" D2W512 D4W1024 D4W1536
 }
 
 REQUIRED_FILES=(

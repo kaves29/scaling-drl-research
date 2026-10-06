@@ -1653,3 +1653,80 @@ Block B is a development job, not confirmatory.
      XLA sizes its GPU allocator as fraction × free memory either way.
    - Editing the scripts does not affect jobs already submitted (Slurm
      copies the script at submission).
+
+## Critic sizes: D4W1536 replaces D6W1536 (received 2026-10-06)
+
+**Decision (yours).** The critic grid is D2W512, D4W1024, D4W1536 (depth ×
+width, per Q network); the actor stays D1W128; D6W1536 is dropped
+everywhere. Reason: the largest critic was too large relative to the actor,
+and the change cuts cost. Nothing else changes (probe, trigger, injection,
+UTD, checkpoints, precision). Recorded as Methodology amendment (y).
+
+**Where it changed** (grep of the repo for `D6W1536`, `1536` and `6 blocks`,
+plus `critic_num_blocks=6`, `6:1536` and `D6`):
+- configs: `configs/base_exp12.yaml` (`fork.architectures`,
+  `positive_control.architecture`);
+- grid manifest: `generate_manifest.py` (`EXP12_ARCHS`, `EXP12_FORKING`);
+- analysis: `analysis/exp1_analysis.py` (`SCALED`, `ARCH_COLORS`),
+  `analysis/exp2_analysis.py` (`SCALED`);
+- scripts: `positive_control.py` (docstring, help), `probe_fresh_checks.py`
+  and `profile_exp12.py` (`ARCHS`, usage), `preflight_checkpoint_check.py`
+  (usage), `exp12_blockA.sh` (A2 archs, A3, A4 trace, range check),
+  `exp12_blockB.sh` (dev run, packing, range, null, identity, speed,
+  preflight, the packing size table), `sbatch_exp12_blockB.sh` (time and
+  justification), `exp12_reports.py` (Block A file names and section
+  title, the null's size list);
+- tests: `test_exp12_phase3.py`, `test_exp12_positive_control.py`,
+  `test_exp12_exp2_analysis.py`, `test_exp12_manifest.py` (labels only);
+- docs: the Methodology (body size list, (e), (p), new (y)), the CUDA
+  sheet, the master summary, this log.
+
+**Deliberately unchanged** (records of what was measured, which name the
+size measured then):
+- this log's earlier entries and the Block A numbers (A2's P/b 0.993 and
+  A3's 34.6 it/s, 50.0 s, 6.77%, 4.01 GiB were measured on D6W1536);
+- the comment in `tests/test_exp12_injection.py` (7.2 eps measured at
+  D6W1536 on CPU);
+- `tests/test_exp12_reports.py` `RangeCriterionTest.BLOCK_A` (Block A's
+  measured P/b values, keyed by the sizes measured; `range_criterion` takes
+  the size list as an argument, so nothing depends on the key);
+- the memory comments in `scripts/run_angle1_a100x8.sh` and
+  `run_angle1_a40x4.sh` (D6W1536's measured 4.01 GiB peak);
+- `scripts/sbatch_exp12_blockA.sh` and `scripts/collect_report.sh`
+  contain no critic size.
+
+**Fine-print choices (logged, not asked):**
+- The A3 output file is now `A3_profile_dog_run_D4W1536.json` (was `_D6`),
+  in `exp12_blockA.sh`, `exp12_reports.py` and the sheet together.
+- Block E's manual preflight writes `E_preflight_D<d>W<w>` (was `D<d>`),
+  because D4W1024 and D4W1536 share the depth.
+- Block B timeouts: dev run 7.5 h → 6 h (≈ 26% over the 4.8 h estimate, as
+  the old 7.5 h was over 5.9 h); preflight 30 → 20 min per size; the
+  driver's deadline 9.5 → 7.5 h.
+
+**Parameter counts** (CPU, `jax.eval_shape` of the real `SACCritic` and
+`SACActor`, with the observation and action dimensions read from the built
+environments: dog-run 223/38, myo-key-turn 93/39, h1-run-v0 51/19; per Q
+network, and the total critic is one network because every suite is single
+critic now):
+
+| | dog-run | myo-key-turn | h1-run-v0 |
+|---|---|---|---|
+| actor D1W128 | 170,700 | 154,318 | 143,782 |
+| D2W512 | 4,337,153 (×25) | 4,271,105 (×28) | 4,239,361 (×29) |
+| D4W1024 | 33,854,465 (×198) | 33,722,369 (×219) | 33,658,881 (×234) |
+| D4W1536 | 75,947,521 (×445) | 75,749,377 (×491) | 75,654,145 (×526) |
+| D6W1536 (dropped) | 113,717,761 (×666) | 113,519,617 (×736) | 113,424,385 (×789) |
+
+(×n = critic/actor parameter ratio.)
+
+**Runtime (all D4W1536 figures are unmeasured estimates).** Anchor: Block
+A's measured D6W1536 point (34.6 it/s, 50.0 s per probe check, 6.77% probe
+overhead, 4.01 GiB peak). D4W1536 has D6W1536's layer shapes with 4 blocks
+instead of 6, so device work is scaled by the parameter ratio 0.668: device
+time 17.9 → 12.0 ms per step, plus the measured ~11 ms of host overhead →
+~43.6 it/s; probe check ~33.4 s; overhead ~5.7%; peak ~2.7 GiB. Block B:
+GPU 0 critical path ~5.1 h (dev run to 120% of B after a late fork ~4.8 h),
+GPU 2 ~3.9 h, GPU 3 ~2.0 h; the request drops from 10 h to 8 h (~57% over
+the critical path, as 10 h was ~55% over 6.4 h). 4 GPUs, 64 CPUs, 128G
+unchanged.

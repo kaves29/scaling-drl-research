@@ -190,9 +190,9 @@ class PositiveControlEndToEndTest(unittest.TestCase):
         self.assertIn("never triggered", report["stop"])
 
     def test_refuses_wrong_setting(self):
-        with self.assertRaises(SystemExit) as e:  # D1W8 hopper-hop is not D6W1536 dog-run
+        with self.assertRaises(SystemExit) as e:  # D1W8 hopper-hop is not D4W1536 dog-run
             self._script(self.run_dir, "x", allow_any=False)
-        self.assertIn("D6W1536", str(e.exception))
+        self.assertIn("D4W1536", str(e.exception))
 
     def test_cli_needs_no_definition_flags(self):
         import positive_control

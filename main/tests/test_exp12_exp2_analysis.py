@@ -94,10 +94,10 @@ class SyntheticResultsTest(unittest.TestCase):
         cls.keys = {}
         for env in EFFECT:
             for seed in (1, 2, 3):
-                cls.keys[(env, seed)] = _write_run(cls.root, "D6W1536", env, seed, check2_pass=seed != 3,
+                cls.keys[(env, seed)] = _write_run(cls.root, "D4W1536", env, seed, check2_pass=seed != 3,
                                                    identity_arm=seed == 1)
-        _write_run(cls.root, "D6W1536", "dog-run", 4, complete=False)  # injected arm unfinished
-        _write_run(cls.root, "D6W1536", "dog-run", 101, role="dev")
+        _write_run(cls.root, "D4W1536", "dog-run", 4, complete=False)  # injected arm unfinished
+        _write_run(cls.root, "D4W1536", "dog-run", 101, role="dev")
         cls.out = os.path.join(cls.root, "analysis")
         cls.outputs = ea.run_analysis(cls.out, "mean", cls.root)
 
@@ -132,9 +132,9 @@ class SyntheticResultsTest(unittest.TestCase):
         self.assertEqual(int(forks.complete.sum()), 6)
         self.assertNotIn(101, set(forks.seed))
         for name in ("check1_table.csv", "check2_table.csv", "paired_returns.csv", "paired_bands.csv",
-                     "paired_returns_D6W1536.png", "paired_returns_D6W1536_check2_success_only.png",
-                     "plasticity_post_fork_D6W1536.png", "diagnostics_policy_kl_D6W1536.png",
-                     "shared_time_axis_D6W1536_dog-run.png", "plasticity_post_fork.csv"):
+                     "paired_returns_D4W1536.png", "paired_returns_D4W1536_check2_success_only.png",
+                     "plasticity_post_fork_D4W1536.png", "diagnostics_policy_kl_D4W1536.png",
+                     "shared_time_axis_D4W1536_dog-run.png", "plasticity_post_fork.csv"):
             self.assertTrue(os.path.exists(os.path.join(self.out, name)), name)
         post = pd.read_csv(os.path.join(self.out, "plasticity_post_fork.csv"))
         self.assertEqual(set(post.arm), {"control", "injected"})  # the identity arm is validation only

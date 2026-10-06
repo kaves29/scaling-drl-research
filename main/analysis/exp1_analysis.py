@@ -24,11 +24,11 @@ from experiments.exp12 import ledger
 from utils.paths import require_absolute
 
 DEFAULT = "D2W512"
-SCALED = ("D4W1024", "D6W1536")
+SCALED = ("D4W1024", "D4W1536")
 REPS = 50_000
 SEED = 0
 # Categorical slots 1-3 of the reference palette (dataviz skill), one per architecture.
-ARCH_COLORS = {"D2W512": "#2a78d6", "D4W1024": "#eb6834", "D6W1536": "#1baf7a"}
+ARCH_COLORS = {"D2W512": "#2a78d6", "D4W1024": "#eb6834", "D4W1536": "#1baf7a"}
 
 
 def interval_estimate(scores, func, reps: int, seed: int):

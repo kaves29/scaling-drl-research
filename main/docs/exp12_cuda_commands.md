@@ -10,7 +10,7 @@ schedules a grid run.
 
 - **Block A** (one A100, 4 CPUs, ≤ 30 min): smoke tests, fresh-critic range
   check, short profile, optional GPU trace (A4); run by scripts/exp12_blockA.sh.
-- **Block B** (one A100x4 node, unattended, ~7.6 h): the dev run, positive
+- **Block B** (one A100x4 node, unattended, 8 h limit, ~5.1 h critical path): the dev run, positive
   control and injected arm, preflight, packing test, GPU test suites, range
   check, identity forks and the fresh-pair null, one lane per GPU.
   Blocks C–E describe the same steps for manual reruns. F: the grid, which I
@@ -26,8 +26,8 @@ schedules a grid run.
   `Precision.HIGH`) as "On GPU: uses tensorfloat32 where available,
   otherwise float32". Its `DEFAULT` is documented the same way on GPU, but the
   explicit name keeps the choice independent of JAX's default.
-- **What it covers:** training updates, action selection, probes, post-fork
-  evaluation and diagnostics. All dtypes stay float32: there is no bf16 or
+- **What it covers:** training updates, action selection, probes and post-fork
+  evaluation (the actor diagnostics' forward passes use "highest", amendment (x)). All dtypes stay float32: there is no bf16 or
   fp16, and x64 is off.
 - **Exception:** Check 1 computes its panel Q and dQ/da inside
   `jax.default_matmul_precision("highest")` (full FP32). Verified on CPU: all
@@ -75,7 +75,8 @@ schedules a grid run.
 - **FLOPs per update:** ≈ 6 critic forward-equivalents × 2 × params × batch
   256. This covers the critic forward + backward, the target forward, and the
   actor update through the critic. UTD 2, so 2 updates per interaction step.
-- **Critic parameters (dog-run):** D2W512 4.34M, D4W1024 33.9M, D6W1536 113.7M.
+- **Critic parameters (dog-run, per Q network):** D2W512 4.34M, D4W1024 33.85M, D4W1536 75.95M
+  (D6W1536, dropped by amendment (y): 113.72M).
 - **One probe check:** 2 critics × 5 rounds × (1,000 fit steps × 3
   forward-equivalents + 3 pool passes over 25,600 inputs) ≈ 33,000
   forward-equivalents at batch 256. A single-critic probe (range mode, the
@@ -93,18 +94,33 @@ schedules a grid run.
   Total ≈ 11 ms (dog-run), ≈ 10.5 ms (MyoSuite), ≈ 7 ms (h1-run). The
   earlier assumption of 6 ms was too low.
 - **Device time per training step** (2 updates, TF32): about 1.5 ms for
-  D2W512 (launch-bound), 3.8 ms for D4W1024 and 12.7 ms for D6W1536. It adds
-  to the host overhead.
+  D2W512 (launch-bound), 3.8 ms for D4W1024 and 12.7 ms for D6W1536 (the
+  pre-calibration forecast). It adds to the host overhead.
 - **Compile:** ≈ 1–2 min per process for D6W1536 (update scan plus probe
-  fit); less for smaller critics.
+  fit); less for smaller critics, D4W1536 included.
 - **Calibration to Block A:**
   - D6W1536 ran 28.9 ms per step against the 23.7 ms forecast. With ~11 ms
     of host overhead (assumed equal on Delta), the device took ~17.9 ms
     (≈ 39 TFLOP/s effective, not 55).
   - A probe check took 50 s against ~36 s, a factor of 1.4.
   - The unmeasured sizes are scaled by these two factors.
-- **Uncertainty:** D6W1536's training speed and probe time are measured; the
-  other sizes are ±50% until Block B's packing test and profile.
+- **D4W1536 (amendment (y)), all figures unmeasured estimates.** It has the
+  same layer shapes as D6W1536 (width 1536) with 4 residual blocks instead
+  of 6, so its device work is taken as proportional to the parameter count,
+  75.95M / 113.72M = 0.668 on dog-run:
+  - device time per step 17.9 ms × 0.668 = 12.0 ms; plus 11 ms of host
+    overhead = 23.0 ms, i.e. **~43.6 it/s**;
+  - one probe check 50.0 s × 0.668 = **~33.4 s**;
+  - probe overhead 6.77% × (33.4 / 50.0) × (43.6 / 34.6) = **~5.7%** of
+    a run;
+  - peak GPU memory 4.01 GiB × 0.668 = **~2.7 GiB** (parameters, Adam
+    state, target and probe copies all scale with the parameter count).
+  Fixed costs (launches, fixed host work) do not shrink with the parameter
+  count, so these may be slightly optimistic; Block B measures them.
+- **Uncertainty:** D6W1536's training speed and probe time were measured (it
+  is now dropped and serves only as the anchor); every other size,
+  D4W1536 included, is ±50% until Block B's packing test and per-suite speed
+  step.
 - **Which figures apply:** the TF32 ones (amendment (v), revised). The FP32
   figures are kept only for comparison.
 
@@ -112,7 +128,8 @@ schedules a grid run.
 |---|---|---|---|---|
 | D2W512 | ~76 (estimate; host-bound) | ~3 s (estimate) | < 1 GB (estimate) | ~3 GB + buffer |
 | D4W1024 | ~61 (estimate) | ~16 s (estimate) | ~2 GB (estimate) | ~3 GB + buffer |
-| D6W1536 | **34.6 (measured, A3)** | **50.0 s (measured, A3)** | **4.01 GiB (measured, A3)** | ~3 GB + buffer |
+| D4W1536 | ~43.6 (estimate, unmeasured) | ~33.4 s (estimate, unmeasured) | ~2.7 GiB (estimate, unmeasured) | ~3 GB + buffer |
+| D6W1536 (dropped; anchor) | **34.6 (measured, A3)** | **50.0 s (measured, A3)** | **4.01 GiB (measured, A3)** | ~3 GB + buffer |
 
 FP32 figures from the earlier plan (for comparison only): ~70, ~35 and ~15 it/s;
 probe checks ~6, ~48 and ~160 s.
@@ -122,9 +139,9 @@ of the GPU per process. Buffer host memory = filled transitions × bytes per
 transition: dog-run 1,948 B, i.e. 0.97 GB at 500k transitions; hopper 148 B;
 MyoSuite 832–1,088 B; HumanoidBench 496–544 B.
 
-The probe takes 6.77% of a D6W1536 dog-run's wall-clock (A3, measured). It
+The probe took 6.77% of a D6W1536 dog-run's wall-clock (A3, measured). It
 is above the ~5% rule; the overhead was accepted (decision R2) and the probe
-is unchanged.
+is unchanged. For D4W1536 the estimate is ~5.7% (unmeasured).
 
 **Whole-run forecast, dog-run (1M env steps), TF32, refreshed from Block A:**
 
@@ -132,13 +149,15 @@ is unchanged.
 |---|---|---|---|---|---|---|
 | D2W512 | 1.8 h (est.) | 1 min | 7 min | 1 min | ~2.0 h | — (does not fork) |
 | D4W1024 | 2.3 h (est.) | 6 min | 7 min | 2 min | ~2.5 h | ~0.9 h |
-| D6W1536 | 4.0 h (measured speed) | 18 min (measured) | 7 min | 3 min | ~4.5 h | ~1.4 h |
+| D4W1536 | 3.2 h (est., unmeasured) | 12 min (est., unmeasured) | 7 min | 2 min | ~3.6 h | ~1.2 h |
+| D6W1536 (dropped; anchor) | 4.0 h (measured speed) | 18 min (measured) | 7 min | 3 min | ~4.5 h | ~1.4 h |
 
 Training evaluations: 100 episodes × 500 steps × 8.7 ms (CPU-measured). A
 post-fork arm is 125,000 steps plus 26 × 10 evaluation episodes (~19 min on
 dog-run) plus 5 probe checks. A run that forks late (check 19) continues as
-the control to fork + 25% of B, i.e. 120% of B: the D6W1536 control then
-trains ~4.8 h plus its post-fork evaluations, ~5.8 h in all.
+the control to fork + 25% of B, i.e. 120% of B: the D4W1536 control then
+trains ~3.8 h plus its probes and evaluations, ~4.8 h in all (estimate; the
+dropped D6W1536 was ~5.8 h).
 
 **What changed with the efficiency scan (2026-10-05):** the host overhead was
 measured instead of assumed (11 ms, not 6 ms, on dog-run). D2W512 is
@@ -284,7 +303,7 @@ PY
 - **Also expected:** `check1_highest` at about 1e-7 to 1e-6. If it is not,
   `summary.txt` prints a warning, because Check 1 relies on it.
 
-### A2. Fresh-critic dynamic range, dog-run (timeout 20 min; ~4 min measured; host ~3 GB, GPU ~4 GB for D6W1536)
+### A2. Fresh-critic dynamic range, dog-run (timeout 20 min; ~4 min measured with D6W1536; host ~3 GB, GPU ≤ ~4 GB)
 - **Criterion, amendment (w), from 2026-10-05:** PASS if P/b ≥ 0.9 at the
   configured pool (25,600) at every size. A failed criterion fails the step.
 - **Superseded rule (information only):** 0.1·b ≤ IQM(P) ≤ 0.9·b. It failed
@@ -302,10 +321,12 @@ PY
 - **Probe settings:** unchanged (pool, steps, rounds, offsets).
 ```bash
 python scripts/probe_fresh_checks.py --mode range --env dog-run --env_group dmc_hard \
-  --archs D2W512 D4W1024 D6W1536 --pools 1600 6400 25600 --out_dir "$OUT/A2_range_dog_run"
+  --archs D2W512 D4W1024 D4W1536 --pools 1600 6400 25600 --out_dir "$OUT/A2_range_dog_run"
 ```
+Block A (job 22667743) ran A2 to A4 with D6W1536, before amendment (y); the
+commands now use D4W1536.
 
-### A3. Short profile, D6W1536 on dog-run, TF32 setting only (timeout 15 min; ~4 min; host ~3 GB, GPU ~5 GB)
+### A3. Short profile, D4W1536 on dog-run, TF32 setting only (timeout 15 min; ~4 min; host ~3 GB, GPU ~5 GB)
 - **Measures:** training it/s, the time of one full probe check, the
   projected probe overhead for a whole run, and peak GPU memory, all for the
   critic that decides the 5% rule.
@@ -315,8 +336,8 @@ python scripts/probe_fresh_checks.py --mode range --env dog-run --env_group dmc_
   steps (~0.1 min), 2 probe checks (~1.2 min). The script sets the TF32
   precision itself.
 ```bash
-python scripts/profile_exp12.py --env dog-run --env_group dmc_hard --archs D6W1536 \
-  --train_steps 300 --warmup_steps 100 --probe_repeats 1 --out "$OUT/A3_profile_dog_run_D6.json"
+python scripts/profile_exp12.py --env dog-run --env_group dmc_hard --archs D4W1536 \
+  --train_steps 300 --warmup_steps 100 --probe_repeats 1 --out "$OUT/A3_profile_dog_run_D4W1536.json"
 ```
 Key fields: `train_it_per_s_probes_off`, `probe_check_s`,
 `probe_overhead_pct_of_wallclock`, `peak_device_bytes`. If the overhead
@@ -352,13 +373,13 @@ XLA_FLAGS=--xla_gpu_deterministic_ops=true python -m unittest -v \
   2>&1 | tee $OUT/A1_rerun_deterministic.log
 ```
 
-### A4. GPU trace of one D6W1536 dog-run job (optional, RUN_A4=1, run last; timeout 10 min; ~4 min; host ~3 GB, GPU ~5 GB) — NEEDS CUDA VERIFICATION
+### A4. GPU trace of one D4W1536 dog-run job (optional, RUN_A4=1, run last; timeout 10 min; ~4 min; host ~3 GB, GPU ~5 GB) — NEEDS CUDA VERIFICATION
 - **What it gives:** a jax.profiler trace of 300 training steps after the
   5,000 random steps and 200 trained warm-up steps, under the TF32 setting
   (probes off). It shows the per-step split between the host (env step,
   sampling, transfers) and the GPU (the update scan), and any gap between
   them. Output: `$OUT/A4.log` (the traced it/s) and
-  `$OUT/A4_trace_D6W1536_dog_run/`.
+  `$OUT/A4_trace_D4W1536_dog_run/`.
 - **Open the trace:** `trace.json.gz` at https://ui.perfetto.dev, or the
   `.xplane.pb` with TensorBoard's profile plugin. "Can't import
   tensorflow.python.profiler.trace" is harmless.
@@ -380,13 +401,13 @@ set_matmul_precision()
 from experiments.exp1 import compose_config
 from experiments.exp12.trainer import Exp12Trainer
 cfg = compose_config(os.path.abspath("configs"), "base_exp12", [
-    "env_name=dog-run", "env=dmc_hard", "critic_num_blocks=6", "critic_hidden_dim=1536", "seed=990", "run_role=dev"])
+    "env_name=dog-run", "env=dmc_hard", "critic_num_blocks=4", "critic_hidden_dim=1536", "seed=990", "run_role=dev"])
 np.random.seed(cfg.seed); random.seed(cfg.seed)
 t = Exp12Trainer(cfg, tempfile.mkdtemp(prefix="trace_"))
 t.start()
 warm = int(cfg.buffer.min_length) + 200
 t.train(warm); jax.block_until_ready(t._sac_agent.critic.params)
-with jax.profiler.trace(os.environ["OUT"] + "/A4_trace_D6W1536_dog_run"):
+with jax.profiler.trace(os.environ["OUT"] + "/A4_trace_D4W1536_dog_run"):
     t0 = time.perf_counter()
     t.train(warm + 300); jax.block_until_ready(t._sac_agent.critic.params)
     dt = time.perf_counter() - t0
@@ -418,10 +439,10 @@ one lane stops another):
 
 | Lane | Steps, in order (timeout) |
 |---|---|
-| GPU 0 | dev run: D6W1536 dog-run, seed 102, run_role=dev (7.5 h) → positive control (30 min) → preflight D2W512, D4W1024, D6W1536 (30 min each) |
+| GPU 0 | dev run: D4W1536 dog-run, seed 102, run_role=dev (6 h) → positive control (30 min; m candidates last / half / all = 1 / 2 / 4 blocks) → preflight D2W512, D4W1024, D4W1536 (20 min each) |
 | GPU 1 | watcher: once `dev_run/fork/FORK_READY` exists, it runs the dev run's injected arm with `ARM_M=half` (the default; 3 h). The positive control chooses m separately and you freeze it. `ARM_M=pc` instead waits for the positive control's m |
-| GPU 2 | packing test (15 min per configuration) → A1 follow-up measurements, default and deterministic ops (20 min each) → GPU test suite, default ops (2 h) → break checks (30 min) → GPU test suite, deterministic ops (2 h) → HumanoidBench tests under `HB_ENV` (30 min) → hopper-hop range check (30 min) → identity forks, reduced budget, D4W1024 and D6W1536 per suite, first with a cold compilation cache per process and then with one shared warm cache (1 h per cell) |
-| GPU 3 | fresh-pair null, 100 pairs per size, dog-run (4 h) → per-suite training speed: myo-key-turn and h1-run-v0 × D2W512, D4W1024, D6W1536, one job each, 4 cores, probes off, 600 timed steps (15 min each). Dog-run comes from the packing test's 1-job runs |
+| GPU 2 | packing test (15 min per configuration) → A1 follow-up measurements, default and deterministic ops (20 min each) → GPU test suite, default ops (2 h) → break checks (30 min) → GPU test suite, deterministic ops (2 h) → HumanoidBench tests under `HB_ENV` (30 min) → hopper-hop range check (30 min) → identity forks, reduced budget, D4W1024 and D4W1536 per suite that works on this install, first with a cold compilation cache per process and then with one shared warm cache (1 h per cell) |
+| GPU 3 | fresh-pair null, 100 pairs per size, dog-run (4 h) → per-suite training speed: myo-key-turn and h1-run-v0 × D2W512, D4W1024, D4W1536, one job each, 4 cores, probes off, 600 timed steps (15 min each). Dog-run comes from the packing test's 1-job runs |
 
 **Rules**
 - Every step has its own log (`logs/blockB_<id>/<lane>/<step>.log`) and a
@@ -439,7 +460,7 @@ one lane stops another):
   steps run with that environment's Python and `MUJOCO_GL=egl`. Without
   `HB_ENV`, they are recorded `SKIPPED_UNAVAILABLE`, which does not fail
   OVERALL. MyoSuite uses an import test in the main environment.
-- The driver keeps its own deadline (9.5 h of the 10 h limit) so that the
+- The driver keeps its own deadline (7.5 h of the 8 h limit) so that the
   report is always written. On SIGTERM it writes the report too.
 
 **Persistent compilation cache (item 8a).** Every Exp 1/2 job enables JAX's
@@ -464,7 +485,7 @@ start-up (item 8c). This tests whether identical executables matter; it does
 not assume they do.
 
 **Packing test** (approved design):
-- **Configurations:** D6W1536 at 1, 2 and 3 concurrent jobs; D4W1024 at
+- **Configurations:** D4W1536 at 1, 2 and 3 concurrent jobs; D4W1024 at
   1, 2 and 4; D2W512 at 1, 3 and 4. All run on GPU 2's A100.
 - **Each job:** dog-run with probes off; 5,000 random steps and 100 trained
   warm-up steps, then a start barrier, then 600 timed steps.
@@ -528,26 +549,32 @@ Then come the numbers:
 - the null per size;
 - the identity cells (cold and warm) and the node.
 
-**Time limit and resources** (from Block A's measured D6W1536 point: 34.6
-it/s, 50 s per probe check):
+**Time limit and resources.** Anchored on Block A's measured D6W1536 point
+(34.6 it/s, 50.0 s per probe check); every D4W1536 figure is an unmeasured
+estimate (~43.6 it/s, ~33.4 s per check; derivation under "How the remaining
+estimates are made"):
 
 | Item | Estimate |
 |---|---|
-| Dev run, fork late (check 19), control to 120% of B | 600,000 steps / 34.6 = 4.8 h, + 25 probe checks × 50 s = 0.35 h, + training evaluations (200 episodes) 0.25 h, + 26 post-fork evaluations 0.33 h, + saves and compile 0.15 h ≈ **5.9 h** (≈ 4.5 h if it never forks) |
-| Positive control | ≈ 0.2 h |
-| Preflight, 3 sizes | ≈ 0.25 h |
-| GPU 0 in all (critical path) | ≈ **6.4 h** |
-| Injected arm (`ARM_M=half`, starts at the fork, ≤ 4.2 h) | 125,000 / 34.6 = 1.0 h, + 26 evaluations 0.33 h, + 5 probe checks and restore 0.15 h ≈ 1.5 h, so it ends by **~5.7 h** |
-| GPU 2 | packing ~0.7 h, follow-up 0.1 h, tests 2 × ~0.75 h, HumanoidBench tests 0.1 h, break checks 0.1 h, range 0.1 h, identity 2 × ~0.75 h ≈ **4.1 h** |
-| GPU 3 | null 100 pairs × (3 + 16 + 50 s) + fills ≈ 2 h, + per-suite speed 6 × ~4 min ≈ **2.4 h** |
+| Dev run, fork late (check 19), control to 120% of B (the later of 100% of B and fork + 25%) | 600,000 steps / 43.6 = 3.8 h, + 25 probe checks × 33.4 s = 0.23 h, + training evaluations (200 episodes) 0.25 h, + 26 post-fork evaluations 0.33 h, + saves and compile 0.12 h ≈ **4.8 h** (≈ 3.7 h if it never forks) |
+| Positive control | ≈ 0.15 h |
+| Preflight, 3 sizes | ≈ 0.2 h |
+| GPU 0 in all (critical path) | ≈ **5.1 h** |
+| Injected arm (`ARM_M=half`, starts at the fork, ≤ ~3.4 h) | 125,000 / 43.6 = 0.8 h, + 26 evaluations 0.33 h, + 5 probe checks and restore 0.1 h ≈ 1.2 h, so it ends by **~4.6 h** |
+| GPU 2 | packing ~0.7 h, follow-up 0.1 h, tests 2 × ~0.75 h, HumanoidBench tests 0.1 h, break checks 0.1 h, range 0.1 h, identity 2 × ~0.65 h ≈ **3.9 h** |
+| GPU 3 | null 100 pairs × (3 + 16 + 33 s) + fills ≈ 1.6 h, + per-suite speed 6 × ~4 min ≈ **2.0 h** |
 
-The request is `--time=10:00:00`, which leaves ~55% over the 6.4 h critical
-path for what Block A did not measure (Delta's host speed, GPU evaluations,
-compile times). The rest of the request:
+The request is `--time=08:00:00` (was 10 h for D6W1536's 6.4 h critical
+path, ~55% over it). 8 h leaves ~57% over the 5.1 h critical path for what
+is not measured: D4W1536 itself, Delta's host speed, GPU evaluations and
+compile times. Step timeouts: dev run 6 h (~26% over its estimate, as
+before), positive control 30 min, preflight 20 min per size; the driver's own
+deadline is 7.5 h, so the report is always written. The rest of the request
+is unchanged:
 - `--gpus=4` and `--cpus-per-task=64` (16 per lane, 4 per packing job);
-- `--mem=128G` (estimated peak ~33 GB);
-- disk ~70 GB under `logs/blockB_<id>`: dev run ~7, arm ~3, identity forks
-  2 × ~22, preflight ~10, and the compilation caches of the identity cells.
+- `--mem=128G` (estimated peak ~30 GB);
+- disk ~60 GB under `logs/blockB_<id>`: dev run ~5, arm ~2, identity forks
+  2 × ~18, preflight ~8, and the compilation caches of the identity cells.
 
 **Check the node before submitting** (no job is started):
 ```bash
@@ -565,7 +592,7 @@ memory, not checked.
 
 **Setup of the test**
 - Run this on the GPU model the grid will use (amendment (p)). Only D4W1024
-  and D6W1536 fork. One environment per suite: dog-run, myo-key-turn and
+  and D4W1536 fork. One environment per suite: dog-run, myo-key-turn and
   h1-run-v0.
 - Each parent is a dev run (seed 101, its own results root). Its f*_run is
   forced at check 2 by the test-only hook: checks 1 and 2 fire, because 2
@@ -618,21 +645,21 @@ size-independent code path (np.savez of the filled part). Full-size save and
 restore is timed on the dev run in Block B (its fork state save and restore, in report.txt).
 
 **Runtime estimates (TF32), for the six cells run sequentially:**
-- **Full budget:** ~2 h (was ~6 h FP32). The D6W1536 parents dominate:
+- **Full budget:** ~1.5 h (estimate; ~2 h with the dropped D6W1536). The D4W1536 parents dominate:
   ~45,000 training steps (dog-run, myo-key-turn) or ~95,000 (h1-run-v0), plus
   the fresh probe and checks 1–2.
-- **Reduced:** ~35 min (was ~1.4 h FP32). Per D6W1536 cell: 5,000 random
-  steps, 7,000 training steps (~2.5 min), the fresh probe and 2 checks
-  (~1.5 min), and 2 × 1,000 post-fork steps with the restore, Check 1 (FP32)
-  and evaluation 0 (~2 min), plus compile ≈ 8 min. Per D4W1024 cell ≈ 4 min.
+- **Reduced:** ~30 min (estimate). Per D4W1536 cell: 5,000 random
+  steps, 7,000 training steps (~2.7 min), the fresh probe and 2 checks
+  (~1 min), and 2 × 1,000 post-fork steps with the restore, Check 1 (FP32)
+  and evaluation 0 (~2 min), plus compile ≈ 6–7 min. Per D4W1024 cell ≈ 4 min.
 
-**Memory:** host ~4 GB, GPU ~5 GB (D6W1536). Disk ~4 GB per D6W1536 cell
-(the fork state and two snapshots, each holding a 1.8 GB agent), ~22 GB for
+**Memory:** host ~4 GB, GPU ~3.5 GB (D4W1536, estimate). Disk ~3 GB per D4W1536 cell
+(the fork state and two snapshots, each holding a ~1.2 GB agent), ~18 GB for
 all six.
 ```bash
 BUDGET=()                                          # full budget
 # BUDGET=(--overrides num_env_steps=240000)        # reduced, equivalent option (see above)
-for ARCH in "4 1024" "6 1536"; do set -- $ARCH; D=$1; W=$2
+for ARCH in "4 1024" "4 1536"; do set -- $ARCH; D=$1; W=$2
 for SUITE in "dog-run dmc_hard" "myo-key-turn myosuite_simba" "h1-run-v0 humanoid_bench"; do
   set -- $SUITE; ENV=$1; GROUP=$2; NAME=D${D}W${W}_${ENV}; BASE=$OUT/C_identity/$NAME
   COMMON=(--config_name base_exp12 --overrides env_name=$ENV --overrides env=$GROUP --overrides seed=101
@@ -651,7 +678,7 @@ done; done
 
 **Now run by Block B's GPU 0 lane** (dev run, then the positive control), with the dev run's injected arm on GPU 1. The commands below are for a manual rerun.
 
-**The run.** A development run: D6W1536 on dog-run, seed 102 (outside 1–5),
+**The run.** A development run: D4W1536 on dog-run, seed 102 (outside 1–5),
 run_role=dev, with the unchanged trigger (2 consecutive firing checks). It
 forks at its own f*_run.
 
@@ -667,20 +694,21 @@ Exit 3 means STOP and consult: the run never triggered, L_trigger ≤ 0, or the
 probe noise (pooled SD of per-round L / L_trigger) is ≥ 0.10.
 
 **Estimates**
-- **Dev run:** ~3.7 h TF32 (was ~10.5 h FP32). 500,000 interaction steps at
-  ~15 / ~42 it/s, plus 21 probes (~56 / ~13 min) and the training
-  evaluations (~7 min).
+- **Dev run:** ~3.6 h TF32 (estimate). 500,000 interaction steps at
+  ~43.6 it/s (estimate), plus 21 probes (~12 min) and the training
+  evaluations (~7 min). m candidates for depth 4: last = 1, half = 2,
+  all = 4 blocks.
   - As launched, the run continues after its fork as the control, to the full
     budget. Only `FORK_READY` is needed for the script.
-  - Memory: host ~4 GB (buffer up to 0.97 GB), GPU ~5 GB, disk ~6.2 GB.
+  - Memory: host ~4 GB (buffer up to 0.97 GB), GPU ~3.5 GB, disk ~4.2 GB (estimates).
 - **Script:** ~4 min TF32 (was ~15 min FP32). One probe with 5 critics (≈ 2.5
   checks) plus 3 shared-offset probes with 2 critics.
-  - Memory: host ~4 GB, GPU ~10 GB (three injected critics of up to 3× the
+  - Memory: host ~4 GB, GPU ~7 GB (estimate; three injected critics of up to 3× the
     critic's parameters are held together).
 ```bash
 PC=$OUT/D_positive_control
 python run.py --experiment exp1 --config_name base_exp12 --overrides env_name=dog-run --overrides env=dmc_hard \
-  --overrides seed=102 --overrides critic_num_blocks=6 --overrides critic_hidden_dim=1536 \
+  --overrides seed=102 --overrides critic_num_blocks=4 --overrides critic_hidden_dim=1536 \
   --overrides run_role=dev --overrides results_root=$PC/results --checkpoint_dir $PC/dev_run 2>&1 | tee $PC.dev_run.log
 python scripts/positive_control.py --run_dir $PC/dev_run --out_dir $PC/result 2>&1 | tee $PC.result.log
 ```
@@ -695,16 +723,16 @@ One smoke run per critic size on the node type the grid will use (tiny probe
 settings, 4,000 env steps). The forking sizes also fork, run the injected arm
 and require Check 1 to pass on that device.
 
-**Estimates (TF32; was 2/4/8 min under FP32):** D2W512 ~2 min, D4W1024 ~3 min, D6W1536 ~4 min (2,000
+**Estimates (TF32):** D2W512 ~2 min, D4W1024 ~3 min, D4W1536 ~3.5 min (2,000
 training steps, the injected arm's 500 steps, 2 × 26 one-episode
 evaluations). Host ~3 GB; GPU ≤ ~5 GB.
 ```bash
-for ARCH in "2 512" "4 1024" "6 1536"; do set -- $ARCH
+for ARCH in "2 512" "4 1024" "4 1536"; do set -- $ARCH
   FORK=$([ "$1" = 2 ] && echo "" || echo "--with-fork")
   python scripts/preflight_checkpoint_check.py --experiment exp1 $FORK \
     --override critic_num_blocks=$1 --override critic_hidden_dim=$2 \
     --override env_name=dog-run --override env=dmc_hard --override seed=999 \
-    --checkpoint_dir $OUT/E_preflight_D$1 2>&1 | tee $OUT/E_preflight_D$1.log
+    --checkpoint_dir $OUT/E_preflight_D$1W$2 2>&1 | tee $OUT/E_preflight_D$1W$2.log
 done
 ```
 
@@ -722,14 +750,14 @@ python scripts/claim_launcher.py --concurrency <n> --num-gpus <n> --phase-files 
   do not export `JAX_DEFAULT_MATMUL_PRECISION` or `NVIDIA_TF32_OVERRIDE`.
 - GPU memory, for jobs that share a GPU: `XLA_PYTHON_CLIENT_PREALLOCATE=false`
   and no `XLA_PYTHON_CLIENT_MEM_FRACTION`. The old Angle 1 launch scripts
-  carried `.10`, which is about 4.0 GiB of a 40 GB A100, while D6W1536 peaks
-  at 4.01 GiB (A3). They now unset it (2026-10-05). Set the jobs per GPU
+  carried `.10`, which is about 4.0 GiB of a 40 GB A100, while D6W1536 peaked
+  at 4.01 GiB (A3; D4W1536 ~2.7 GiB, estimate). They now unset it (2026-10-05). Set the jobs per GPU
   from the packing test's measured per-job and total memory.
 - Every job uses the persistent compilation cache under
   `main/jax_cache/<GPU model>` (shared by all jobs on that model).
 - Re-running generate_manifest.py is safe. Runs with DONE are skipped, and
   unfinished ones resume: from state/LATEST, from the saved fork state, or
   from scratch before their first save.
-- Scaled runs (D4W1024, D6W1536) that fork continue as the control on their
+- Scaled runs (D4W1024, D4W1536) that fork continue as the control on their
   device model. A control resumed on another model refuses to run, so keep
-  every D4/D6 Exp 1 job on the grid's GPU model (amendment (u)).
+  every D4W1024 and D4W1536 Exp 1 job on the grid's GPU model (amendment (u)).

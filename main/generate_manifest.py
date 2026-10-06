@@ -207,7 +207,7 @@ def backfill_done(status):
 # The control arm is the Exp 1 job itself. Every path is absolute; logs go next to the
 # checkpoints. Budgets come from the env groups (500k swimmer/hopper, 2M HumanoidBench,
 # 1M otherwise; checked by tests/test_exp12_manifest.py).
-EXP12_ARCHS = [("D2W512", 2, 512), ("D4W1024", 4, 1024), ("D6W1536", 6, 1536)]
+EXP12_ARCHS = [("D2W512", 2, 512), ("D4W1024", 4, 1024), ("D4W1536", 4, 1536)]
 EXP12_ENVS = [
     ("dog-run", "dmc_hard"), ("dog-trot", "dmc_hard"), ("humanoid-run", "dmc_hard"),
     ("humanoid-walk", "dmc_hard"), ("humanoid-stand", "dmc_hard"),
@@ -218,7 +218,7 @@ EXP12_ENVS = [
 ]
 EXP12_BUDGETS = {"dmc_hard": 1_000_000, "dmc_medium": 500_000, "myosuite_simba": 1_000_000,
                  "humanoid_bench": 2_000_000}
-EXP12_FORKING = ("D4W1024", "D6W1536")
+EXP12_FORKING = ("D4W1024", "D4W1536")
 EXP12_SEEDS = [1, 2, 3, 4, 5]
 EXP12_CHECKS = 20
 EXP12_ACTION_REPEAT = 2

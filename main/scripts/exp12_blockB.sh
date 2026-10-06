@@ -1,6 +1,6 @@
 #!/bin/bash
 # Exp 1/2 Block B (docs/exp12_cuda_commands.md) on one 4-GPU node, unattended, one lane per GPU:
-#   GPU 0  dev run (D6W1536 dog-run, seed 102) -> positive control -> preflight (D2/D4/D6)
+#   GPU 0  dev run (D4W1536 dog-run, seed 102) -> positive control -> preflight (D2W512, D4W1024, D4W1536)
 #   GPU 1  watcher: the dev run's injected arm (m = ARM_M, default half), once its fork state exists
 #   GPU 2  packing test -> A1 follow-up measurements -> GPU test suite (default, deterministic ops)
 #          + break checks + HumanoidBench tests -> hopper-hop range check -> identity forks (reduced
@@ -38,27 +38,27 @@ unset JAX_DEFAULT_MATMUL_PRECISION NVIDIA_TF32_OVERRIDE  # the code sets TF32 it
 # ---- settings (the CPU plumbing test shrinks them through BLOCKB_TEST_HOOKS; never needed on the GPU) ----
 export ARM_M="${ARM_M:-half}"
 export HB_ENV="${HB_ENV:-}"
-export DEV_OVERRIDES="env_name=dog-run env=dmc_hard seed=102 critic_num_blocks=6 critic_hidden_dim=1536 run_role=dev"
+export DEV_OVERRIDES="env_name=dog-run env=dmc_hard seed=102 critic_num_blocks=4 critic_hidden_dim=1536 run_role=dev"
 export DEV_CKPT_INTERVAL=25000          # one save per probe check (dog-run: 500,000 interaction steps / 20)
 export EXTRA_OVERRIDES=""               # appended to every run.py job
 export PROBE_EXTRA=""                   # appended (as --override) to probe_fresh_checks.py
 export PC_EXTRA=""                      # appended to positive_control.py
-export PACK_CONFIGS="D6W1536:1,2,3 D4W1024:1,2,4 D2W512:1,3,4" PACK_STEPS=600 PACK_WARMUP=100 PACK_CORES=4
+export PACK_CONFIGS="D4W1536:1,2,3 D4W1024:1,2,4 D2W512:1,3,4" PACK_STEPS=600 PACK_WARMUP=100 PACK_CORES=4
 export PACK_EXTRA=""                    # appended to the packing jobs' config overrides
 export TEST_PATTERN="test_exp12_*.py" RUN_BREAK_CHECKS=1
-export RANGE_ARCHS="D2W512 D4W1024 D6W1536" RANGE_POOLS="1600 6400 25600"
-export NULL_ARCHS="D2W512 D4W1024 D6W1536" NULL_PAIRS=100
-export IDENTITY_ARCHS="4:1024 6:1536" IDENTITY_SUITES="dog-run:dmc_hard myo-key-turn:myosuite_simba h1-run-v0:humanoid_bench"
+export RANGE_ARCHS="D2W512 D4W1024 D4W1536" RANGE_POOLS="1600 6400 25600"
+export NULL_ARCHS="D2W512 D4W1024 D4W1536" NULL_PAIRS=100
+export IDENTITY_ARCHS="4:1024 4:1536" IDENTITY_SUITES="dog-run:dmc_hard myo-key-turn:myosuite_simba h1-run-v0:humanoid_bench"
 export IDENTITY_BUDGET=240000           # reduced, equivalent budget (Block C)
 export IDENTITY_CACHE_MODES="cold warm" # item 8b: separate cold caches per process, then one shared warm cache
-export SPEED_SUITES="myo-key-turn:myosuite_simba h1-run-v0:humanoid_bench" SPEED_ARCHS="D2W512 D4W1024 D6W1536"
+export SPEED_SUITES="myo-key-turn:myosuite_simba h1-run-v0:humanoid_bench" SPEED_ARCHS="D2W512 D4W1024 D4W1536"
 export HB_TESTS="tests.test_exp12_pipeline.PipelinePerSuiteTest.test_humanoid_bench tests.test_exp12_fork.HumanoidBenchReachEvalSeedingTest"
-export PREFLIGHT_ARCHS="2:512 4:1024 6:1536" PREFLIGHT_EXTRA=""
+export PREFLIGHT_ARCHS="2:512 4:1024 4:1536" PREFLIGHT_EXTRA=""
 export LANES="0 1 2 3"
 export WATCH_POLL=60
-export BLOCKB_WALL="${BLOCKB_WALL:-34200}"   # 9.5 h: internal deadline inside the 10 h Slurm limit
+export BLOCKB_WALL="${BLOCKB_WALL:-27000}"   # 7.5 h: internal deadline inside the 8 h Slurm limit
 declare -A TIMEOUT=(
-  [dev_run]=27000 [positive_control]=1800 [preflight]=1800 [arm]=10800
+  [dev_run]=21600 [positive_control]=1800 [preflight]=1200 [arm]=10800
   [pack]=900 [a1_followup]=1200 [tests]=7200 [break_checks]=1800 [range_hopper]=1800
   [identity]=3600 [null]=14400 [speed]=900 [tests_hb]=1800
 )
@@ -117,7 +117,7 @@ from experiments.exp12.trainer import Exp12Trainer
 
 arch, n, i, steps, warmup, d = sys.argv[1], int(sys.argv[2]), int(sys.argv[3]), int(sys.argv[4]), int(sys.argv[5]), Path(sys.argv[6])
 env, group = sys.argv[7], sys.argv[8]
-blocks, width = {"D2W512": (2, 512), "D4W1024": (4, 1024), "D6W1536": (6, 1536)}[arch]
+blocks, width = {"D2W512": (2, 512), "D4W1024": (4, 1024), "D4W1536": (4, 1536)}[arch]
 cfg = compose_config(os.path.abspath("configs"), "base_exp12", [
     f"env_name={env}", f"env={group}", f"critic_num_blocks={blocks}", f"critic_hidden_dim={width}",
     f"seed={990 + i}", "run_role=dev", "num_eval_episodes=1", *sys.argv[9:]])

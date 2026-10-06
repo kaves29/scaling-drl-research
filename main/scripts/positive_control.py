@@ -2,7 +2,7 @@
 """Positive control and m-selection (Methodology "Positive control", amendments (c)-(e), (q)).
 
 Reads a finished-or-forked DEVELOPMENT Exp 1 run (run_role=dev, seed outside 1-5,
-D6W1536 on dog-run) and never trains. At the run's own fork state (its f*_run,
+D4W1536 on dog-run) and never trains. At the run's own fork state (its f*_run,
 taken with the unchanged Exp 1 trigger) it probes, on one shared pool, target and
 minibatch order (the trigger check's own probe streams):
     fresh       the run's stored untrained critic (steps 1-2: the healthy reference, L = 0)
@@ -190,7 +190,7 @@ def main(argv=None) -> int:
     parser.add_argument("--run_dir", required=True)
     parser.add_argument("--out_dir", required=True)
     parser.add_argument("--allow_any_setting", action="store_true",
-                        help="TEST-ONLY: skip the D6W1536 / dog-run requirement (recorded in the output)")
+                        help="TEST-ONLY: skip the D4W1536 / dog-run requirement (recorded in the output)")
     args = parser.parse_args(argv)
     _stub_wandb()
     return run(args)

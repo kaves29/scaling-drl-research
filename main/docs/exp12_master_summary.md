@@ -1,7 +1,9 @@
 # Experiments 1 and 2: master summary (Phase 8)
 
 Branch `claude/eloquent-fermat-inxqlt` (not merged; nothing pushed to main).
-Source of truth: `.claude/methodology-exp1-exp2.md`, with Amendments (a)–(x).
+Source of truth: `.claude/methodology-exp1-exp2.md`, with Amendments (a)–(y).
+Critic grid (amendment (y), 2026-10-06): D2W512, D4W1024, D4W1536 per Q network; actor D1W128.
+D6W1536 is dropped; where it appears below it is a measured Block A record or the estimates' anchor.
 Decision log: `docs/exp12_decisions.md`. CUDA command sheet:
 `docs/exp12_cuda_commands.md`.
 
@@ -25,7 +27,7 @@ dev run or pilot has been launched or scheduled by me.
 | `experiments/exp12/run_probes.py` | `RunProbes.capture_fresh/maybe_check/record_check/extend_to` | fresh critic probed and stored before training; 20 checks at k/20 of B; probes continue after the fork on the same grid (F2) |
 | `experiments/exp12/trigger.py` | `bootstrap_interval`, `triggered`, `f_star`, `last_eligible_check` | R-TRIGGER: percentile bootstrap (10,000, IQM, 95%), fire when the lower bound > 0, f*_run = check completing the first run of 2 consecutive firing checks among 1..19 (l) |
 | `experiments/exp12/ledger.py` | `write_run`, `load`, `load_metrics` | R-LEDGER: run.csv, checks.csv, probe_curves.npz, metrics.csv; dev runs excluded by default |
-| `experiments/exp1.py` | `run` (registered `exp1`) | R-RUN; fork at f*_run for D4W1024/D6W1536; the process restarts from the fork state as the CONTROL to max(B, fork+0.25B) (D2) |
+| `experiments/exp1.py` | `run` (registered `exp1`) | R-RUN; fork at f*_run for D4W1024/D4W1536; the process restarts from the fork state as the CONTROL to max(B, fork+0.25B) (D2) |
 | `experiments/exp12/fork.py` | `fork_plan`, `write_fork`, `sample_panel`, `panel_q_and_grad`, `check1`, `post_fork_eval`, `matmul_precision_report`, `check_same_device` | R-FORK, R-CHECKS Check 1 (m), post-fork evaluations every 1% of B × 10 episodes (F1), device pinning (p) |
 | `experiments/exp12/injection.py` | `InjectedSACCritic`, `inject`, `injected_optimizer`, `split_params`, `head_blocks` | R-INJECT (Nikishin 2023): head = last m blocks + post-LN + output; Q = old + (new − copy); trunk keeps AdamW state, new head fresh AdamW, frozen params zero updates and no decay; target injected; m ∈ {last, half, all} |
 | `experiments/exp2_arm.py` | `run` (registered `exp2_arm`), `check2` | separate resumable injected arm to fork + 0.25B; Check 1 enforced, Check 2 reported (n); identity arm for validation |
@@ -74,7 +76,7 @@ amendments:
 - (b) The fork design.
 - (c) The per-critic probe offset, plus a one-time shared-offset check.
 - (d) The m rule: the smallest m within 0.10 of the best recovery.
-- (e) The positive control on D6W1536 dog-run with a dev seed.
+- (e) The positive control on D4W1536 dog-run with a dev seed (was D6W1536; (y)).
 - (f) Superseded by (q).
 - (g) No normalisation; graphs only.
 - (h) SimBa random warm-up until 5,000 transitions.
@@ -106,6 +108,9 @@ amendments:
   positive control and the dev run, and the null measures noise.
 - (x) The churn and KL diagnostics' actor forward passes run under
   "highest"; training stays TF32.
+- (y) Critic grid D2W512, D4W1024, D4W1536 (D4W1536 replaces D6W1536: the
+  largest critic was too large relative to the actor, and the change cuts
+  compute). m candidates for depth 4: 1 / 2 / 4 blocks. Nothing else changes.
 
 Routine engineering choices are listed under "Choices (routine, shown for veto)" in each phase section of the log. The main ones:
 
@@ -197,19 +202,20 @@ numbers in section 5.
 |---|---|---|
 | **A100 (Block A, job 22667743)**: stack | A100-SXM4-40GB; jax/jaxlib 0.4.34; CUDA 12.3 (PJRT) | summary.txt |
 | A0: float32 matmul error | 3.05e-4 at the run setting (TF32 active); 2.16e-7 under "highest" | A0 |
+| Parameters per Q network (amendment (y)), from the real obs/action dims | dog-run (223/38): actor 170,700; D2W512 4,337,153; D4W1024 33,854,465; D4W1536 75,947,521 (critic/actor 25 / 198 / 445). myo-key-turn (93/39): actor 154,318; 4,271,105 / 33,722,369 / 75,749,377 (28 / 219 / 491). h1-run-v0 (51/19): actor 143,782; 4,239,361 / 33,658,881 / 75,654,145 (29 / 234 / 526). One Q network per critic (single critic); the dropped D6W1536 was 113.7M (ratio 666–789) | CPU, flax init |
 | A3: D6W1536 dog-run, TF32 | 34.6 it/s (probes off); one probe check 50.0 s; probe overhead 6.77% of a run (accepted, R2); peak GPU memory 4.01 GiB | A3 |
 | A4: traced | 31.8 it/s under the profiler | A4 |
 | A2: fresh critic, P/b at pool 25,600 | 0.990 (D2W512), 0.997 (D4W1024), 0.993 (D6W1536). The old 10–90% rule fails at every size, and (w) passes. Final-loss SD across rounds 0.0078 / 0.0023 / 0.0016 | A2 |
 | A1 | 34 tests, 8 failures: 5 subtests of the injection test, from TF32 (fixed in the test); 3 diagnostics tests, from GPU program-dependent rounding (now the GPU tolerance pattern, measured in Block B) | decisions log 2026-10-05 |
 | Training it/s with probes off vs the current code (angle_1) | CPU: exp1/angle_1 wall-time ratio 0.96 (D2W512, humanoid-run); the real ratio **NEEDS CUDA VERIFICATION** (CUDA B4, `ratio_exp1_over_angle1`) | |
-| Probe overhead per critic size | CPU: D2W512 one check 413 s, projected 7.1% of a 500k-step run's wall-clock; all sizes **NEEDS CUDA VERIFICATION** (A3, B4). Forecast under TF32 for D6W1536 dog-run ≈ 6% (CUDA sheet, an estimate). Rule: if D6W1536 exceeds ~5%, I report and ask; the probe is never reduced | |
+| Probe overhead per critic size | CPU: D2W512 one check 413 s, projected 7.1% of a 500k-step run's wall-clock; all sizes **NEEDS CUDA VERIFICATION** (A3, B4). Measured for D6W1536 dog-run 6.77% (A3, accepted, R2); D4W1536 ≈ 5.7% (estimate, unmeasured). Rule: above ~5%, I report and ask; the probe is never reduced | |
 | Actor diagnostics overhead | CPU: within noise (−1.2%, D2W512, 60 steps); **NEEDS CUDA VERIFICATION** (`diagnostics_overhead_pct`) | |
 | Fork save / restore | CPU, local disk: D6W1536 dog-run complete state at a 95%-of-B fork = 2.62 GB, save 17.4 s, restore 18.4 s. D2W512 hopper-hop: 99 MB, 1.0 s / 0.8 s. Cluster disk **NEEDS CUDA VERIFICATION** | |
 | Post-fork evaluation cost (F1, 26 × 10 episodes per arm) | CPU: dog-run 41 s per evaluation (0.30 h per arm); hopper-hop 7.3 s; MyoSuite 1.7–2.8 s and h1-run 3.4 s (lower bounds: untrained policies end episodes early; full-length h1-run ≈ 49 s). As a share of arm training time: **NEEDS CUDA VERIFICATION** | |
 | Peak GPU memory per size, recommended concurrency | **NEEDS CUDA VERIFICATION** (`peak_device_bytes`, `recommended_jobs_per_gpu_upper_bound`) | |
-| Retained disk per run (worst case dog-run, fork at 95% of B) | D2W512 1.06 GB; D4W1024 5.03 GB (3.32 run + 1.71 arm); D6W1536 9.18 GB (6.19 + 2.99); whole-grid upper bound ≈ 734 GB. Estimate from parameter counts and measured bytes per transition, checked against the measured 2.62 GB fork state (estimate 2.75 GB) | |
+| Retained disk per run (worst case dog-run, fork at 95% of B) | D2W512 1.06 GB; D4W1024 5.03 GB (3.32 run + 1.71 arm); D4W1536 ≈ 7.2 GB (4.8 + 2.4, interpolated in parameter count between D4W1024 and the dropped D6W1536's 9.18 GB); whole-grid upper bound ≈ 631 GB (was ≈ 734 GB with D6W1536). Estimate from parameter counts and measured bytes per transition, checked against the measured 2.62 GB fork state (estimate 2.75 GB) | |
 | Synthetic-null false-trigger rate per check (5 rounds, one check) | 4.93% (nominal one-sided 2.5%); the fresh-pair null with real probes **NEEDS CUDA VERIFICATION** (B3) | |
-| Host overhead per training step (efficiency scan, 2026-10-05) | CPU-measured, waited on by the GPU: dog-run ≈ 11 ms (env 8.1), MyoSuite ≈ 10.5, h1-run ≈ 7. TF32 forecast for dog-run: D2W512 ~80, D4W1024 ~68, D6W1536 ~42 it/s; ~1.9 / 2.3 / 3.7 h per run. **Estimates**; no code change came out of the scan (docs/exp12_decisions.md) | |
+| Host overhead per training step (efficiency scan, 2026-10-05) | CPU-measured, waited on by the GPU: dog-run ≈ 11 ms (env 8.1), MyoSuite ≈ 10.5, h1-run ≈ 7. TF32 forecast for dog-run: D2W512 ~80, D4W1024 ~68, D4W1536 ~44 it/s (D6W1536 measured 34.6); ~1.9 / 2.3 / 3.2 h of training per run. **Estimates**; no code change came out of the scan (docs/exp12_decisions.md) | |
 | Check 1 on CPU | identity and control 0 eps; injected Q exact, dQ/da up to 7.2 eps (D6W1536) | |
 
 ## 6. Risks, limitations, open points
@@ -248,12 +254,15 @@ numbers in section 5.
   runs, so all Exp 1/2 runs must use the same setting (they do: one helper).
 - Device pinning: every scaled run and both arms must stay on one GPU
   model (u). A control resumed on another model refuses to run.
-- Disk: the grid's upper bound is ≈ 734 GB of retained state (section 5).
+- Disk: the grid's upper bound is ≈ 631 GB of retained state (section 5; estimate).
 - The positive control may stop: the dev run may never trigger, L_trigger
   may be ≤ 0, or the noise may be ≥ 0.10. Each stops and consults by
   design; the trigger is never loosened.
-- The probe overhead for D6W1536 is 6.77% (A3), above the ~5% rule; you
-  accepted it (R2), and the probe is unchanged.
+- The probe overhead for D6W1536 was 6.77% (A3), above the ~5% rule; you
+  accepted it (R2), and the probe is unchanged. D4W1536 is estimated at
+  ~5.7% (unmeasured; Block B measures its speed).
+- Every D4W1536 speed, probe and memory figure is an unmeasured estimate,
+  scaled from the D6W1536 measurement by parameter count.
 - HumanoidBench runs only through a separate cloned environment (`HB_ENV`);
   without it, its Block B steps are recorded as unavailable.
 - The persistent compilation cache depends on a private jax 0.4.34 function
@@ -275,7 +284,8 @@ numbers in section 5.
 | 8 | `2b9ccc3` summary draft; the final commit carries the Phase 7 results |
 | CUDA prep | `a8ca346` TF32 everywhere (v); `92b488a` efficiency scan; `7812b17` Block A runner |
 | Block A follow-up | `5ffce58` A1 parser, injection test under "highest", amendment (w), Block A numbers; `4314170` Block B driver |
-| Block B decisions | this commit: ARM_M=half; GPU tolerance pattern; well-conditioned KL test; amendment (x); compilation cache; cold/warm identity; per-suite speed; HB_ENV; memory flags |
+| Block B decisions | `9198e33` ARM_M=half; GPU tolerance pattern; well-conditioned KL test; amendment (x); compilation cache; cold/warm identity; per-suite speed; HB_ENV; memory flags |
+| Critic sizes | this commit: D4W1536 replaces D6W1536 (amendment (y)); Block B 8 h |
 
 ## 8. What to run next (all on the CUDA stack, from `main/`)
 
@@ -286,7 +296,7 @@ The full sheet is `docs/exp12_cuda_commands.md`.
 2. **Optional, for HumanoidBench:** create the cloned `HB_ENV` environment
    (the sheet's Setup). Its last step must print
    `MAIN ENVIRONMENT UNCHANGED`.
-3. **Block B** (one A100x4 node, 10 h): the dev run, positive control,
+3. **Block B** (one A100x4 node, 8 h): the dev run, positive control,
    injected arm (m = half), preflight, packing test, GPU test suites (default
    and deterministic), A1 follow-up measurements, hopper-hop range, identity
    forks (cold and warm cache), the fresh-pair null, and per-suite speeds:
@@ -311,10 +321,10 @@ The full sheet is `docs/exp12_cuda_commands.md`.
 - [x] A2 under (w): P/b ≥ 0.9 at all three sizes (dog-run). B2 (hopper-hop) is in Block B.
 - [ ] GPU test suites (default, deterministic) and break checks pass; GPU tolerances set from Block B's measurements.
 - [ ] Null fire rate ≤ 5% per size, or your decision on the p95 threshold.
-- [x] Probe overhead for D6W1536: 6.77%, accepted (R2).
+- [x] Probe overhead for D6W1536: 6.77%, accepted (R2). D4W1536 (~5.7%, estimate) is measured in Block B.
 - [ ] Identity fork bit-identical for every available architecture × suite cell (cold and warm cache), or your decision.
 - [ ] Positive control: m chosen and frozen in `injection.m`.
 - [ ] Preflight PASS per size on the grid's GPU model.
 - [ ] Jobs per GPU set from the packing test (per-job peak and total memory, slowdown), with `XLA_PYTHON_CLIENT_PREALLOCATE=false` and no memory fraction.
-- [ ] All grid jobs pinned to one GPU model; disk ≥ ~734 GB free.
+- [ ] All grid jobs pinned to one GPU model; disk ≥ ~631 GB free.
 - [ ] `WANDB_API_KEY` exported. Unique joblog per launch. Overlap check OK before arms run alongside the grid.

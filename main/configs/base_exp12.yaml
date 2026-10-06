@@ -76,7 +76,7 @@ trigger:
 ##################################################################################
 fork:
   enabled: true
-  architectures: ['D4W1024', 'D6W1536']   # only scaled critics fork (D6)
+  architectures: ['D4W1024', 'D4W1536']   # only scaled critics fork
   horizon_fraction: 0.25                  # post-fork horizon, measured from the fork
   max_total_fraction: 1.2                 # maximum total budget
   eval_every_fraction: 0.01               # post-fork evaluation every 1% of B (F1)
@@ -101,7 +101,7 @@ testing:
   stop_after_identity_snapshot: false  # VALIDATION-ONLY: end the job once fork.identity_snapshot_steps is saved; run_role=dev only
 
 positive_control:            # scripts/positive_control.py, amendments (d)-(f)
-  architecture: D6W1536
+  architecture: D4W1536
   env_name: dog-run
   similar_within: 0.10       # choose the smallest m whose recovery is within this of the best
   noise_threshold: 0.10      # STOP and consult if the probe's own noise exceeds this

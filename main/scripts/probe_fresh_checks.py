@@ -24,9 +24,9 @@ fresh check (SimBa random warm-up, obs_rms updated). WandB is stubbed.
 
 Examples (CUDA, from main/):
     python scripts/probe_fresh_checks.py --mode range --env dog-run --env_group dmc_hard \\
-        --archs D2W512 D4W1024 D6W1536 --out_dir /abs/path/fresh_range_dog_run
+        --archs D2W512 D4W1024 D4W1536 --out_dir /abs/path/fresh_range_dog_run
     python scripts/probe_fresh_checks.py --mode null --env dog-run --env_group dmc_hard \\
-        --archs D2W512 D4W1024 D6W1536 --null_pairs 100 --out_dir /abs/path/fresh_null_dog_run
+        --archs D2W512 D4W1024 D4W1536 --null_pairs 100 --out_dir /abs/path/fresh_null_dog_run
 """
 
 import argparse
@@ -52,7 +52,7 @@ configure_compilation_cache()
 import jax  # noqa: E402
 import numpy as np  # noqa: E402
 
-ARCHS = {"D2W512": (2, 512), "D4W1024": (4, 1024), "D6W1536": (6, 1536)}
+ARCHS = {"D2W512": (2, 512), "D4W1024": (4, 1024), "D4W1536": (4, 1536)}
 RANGE_LOW, RANGE_HIGH = 0.1, 0.9
 NULL_FIRE_RATE_LIMIT = 0.05
 NULL_PAIR_KEY_OFFSET = 10_000

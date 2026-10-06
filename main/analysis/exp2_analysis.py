@@ -31,7 +31,7 @@ from analysis.exp1_analysis import _plot_setup
 from experiments.exp12 import exp2_ledger, ledger
 from utils.paths import require_absolute
 
-SCALED = ("D4W1024", "D6W1536")
+SCALED = ("D4W1024", "D4W1536")
 ARM_COLORS = {"control": "#2a78d6", "injected": "#eb6834"}
 STATISTICS = {"mean": lambda x, axis: np.mean(x, axis=axis),
               "iqm": lambda x, axis: trim_mean(x, proportiontocut=0.25, axis=axis)}
