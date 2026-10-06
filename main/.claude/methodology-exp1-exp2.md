@@ -546,4 +546,18 @@ and sac_simba.yaml sets critic_use_cdq: ${env.episodic}) and paper (Table 7).
 - Implementation note: on the pinned jax 0.4.34 / flax 0.8.4 the twin critic
   could not be built at all (nn.vmap with in_axes=None); it now broadcasts
   its inputs explicitly, with the same mathematics and parameter layout.
-
+- Parameter-count limitation (verified 2026-10-06; separate task ratios approved
+  by the project lead). The fixed D1W128 actor is small relative to the scaled
+  HumanoidBench critics even after replacing D6W1536. On h1-run-v0 (51 observation
+  inputs, 19 actions), the actor has 143,782 parameters; D4W1536 has 75,654,145
+  per Q and 151,308,290 across the two Q networks: ratios 526.17 and 1,052.35
+  to the actor. D4W1024 has 67,317,762 across the two Q networks, ratio 468.19.
+  On h1-reach-v0 (57 observation inputs, 19 actions), the actor has 144,550
+  parameters; D4W1536 has 75,663,361 per Q and 151,326,722 across the two:
+  ratios 523.44 and 1,046.88. D4W1024 has 67,330,050 across the two, ratio
+  465.79. These are derived from the actual Flax network initialisation shapes
+  on CPU, with observation dimensions checked against the pinned HumanoidBench
+  task source and action dimensions measured from its MuJoCo XML models.
+  Counts describe online networks before injection, excluding target networks
+  and optimizer state. The ratios quantify the architecture imbalance; they
+  do not establish that imbalance causes pathology.
