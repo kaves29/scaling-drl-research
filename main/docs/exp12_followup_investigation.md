@@ -1,3 +1,5 @@
+> Historical report and evidence snapshot at `f9615de`. Current review and readiness: [independent Claude review](exp12_claude_review.md). Generated evidence links below resolve to the preserved Git snapshot.
+
 > Historical investigation at HEAD `438a5b0`, before the subsequent approved implementation.
 > Current implementation, decisions and gates: [approved implementation report](exp12_approved_implementation_report.md).
 
@@ -11,9 +13,9 @@ or pushed. Every recommendation below is a proposal, not an adopted decision.
 
 ## Evidence and scope
 
-Evidence is in [exp12_followup_evidence](exp12_followup_evidence), including original test
+Evidence is in [exp12_followup_evidence](https://github.com/kaves29/scaling-drl-research/tree/f9615de5a3beaa380ef2e11bccaa1d5d1a5161a6/main/docs/exp12_followup_evidence), including original test
 logs, executable diagnostic harnesses, exact arrays, every differing element, synthetic
-acceptance counterexamples and [SHA-256 fingerprints](exp12_followup_evidence/sha256.json).
+acceptance counterexamples and [SHA-256 fingerprints](https://github.com/kaves29/scaling-drl-research/blob/f9615de5a3beaa380ef2e11bccaa1d5d1a5161a6/main/docs/exp12_followup_evidence/sha256.json).
 The diagnostic harnesses ran outside the repository under `/tmp`; the files here are copies.
 They are not replacement production tests or research observations.
 
@@ -22,7 +24,7 @@ Optax 0.2.3, Orbax 0.5.3, NumPy 1.26.4, pandas 2.1.4, MuJoCo 3.6.0,
 dm_control 1.0.38 and MyoSuite 2.12.2. `rliable==1.2.0` and its temporary supporting
 dependencies came from the prior audit's `/tmp/exp12-validation-deps`; no dependency was
 installed or changed in this investigation. HB is unavailable locally. Full versions and
-cross-process array equality are in [metadata.json](exp12_followup_evidence/metadata.json).
+cross-process array equality are in [metadata.json](https://github.com/kaves29/scaling-drl-research/blob/f9615de5a3beaa380ef2e11bccaa1d5d1a5161a6/main/docs/exp12_followup_evidence/metadata.json).
 
 Historical code was extracted with `git archive <commit> main` into `/tmp/exp12-history`.
 All revisions used the same current dependencies. This isolates code changes; it does not
@@ -40,9 +42,9 @@ the test's expected reference is eager, both under local `highest` precision.
 The original test fails in two fresh processes at HEAD and at its introduction,
 `2f67915cf9243d75f56299645ccd3961e9c0c44e`. Its exact Q assertion stops execution before
 the gradient assertion. A separate diagnostic applies that later assertion unchanged and
-also fails. [Original repeats and historical results](exp12_followup_evidence/original_test_results.json),
-[first-commit test log](exp12_followup_evidence/twin_original_2f67915.log),
-[later gradient assertion](exp12_followup_evidence/twin_later_gradient_assertion.log).
+also fails. [Original repeats and historical results](https://github.com/kaves29/scaling-drl-research/blob/f9615de5a3beaa380ef2e11bccaa1d5d1a5161a6/main/docs/exp12_followup_evidence/original_test_results.json),
+[first-commit test log](https://github.com/kaves29/scaling-drl-research/blob/f9615de5a3beaa380ef2e11bccaa1d5d1a5161a6/main/docs/exp12_followup_evidence/twin_original_2f67915.log),
+[later gradient assertion](https://github.com/kaves29/scaling-drl-research/blob/f9615de5a3beaa380ef2e11bccaa1d5d1a5161a6/main/docs/exp12_followup_evidence/twin_later_gradient_assertion.log).
 
 Here and in the twin CSV, expected = eager, observed = production panel, and relative
 difference = `abs(observed - expected) / abs(expected)`. Values are exact decimal
@@ -63,8 +65,8 @@ Their existing bounds are approximately `1.2940981e-7`, `1.6856566e-7`, and
 `5.2196287e-7`. A maximum absolute gradient difference does not identify the largest
 criterion violation because the relative allowance changes with component magnitude.
 All 668 nonidentical elements, exact hexadecimal values and existing bounds are in
-[twin_differences.csv](exp12_followup_evidence/twin_differences.csv); complete expected
-and observed arrays are in [twin_arrays.npz](exp12_followup_evidence/twin_current_1/twin_arrays.npz).
+[twin_differences.csv](https://github.com/kaves29/scaling-drl-research/blob/f9615de5a3beaa380ef2e11bccaa1d5d1a5161a6/main/docs/exp12_followup_evidence/twin_differences.csv); complete expected
+and observed arrays are in [twin_arrays.npz](https://github.com/kaves29/scaling-drl-research/blob/f9615de5a3beaa380ef2e11bccaa1d5d1a5161a6/main/docs/exp12_followup_evidence/twin_current_1/twin_arrays.npz).
 
 ### Independent and historical comparisons
 
@@ -103,7 +105,7 @@ and observed arrays are in [twin_arrays.npz](exp12_followup_evidence/twin_curren
    eager/JIT differ in 412 Q elements (max `1.1324882507324219e-6`) and 668 gradients
    (max `1.1920928955078125e-6`), with two gradient violations of the later criterion.
    Its compiled sliced-single arrays equal the current sliced-single reference exactly.
-   See [pre-Exp12 probe](exp12_followup_evidence/pre_exp12_twin_probe.json).
+   See [pre-Exp12 probe](https://github.com/kaves29/scaling-drl-research/blob/f9615de5a3beaa380ef2e11bccaa1d5d1a5161a6/main/docs/exp12_followup_evidence/pre_exp12_twin_probe.json).
 
 **Origin and classification.** The first commit containing the failing assertion is
 `2f67915`; the same underlying twin eager/JIT behavior already exists in `c293b9a`.
@@ -168,8 +170,8 @@ Maximum observation absolute differences at steps 1–4 are
 `0.0030585541389882565`, `0.003341197967529297`, `0.003563523292541504` and
 `0.0037108297692611814`. Both rollouts have length five, with all termination/truncation
 flags false. All 60 differing observation values, exact encodings and both relative errors
-are in [baoding_differences.csv](exp12_followup_evidence/baoding_differences.csv);
-[baoding_exact_summary.json](exp12_followup_evidence/baoding_exact_summary.json) includes
+are in [baoding_differences.csv](https://github.com/kaves29/scaling-drl-research/blob/f9615de5a3beaa380ef2e11bccaa1d5d1a5161a6/main/docs/exp12_followup_evidence/baoding_differences.csv);
+[baoding_exact_summary.json](https://github.com/kaves29/scaling-drl-research/blob/f9615de5a3beaa380ef2e11bccaa1d5d1a5161a6/main/docs/exp12_followup_evidence/baoding_exact_summary.json) includes
 each step's extrema and all rewards. Full arrays/actions are retained in the NPZ files.
 
 **Cause and classification.** The capture contains physics, solver and wrapper state and
@@ -193,7 +195,7 @@ MyoSuite dependency regression.
 saved simulator RNG state and replays actions, recreating task counters. An independent
 five-step continuation into freshly constructed environments matched exactly for all four
 selected Exp12 MyoSuite tasks, and Baoding as an extra diagnostic, on this CPU.
-[Restore diagnostic](exp12_followup_evidence/exp12_restore.json).
+[Restore diagnostic](https://github.com/kaves29/scaling-drl-research/blob/f9615de5a3beaa380ef2e11bccaa1d5d1a5161a6/main/docs/exp12_followup_evidence/exp12_restore.json).
 No direct Exp12 result path through the bad helper was found. These short CPU probes do
 not establish CUDA/full-run replay fidelity. The old defect would affect exact-state Baoding
 rollout estimates if that helper were used for them, including a future Angle 3 use.
@@ -209,7 +211,7 @@ silently skip it, or loosen equality.
 ## 3. Analysis completeness: confirmed current behavior
 
 These are acceptance counterexamples on synthetic files, not allegations that production
-results are corrupt. [Acceptance probe and results](exp12_followup_evidence/analysis_acceptance.json).
+results are corrupt. [Acceptance probe and results](https://github.com/kaves29/scaling-drl-research/blob/f9615de5a3beaa380ef2e11bccaa1d5d1a5161a6/main/docs/exp12_followup_evidence/analysis_acceptance.json).
 Endpoint probes use 20 bootstrap replicates solely to test code acceptance cheaply; neither
 production defaults nor statistical criteria were modified.
 
@@ -235,7 +237,7 @@ scaled-minus-D2 IQM comparisons on whatever matrices survive.
 | Empty checks.csv with correct headers and stale finite run.csv endpoint | Accepted by loader and primary estimator |
 
 The last case was tested through actual CSV loading for three architectures:
-[exp1_ledger_acceptance.json](exp12_followup_evidence/exp1_ledger_acceptance.json).
+[exp1_ledger_acceptance.json](https://github.com/kaves29/scaling-drl-research/blob/f9615de5a3beaa380ef2e11bccaa1d5d1a5161a6/main/docs/exp12_followup_evidence/exp1_ledger_acceptance.json).
 An entirely absent run directory is invisible. A present malformed directory may raise a
 file/schema error; that accidental failure is not a complete population validator. Whole
 dimensions filtered out as unfinished can disappear the same way as absent dimensions.
@@ -461,7 +463,7 @@ integer leaves are normalized too. NaNs can hide discrepancies: an unchanged cal
 helper returns 0 for `[2, NaN]` versus `[1, NaN]`, and for `[NaN]` versus `[1]`, because
 the NaN maximum never increases the initialized worst value. A CPU-only synthetic probe
 confirms these cases and returns 0.1 for integer `[11]` versus `[10]`:
-[cuda_metric_scope.json](exp12_followup_evidence/cuda_metric_scope.json).
+[cuda_metric_scope.json](https://github.com/kaves29/scaling-drl-research/blob/f9615de5a3beaa380ef2e11bccaa1d5d1a5161a6/main/docs/exp12_followup_evidence/cuda_metric_scope.json).
 Some update info intentionally contains cadence NaNs, so requiring all values finite would
 also be incorrect. Before treating a measured bound as acceptance, recommend an explicitly
 reviewed applicability/NaN-mask check and exact discrete-state checks, with the scalar float

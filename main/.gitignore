@@ -176,3 +176,13 @@ check_points/
 *.nfs*
 # Exp 1/2 persistent XLA compilation cache (experiments/exp12/precision.py)
 jax_cache/
+
+# Generated validation dumps belong outside tracked source. Historical versions
+# are preserved at f9615de; keep only small provenance and reproduction scripts.
+/docs/exp12_*_evidence/**/*.log
+/docs/exp12_*_evidence/**/*.npz
+/docs/exp12_*_evidence/**/*.csv
+/docs/exp12_*_evidence/**/*.json
+!/docs/exp12_*_evidence/metadata.json
+!/docs/exp12_*_evidence/sha256.json
+!/docs/exp12_*_evidence/commit_files.json

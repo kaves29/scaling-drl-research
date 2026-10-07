@@ -1,3 +1,5 @@
+> Historical report and evidence snapshot at `f9615de`. Current review and readiness: [independent Claude review](exp12_claude_review.md). Generated evidence links below resolve to the preserved Git snapshot.
+
 # Exp1/2 approved implementation and remaining gates
 
 2026-10-06, following the lead's attached decisions. This report supersedes the
@@ -142,7 +144,7 @@ atol=1e-7. These are graph-dependent float32 rounding differences in the observe
 CPU case, not evidence that the panel computes the wrong Q/min gradient.
 No change to the criterion has been made.
 
-The [new characterization](exp12_approved_evidence/twin_numpy_characterization.json)
+The [new characterization](https://github.com/kaves29/scaling-drl-research/blob/f9615de5a3beaa380ef2e11bccaa1d5d1a5161a6/main/docs/exp12_approved_evidence/twin_numpy_characterization.json)
 uses seeds 0–4 at D2W8, D1W16 and D4W32, with 256 states, 6 observation inputs,
 3 actions uniform in [-1,1], including the exact original failing fixture.
 Parameters/inputs are the same stored float32 values, evaluated independently in
@@ -365,8 +367,8 @@ the real HB pipeline and Reach RNG/evaluation test. No CUDA execution occurred.
 Some negative-fixture logs deliberately print FAIL; the unittest summary above
 records actual test outcomes.
 
-Raw logs, characterization and [per-commit file inventory](exp12_approved_evidence/commit_files.json)
-are in [the approved evidence directory](exp12_approved_evidence/).
+Raw logs, characterization and [per-commit file inventory](https://github.com/kaves29/scaling-drl-research/blob/f9615de5a3beaa380ef2e11bccaa1d5d1a5161a6/main/docs/exp12_approved_evidence/commit_files.json)
+are in [the approved evidence directory](https://github.com/kaves29/scaling-drl-research/tree/f9615de5a3beaa380ef2e11bccaa1d5d1a5161a6/main/docs/exp12_approved_evidence/).
 SHA256 inventories preserve both the 55 historical evidence files and the new
 validation records. The 195/130 study tests use explicitly synthetic provenance;
 they prove accounting behavior, not real CUDA production of a complete study.
