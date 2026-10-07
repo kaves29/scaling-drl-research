@@ -17,46 +17,61 @@
 #   3. h1-run-v0 training speed, probe-check time and peak GPU memory per size, twin critics (HB_ENV)
 # Estimate ~1.5 h (docs/exp12_cuda_commands.md); 4 h requested. Every step has its own log and timeout under
 # logs/hb_<jobid>/; a failing step does not stop the others.
-# Submit from main/ after `mkdir -p logs`:  HB_ENV=<env> EXPECTED_COMMIT=<hash> sbatch scripts/sbatch_exp12_hb.sh
+# Submit from main/ after `mkdir -p logs`:  HB_ENV=<env> EXPECTED_COMMIT=<hash> EXPECTED_GPU_MODEL=<device_kind> sbatch scripts/sbatch_exp12_hb.sh
 # CPU plumbing test: HB_ENV=<env> HB_TEST_HOOKS=<file that shrinks the settings> bash scripts/sbatch_exp12_hb.sh
-set -u
-cd "$(dirname "$(readlink -f "$0")")/.." 2>/dev/null || cd /work/hdd/biqc/skaveti1/exp12/main
+set -uo pipefail
+SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)" || exit 2
+cd "$SCRIPT_DIR/.." || exit 2
+: "${EXPECTED_COMMIT:?set EXPECTED_COMMIT to the reviewed clean final-tree revision}"
+: "${EXPECTED_GPU_MODEL:?set EXPECTED_GPU_MODEL to the grid GPU device_kind}"
+if [ -n "${SLURM_JOB_ID:-}" ] && [ -n "${HB_TEST_HOOKS:-}" ]; then
+  echo "ERROR: local plumbing hooks are prohibited in a Slurm qualification job"; exit 2
+fi
 : "${HB_ENV:?set HB_ENV to the conda env with HumanoidBench (docs/exp12_cuda_commands.md, Setup)}"
 if [ -n "${SLURM_JOB_ID:-}" ]; then
-  cd /work/hdd/biqc/skaveti1/exp12/main
-  module reset
-  source /sw/rh9.4/python/miniforge3/etc/profile.d/conda.sh
-  conda activate scaling-drl-py31213
+  module reset || exit 2
+  source /sw/rh9.4/python/miniforge3/etc/profile.d/conda.sh || exit 2
+  conda activate scaling-drl-py31213 || exit 2
 fi
 MAIN_PY="$(command -v python)"
 HB_PY="$HB_ENV/bin/python"
 unset JAX_DEFAULT_MATMUL_PRECISION NVIDIA_TF32_OVERRIDE XLA_PYTHON_CLIENT_MEM_FRACTION
 export XLA_PYTHON_CLIENT_PREALLOCATE=false OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1
 export WANDB_MODE=disabled PYTHONUNBUFFERED=1 MUJOCO_GL="${MUJOCO_GL:-egl}" PYOPENGL_PLATFORM="${PYOPENGL_PLATFORM:-egl}"
+if [ "$MUJOCO_GL" != egl ] || [ "$PYOPENGL_PLATFORM" != egl ]; then
+  echo "ERROR: HB CUDA qualification requires MUJOCO_GL=egl PYOPENGL_PLATFORM=egl"; exit 2
+fi
 OUT="$(pwd)/logs/hb_${SLURM_JOB_ID:-local}"
 IDENTITY_ARCHS="4:1024 4:1536" IDENTITY_BUDGET=240000 SPEED_ARCHS="D2W512 D4W1024 D4W1536"
 TESTS="tests.test_exp12_pipeline.PipelinePerSuiteTest.test_humanoid_bench tests.test_exp12_fork.HumanoidBenchReachEvalSeedingTest tests.test_exp12_twin_critic"
 EXTRA_OVERRIDES="" SPEED_EXTRA="--train_steps 600 --warmup_steps 100 --probe_repeats 1"
-declare -A TIMEOUT=([tests]=2700 [identity]=3600 [speed]=3600)
+TIMEOUT_TESTS=2700 TIMEOUT_IDENTITY=3600 TIMEOUT_SPEED=3600
 [ -n "${HB_TEST_HOOKS:-}" ] && source "$HB_TEST_HOOKS"
+[ ! -e "$OUT/status.tsv" ] || { echo "ERROR: status.tsv already exists: $OUT"; exit 2; }
 mkdir -p "$OUT"
 
 echo "=== exp12_hb job ${SLURM_JOB_ID:-local} on $(hostname), $(date); HB_ENV=$HB_ENV ==="
 command -v nvidia-smi >/dev/null && nvidia-smi --query-gpu=index,name,memory.total,driver_version --format=csv
 echo "commit: $(git rev-parse HEAD)"; git status --short | head -20
-if [ -n "${EXPECTED_COMMIT:-}" ] && [ "$(git rev-parse HEAD)" != "$EXPECTED_COMMIT" ]; then
-  echo "ERROR: HEAD is not $EXPECTED_COMMIT"; exit 2
+if [ "$(git rev-parse HEAD)" != "$EXPECTED_COMMIT" ] || [ -n "$(git status --porcelain --untracked-files=no)" ]; then
+  echo "ERROR: expected a clean tree at $EXPECTED_COMMIT"; exit 2
 fi
-for py in "$MAIN_PY" "$HB_PY"; do
-  "$py" -c "import sys, jax; print(sys.executable, '| jax', jax.__version__, '| devices', jax.devices())" || exit 2
-done
-"$HB_PY" -c "import importlib.util, sys; sys.exit(importlib.util.find_spec('humanoid_bench') is None)" ||
-  { echo "ERROR: humanoid_bench is not installed in $HB_ENV"; exit 2; }  # the same check as Block B
+"$MAIN_PY" scripts/check_exp12_hb_environment.py --gpu-model "$EXPECTED_GPU_MODEL" --out "$OUT/main_environment.json" || exit 2
+"$HB_PY" scripts/check_exp12_hb_environment.py --gpu-model "$EXPECTED_GPU_MODEL" --main "$OUT/main_environment.json" --out "$OUT/hb_environment.json" || exit 2
+# Separate writable caches for ordinary test/profile workers. Identity scenarios retain
+# their explicit caller cache setting until the cold/warm plan is approved.
+export EXP12_HB_CACHE_ROOT="$OUT/cache"
 
 ov() { local x; for x in "$@"; do printf -- "--overrides %s " "$x"; done; }
 step() {  # name timeout_key command...
   local name=$1 key=$2 s=$SECONDS; shift 2
-  timeout -k 30 "${TIMEOUT[$key]}" "$@" > "$OUT/$name.log" 2>&1
+  local limit
+  case "$key" in tests) limit=$TIMEOUT_TESTS;; identity) limit=$TIMEOUT_IDENTITY;; speed) limit=$TIMEOUT_SPEED;; *) return 2;; esac
+  if [ "$key" = identity ]; then
+    timeout -k 30 "$limit" "$@" > "$OUT/$name.log" 2>&1
+  else
+    EXP12_JAX_CACHE_DIR="$EXP12_HB_CACHE_ROOT/$name" timeout -k 30 "$limit" "$@" > "$OUT/$name.log" 2>&1
+  fi
   local code=$?
   printf "%s\t%s\t%ss\n" "$name" "$code" "$((SECONDS - s))" | tee -a "$OUT/status.tsv"
 }
@@ -87,6 +102,7 @@ step speed_h1-run-v0 speed "$HB_PY" scripts/profile_exp12.py --env h1-run-v0 --e
   echo "== tests =="; grep -E "^(Ran|OK|FAILED)" "$OUT/tests.log"
   echo "== identity forks (twin critics on h1-run-v0) =="
   for f in "$OUT"/identity/*.json; do
+    [ -f "$f" ] || continue
     "$MAIN_PY" -c "import json, sys; d = json.load(open(sys.argv[1])); print(sys.argv[1].rsplit('/', 1)[1], 'PASS' if d['pass'] else 'FAIL', d.get('differences', d.get('error', ''))[:5])" "$f"
   done
   echo "== h1-run-v0 with twin critics: it/s (probes off), probe check s, overhead %, peak GPU GiB =="
@@ -97,3 +113,6 @@ for r in json.load(open(sys.argv[1])):
     print(r['arch'], round(r['train_it_per_s_probes_off'], 1), round(r['probe_check_s'], 1),
           round(r['probe_overhead_pct_of_wallclock'], 2), None if peak is None else round(peak / 2**30, 2))" "$OUT/speed_h1-run-v0.json"
 } 2>&1 | tee "$OUT/summary.txt"
+
+"$MAIN_PY" scripts/check_exp12_hb_status.py --out "$OUT" --identity-archs $IDENTITY_ARCHS --speed-archs $SPEED_ARCHS
+exit $?
