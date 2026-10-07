@@ -712,15 +712,19 @@ class SACAgent(BaseAgent):
 
         checkpointer = orbax.checkpoint.PyTreeCheckpointer()
 
-        # churn_ref_batch excluded: PyTreeRestore uses the target's shape as
-        # ground truth per leaf, and self.churn_ref_batch is always None
-        # here - a None leaf in `item` silently discards a real saved value.
+        # A fresh agent's None reference would discard the saved batch. Read
+        # its shape from metadata so the large agent payload is restored once.
+        reference = jax.tree_util.tree_map(
+            orbax.checkpoint.utils.to_shape_dtype_struct,
+            checkpointer.metadata(ckpt_path)["churn_ref_batch"],
+        )
         target_state = {
             "rng": self._rng,
             "actor": self._actor,
             "critic": self._critic,
             "target_critic": self._target_critic,
             "temperature": self._temperature,
+            "churn_ref_batch": reference,
         }
         restored = checkpointer.restore(ckpt_path, args=orbax.checkpoint.args.PyTreeRestore(item=target_state))
         self._rng = restored["rng"]
@@ -729,7 +733,4 @@ class SACAgent(BaseAgent):
         self._target_critic = restored["target_critic"]
         self._temperature = restored["temperature"]
 
-        # Unconstrained restore (no `item=`) recovers its real on-disk shape.
-        churn_restored = checkpointer.restore(ckpt_path)
-        self.churn_ref_batch = churn_restored["churn_ref_batch"]
-    
+        self.churn_ref_batch = restored["churn_ref_batch"]
