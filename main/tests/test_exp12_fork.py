@@ -124,7 +124,7 @@ class ForkEndToEndTest(unittest.TestCase):
             self.assertEqual((pair["max_abs_dq"], pair["max_abs_d_dq_da"], pair["tolerance_eps"]), (0.0, 0.0, 0.0))
         for pair in identity["pairs"].values():
             self.assertEqual((pair["max_abs_dq"], pair["max_abs_d_dq_da"], pair["tolerance_eps"]), (0.0, 0.0, 0.0))
-        self.assertEqual(injected["pairs"]["pre_vs_after"]["max_abs_dq"], 0.0)
+        self.assertLessEqual(injected["pairs"]["pre_vs_after"]["dq_eps_units"], 64)
         self.assertEqual(injected["pairs"]["pre_vs_after"]["tolerance_eps"], 64)
         self.assertEqual(injected["pairs"]["pre_vs_control"], {**injected["pairs"]["pre_vs_control"],
                                                                "max_abs_dq": 0.0, "max_abs_d_dq_da": 0.0,

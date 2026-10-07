@@ -18,6 +18,34 @@ from tests.test_exp12_diagnostics import _agent, _batches
 
 
 class RestoreRuntimeTest(unittest.TestCase):
+    def test_comparison_does_not_require_the_saved_device(self):
+        from experiments.exp12.state import load_agent_tree
+        from orbax.checkpoint import type_handlers
+
+        with tempfile.TemporaryDirectory() as root:
+            path = Path(root) / "agent_ckpt"
+            tree = {
+                "params": jax.numpy.arange(6, dtype=jax.numpy.float32),
+                "step": jax.numpy.array(3, dtype=jax.numpy.int32),
+                "optional": None,
+            }
+            checkpointer = orbax.checkpoint.PyTreeCheckpointer()
+            checkpointer.save(str(path), tree)
+            with mock.patch.object(
+                type_handlers,
+                "_deserialize_sharding_from_json_string",
+                side_effect=ValueError("saved device is unavailable"),
+            ):
+                with self.assertRaisesRegex(ValueError, "saved device is unavailable"):
+                    checkpointer.restore(str(path))
+                restored = load_agent_tree(root)
+            self.assert_tree_equal(tree, restored)
+            self.assertIsInstance(restored["params"], np.ndarray)
+            self.assertIsInstance(restored["step"], np.ndarray)
+            self.assertEqual(restored["params"].dtype, np.dtype("float32"))
+            self.assertEqual(restored["step"].dtype, np.dtype("int32"))
+            self.assertIsNone(restored["optional"])
+
     def test_twin_restore_uses_saved_reference_shape(self):
         from tests.test_exp12_twin_critic import _twin_agent
 

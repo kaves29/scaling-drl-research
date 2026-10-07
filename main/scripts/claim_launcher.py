@@ -18,6 +18,10 @@ exists; this launcher then decides whether it's a live claim (skip - the
 owning SLURM job is still running, per squeue) or a stale one (the owning
 job has ended, e.g. an allocation ran out mid-job - safe to steal and
 resume from meta.pkl, which run.py's own resumability already handles).
+All creation, stale recovery and release transitions take the same atomic
+claim_guard directory. Never remove an orphan guard while a launcher could
+still hold it; stop all relevant owners before manual recovery. All cooperating
+launchers must use this protocol; do not mix old and new revisions.
 
 Usage:
     python scripts/claim_launcher.py --concurrency 32 --num-gpus 8
@@ -27,6 +31,7 @@ Run from the repo root (the same directory phase1_jobs.txt etc. live in) -
 matches how generate_manifest.py itself is always invoked.
 """
 import argparse
+import contextlib
 import json
 import os
 import socket
@@ -42,6 +47,7 @@ import generate_manifest as gm  # reuses gm.DONE_MARKER - the same signal genera
 PHASE_FILES = ["phase1_jobs.txt", "phase2_jobs.txt", "phase3_jobs.txt"]
 CLAIM_DIR_NAME = "claim"
 OWNER_FILE_NAME = "owner.json"
+CLAIM_GUARD_DIR_NAME = "claim_guard"
 POLL_INTERVAL_SECONDS = 180  # "every few minutes"
 
 _log_lock = threading.Lock()
@@ -106,50 +112,76 @@ def _claim_owner_alive(owner: dict) -> bool:
     return _pid_alive_on_this_host(owner.get("hostname"), owner.get("pid"))
 
 
-def _try_claim(ckpt_dir: str, my_job_id: str, my_host: str) -> bool:
-    """Attempts to atomically claim ckpt_dir's job. Returns True if this
-    process now owns the claim (freshly, or by reclaiming a stale one)."""
-    Path(ckpt_dir).mkdir(parents=True, exist_ok=True)
-    cdir = _claim_dir(ckpt_dir)
+@contextlib.contextmanager
+def _claim_guard(ckpt_dir):
+    """Serialize claim transitions; an orphan guard requires manual recovery."""
+    guard = Path(ckpt_dir) / CLAIM_GUARD_DIR_NAME
     try:
-        cdir.mkdir()
+        guard.mkdir()
     except FileExistsError:
-        owner = _read_owner(cdir)
-        if owner is None:
-            return False  # mid-claim by someone else (mkdir succeeded, owner.json not written yet) - try again later
-        if _claim_owner_alive(owner):
-            return False  # genuinely in progress elsewhere
-        # Stale: reclaim. Small race if two processes both decide to steal
-        # the same stale claim at once - only one of the two mkdir() calls
-        # below can win; the loser just falls through to "return False"
-        # and picks it up again (or moves on) on its next scan.
+        yield False
+        return
+    try:
+        yield True
+    finally:
+        guard.rmdir()
+
+
+def _try_claim(ckpt_dir: str, my_job_id: str, my_host: str) -> bool:
+    """Claim fresh/stale work under the same atomic transition guard."""
+    Path(ckpt_dir).mkdir(parents=True, exist_ok=True)
+    with _claim_guard(ckpt_dir) as acquired:
+        if not acquired:
+            return False
+        cdir = _claim_dir(ckpt_dir)
         try:
-            (cdir / OWNER_FILE_NAME).unlink(missing_ok=True)
+            cdir.mkdir()
+        except FileExistsError:
+            owner = _read_owner(cdir)
+            if owner is None or _claim_owner_alive(owner):
+                return False
+            (cdir / OWNER_FILE_NAME).unlink()
             cdir.rmdir()
             cdir.mkdir()
-        except (FileNotFoundError, FileExistsError, OSError):
-            return False
-    (cdir / OWNER_FILE_NAME).write_text(json.dumps({
-        "slurm_job_id": my_job_id,
-        "hostname": my_host,
-        "pid": os.getpid(),
-        "claimed_at": time.time(),
-    }))
-    return True
+        (cdir / OWNER_FILE_NAME).write_text(
+            json.dumps(
+                {
+                    "slurm_job_id": my_job_id,
+                    "hostname": my_host,
+                    "pid": os.getpid(),
+                    "claimed_at": time.time(),
+                }
+            )
+        )
+        return True
 
 
-def _release_claim(ckpt_dir: str) -> None:
-    cdir = _claim_dir(ckpt_dir)
+def _release_claim(ckpt_dir: str) -> bool:
+    """Release only this process's claim under the transition guard."""
     try:
-        (cdir / OWNER_FILE_NAME).unlink(missing_ok=True)
-        cdir.rmdir()
+        with _claim_guard(ckpt_dir) as acquired:
+            if not acquired:
+                return False
+            cdir = _claim_dir(ckpt_dir)
+            owner = _read_owner(cdir)
+            if owner is None or (
+                owner.get("pid") != os.getpid()
+                or owner.get("hostname") != socket.gethostname()
+                or owner.get("slurm_job_id") != os.environ.get("SLURM_JOB_ID", "none")
+            ):
+                return False
+            (cdir / OWNER_FILE_NAME).unlink()
+            cdir.rmdir()
+            return True
     except OSError:
-        pass
+        return False
 
 
 def _phase_fully_done(phase_file: str, repo_root: Path) -> bool:
     lines = (repo_root / phase_file).read_text().splitlines()
-    return all(_is_done(_extract_checkpoint_dir(line)) for line in lines if line.strip())
+    return all(
+        _is_done(_extract_checkpoint_dir(line)) for line in lines if line.strip()
+    )
 
 
 def _log(log_path: Path, slot: int, msg: str) -> None:
@@ -186,16 +218,33 @@ def _worker(slot, num_gpus, dry_run, my_job_id, my_host, repo_root, log_path, de
                 _log(log_path, slot, f"claimed {ckpt_dir}")
                 if dry_run:
                     print(f"[dry-run][slot{slot}] would run: {cmd}")
-                    time.sleep(2)  # hold briefly so a concurrent tester can genuinely race this claim
-                    _release_claim(ckpt_dir)
-                    _log(log_path, slot, f"released {ckpt_dir}")
+                    time.sleep(
+                        2
+                    )  # hold briefly so a concurrent tester can genuinely race this claim
+                    released = _release_claim(ckpt_dir)
+                    _log(
+                        log_path,
+                        slot,
+                        f"{'released' if released else 'release blocked'} {ckpt_dir}",
+                    )
                 else:
                     env = dict(os.environ)
                     env["CUDA_VISIBLE_DEVICES"] = str(gpu)
-                    rc = subprocess.run(["bash", "-c", cmd], cwd=str(repo_root), env=env).returncode
+                    rc = subprocess.run(
+                        ["bash", "-c", cmd], cwd=str(repo_root), env=env
+                    ).returncode
                     if rc != 0:
-                        _log(log_path, slot, f"FAILED rc={rc}: {ckpt_dir} - releasing claim for retry")
-                        _release_claim(ckpt_dir)
+                        _log(
+                            log_path,
+                            slot,
+                            f"FAILED rc={rc}: {ckpt_dir} - releasing claim for retry",
+                        )
+                        if not _release_claim(ckpt_dir):
+                            _log(
+                                log_path,
+                                slot,
+                                f"release blocked: {ckpt_dir}; inspect claim/guard before recovery",
+                            )
                     else:
                         _log(log_path, slot, f"completed: {ckpt_dir}")
                         # Claim intentionally left in place: the DONE marker

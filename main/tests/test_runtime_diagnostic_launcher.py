@@ -24,13 +24,21 @@ if sys.argv[1:] == ['-']:
         (root / 'backend.json').write_text('{"mock": true}')
     else:
         exec(compile(source, '<real output validator>', 'exec'))
+elif sys.argv[1] == 'scripts/compare_identity_fork.py':
+    (root / 'identity.json').write_text(json.dumps(dict(pass_=True, differences=[], fork_step=12000,
+        interaction_step=13000, identity_interaction_step=13000)).replace('"pass_"', '"pass"'))
+elif 'run.py' in sys.argv:
+    with (root / 'identity-commands.jsonl').open('a') as commands:
+        commands.write(json.dumps(dict(args=sys.argv[1:], cache=os.environ['EXP12_JAX_CACHE_DIR'])) + '\n')
+    target = Path(sys.argv[sys.argv.index('--out') + 1])
+    target.write_text(json.dumps(dict(event='summary', error=None)) + '\n')
 else:
     with (root / 'profile-calls.txt').open('a') as calls:
         calls.write('call\n')
     (root / 'profile-args.json').write_text(json.dumps(sys.argv[1:]))
     if mode == 'profile-error':
         sys.exit(9)
-    row = dict(arch='D4W1536', env='dog-run', num_interaction_steps=500000,
+    row = dict(arch=os.environ.get('DIAGNOSTIC_ARCH', 'D4W1536'), env='dog-run', num_interaction_steps=500000,
                train_it_per_s_probes_off=1.0, probe_check_s=1.0, fork_save_s=1.0,
                fork_restore_s=1.0, fork_state_bytes=100, post_fork_eval_s=1.0,
                fork_buffer_transitions=475000, post_fork_eval_episodes=10,
@@ -63,6 +71,8 @@ class RuntimeDiagnosticLauncherTest(unittest.TestCase):
         scripts.mkdir(parents=True)
         for name in ("profile_exp12.py", "trace_exp12_runtime.py"):
             (scripts / name).touch()
+        (self.main / "run.py").touch()
+        (scripts / "compare_identity_fork.py").touch()
         self.script = scripts / SCRIPT.name
         shutil.copyfile(SCRIPT, self.script)
         self.git("init", "-b", "claude/eloquent-fermat-inxqlt")
@@ -203,6 +213,58 @@ class RuntimeDiagnosticLauncherTest(unittest.TestCase):
         self.assertEqual(
             result.returncode, 0, result.stderr + (self.out / "profile.log").read_text()
         )
+
+    def test_identity_modes_keep_the_existing_gate_and_cache_scenarios(self):
+        for mode in ("identity_cold", "identity_warm"):
+            with self.subTest(mode=mode):
+                out = self.root / mode
+                result = self.run_script(OUT=str(out), DIAGNOSTIC_MODE=mode)
+                self.assertEqual(
+                    result.returncode,
+                    0,
+                    result.stderr + (out / "profile.log").read_text(),
+                )
+                calls = [
+                    json.loads(line)
+                    for line in (out / "identity-commands.jsonl")
+                    .read_text()
+                    .splitlines()
+                ]
+                self.assertEqual(len(calls), 2)
+                for call in calls:
+                    args = call["args"]
+                    for value in (
+                        "num_env_steps=240000",
+                        "fork.identity_snapshot_steps=1000",
+                        "testing.stop_after_identity_snapshot=true",
+                        "testing.force_trigger_check=2",
+                        "seed=101",
+                        "critic_num_blocks=4",
+                        "critic_hidden_dim=1536",
+                    ):
+                        self.assertIn(value, args)
+                    self.assertFalse(any(value.startswith("probe.") for value in args))
+                self.assertIn("fork.arm=identity", calls[1]["args"])
+                self.assertEqual(
+                    calls[0]["cache"] == calls[1]["cache"], mode == "identity_warm"
+                )
+                self.assertTrue((out / "validation.json").exists())
+
+    def test_only_approved_profile_architectures_are_accepted(self):
+        for arch in ("D2W512", "D4W1024"):
+            with self.subTest(arch=arch):
+                out = self.root / arch
+                self.assertEqual(
+                    self.run_script(OUT=str(out), DIAGNOSTIC_ARCH=arch).returncode, 0
+                )
+        self.assertNotEqual(self.run_script(DIAGNOSTIC_ARCH="D6W1536").returncode, 0)
+        self.assertNotEqual(
+            self.run_script(
+                DIAGNOSTIC_ARCH="D2W512", DIAGNOSTIC_MODE="identity_cold"
+            ).returncode,
+            0,
+        )
+        self.assertFalse(self.out.exists())
 
     def test_failure_keeps_status_and_never_retries(self):
         result = self.run_script(FAKE_MODE="profile-error")

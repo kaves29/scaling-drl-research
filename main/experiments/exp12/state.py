@@ -86,9 +86,23 @@ def _leaves(tree):
 
 
 def load_agent_tree(state_dir):
+    """Read values for exact comparison without requiring the saved device."""
+    import jax
     import orbax.checkpoint
+    from orbax.checkpoint import aggregate_handlers
 
-    return orbax.checkpoint.PyTreeCheckpointer().restore(str(Path(state_dir) / "agent_ckpt"))
+    path = Path(state_dir) / "agent_ckpt"
+    handler = aggregate_handlers.MsgpackHandler()
+    try:
+        structure = handler.deserialize(path / "checkpoint")
+    finally:
+        handler.close()
+    restore_args = jax.tree_util.tree_map(
+        lambda _: orbax.checkpoint.RestoreArgs(restore_type=np.ndarray), structure
+    )
+    return orbax.checkpoint.PyTreeCheckpointer().restore(
+        str(path), restore_args=restore_args
+    )
 
 
 def state_differences(dir_a, dir_b, ignore_meta=("wandb_run_id",)):

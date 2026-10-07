@@ -16,6 +16,16 @@ set -euo pipefail
 : "${OUT:?new absolute persistent output directory required}"
 : "${EXPECTED_COMMIT:?reviewed full source hash required}"
 : "${EXPECTED_GPU_MODEL:?reviewed literal A100 device_kind required}"
+DIAGNOSTIC_MODE=${DIAGNOSTIC_MODE:-profile}
+DIAGNOSTIC_ARCH=${DIAGNOSTIC_ARCH:-D4W1536}
+case "$DIAGNOSTIC_MODE" in profile|identity_cold|identity_warm) ;; *) exit 2 ;; esac
+case "$DIAGNOSTIC_ARCH" in
+  D2W512) DIAGNOSTIC_BLOCKS=2; DIAGNOSTIC_WIDTH=512 ;;
+  D4W1024) DIAGNOSTIC_BLOCKS=4; DIAGNOSTIC_WIDTH=1024 ;;
+  D4W1536) DIAGNOSTIC_BLOCKS=4; DIAGNOSTIC_WIDTH=1536 ;;
+  *) exit 2 ;;
+esac
+[ "$DIAGNOSTIC_MODE" = profile ] || [ "$DIAGNOSTIC_BLOCKS" = 4 ] || exit 2
 cd "$SLURM_SUBMIT_DIR"
 test -f scripts/profile_exp12.py
 test -f scripts/trace_exp12_runtime.py
@@ -31,6 +41,7 @@ test -d "$(dirname "$OUT")"
 mkdir "$OUT"
 mkdir "$OUT/temp" "$OUT/cache_single_writer"
 export OUT EXPECTED_COMMIT EXPECTED_GPU_MODEL
+export DIAGNOSTIC_MODE DIAGNOSTIC_ARCH DIAGNOSTIC_BLOCKS DIAGNOSTIC_WIDTH
 export TMPDIR="$OUT/temp" WANDB_MODE=disabled PYTHONUNBUFFERED=1
 export JAX_PLATFORMS=cuda MUJOCO_GL=disable JAX_ENABLE_X64=false
 export OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1
@@ -65,10 +76,59 @@ metadata = dict(
 Path(os.environ["OUT"], "backend.json").write_text(json.dumps(metadata, indent=2))
 print(json.dumps(metadata), flush=True)
 PY
+if [ "$DIAGNOSTIC_MODE" != profile ]; then
+  common=(--config_name base_exp12
+    --overrides env_name=dog-run --overrides env=dmc_hard --overrides seed=101
+    --overrides "critic_num_blocks=$DIAGNOSTIC_BLOCKS"
+    --overrides "critic_hidden_dim=$DIAGNOSTIC_WIDTH"
+    --overrides run_role=dev --overrides testing.force_trigger_check=2
+    --overrides fork.identity_snapshot_steps=1000
+    --overrides testing.stop_after_identity_snapshot=true
+    --overrides "results_root=$OUT/results" --overrides num_env_steps=240000)
+  parent_cache="$OUT/cache_parent"; arm_cache="$OUT/cache_arm"
+  if [ "$DIAGNOSTIC_MODE" = identity_warm ]; then
+    parent_cache="$OUT/cache_single_writer"; arm_cache="$parent_cache"
+  fi
+  EXP12_JAX_CACHE_DIR="$parent_cache" python scripts/trace_exp12_runtime.py \
+    --out "$OUT/parent_trace.jsonl" --synchronize --progress-every 100 -- \
+    run.py --experiment exp1 "${common[@]}" --checkpoint_dir "$OUT/parent"
+  EXP12_JAX_CACHE_DIR="$arm_cache" python scripts/trace_exp12_runtime.py \
+    --out "$OUT/identity_trace.jsonl" --synchronize --progress-every 100 -- \
+    run.py --experiment exp2_arm "${common[@]}" --overrides "fork.source=$OUT/parent" \
+    --overrides fork.arm=identity --checkpoint_dir "$OUT/identity"
+  python scripts/compare_identity_fork.py --run_dir "$OUT/parent" --arm_dir "$OUT/identity" \
+    --out "$OUT/identity.json"
+  python - <<'PY'
+import json
+import os
+from pathlib import Path
+
+root = Path(os.environ["OUT"])
+result = json.loads((root / "identity.json").read_text())
+assert result["pass"] and result["differences"] == []
+assert result["fork_step"] == 12000
+assert result["interaction_step"] == result["identity_interaction_step"] == 13000
+for name in ("parent_trace.jsonl", "identity_trace.jsonl"):
+    events = [json.loads(line) for line in (root / name).read_text().splitlines()]
+    assert events[-1]["event"] == "summary"
+    assert all(event.get("error") is None for event in events)
+(root / "validation.json").write_text(
+    json.dumps(
+        dict(
+            status="existing exact identity gate passed; not full campaign qualification",
+            mode=os.environ["DIAGNOSTIC_MODE"],
+            arch=os.environ["DIAGNOSTIC_ARCH"],
+        ),
+        indent=2,
+    )
+)
+PY
+  exit 0
+fi
 python scripts/trace_exp12_runtime.py \
   --out "$OUT/trace.jsonl" --synchronize --progress-every 100 -- \
   scripts/profile_exp12.py --env dog-run --env_group dmc_hard \
-  --archs D4W1536 --seed 990 --warmup_steps 1001 --train_steps 60 \
+  --archs "$DIAGNOSTIC_ARCH" --seed 990 --warmup_steps 1001 --train_steps 60 \
   --probe_repeats 1 --fork_timing --eval_cost --out "$OUT/profile.json"
 python - <<'PY'
 import json
@@ -91,7 +151,7 @@ rows = read_json((root / "profile.json").read_text())
 assert len(rows) == 1
 row = rows[0]
 assert (row["arch"], row["env"], row["num_interaction_steps"]) == (
-    "D4W1536",
+    os.environ["DIAGNOSTIC_ARCH"],
     "dog-run",
     500000,
 )

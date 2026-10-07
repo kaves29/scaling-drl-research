@@ -307,13 +307,27 @@ run_step() {  # lane step timeout_key fn args... ; returns the step's exit code
   return "$code"
 }
 
+parent_no_fork_status() {
+  local code
+  code=$(cat "$OUT/gpu0/dev_run.exit_status" 2>/dev/null) || code=unknown
+  if [ "$code" = 0 ] && [ -e "$OUT/gpu0/dev_run/DONE" ]; then
+    echo SKIPPED_NO_TRIGGER
+  else
+    echo BLOCKED_PARENT_INCOMPLETE
+  fi
+}
+
 lane_gpu0() {
+  local dev_code
   run_step gpu0 dev_run dev_run step_dev_run
+  dev_code=$?
+  printf '%s\n' "$dev_code" > "$OUT/gpu0/dev_run.exit_status.tmp"
+  mv "$OUT/gpu0/dev_run.exit_status.tmp" "$OUT/gpu0/dev_run.exit_status"
   touch "$OUT/gpu0/dev_run.finished"
   if [ -e "$OUT/gpu0/dev_run/fork/FORK_READY" ]; then
     run_step gpu0 positive_control positive_control step_positive_control
   else
-    record gpu0 positive_control "SKIPPED_NO_TRIGGER" - - "$(date +%s)"  # exit-3 rule: no fork, nothing to probe
+    record gpu0 positive_control "$(parent_no_fork_status)" - - "$(date +%s)"
   fi
   touch "$OUT/gpu0/positive_control.finished"
   local a
@@ -324,8 +338,8 @@ lane_gpu1() {  # the injected-arm watcher
   local s; s=$(date +%s)
   until [ -e "$OUT/gpu0/dev_run/fork/FORK_READY" ]; do
     if [ -e "$OUT/gpu0/dev_run.finished" ] && [ ! -e "$OUT/gpu0/dev_run/fork/FORK_READY" ]; then
-      record gpu1 arm_injected SKIPPED_NO_TRIGGER - "$(( $(date +%s) - s ))" "$s"
-      echo "the dev run ended without a fork (never triggered, or failed); no injected arm" > "$OUT/gpu1/arm_injected.log"
+      record gpu1 arm_injected "$(parent_no_fork_status)" - "$(( $(date +%s) - s ))" "$s"
+      echo "the dev run ended without a ready fork; parent status $(parent_no_fork_status); no injected arm" > "$OUT/gpu1/arm_injected.log"
       return 0
     fi
     [ "$(remaining)" -le 60 ] && { record gpu1 arm_injected SKIPPED_NO_TIME - - "$s"; return 0; }
