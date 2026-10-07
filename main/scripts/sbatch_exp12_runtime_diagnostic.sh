@@ -11,35 +11,51 @@
 # Manual diagnostic only. Activate the reviewed CUDA environment before sbatch.
 # Set external --output/--error paths; see docs/exp12_overnight_readiness.md.
 set -euo pipefail
-: "${SLURM_JOB_ID:?run only inside an explicitly requested Slurm allocation}"
-: "${SLURM_SUBMIT_DIR:?submit from the reviewed main directory}"
-: "${OUT:?new absolute persistent output directory required}"
-: "${EXPECTED_COMMIT:?reviewed full source hash required}"
-: "${EXPECTED_GPU_MODEL:?reviewed literal A100 device_kind required}"
+fail() {
+  local status=$1
+  shift
+  printf 'exp12_runtime_diagnostic: preflight failed: %s\n' "$*" >&2
+  exit "$status"
+}
+[ -n "${SLURM_JOB_ID:-}" ] || fail 1 "SLURM_JOB_ID is required; run only in an explicitly requested Slurm allocation"
+[ -n "${SLURM_SUBMIT_DIR:-}" ] || fail 1 "SLURM_SUBMIT_DIR is required; submit from the reviewed main directory"
+[ -n "${OUT:-}" ] || fail 1 "OUT is required; use a new absolute persistent output directory"
+[ -n "${EXPECTED_COMMIT:-}" ] || fail 1 "EXPECTED_COMMIT is required; use the reviewed full source hash"
+[ -n "${EXPECTED_GPU_MODEL:-}" ] || fail 1 "EXPECTED_GPU_MODEL is required; use the reviewed literal A100 device_kind"
+[[ "$EXPECTED_COMMIT" =~ ^[0-9a-f]{40}$ ]] || fail 2 "EXPECTED_COMMIT must be a full 40-character lowercase hexadecimal commit hash"
 DIAGNOSTIC_MODE=${DIAGNOSTIC_MODE:-profile}
 DIAGNOSTIC_ARCH=${DIAGNOSTIC_ARCH:-D4W1536}
-case "$DIAGNOSTIC_MODE" in profile|identity_cold|identity_warm) ;; *) exit 2 ;; esac
+case "$DIAGNOSTIC_MODE" in
+  profile|identity_cold|identity_warm) ;;
+  *) fail 2 "unsupported DIAGNOSTIC_MODE: $DIAGNOSTIC_MODE" ;;
+esac
 case "$DIAGNOSTIC_ARCH" in
   D2W512) DIAGNOSTIC_BLOCKS=2; DIAGNOSTIC_WIDTH=512 ;;
   D4W1024) DIAGNOSTIC_BLOCKS=4; DIAGNOSTIC_WIDTH=1024 ;;
   D4W1536) DIAGNOSTIC_BLOCKS=4; DIAGNOSTIC_WIDTH=1536 ;;
-  *) exit 2 ;;
+  *) fail 2 "unsupported DIAGNOSTIC_ARCH: $DIAGNOSTIC_ARCH" ;;
 esac
-[ "$DIAGNOSTIC_MODE" = profile ] || [ "$DIAGNOSTIC_BLOCKS" = 4 ] || exit 2
-cd "$SLURM_SUBMIT_DIR"
-test -f scripts/profile_exp12.py
-test -f scripts/trace_exp12_runtime.py
-test "$(git branch --show-current)" = claude/eloquent-fermat-inxqlt
-test "$(git rev-parse HEAD)" = "$EXPECTED_COMMIT"
-test -z "$(git status --porcelain --untracked-files=all)"
-case "$EXPECTED_GPU_MODEL" in *A100*) ;; *) exit 2 ;; esac
-case "$OUT" in /*) ;; *) exit 2 ;; esac
-OUT=$(realpath -m "$OUT")
-repo=$(git rev-parse --show-toplevel)
-case "$OUT/" in "$repo/"*) exit 2 ;; esac
-test -d "$(dirname "$OUT")"
-mkdir "$OUT"
-mkdir "$OUT/temp" "$OUT/cache_single_writer"
+[ "$DIAGNOSTIC_MODE" = profile ] || [ "$DIAGNOSTIC_BLOCKS" = 4 ] || fail 2 "identity mode requires a D4 architecture"
+cd "$SLURM_SUBMIT_DIR" || fail 1 "cannot enter SLURM_SUBMIT_DIR: $SLURM_SUBMIT_DIR"
+required_files=(scripts/profile_exp12.py scripts/trace_exp12_runtime.py)
+if [ "$DIAGNOSTIC_MODE" != profile ]; then
+  required_files+=(run.py scripts/compare_identity_fork.py)
+fi
+for path in "${required_files[@]}"; do
+  [ -f "$path" ] || fail 1 "missing required file: $path (submit from the reviewed main directory)"
+done
+actual_commit=$(git rev-parse --verify HEAD) || fail 1 "cannot resolve Git HEAD in SLURM_SUBMIT_DIR"
+[ "$actual_commit" = "$EXPECTED_COMMIT" ] || fail 1 "HEAD mismatch: expected $EXPECTED_COMMIT, found $actual_commit"
+tree_status=$(git status --porcelain --untracked-files=all) || fail 1 "cannot inspect Git working tree"
+[ -z "$tree_status" ] || fail 1 "working tree is not clean (tracked, staged, or untracked changes)"
+case "$EXPECTED_GPU_MODEL" in *A100*) ;; *) fail 2 "EXPECTED_GPU_MODEL must name an A100: $EXPECTED_GPU_MODEL" ;; esac
+case "$OUT" in /*) ;; *) fail 2 "OUT must be absolute: $OUT" ;; esac
+OUT=$(realpath -m "$OUT") || fail 1 "cannot resolve OUT path: $OUT"
+repo=$(git rev-parse --show-toplevel) || fail 1 "cannot resolve Git checkout root"
+case "$OUT/" in "$repo/"*) fail 2 "OUT must be outside the checkout: $OUT" ;; esac
+[ -d "$(dirname "$OUT")" ] || fail 1 "OUT parent does not exist: $(dirname "$OUT")"
+mkdir "$OUT" || fail 1 "cannot create new OUT directory (must not already exist): $OUT"
+mkdir "$OUT/temp" "$OUT/cache_single_writer" || fail 1 "cannot create temporary/cache directories beneath OUT: $OUT"
 export OUT EXPECTED_COMMIT EXPECTED_GPU_MODEL
 export DIAGNOSTIC_MODE DIAGNOSTIC_ARCH DIAGNOSTIC_BLOCKS DIAGNOSTIC_WIDTH
 export TMPDIR="$OUT/temp" WANDB_MODE=disabled PYTHONUNBUFFERED=1

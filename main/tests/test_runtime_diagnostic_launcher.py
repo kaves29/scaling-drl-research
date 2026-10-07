@@ -127,38 +127,164 @@ class RuntimeDiagnosticLauncherTest(unittest.TestCase):
 
     def test_no_allocation_refuses_before_output(self):
         del self.env["SLURM_JOB_ID"]
-        self.assertNotEqual(self.run_script().returncode, 0)
+        self.assert_preflight_failure(self.run_script(), "SLURM_JOB_ID")
         self.assertFalse(self.out.exists())
+
+    def assert_preflight_failure(self, result, reason):
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("preflight failed:", result.stderr)
+        self.assertIn(reason, result.stderr)
+        self.assertEqual(result.stdout, "")
 
     def test_wrong_revision_refuses_before_output(self):
-        self.assertNotEqual(self.run_script(EXPECTED_COMMIT="0" * 40).returncode, 0)
+        self.assert_preflight_failure(
+            self.run_script(EXPECTED_COMMIT="0" * 40), "HEAD mismatch"
+        )
         self.assertFalse(self.out.exists())
 
-    def test_wrong_branch_refuses_before_output(self):
+    def test_exact_revision_on_other_branch_is_accepted(self):
         self.git("switch", "-c", "other")
-        self.assertNotEqual(self.run_script().returncode, 0)
+        result = self.run_script()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual((self.out / "commit.txt").read_text().strip(), self.commit)
+
+    def test_detached_exact_revision_is_accepted_in_all_modes(self):
+        self.git("switch", "--detach", self.commit)
+        self.assertEqual(self.git("branch", "--show-current").strip(), "")
+        for mode in ("profile", "identity_cold", "identity_warm"):
+            with self.subTest(mode=mode):
+                out = self.root / mode
+                result = self.run_script(DIAGNOSTIC_MODE=mode, OUT=str(out))
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual((out / "commit.txt").read_text().strip(), self.commit)
+                self.assertTrue((out / "validation.json").is_file())
+
+    def test_detached_wrong_revision_is_rejected(self):
+        self.git("switch", "--detach", self.commit)
+        self.assert_preflight_failure(
+            self.run_script(EXPECTED_COMMIT="0" * 40), "HEAD mismatch"
+        )
+        self.assertFalse(self.out.exists())
+
+    def test_expected_commit_must_be_full_literal_hash(self):
+        for expected in ("HEAD", self.commit[:12], "z" * 40):
+            with self.subTest(expected=expected):
+                self.assert_preflight_failure(
+                    self.run_script(EXPECTED_COMMIT=expected), "40-character"
+                )
+                self.assertFalse(self.out.exists())
+
+    def test_missing_required_environment_is_explained(self):
+        for name in (
+            "SLURM_SUBMIT_DIR",
+            "OUT",
+            "EXPECTED_COMMIT",
+            "EXPECTED_GPU_MODEL",
+        ):
+            with self.subTest(name=name):
+                value = self.env.pop(name)
+                try:
+                    self.assert_preflight_failure(self.run_script(), name)
+                    self.assertFalse(self.out.exists())
+                finally:
+                    self.env[name] = value
+
+    def test_missing_required_files_are_explained(self):
+        for mode, name in (
+            ("profile", "scripts/profile_exp12.py"),
+            ("profile", "scripts/trace_exp12_runtime.py"),
+            ("identity_cold", "run.py"),
+            ("identity_warm", "scripts/compare_identity_fork.py"),
+        ):
+            with self.subTest(mode=mode, name=name):
+                path = self.main / name
+                contents = path.read_bytes()
+                path.unlink()
+                try:
+                    self.assert_preflight_failure(
+                        self.run_script(DIAGNOSTIC_MODE=mode), "required file: " + name
+                    )
+                    self.assertFalse(self.out.exists())
+                finally:
+                    path.write_bytes(contents)
+
+    def test_invalid_submit_directory_is_explained(self):
+        self.assert_preflight_failure(
+            self.run_script(SLURM_SUBMIT_DIR=str(self.root / "missing")),
+            "cannot enter SLURM_SUBMIT_DIR",
+        )
+        self.assertFalse(self.out.exists())
+
+    def test_missing_git_metadata_is_explained(self):
+        metadata = self.repo / ".git"
+        saved = self.root / "saved-git"
+        metadata.rename(saved)
+        try:
+            self.assert_preflight_failure(self.run_script(), "cannot resolve Git HEAD")
+            self.assertFalse(self.out.exists())
+        finally:
+            saved.rename(metadata)
+
+    def test_tracked_changes_are_rejected_when_detached(self):
+        self.git("switch", "--detach", self.commit)
+        (self.main / "scripts/profile_exp12.py").write_text("# changed\n")
+        self.assert_preflight_failure(self.run_script(), "working tree is not clean")
+        self.assertFalse(self.out.exists())
+
+    def test_staged_changes_are_rejected_when_detached(self):
+        self.git("switch", "--detach", self.commit)
+        (self.main / "scripts/profile_exp12.py").write_text("# changed\n")
+        self.git("add", "main/scripts/profile_exp12.py")
+        self.assert_preflight_failure(self.run_script(), "working tree is not clean")
         self.assertFalse(self.out.exists())
 
     def test_dirty_checkout_refuses_before_output(self):
         (self.main / "untracked.txt").touch()
-        self.assertNotEqual(self.run_script().returncode, 0)
+        self.assert_preflight_failure(self.run_script(), "working tree is not clean")
         self.assertFalse(self.out.exists())
 
     def test_reused_output_is_preserved(self):
         self.out.mkdir()
         sentinel = self.out / "existing.txt"
         sentinel.write_text("preserve")
-        self.assertNotEqual(self.run_script().returncode, 0)
+        self.assert_preflight_failure(
+            self.run_script(), "cannot create new OUT directory"
+        )
         self.assertEqual(sentinel.read_text(), "preserve")
 
     def test_output_inside_checkout_refuses(self):
         target = self.main / "output"
-        self.assertNotEqual(self.run_script(OUT=str(target)).returncode, 0)
+        self.assert_preflight_failure(
+            self.run_script(OUT=str(target)), "outside the checkout"
+        )
         self.assertFalse(target.exists())
 
+    def test_invalid_output_paths_are_explained(self):
+        for out, reason in (
+            ("relative-output", "OUT must be absolute"),
+            (str(self.root / "missing" / "output"), "OUT parent does not exist"),
+        ):
+            with self.subTest(out=out):
+                self.assert_preflight_failure(self.run_script(OUT=out), reason)
+                self.assertFalse(self.out.exists())
+
+    def test_invalid_diagnostic_selections_are_explained(self):
+        for updates, reason in (
+            ({"DIAGNOSTIC_MODE": "invalid"}, "unsupported DIAGNOSTIC_MODE"),
+            ({"DIAGNOSTIC_ARCH": "D6W1536"}, "unsupported DIAGNOSTIC_ARCH"),
+            (
+                {"DIAGNOSTIC_MODE": "identity_cold", "DIAGNOSTIC_ARCH": "D2W512"},
+                "identity mode requires a D4 architecture",
+            ),
+        ):
+            with self.subTest(updates=updates):
+                self.assert_preflight_failure(self.run_script(**updates), reason)
+                self.assertFalse(self.out.exists())
+
     def test_non_a100_refuses_before_output(self):
-        self.assertNotEqual(
-            self.run_script(EXPECTED_GPU_MODEL="Other GPU").returncode, 0
+        self.assert_preflight_failure(
+            self.run_script(EXPECTED_GPU_MODEL="Other GPU"),
+            "EXPECTED_GPU_MODEL must name an A100",
         )
         self.assertFalse(self.out.exists())
 
