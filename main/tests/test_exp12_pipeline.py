@@ -70,11 +70,12 @@ class PipelinePerSuiteTest(unittest.TestCase):
 
         out1 = os.path.join(self.tmp, "exp1_analysis")
         primary = exp1_analysis.run_analysis(out1, results, include_dev=True, default="D1W8",
-                                             scaled=("D1W16",))["primary"]
+                                             scaled=("D1W16",), exploratory=True)["primary"]
         self.assertEqual(list(primary.comparison), ["D1W16 - D1W8"])
         self.assertEqual((primary.runs_scaled.iloc[0], primary.runs_default.iloc[0]), (1, 1))
         out2 = os.path.join(self.tmp, "exp2_analysis")
-        outputs = exp2_analysis.run_analysis(out2, results_root=results, include_dev=True, scaled=("D1W16",))
+        outputs = exp2_analysis.run_analysis(out2, results_root=results, include_dev=True, scaled=("D1W16",),
+                                             exploratory=True)
         self.assertEqual(len(outputs["paired"]), 26)
         for d, names in ((out1, ("primary_endpoint.csv", "trajectories.png", "every_seed.png", "f_star_table.csv")),
                          (out2, ("paired_returns_D1W16.png", "check1_table.csv", "check2_table.csv",

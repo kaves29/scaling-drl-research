@@ -147,7 +147,7 @@ def run(args: dict) -> None:
         t.save(state_root)
         probes.write_csv()
         exp2_ledger.write_arm(run_key, arm, plan, probes.records, t.extra_state["post_fork_evals"],
-                              t.metrics_rows, int(cfg.action_repeat), cfg.results_root)
+                              t.metrics_rows, int(cfg.action_repeat), cfg.results_root, run_dir=arm_dir)
 
     def after_step(t):
         probes.maybe_check(t)

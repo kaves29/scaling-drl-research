@@ -29,10 +29,13 @@ def write_json(run_key: str, name: str, payload: Dict, results_root: Optional[st
 
 
 def write_arm(run_key: str, arm: str, plan: Dict, probe_records: List[Dict], eval_rows: List[Dict],
-              metrics_rows: List[Dict], action_repeat: int, results_root: Optional[str] = None) -> Path:
+              metrics_rows: List[Dict], action_repeat: int, results_root: Optional[str] = None,
+              run_dir=None) -> Path:
     if arm not in ARMS:
         raise ValueError(f"unknown arm {arm!r}")
     out = run_root(run_key, results_root) / f"arm_{arm}"
+    if run_dir is not None:
+        atomic_write_text(out / "source.json", json.dumps({"run_dir": str(Path(run_dir).resolve())}))
     fork_step, k0 = plan["fork_step"], plan["fork_check_index"]
     checks = pd.DataFrame([r for r in probe_records if r["check_index"] >= k0])
     if not checks.empty:

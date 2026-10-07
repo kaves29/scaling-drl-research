@@ -12,6 +12,7 @@ shows its progress (status "running") and a finished one is "complete".
 """
 
 import io
+import json
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
@@ -35,8 +36,6 @@ LEGACY_CHECK_COLUMNS = [
     *[f"loss_r{r}" for r in range(ROUNDS)],
     "score_current_iqm", "score_fresh_iqm", "loss_iqm", "ci_low", "ci_high", "triggered", "valid",
 ]
-
-
 TWIN_CHECK_COLUMNS = [
     *[f"score_{name}_q{q}_r{r}" for q in (1, 2) for name in ("current", "fresh") for r in range(ROUNDS)],
     *[f"loss_q{q}_r{r}" for q in (1, 2) for r in range(ROUNDS)],
@@ -59,6 +58,7 @@ def write_run(identity: Dict, records: List[Dict], f_star: Optional[Dict], statu
     """identity: run_key, run_role, architecture, environment, seed, budget_env_steps,
     num_interaction_steps, num_checks, code_commit."""
     out = ledger_root(results_root) / identity["run_key"]
+    atomic_write_text(out / "source.json", json.dumps({"run_dir": str(Path(probe_dir).resolve().parent)}))
     n, checks = identity["num_interaction_steps"], identity["num_checks"]
     base = {k: identity[k] for k in ("run_key", "run_role", "architecture", "environment", "seed")}
     base["experiment"] = EXPERIMENT
@@ -101,8 +101,11 @@ def write_run(identity: Dict, records: List[Dict], f_star: Optional[Dict], statu
 
 def load(results_root: Optional[str] = None, include_dev: bool = False,
          require_complete: bool = True) -> Tuple[pd.DataFrame, pd.DataFrame]:
-    """(runs, checks) for every run under the ledger root. Development runs are
-    excluded unless include_dev; unfinished runs unless require_complete=False."""
+    """Uncertified raw/progress data; run_analysis validates the prescribed population.
+
+    Development runs are excluded unless include_dev, unfinished runs unless
+    require_complete=False. A status marker alone does not certify completeness.
+    """
     root = ledger_root(results_root)
     runs, checks = [], []
     for run_dir in sorted(p for p in root.glob("*") if p.is_dir()):

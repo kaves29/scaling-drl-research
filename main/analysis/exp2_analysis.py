@@ -14,7 +14,8 @@ to identity). Per scaled architecture:
 Development runs and the identity (validation) arm are excluded by default. A fork
 enters the paired graphs only when both arms have every post-fork evaluation.
 
-    python -m analysis.exp2_analysis --out /abs/path/exp2_analysis [--statistic iqm|mean] [--include-dev]
+    python -m analysis.exp2_analysis --out /abs/path/exp2_analysis --study-manifest /abs/study.json
+    Add --exploratory for unvalidated progress output or custom summaries.
 """
 
 import argparse
@@ -61,7 +62,7 @@ def _read_csv(path: Path) -> pd.DataFrame:
 
 
 def load(results_root=None, include_dev: bool = False) -> Dict[str, pd.DataFrame]:
-    """Every fork under results/exp12/exp2 joined to its Exp 1 run (role, architecture, environment, seed)."""
+    """Uncertified raw/progress loader; run_analysis performs confirmatory validation."""
     runs, _ = ledger.load(results_root, include_dev=include_dev, require_complete=False)
     root = Path(exp2_ledger.run_root("x", results_root)).parent
     forks, evals, checks, metrics = [], [], [], []
@@ -99,7 +100,7 @@ def load(results_root=None, include_dev: bool = False) -> Dict[str, pd.DataFrame
 def paired_returns(evals: pd.DataFrame, forks: pd.DataFrame,
                    normalize: Callable[[str, np.ndarray], np.ndarray] = identity) -> pd.DataFrame:
     """One row per (fork, evaluation): mean (normalised) return of each arm and injected - control."""
-    complete = forks[forks.complete].run_key
+    complete = forks[forks.complete.astype(bool)].run_key
     e = evals[evals.run_key.isin(complete)].copy()
     if e.empty:
         return pd.DataFrame(columns=["run_key", "architecture", "environment", "seed", "eval_index",
@@ -175,6 +176,8 @@ def plot_paired(paired: pd.DataFrame, bands: pd.DataFrame, arch: str, path: Path
 
 def plot_both_arms(df: pd.DataFrame, arch: str, value: str, path: Path, ylabel: str) -> None:
     """Every seed's line for both arms, one panel per environment."""
+    if df.empty:
+        return
     plt = _plot_setup()
     df = df[(df.architecture == arch) & df[value].notna()] if value in df else df.iloc[0:0]
     envs = sorted(df.environment.unique())
@@ -227,16 +230,30 @@ def shared_time_axis(runs: pd.DataFrame, checks: pd.DataFrame, metrics: pd.DataF
     plt.close(fig)
 
 
-def run_analysis(out_dir: str, statistic: str = "iqm", results_root=None, include_dev: bool = False,
-                 normalize: Callable[[str, np.ndarray], np.ndarray] = identity, scaled=SCALED) -> Dict:
+def _write_analysis(out_dir: str, statistic: str = "iqm", results_root=None, include_dev: bool = False,
+                    normalize: Callable[[str, np.ndarray], np.ndarray] = identity, scaled=SCALED,
+                    certification=None) -> Dict:
     if statistic not in STATISTICS:
         raise ValueError(f"statistic must be one of {sorted(STATISTICS)}")
     out = Path(require_absolute(out_dir, "--out"))
     out.mkdir(parents=True, exist_ok=True)
     data = load(results_root, include_dev)
     forks = data["forks"]
-    if forks.empty:
+    if forks.empty and certification is None:
         raise ValueError("no forks in results/exp12/exp2")
+    if forks.empty:
+        forks = pd.DataFrame(columns=["run_key", "architecture", "environment", "seed", "check1_pass",
+                                      "check1_max_eps_units", "check2_pass", "check2_paired_difference_iqm",
+                                      "check2_ci_low", "check2_ci_high", "complete"])
+        data["evals"] = pd.DataFrame(columns=["run_key"])
+    if certification is not None:
+        census = pd.DataFrame(certification["census"])
+        census.to_csv(out / "candidate_census.csv", index=False)
+        population = census.groupby(["architecture", "environment"])
+        summary = population.status.agg(candidates="size", eligible=lambda x: (x == "eligible_trigger").sum(),
+                                        valid_no_trigger=lambda x: (x == "valid_no_trigger").sum()).reset_index()
+        summary["zero_eligible"] = summary.eligible == 0
+        summary.to_csv(out / "eligibility_by_environment.csv", index=False)
     forks.to_csv(out / "forks.csv", index=False)
     forks[["run_key", "architecture", "environment", "seed", "check1_pass", "check1_max_eps_units"]].to_csv(
         out / "check1_table.csv", index=False)
@@ -279,6 +296,33 @@ def run_analysis(out_dir: str, statistic: str = "iqm", results_root=None, includ
     return outputs
 
 
+def run_analysis(out_dir: str, statistic: str = "iqm", results_root=None, include_dev: bool = False,
+                 normalize: Callable[[str, np.ndarray], np.ndarray] = identity, scaled=SCALED,
+                 *, study_manifest=None, exploratory: bool = False) -> Dict:
+    from analysis.exp12_validation import ReportingDecisionRequired, publish
+
+    require_absolute(out_dir, "--out")
+    if statistic not in STATISTICS:
+        raise ValueError(f"statistic must be one of {sorted(STATISTICS)}")
+    if not exploratory and (include_dev or statistic != "iqm" or normalize is not identity or tuple(scaled) != SCALED):
+        raise ValueError("custom analysis requires the explicitly exploratory path")
+
+    def write(out, certification):
+        if not exploratory:
+            eligible = pd.DataFrame(certification["census"])
+            eligible = eligible[eligible.status == "eligible_trigger"]
+            counts = eligible.groupby(["architecture", "environment"]).size()
+            secondary = eligible[eligible.get("check2_pass", pd.Series(False, index=eligible.index)) == True]
+            secondary_counts = secondary.groupby(["architecture", "environment"]).size()
+            unresolved = list(counts[counts == 1].index) + list(secondary_counts[secondary_counts == 1].index)
+            if unresolved:
+                raise ReportingDecisionRequired([f"one-seed uncertainty decision required (primary/secondary): {unresolved}"], certification["census"])
+        return _write_analysis(str(out), statistic, results_root, include_dev, normalize, scaled,
+                               None if exploratory else certification)
+
+    return publish(out_dir, write, results_root, "exp2", study_manifest, exploratory)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--out", required=True)
@@ -286,8 +330,11 @@ def main():
                         help="statistic over seeds for the bands (IQM, amendment (r))")
     parser.add_argument("--results-root", default=None)
     parser.add_argument("--include-dev", action="store_true")
+    parser.add_argument("--study-manifest", default=None)
+    parser.add_argument("--exploratory", action="store_true", help="unvalidated progress output; never confirmatory")
     args = parser.parse_args()
-    outputs = run_analysis(args.out, args.statistic, args.results_root, args.include_dev)
+    outputs = run_analysis(args.out, args.statistic, args.results_root, args.include_dev,
+                           study_manifest=args.study_manifest, exploratory=args.exploratory)
     print(outputs["forks"].to_string(index=False))
 
 

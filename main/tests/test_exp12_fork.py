@@ -175,7 +175,7 @@ class ForkEndToEndTest(unittest.TestCase):
         from analysis import exp2_analysis
 
         out = os.path.join(self.tmp, "exp2_analysis")
-        outputs = exp2_analysis.run_analysis(out, "mean", self.results, include_dev=True)
+        outputs = exp2_analysis.run_analysis(out, "mean", self.results, include_dev=True, exploratory=True)
         fork_row = outputs["forks"].iloc[0]
         self.assertTrue(fork_row.complete)
         self.assertTrue(fork_row.check1_pass)

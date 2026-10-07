@@ -262,7 +262,7 @@ class Exp1AnalysisTest(unittest.TestCase):
 
         write_synthetic_grid(self.root, {"D2W512": 0.0, "D4W1024": 0.5, "D4W1536": 0.2})
         out = os.path.join(self.root, "analysis")
-        run_analysis(out, self.root)
+        run_analysis(out, self.root, exploratory=True)
         for name in ("primary_endpoint.csv", "final_loss_by_architecture.csv", "trajectories.csv",
                      "f_star_table.csv", "every_seed_checks.csv", "trajectories.png", "every_seed.png"):
             self.assertTrue((Path(out) / name).exists(), name)

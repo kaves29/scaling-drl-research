@@ -99,7 +99,7 @@ class SyntheticResultsTest(unittest.TestCase):
         _write_run(cls.root, "D4W1536", "dog-run", 4, complete=False)  # injected arm unfinished
         _write_run(cls.root, "D4W1536", "dog-run", 101, role="dev")
         cls.out = os.path.join(cls.root, "analysis")
-        cls.outputs = ea.run_analysis(cls.out, "mean", cls.root)
+        cls.outputs = ea.run_analysis(cls.out, "mean", cls.root, exploratory=True)
 
     @classmethod
     def tearDownClass(cls):

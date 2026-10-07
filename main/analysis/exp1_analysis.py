@@ -8,7 +8,8 @@ percentile 95% intervals. Descriptive outputs: plasticity-loss trajectories on
 a budget-fraction axis, every seed in every environment, the per-run f*_run
 table, and probe learning curves. Development runs are excluded by default.
 
-    python -m analysis.exp1_analysis --out /abs/path/exp1_analysis [--include-dev] [--results-root ...]
+    python -m analysis.exp1_analysis --out /abs/path/exp1_analysis --study-manifest /abs/study.json [--results-root ...]
+    Add --exploratory for unvalidated progress output.
 """
 
 import argparse
@@ -175,8 +176,8 @@ def plot_learning_curves(run_key: str, path: Path, results_root=None, check_indi
     plt.close(fig)
 
 
-def run_analysis(out_dir: str, results_root=None, include_dev: bool = False, curves_for: Sequence[str] = (),
-                 default: str = DEFAULT, scaled: Sequence[str] = SCALED) -> Dict:
+def _write_analysis(out_dir: str, results_root=None, include_dev: bool = False, curves_for: Sequence[str] = (),
+                    default: str = DEFAULT, scaled: Sequence[str] = SCALED) -> Dict:
     out = Path(require_absolute(out_dir, "--out"))
     out.mkdir(parents=True, exist_ok=True)
     runs, checks = ledger.load(results_root, include_dev=include_dev)
@@ -198,14 +199,33 @@ def run_analysis(out_dir: str, results_root=None, include_dev: bool = False, cur
     return outputs
 
 
+def run_analysis(out_dir: str, results_root=None, include_dev: bool = False, curves_for: Sequence[str] = (),
+                 default: str = DEFAULT, scaled: Sequence[str] = SCALED, *, study_manifest=None,
+                 exploratory: bool = False) -> Dict:
+    from analysis.exp12_validation import ValidationError, publish
+
+    require_absolute(out_dir, "--out")
+    if not exploratory and (include_dev or default != DEFAULT or tuple(scaled) != SCALED):
+        raise ValueError("custom populations require the explicitly exploratory path")
+    def write(out, certification):
+        if not exploratory and not set(curves_for).issubset({r["run_key"] for r in certification["census"]}):
+            raise ValidationError(["requested curves are outside the validated population"], certification["census"])
+        return _write_analysis(str(out), results_root, include_dev, curves_for, default, scaled)
+
+    return publish(out_dir, write, results_root, "exp1", study_manifest, exploratory)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--out", required=True)
     parser.add_argument("--results-root", default=None)
     parser.add_argument("--include-dev", action="store_true")
+    parser.add_argument("--study-manifest", default=None)
+    parser.add_argument("--exploratory", action="store_true", help="unvalidated progress output; never confirmatory")
     parser.add_argument("--curves", nargs="*", default=[], help="run keys to plot probe learning curves for")
     args = parser.parse_args()
-    print(run_analysis(args.out, args.results_root, args.include_dev, args.curves)["primary"].to_string(index=False))
+    print(run_analysis(args.out, args.results_root, args.include_dev, args.curves,
+                       study_manifest=args.study_manifest, exploratory=args.exploratory)["primary"].to_string(index=False))
 
 
 if __name__ == "__main__":

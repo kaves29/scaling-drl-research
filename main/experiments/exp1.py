@@ -160,7 +160,7 @@ def run(args: dict) -> None:
             exp2_ledger.write_json(identity.run_key, "fork.json", plan, cfg.results_root)
             exp2_ledger.write_arm(identity.run_key, "control", plan, probes.records,
                                   t.extra_state.get("post_fork_evals", []), t.metrics_rows,
-                                  int(cfg.action_repeat), cfg.results_root)
+                                  int(cfg.action_repeat), cfg.results_root, run_dir=run_dir)
 
     def after_step(t: Exp12Trainer) -> None:
         step = t.interaction_step
