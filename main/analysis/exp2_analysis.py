@@ -263,6 +263,11 @@ def run_analysis(out_dir: str, statistic: str = "iqm", results_root=None, includ
         data["metrics"].to_csv(out / "diagnostics_post_fork.csv", index=False)
     for arch in scaled:
         plot_both_arms(post, arch, "loss_iqm", out / f"plasticity_post_fork_{arch}.png", "plasticity loss L (IQM)")
+        for q in (1, 2):
+            value = f"loss_q{q}_iqm"
+            if value in post and post[value].notna().any():
+                plot_both_arms(post, arch, value, out / f"plasticity_post_fork_{arch}_q{q}.png",
+                               f"Q{q} plasticity loss L (IQM)")
         for v in DIAGNOSTICS:
             plot_both_arms(data["metrics"], arch, v, out / f"diagnostics_{v.split('/')[-1]}_{arch}.png", v)
     _, exp1_checks = ledger.load(results_root, include_dev=include_dev, require_complete=False)

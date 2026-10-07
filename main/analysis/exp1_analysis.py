@@ -158,15 +158,20 @@ def plot_learning_curves(run_key: str, path: Path, results_root=None, check_indi
     curves = np.load(ledger.ledger_root(results_root) / run_key / "probe_curves.npz")
     fig, axes = plt.subplots(1, len(check_indices), figsize=(3.6 * len(check_indices), 2.8), squeeze=False)
     for ax, k in zip(axes[0], check_indices):
+        twins = f"check_{k:02d}/fresh_q1_losses" in curves
         for name, color in (("fresh", "#2a78d6"), ("current", "#eb6834")):
-            losses = curves[f"check_{k:02d}/{name}_losses"]
-            ax.plot(losses.mean(0), color=color, linewidth=1.5, label=name)
+            for q in ((1, 2) if twins else (None,)):
+                label = name if q is None else f"{name}_q{q}"
+                losses = curves[f"check_{k:02d}/{label}_losses"]
+                ax.plot(losses.mean(0), color=color, linestyle="--" if q == 2 else "-",
+                        linewidth=1.5, label=label)
         ax.set_yscale("log")
         ax.set_title(f"{run_key} check {k}", loc="left")
         ax.set_xlabel("probe step")
         ax.legend(frameon=False)
     fig.tight_layout()
     fig.savefig(path, dpi=150)
+    curves.close()
     plt.close(fig)
 
 

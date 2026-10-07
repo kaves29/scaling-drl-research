@@ -28,13 +28,21 @@ RUN_COLUMNS = [
     "num_interaction_steps", "num_checks", "status", "initial_fresh_score_iqm", "final_loss_iqm",
     "f_star_check", "f_star_interaction_step", "f_star_fraction", "fork_interaction_step", "code_commit",
 ]
-CHECK_COLUMNS = [
+LEGACY_CHECK_COLUMNS = [
     "run_key", "experiment", "run_role", "architecture", "environment", "seed", "check_index",
     "interaction_step", "budget_fraction",
     *[f"score_current_r{r}" for r in range(ROUNDS)], *[f"score_fresh_r{r}" for r in range(ROUNDS)],
     *[f"loss_r{r}" for r in range(ROUNDS)],
     "score_current_iqm", "score_fresh_iqm", "loss_iqm", "ci_low", "ci_high", "triggered", "valid",
 ]
+
+
+TWIN_CHECK_COLUMNS = [
+    *[f"score_{name}_q{q}_r{r}" for q in (1, 2) for name in ("current", "fresh") for r in range(ROUNDS)],
+    *[f"loss_q{q}_r{r}" for q in (1, 2) for r in range(ROUNDS)],
+    *[f"loss_q{q}_iqm" for q in (1, 2)],
+]
+CHECK_COLUMNS = LEGACY_CHECK_COLUMNS + TWIN_CHECK_COLUMNS
 
 
 class LedgerSchemaError(ValueError):
@@ -101,12 +109,12 @@ def load(results_root: Optional[str] = None, include_dev: bool = False,
         run = pd.read_csv(run_dir / "run.csv")
         chk = pd.read_csv(run_dir / "checks.csv")
         for df, cols, name in ((run, RUN_COLUMNS, "run.csv"), (chk, CHECK_COLUMNS, "checks.csv")):
-            if list(df.columns) != cols:
+            if list(df.columns) != cols and not (name == "checks.csv" and list(df.columns) == LEGACY_CHECK_COLUMNS):
                 raise LedgerSchemaError(f"{run_dir / name}: columns {list(df.columns)} != {cols}")
         if (run.experiment != EXPERIMENT).any():
             raise LedgerSchemaError(f"{run_dir}: not an {EXPERIMENT} run")
         runs.append(run)
-        checks.append(chk)
+        checks.append(chk.reindex(columns=CHECK_COLUMNS))
     if not runs:
         return pd.DataFrame(columns=RUN_COLUMNS), pd.DataFrame(columns=CHECK_COLUMNS)
     runs, checks = pd.concat(runs, ignore_index=True), pd.concat(checks, ignore_index=True)
