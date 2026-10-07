@@ -20,8 +20,20 @@
 # Submit from main/ after `mkdir -p logs`:  HB_ENV=<env> EXPECTED_COMMIT=<hash> EXPECTED_GPU_MODEL=<device_kind> sbatch scripts/sbatch_exp12_hb.sh
 # CPU plumbing test: HB_ENV=<env> HB_TEST_HOOKS=<file that shrinks the settings> bash scripts/sbatch_exp12_hb.sh
 set -uo pipefail
-SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)" || exit 2
-cd "$SCRIPT_DIR/.." || exit 2
+# Slurm executes a spool copy of this script: $0 is not its checkout path.
+# The submission contract is `cd <reviewed-checkout>/main; sbatch scripts/...`.
+if [ -n "${SLURM_JOB_ID:-}" ]; then
+  if [ -z "${SLURM_SUBMIT_DIR:-}" ]; then
+    echo "ERROR: SLURM_SUBMIT_DIR is required; submit from main in the reviewed checkout"; exit 2
+  fi
+  cd -- "$SLURM_SUBMIT_DIR" || exit 2
+else
+  SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)" || exit 2
+  cd "$SCRIPT_DIR/.." || exit 2
+fi
+if [ ! -f run.py ] || [ ! -f configs/base_exp12.yaml ] || [ ! -f scripts/check_exp12_hb_status.py ]; then
+  echo "ERROR: submit Block HB from the reviewed checkout's main directory"; exit 2
+fi
 : "${EXPECTED_COMMIT:?set EXPECTED_COMMIT to the reviewed clean final-tree revision}"
 : "${EXPECTED_GPU_MODEL:?set EXPECTED_GPU_MODEL to the grid GPU device_kind}"
 if [ -n "${SLURM_JOB_ID:-}" ] && [ -n "${HB_TEST_HOOKS:-}" ]; then

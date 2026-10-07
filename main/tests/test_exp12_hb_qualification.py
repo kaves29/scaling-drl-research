@@ -119,6 +119,9 @@ class HbQualificationTest(unittest.TestCase):
             (root / "scripts").mkdir()
             shutil.copy(driver, root / "scripts" / driver.name)
             shutil.copy(checker, root / "scripts" / checker.name)
+            (root / "configs").mkdir()
+            (root / "configs/base_exp12.yaml").touch()
+            (root / "run.py").touch()
             (root / "bin").mkdir()
             (root / "hb/bin").mkdir(parents=True)
             git = root / "bin/git"
@@ -223,3 +226,72 @@ else:
         ]:
             with self.subTest(field=field), self.assertRaises(ValueError):
                 validate({**hb, field: value}, "SYNTHETIC", main)
+
+    def test_slurm_spool_copy_uses_submit_checkout(self):
+        """Execute the complete copied script as Slurm does, stopping at module setup.
+
+        No Slurm, cluster files, conda or workloads are invoked. The module stand-in
+        records the cwd reached by the real script and deliberately stops setup.
+        """
+        driver = Path(__file__).resolve().parents[1] / "scripts/sbatch_exp12_hb.sh"
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp).resolve()
+            checkout = root / "final checkout/main"
+            (checkout / "scripts").mkdir(parents=True)
+            (checkout / "configs").mkdir()
+            for name in (
+                "run.py",
+                "configs/base_exp12.yaml",
+                "scripts/check_exp12_hb_status.py",
+            ):
+                (checkout / name).touch()
+            spool = root / "slurmd/job123/slurm_script"
+            spool.parent.mkdir(parents=True)
+            shutil.copy(driver, spool)
+            spool.chmod(0o755)
+            (root / "bin").mkdir()
+            module = root / "bin/module"
+            module.write_text('#!/bin/sh\npwd -P > "$CWD_RECORD"\nexit 73\n')
+            module.chmod(0o755)
+            record = root / "cwd.txt"
+            env = {
+                **os.environ,
+                "PATH": str(root / "bin") + ":" + os.environ["PATH"],
+                "SLURM_JOB_ID": "123",
+                "SLURM_SUBMIT_DIR": str(checkout),
+                "EXPECTED_COMMIT": "1" * 40,
+                "EXPECTED_GPU_MODEL": "SYNTHETIC",
+                "HB_ENV": str(root / "unused-hb"),
+                "CWD_RECORD": str(record),
+            }
+            env.pop("HB_TEST_HOOKS", None)
+            env.pop("BASH_ENV", None)
+            # Default Slurm cwd, and an unrelated initial cwd (--chdir).
+            for cwd in (checkout, root):
+                result = subprocess.run(
+                    [str(spool)],
+                    cwd=cwd,
+                    env=env,
+                    capture_output=True,
+                    text=True,
+                    timeout=10,
+                )
+                self.assertEqual(result.returncode, 2, result.stdout + result.stderr)
+                self.assertEqual(record.read_text().strip(), str(checkout))
+                record.unlink()
+            for submit_dir in ("", str(root), str(root / "missing")):
+                with self.subTest(submit_dir=submit_dir):
+                    result = subprocess.run(
+                        [str(spool)],
+                        cwd=checkout,
+                        env={**env, "SLURM_SUBMIT_DIR": submit_dir},
+                        capture_output=True,
+                        text=True,
+                        timeout=10,
+                    )
+                    self.assertEqual(
+                        result.returncode, 2, result.stdout + result.stderr
+                    )
+                    self.assertFalse(
+                        record.exists(), "invalid checkout reached cluster setup"
+                    )
