@@ -89,6 +89,20 @@ def characterize():
                 eager=errors(eager_q.reshape(2, -1), q64),
                 jit=errors(actual["q"].reshape(2, -1), q64),
             )
+            values["per_network"] = {
+                f"q{k+1}": {
+                    "eager": errors(eager_q.reshape(2, -1)[k], q64[k]),
+                    "jit": errors(actual["q"].reshape(2, -1)[k], q64[k]),
+                }
+                for k in (0, 1)
+            }
+            pair_error = {
+                "q": errors(
+                    actual["q"].reshape(2, -1),
+                    eager_q.reshape(2, -1).astype(np.float64),
+                ),
+                "gradient": errors(actual["dq_da"], eager_g.astype(np.float64)),
+            }
             mutations = {
                 "first_Q_gradient": errors(first, g64),
                 "second_Q_gradient": errors(second, g64),
@@ -104,6 +118,7 @@ def characterize():
                     width=width,
                     seed=seed,
                     q=values,
+                    eager_vs_jit=pair_error,
                     gradient=gradients,
                     finite_difference=errors(np.stack(finite, axis=1), g64),
                     mutations=mutations,
@@ -127,6 +142,15 @@ def characterize():
         for c in cases
         for field in ("q", "gradient")
         for mode in ("eager", "jit")
+    )
+    maximum = max(
+        maximum,
+        max(
+            c["q"]["per_network"][q][mode]["max_eps_units"]
+            for c in cases
+            for q in ("q1", "q2")
+            for mode in ("eager", "jit")
+        ),
     )
     proposed = 2 ** math.ceil(math.log2(4 * maximum))
     return dict(
