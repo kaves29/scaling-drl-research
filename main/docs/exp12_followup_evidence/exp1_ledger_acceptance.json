@@ -1,0 +1,29 @@
+{
+  "run_count": 3,
+  "check_rows": 0,
+  "primary": [
+    {
+      "comparison": "D4W1024 - D2W512",
+      "statistic": "IQM(scaled) - IQM(default) of final-check L",
+      "point": 0.0,
+      "ci_low": 0.0,
+      "ci_high": 0.0,
+      "runs_scaled": 1,
+      "runs_default": 1,
+      "environments": 1,
+      "reps": 20
+    },
+    {
+      "comparison": "D4W1536 - D2W512",
+      "statistic": "IQM(scaled) - IQM(default) of final-check L",
+      "point": 0.0,
+      "ci_low": 0.0,
+      "ci_high": 0.0,
+      "runs_scaled": 1,
+      "runs_default": 1,
+      "environments": 1,
+      "reps": 20
+    }
+  ],
+  "files_used_have_no_check20": true
+}

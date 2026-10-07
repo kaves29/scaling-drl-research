@@ -1,0 +1,986 @@
+[
+  {
+    "experiment": 1,
+    "case": "complete_195",
+    "accepted": true,
+    "primary": [
+      {
+        "comparison": "D4W1024 - D2W512",
+        "statistic": "IQM(scaled) - IQM(default) of final-check L",
+        "point": 0.010000000000000009,
+        "ci_low": -0.03560606060606058,
+        "ci_high": 0.06196969696969695,
+        "runs_scaled": 65,
+        "runs_default": 65,
+        "environments": 13,
+        "reps": 20
+      },
+      {
+        "comparison": "D4W1536 - D2W512",
+        "statistic": "IQM(scaled) - IQM(default) of final-check L",
+        "point": 0.020000000000000018,
+        "ci_low": -0.025606060606060573,
+        "ci_high": 0.0719696969696969,
+        "runs_scaled": 65,
+        "runs_default": 65,
+        "environments": 13,
+        "reps": 20
+      }
+    ],
+    "shapes": {
+      "D2W512": [
+        5,
+        13
+      ],
+      "D4W1024": [
+        5,
+        13
+      ],
+      "D4W1536": [
+        5,
+        13
+      ]
+    }
+  },
+  {
+    "experiment": 1,
+    "case": "missing_seed5_all",
+    "accepted": true,
+    "primary": [
+      {
+        "comparison": "D4W1024 - D2W512",
+        "statistic": "IQM(scaled) - IQM(default) of final-check L",
+        "point": 0.010000000000000009,
+        "ci_low": -0.05855769230769232,
+        "ci_high": 0.06971153846153846,
+        "runs_scaled": 52,
+        "runs_default": 52,
+        "environments": 13,
+        "reps": 20
+      },
+      {
+        "comparison": "D4W1536 - D2W512",
+        "statistic": "IQM(scaled) - IQM(default) of final-check L",
+        "point": 0.020000000000000073,
+        "ci_low": -0.04855769230769228,
+        "ci_high": 0.0797115384615385,
+        "runs_scaled": 52,
+        "runs_default": 52,
+        "environments": 13,
+        "reps": 20
+      }
+    ],
+    "shapes": {
+      "D2W512": [
+        4,
+        13
+      ],
+      "D4W1024": [
+        4,
+        13
+      ],
+      "D4W1536": [
+        4,
+        13
+      ]
+    }
+  },
+  {
+    "experiment": 1,
+    "case": "missing_seed5_scaled_only",
+    "accepted": true,
+    "primary": [
+      {
+        "comparison": "D4W1024 - D2W512",
+        "statistic": "IQM(scaled) - IQM(default) of final-check L",
+        "point": 0.010000000000000009,
+        "ci_low": -0.03560606060606058,
+        "ci_high": 0.06196969696969695,
+        "runs_scaled": 65,
+        "runs_default": 65,
+        "environments": 13,
+        "reps": 20
+      },
+      {
+        "comparison": "D4W1536 - D2W512",
+        "statistic": "IQM(scaled) - IQM(default) of final-check L",
+        "point": -0.029999999999999916,
+        "ci_low": -0.08139860139860135,
+        "ci_high": 0.03375291375291374,
+        "runs_scaled": 52,
+        "runs_default": 65,
+        "environments": 13,
+        "reps": 20
+      }
+    ],
+    "shapes": {
+      "D2W512": [
+        5,
+        13
+      ],
+      "D4W1024": [
+        5,
+        13
+      ],
+      "D4W1536": [
+        4,
+        13
+      ]
+    }
+  },
+  {
+    "experiment": 1,
+    "case": "missing_h1reach_all",
+    "accepted": true,
+    "primary": [
+      {
+        "comparison": "D4W1024 - D2W512",
+        "statistic": "IQM(scaled) - IQM(default) of final-check L",
+        "point": 0.009999999999999953,
+        "ci_low": -0.043333333333333335,
+        "ci_high": 0.051750000000000025,
+        "runs_scaled": 60,
+        "runs_default": 60,
+        "environments": 12,
+        "reps": 20
+      },
+      {
+        "comparison": "D4W1536 - D2W512",
+        "statistic": "IQM(scaled) - IQM(default) of final-check L",
+        "point": 0.020000000000000018,
+        "ci_low": -0.03333333333333338,
+        "ci_high": 0.06174999999999995,
+        "runs_scaled": 60,
+        "runs_default": 60,
+        "environments": 12,
+        "reps": 20
+      }
+    ],
+    "shapes": {
+      "D2W512": [
+        5,
+        12
+      ],
+      "D4W1024": [
+        5,
+        12
+      ],
+      "D4W1536": [
+        5,
+        12
+      ]
+    }
+  },
+  {
+    "experiment": 1,
+    "case": "missing_one_cell",
+    "accepted": false,
+    "error": "D2W512: missing or non-finite final_loss_iqm for (seed, env) [(1, 'dog-run')]"
+  },
+  {
+    "experiment": 1,
+    "case": "duplicate_identity",
+    "accepted": true,
+    "primary": [
+      {
+        "comparison": "D4W1024 - D2W512",
+        "statistic": "IQM(scaled) - IQM(default) of final-check L",
+        "point": 0.010000000000000009,
+        "ci_low": -0.03560606060606058,
+        "ci_high": 0.06196969696969695,
+        "runs_scaled": 65,
+        "runs_default": 65,
+        "environments": 13,
+        "reps": 20
+      },
+      {
+        "comparison": "D4W1536 - D2W512",
+        "statistic": "IQM(scaled) - IQM(default) of final-check L",
+        "point": 0.020000000000000018,
+        "ci_low": -0.025606060606060573,
+        "ci_high": 0.0719696969696969,
+        "runs_scaled": 65,
+        "runs_default": 65,
+        "environments": 13,
+        "reps": 20
+      }
+    ],
+    "shapes": {
+      "D2W512": [
+        5,
+        13
+      ],
+      "D4W1024": [
+        5,
+        13
+      ],
+      "D4W1536": [
+        5,
+        13
+      ]
+    }
+  },
+  {
+    "experiment": 1,
+    "case": "extra_seed6",
+    "accepted": true,
+    "primary": [
+      {
+        "comparison": "D4W1024 - D2W512",
+        "statistic": "IQM(scaled) - IQM(default) of final-check L",
+        "point": 0.010000000000000064,
+        "ci_low": -0.02012499999999996,
+        "ci_high": 0.052750000000000005,
+        "runs_scaled": 78,
+        "runs_default": 78,
+        "environments": 13,
+        "reps": 20
+      },
+      {
+        "comparison": "D4W1536 - D2W512",
+        "statistic": "IQM(scaled) - IQM(default) of final-check L",
+        "point": 0.020000000000000018,
+        "ci_low": -0.010124999999999952,
+        "ci_high": 0.06275000000000004,
+        "runs_scaled": 78,
+        "runs_default": 78,
+        "environments": 13,
+        "reps": 20
+      }
+    ],
+    "shapes": {
+      "D2W512": [
+        6,
+        13
+      ],
+      "D4W1024": [
+        6,
+        13
+      ],
+      "D4W1536": [
+        6,
+        13
+      ]
+    }
+  },
+  {
+    "experiment": 1,
+    "case": "extra_environment",
+    "accepted": true,
+    "primary": [
+      {
+        "comparison": "D4W1024 - D2W512",
+        "statistic": "IQM(scaled) - IQM(default) of final-check L",
+        "point": 0.010000000000000009,
+        "ci_low": -0.022013888888888847,
+        "ci_high": 0.037777777777777716,
+        "runs_scaled": 70,
+        "runs_default": 70,
+        "environments": 14,
+        "reps": 20
+      },
+      {
+        "comparison": "D4W1536 - D2W512",
+        "statistic": "IQM(scaled) - IQM(default) of final-check L",
+        "point": 0.020000000000000018,
+        "ci_low": -0.012013888888888867,
+        "ci_high": 0.0477777777777777,
+        "runs_scaled": 70,
+        "runs_default": 70,
+        "environments": 14,
+        "reps": 20
+      }
+    ],
+    "shapes": {
+      "D2W512": [
+        5,
+        14
+      ],
+      "D4W1024": [
+        5,
+        14
+      ],
+      "D4W1536": [
+        5,
+        14
+      ]
+    }
+  },
+  {
+    "experiment": 1,
+    "case": "infinite_endpoint",
+    "accepted": true,
+    "primary": [
+      {
+        "comparison": "D4W1024 - D2W512",
+        "statistic": "IQM(scaled) - IQM(default) of final-check L",
+        "point": 0.003939393939393909,
+        "ci_low": -0.03878787878787878,
+        "ci_high": 0.060530303030303025,
+        "runs_scaled": 65,
+        "runs_default": 65,
+        "environments": 13,
+        "reps": 20
+      },
+      {
+        "comparison": "D4W1536 - D2W512",
+        "statistic": "IQM(scaled) - IQM(default) of final-check L",
+        "point": 0.013939393939393918,
+        "ci_low": -0.028787878787878772,
+        "ci_high": 0.07053030303030297,
+        "runs_scaled": 65,
+        "runs_default": 65,
+        "environments": 13,
+        "reps": 20
+      }
+    ],
+    "shapes": {
+      "D2W512": [
+        5,
+        13
+      ],
+      "D4W1024": [
+        5,
+        13
+      ],
+      "D4W1536": [
+        5,
+        13
+      ]
+    }
+  },
+  {
+    "experiment": 2,
+    "case": "complete_26x10",
+    "load_error": false,
+    "forks": [
+      {
+        "run_key": "exp1_D4W1536_dog-run_seed1",
+        "run_role": "confirmatory",
+        "architecture": "D4W1536",
+        "environment": "dog-run",
+        "seed": 1,
+        "fork_step": 100,
+        "fork_check_index": 5,
+        "check1_pass": true,
+        "check1_max_eps_units": 1.5,
+        "check2_pass": true,
+        "check2_paired_difference_iqm": 0.1,
+        "check2_ci_low": 0.05,
+        "check2_ci_high": 0.2,
+        "control_evals": 26,
+        "injected_evals": 26,
+        "complete": true
+      }
+    ],
+    "paired_rows": 26,
+    "nonfinite_differences": 0,
+    "first_paired": [
+      {
+        "run_key": "exp1_D4W1536_dog-run_seed1",
+        "architecture": "D4W1536",
+        "environment": "dog-run",
+        "seed": 1,
+        "eval_index": 0,
+        "steps_since_fork": 0,
+        "control": 104.5,
+        "injected": 124.5,
+        "difference": 20.0
+      }
+    ]
+  },
+  {
+    "experiment": 2,
+    "case": "one_episode_per_eval",
+    "load_error": false,
+    "forks": [
+      {
+        "run_key": "exp1_D4W1536_dog-run_seed1",
+        "run_role": "confirmatory",
+        "architecture": "D4W1536",
+        "environment": "dog-run",
+        "seed": 1,
+        "fork_step": 100,
+        "fork_check_index": 5,
+        "check1_pass": true,
+        "check1_max_eps_units": 1.5,
+        "check2_pass": true,
+        "check2_paired_difference_iqm": 0.1,
+        "check2_ci_low": 0.05,
+        "check2_ci_high": 0.2,
+        "control_evals": 26,
+        "injected_evals": 26,
+        "complete": true
+      }
+    ],
+    "paired_rows": 26,
+    "nonfinite_differences": 0,
+    "first_paired": [
+      {
+        "run_key": "exp1_D4W1536_dog-run_seed1",
+        "architecture": "D4W1536",
+        "environment": "dog-run",
+        "seed": 1,
+        "eval_index": 0,
+        "steps_since_fork": 0,
+        "control": 100.0,
+        "injected": 120.0,
+        "difference": 20.0
+      }
+    ]
+  },
+  {
+    "experiment": 2,
+    "case": "wrong_eval_indices",
+    "load_error": false,
+    "forks": [
+      {
+        "run_key": "exp1_D4W1536_dog-run_seed1",
+        "run_role": "confirmatory",
+        "architecture": "D4W1536",
+        "environment": "dog-run",
+        "seed": 1,
+        "fork_step": 100,
+        "fork_check_index": 5,
+        "check1_pass": true,
+        "check1_max_eps_units": 1.5,
+        "check2_pass": true,
+        "check2_paired_difference_iqm": 0.1,
+        "check2_ci_low": 0.05,
+        "check2_ci_high": 0.2,
+        "control_evals": 26,
+        "injected_evals": 26,
+        "complete": true
+      }
+    ],
+    "paired_rows": 26,
+    "nonfinite_differences": 0,
+    "first_paired": [
+      {
+        "run_key": "exp1_D4W1536_dog-run_seed1",
+        "architecture": "D4W1536",
+        "environment": "dog-run",
+        "seed": 1,
+        "eval_index": 100,
+        "steps_since_fork": 0,
+        "control": 104.5,
+        "injected": 124.5,
+        "difference": 20.0
+      }
+    ]
+  },
+  {
+    "experiment": 2,
+    "case": "misaligned_arm_steps",
+    "load_error": false,
+    "forks": [
+      {
+        "run_key": "exp1_D4W1536_dog-run_seed1",
+        "run_role": "confirmatory",
+        "architecture": "D4W1536",
+        "environment": "dog-run",
+        "seed": 1,
+        "fork_step": 100,
+        "fork_check_index": 5,
+        "check1_pass": true,
+        "check1_max_eps_units": 1.5,
+        "check2_pass": true,
+        "check2_paired_difference_iqm": 0.1,
+        "check2_ci_low": 0.05,
+        "check2_ci_high": 0.2,
+        "control_evals": 26,
+        "injected_evals": 26,
+        "complete": true
+      }
+    ],
+    "paired_rows": 52,
+    "nonfinite_differences": 52,
+    "first_paired": [
+      {
+        "run_key": "exp1_D4W1536_dog-run_seed1",
+        "architecture": "D4W1536",
+        "environment": "dog-run",
+        "seed": 1,
+        "eval_index": 0,
+        "steps_since_fork": 0,
+        "control": 104.5,
+        "injected": NaN,
+        "difference": NaN
+      }
+    ]
+  },
+  {
+    "experiment": 2,
+    "case": "duplicate_episode_rows",
+    "load_error": false,
+    "forks": [
+      {
+        "run_key": "exp1_D4W1536_dog-run_seed1",
+        "run_role": "confirmatory",
+        "architecture": "D4W1536",
+        "environment": "dog-run",
+        "seed": 1,
+        "fork_step": 100,
+        "fork_check_index": 5,
+        "check1_pass": true,
+        "check1_max_eps_units": 1.5,
+        "check2_pass": true,
+        "check2_paired_difference_iqm": 0.1,
+        "check2_ci_low": 0.05,
+        "check2_ci_high": 0.2,
+        "control_evals": 26,
+        "injected_evals": 26,
+        "complete": true
+      }
+    ],
+    "paired_rows": 26,
+    "nonfinite_differences": 0,
+    "first_paired": [
+      {
+        "run_key": "exp1_D4W1536_dog-run_seed1",
+        "architecture": "D4W1536",
+        "environment": "dog-run",
+        "seed": 1,
+        "eval_index": 0,
+        "steps_since_fork": 0,
+        "control": 104.5,
+        "injected": 204.0,
+        "difference": 99.5
+      }
+    ]
+  },
+  {
+    "experiment": 2,
+    "case": "nan_one_episode",
+    "load_error": false,
+    "forks": [
+      {
+        "run_key": "exp1_D4W1536_dog-run_seed1",
+        "run_role": "confirmatory",
+        "architecture": "D4W1536",
+        "environment": "dog-run",
+        "seed": 1,
+        "fork_step": 100,
+        "fork_check_index": 5,
+        "check1_pass": true,
+        "check1_max_eps_units": 1.5,
+        "check2_pass": true,
+        "check2_paired_difference_iqm": 0.1,
+        "check2_ci_low": 0.05,
+        "check2_ci_high": 0.2,
+        "control_evals": 26,
+        "injected_evals": 26,
+        "complete": true
+      }
+    ],
+    "paired_rows": 26,
+    "nonfinite_differences": 0,
+    "first_paired": [
+      {
+        "run_key": "exp1_D4W1536_dog-run_seed1",
+        "architecture": "D4W1536",
+        "environment": "dog-run",
+        "seed": 1,
+        "eval_index": 0,
+        "steps_since_fork": 0,
+        "control": 104.5,
+        "injected": 125.0,
+        "difference": 20.5
+      }
+    ]
+  },
+  {
+    "experiment": 2,
+    "case": "inf_episode",
+    "load_error": false,
+    "forks": [
+      {
+        "run_key": "exp1_D4W1536_dog-run_seed1",
+        "run_role": "confirmatory",
+        "architecture": "D4W1536",
+        "environment": "dog-run",
+        "seed": 1,
+        "fork_step": 100,
+        "fork_check_index": 5,
+        "check1_pass": true,
+        "check1_max_eps_units": 1.5,
+        "check2_pass": true,
+        "check2_paired_difference_iqm": 0.1,
+        "check2_ci_low": 0.05,
+        "check2_ci_high": 0.2,
+        "control_evals": 26,
+        "injected_evals": 26,
+        "complete": true
+      }
+    ],
+    "paired_rows": 26,
+    "nonfinite_differences": 1,
+    "first_paired": [
+      {
+        "run_key": "exp1_D4W1536_dog-run_seed1",
+        "architecture": "D4W1536",
+        "environment": "dog-run",
+        "seed": 1,
+        "eval_index": 0,
+        "steps_since_fork": 0,
+        "control": 104.5,
+        "injected": Infinity,
+        "difference": Infinity
+      }
+    ]
+  },
+  {
+    "experiment": 2,
+    "case": "missing_evaluation",
+    "load_error": false,
+    "forks": [
+      {
+        "run_key": "exp1_D4W1536_dog-run_seed1",
+        "run_role": "confirmatory",
+        "architecture": "D4W1536",
+        "environment": "dog-run",
+        "seed": 1,
+        "fork_step": 100,
+        "fork_check_index": 5,
+        "check1_pass": true,
+        "check1_max_eps_units": 1.5,
+        "check2_pass": true,
+        "check2_paired_difference_iqm": 0.1,
+        "check2_ci_low": 0.05,
+        "check2_ci_high": 0.2,
+        "control_evals": 26,
+        "injected_evals": 25,
+        "complete": false
+      }
+    ],
+    "paired_rows": 0,
+    "nonfinite_differences": 0,
+    "first_paired": []
+  },
+  {
+    "experiment": 2,
+    "case": "missing_arm",
+    "load_error": false,
+    "forks": [
+      {
+        "run_key": "exp1_D4W1536_dog-run_seed1",
+        "run_role": "confirmatory",
+        "architecture": "D4W1536",
+        "environment": "dog-run",
+        "seed": 1,
+        "fork_step": 100,
+        "fork_check_index": 5,
+        "check1_pass": true,
+        "check1_max_eps_units": 1.5,
+        "check2_pass": true,
+        "check2_paired_difference_iqm": 0.1,
+        "check2_ci_low": 0.05,
+        "check2_ci_high": 0.2,
+        "control_evals": 26,
+        "injected_evals": 0,
+        "complete": false
+      }
+    ],
+    "paired_rows": 0,
+    "nonfinite_differences": 0,
+    "first_paired": []
+  },
+  {
+    "experiment": 2,
+    "case": "missing_check1",
+    "load_error": false,
+    "forks": [
+      {
+        "run_key": "exp1_D4W1536_dog-run_seed1",
+        "run_role": "confirmatory",
+        "architecture": "D4W1536",
+        "environment": "dog-run",
+        "seed": 1,
+        "fork_step": 100,
+        "fork_check_index": 5,
+        "check1_pass": null,
+        "check1_max_eps_units": null,
+        "check2_pass": true,
+        "check2_paired_difference_iqm": 0.1,
+        "check2_ci_low": 0.05,
+        "check2_ci_high": 0.2,
+        "control_evals": 26,
+        "injected_evals": 26,
+        "complete": true
+      }
+    ],
+    "paired_rows": 26,
+    "nonfinite_differences": 0,
+    "first_paired": [
+      {
+        "run_key": "exp1_D4W1536_dog-run_seed1",
+        "architecture": "D4W1536",
+        "environment": "dog-run",
+        "seed": 1,
+        "eval_index": 0,
+        "steps_since_fork": 0,
+        "control": 104.5,
+        "injected": 124.5,
+        "difference": 20.0
+      }
+    ]
+  },
+  {
+    "experiment": 2,
+    "case": "failed_check1",
+    "load_error": false,
+    "forks": [
+      {
+        "run_key": "exp1_D4W1536_dog-run_seed1",
+        "run_role": "confirmatory",
+        "architecture": "D4W1536",
+        "environment": "dog-run",
+        "seed": 1,
+        "fork_step": 100,
+        "fork_check_index": 5,
+        "check1_pass": false,
+        "check1_max_eps_units": 1.5,
+        "check2_pass": true,
+        "check2_paired_difference_iqm": 0.1,
+        "check2_ci_low": 0.05,
+        "check2_ci_high": 0.2,
+        "control_evals": 26,
+        "injected_evals": 26,
+        "complete": true
+      }
+    ],
+    "paired_rows": 26,
+    "nonfinite_differences": 0,
+    "first_paired": [
+      {
+        "run_key": "exp1_D4W1536_dog-run_seed1",
+        "architecture": "D4W1536",
+        "environment": "dog-run",
+        "seed": 1,
+        "eval_index": 0,
+        "steps_since_fork": 0,
+        "control": 104.5,
+        "injected": 124.5,
+        "difference": 20.0
+      }
+    ]
+  },
+  {
+    "experiment": 2,
+    "case": "missing_check2",
+    "load_error": false,
+    "forks": [
+      {
+        "run_key": "exp1_D4W1536_dog-run_seed1",
+        "run_role": "confirmatory",
+        "architecture": "D4W1536",
+        "environment": "dog-run",
+        "seed": 1,
+        "fork_step": 100,
+        "fork_check_index": 5,
+        "check1_pass": true,
+        "check1_max_eps_units": 1.5,
+        "check2_pass": null,
+        "check2_paired_difference_iqm": null,
+        "check2_ci_low": null,
+        "check2_ci_high": null,
+        "control_evals": 26,
+        "injected_evals": 26,
+        "complete": true
+      }
+    ],
+    "paired_rows": 26,
+    "nonfinite_differences": 0,
+    "first_paired": [
+      {
+        "run_key": "exp1_D4W1536_dog-run_seed1",
+        "architecture": "D4W1536",
+        "environment": "dog-run",
+        "seed": 1,
+        "eval_index": 0,
+        "steps_since_fork": 0,
+        "control": 104.5,
+        "injected": 124.5,
+        "difference": 20.0
+      }
+    ]
+  },
+  {
+    "experiment": 2,
+    "case": "failed_check2",
+    "load_error": false,
+    "forks": [
+      {
+        "run_key": "exp1_D4W1536_dog-run_seed1",
+        "run_role": "confirmatory",
+        "architecture": "D4W1536",
+        "environment": "dog-run",
+        "seed": 1,
+        "fork_step": 100,
+        "fork_check_index": 5,
+        "check1_pass": true,
+        "check1_max_eps_units": 1.5,
+        "check2_pass": false,
+        "check2_paired_difference_iqm": 0.1,
+        "check2_ci_low": 0.05,
+        "check2_ci_high": 0.2,
+        "control_evals": 26,
+        "injected_evals": 26,
+        "complete": true
+      }
+    ],
+    "paired_rows": 26,
+    "nonfinite_differences": 0,
+    "first_paired": [
+      {
+        "run_key": "exp1_D4W1536_dog-run_seed1",
+        "architecture": "D4W1536",
+        "environment": "dog-run",
+        "seed": 1,
+        "eval_index": 0,
+        "steps_since_fork": 0,
+        "control": 104.5,
+        "injected": 124.5,
+        "difference": 20.0
+      }
+    ]
+  },
+  {
+    "experiment": 2,
+    "case": "running_parent",
+    "load_error": false,
+    "forks": [
+      {
+        "run_key": "exp1_D4W1536_dog-run_seed1",
+        "run_role": "confirmatory",
+        "architecture": "D4W1536",
+        "environment": "dog-run",
+        "seed": 1,
+        "fork_step": 100,
+        "fork_check_index": 5,
+        "check1_pass": true,
+        "check1_max_eps_units": 1.5,
+        "check2_pass": true,
+        "check2_paired_difference_iqm": 0.1,
+        "check2_ci_low": 0.05,
+        "check2_ci_high": 0.2,
+        "control_evals": 26,
+        "injected_evals": 26,
+        "complete": true
+      }
+    ],
+    "paired_rows": 26,
+    "nonfinite_differences": 0,
+    "first_paired": [
+      {
+        "run_key": "exp1_D4W1536_dog-run_seed1",
+        "architecture": "D4W1536",
+        "environment": "dog-run",
+        "seed": 1,
+        "eval_index": 0,
+        "steps_since_fork": 0,
+        "control": 104.5,
+        "injected": 124.5,
+        "difference": 20.0
+      }
+    ]
+  },
+  {
+    "experiment": 2,
+    "case": "missing_fork_json",
+    "load_error": false,
+    "forks": [],
+    "paired_rows": 0,
+    "nonfinite_differences": 0,
+    "first_paired": []
+  },
+  {
+    "experiment": 2,
+    "case": "missing_entire_fork",
+    "load_error": false,
+    "forks": [],
+    "paired_rows": 0,
+    "nonfinite_differences": 0,
+    "first_paired": []
+  },
+  {
+    "experiment": 2,
+    "case": "self_declared_shorter_plan",
+    "load_error": false,
+    "forks": [
+      {
+        "run_key": "exp1_D4W1536_dog-run_seed1",
+        "run_role": "confirmatory",
+        "architecture": "D4W1536",
+        "environment": "dog-run",
+        "seed": 1,
+        "fork_step": 100,
+        "fork_check_index": 5,
+        "check1_pass": true,
+        "check1_max_eps_units": 1.5,
+        "check2_pass": true,
+        "check2_paired_difference_iqm": 0.1,
+        "check2_ci_low": 0.05,
+        "check2_ci_high": 0.2,
+        "control_evals": 3,
+        "injected_evals": 3,
+        "complete": true
+      }
+    ],
+    "paired_rows": 3,
+    "nonfinite_differences": 0,
+    "first_paired": [
+      {
+        "run_key": "exp1_D4W1536_dog-run_seed1",
+        "architecture": "D4W1536",
+        "environment": "dog-run",
+        "seed": 1,
+        "eval_index": 0,
+        "steps_since_fork": 0,
+        "control": 104.5,
+        "injected": 124.5,
+        "difference": 20.0
+      }
+    ]
+  },
+  {
+    "experiment": 2,
+    "case": "D2_fork",
+    "load_error": false,
+    "forks": [
+      {
+        "run_key": "exp1_D4W1536_dog-run_seed1",
+        "run_role": "confirmatory",
+        "architecture": "D2W512",
+        "environment": "dog-run",
+        "seed": 1,
+        "fork_step": 100,
+        "fork_check_index": 5,
+        "check1_pass": true,
+        "check1_max_eps_units": 1.5,
+        "check2_pass": true,
+        "check2_paired_difference_iqm": 0.1,
+        "check2_ci_low": 0.05,
+        "check2_ci_high": 0.2,
+        "control_evals": 26,
+        "injected_evals": 26,
+        "complete": true
+      }
+    ],
+    "paired_rows": 26,
+    "nonfinite_differences": 0,
+    "first_paired": [
+      {
+        "run_key": "exp1_D4W1536_dog-run_seed1",
+        "architecture": "D2W512",
+        "environment": "dog-run",
+        "seed": 1,
+        "eval_index": 0,
+        "steps_since_fork": 0,
+        "control": 104.5,
+        "injected": 124.5,
+        "difference": 20.0
+      }
+    ]
+  }
+]

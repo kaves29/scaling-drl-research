@@ -1,0 +1,38 @@
+[
+  {
+    "name": "twin_original_current_1",
+    "cwd": "/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/main",
+    "test": "tests.test_exp12_twin_critic.TwinCheck1Test.test_panel_values",
+    "exit_code": 1
+  },
+  {
+    "name": "twin_original_current_2",
+    "cwd": "/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/main",
+    "test": "tests.test_exp12_twin_critic.TwinCheck1Test.test_panel_values",
+    "exit_code": 1
+  },
+  {
+    "name": "baoding_original_current_1",
+    "cwd": "/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/main",
+    "test": "tests.test_angle2a_env_state_determinism_smoke.TestMyosuiteDeterminism.test_myo_baoding_p1",
+    "exit_code": 1
+  },
+  {
+    "name": "baoding_original_current_2",
+    "cwd": "/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/main",
+    "test": "tests.test_angle2a_env_state_determinism_smoke.TestMyosuiteDeterminism.test_myo_baoding_p1",
+    "exit_code": 1
+  },
+  {
+    "name": "baoding_original_6ffccba",
+    "cwd": "/tmp/exp12-history/6ffccba/main",
+    "test": "tests.test_angle2a_env_state_determinism_smoke.TestMyosuiteDeterminism.test_myo_baoding_p1",
+    "exit_code": 1
+  },
+  {
+    "name": "baoding_original_b554d45",
+    "cwd": "/tmp/exp12-history/b554d45/main",
+    "test": "tests.test_angle2a_env_state_determinism_smoke.TestMyosuiteDeterminism.test_myo_baoding_p1",
+    "exit_code": 1
+  }
+]

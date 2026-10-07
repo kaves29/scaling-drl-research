@@ -1,0 +1,32 @@
+test_panel_values (tests.test_exp12_twin_critic.TwinCheck1Test.test_panel_values) ... FAIL
+
+======================================================================
+FAIL: test_panel_values (tests.test_exp12_twin_critic.TwinCheck1Test.test_panel_values)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/main/tests/test_exp12_twin_critic.py", line 301, in test_panel_values
+    np.testing.assert_array_equal(out["q"], np.asarray(q).reshape(-1))
+  File "/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/numpy/testing/_private/utils.py", line 920, in assert_array_equal
+    assert_array_compare(operator.__eq__, x, y, err_msg=err_msg,
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/numpy/testing/_private/utils.py", line 797, in assert_array_compare
+    raise AssertionError(msg)
+AssertionError: 
+Arrays are not equal
+
+Mismatched elements: 67 / 512 (13.1%)
+Max absolute difference: 7.1525574e-07
+Max relative difference: 0.00017119
+ x: array([ 1.708069,  1.338049, -0.248122,  1.223126,  1.166894, -1.545707,
+        0.687412,  1.27951 ,  1.589073,  0.571355,  1.099083,  1.388466,
+        1.493875,  1.261234,  0.821431,  1.391664,  0.853409,  1.278835,...
+ y: array([ 1.708069,  1.338049, -0.248122,  1.223126,  1.166894, -1.545707,
+        0.687412,  1.27951 ,  1.589073,  0.571355,  1.099083,  1.388466,
+        1.493875,  1.261234,  0.821431,  1.391664,  0.853409,  1.278835,...
+
+----------------------------------------------------------------------
+Ran 1 test in 1.794s
+
+FAILED (failures=1)
