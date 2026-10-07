@@ -1,0 +1,132 @@
+[
+  {
+    "commit": "4e9ad646ef6d91e1fe097c18f18aac365941c456",
+    "subject": "Fix Angle 2A Baoding task counter restoration",
+    "files": [
+      "main/experiments/angle_2a/env_state.py",
+      "main/tests/test_angle2a_env_state.py",
+      "main/tests/test_angle2a_env_state_determinism_smoke.py"
+    ]
+  },
+  {
+    "commit": "7e482f05ed6b09e63a4f3b3f901bd51410ed4b61",
+    "subject": "Add independent NumPy twin numerical characterization without changing gates",
+    "files": [
+      "main/scripts/characterize_exp12_twin_numerics.py",
+      "main/tests/exp12_numpy_oracle.py",
+      "main/tests/test_exp12_numpy_oracle.py"
+    ]
+  },
+  {
+    "commit": "fabd2c0564567b6a6d03f3384c82b7b8c6317778",
+    "subject": "Make Block HB qualification fail closed on required steps and provenance",
+    "files": [
+      "main/scripts/check_exp12_hb_environment.py",
+      "main/scripts/check_exp12_hb_status.py",
+      "main/scripts/sbatch_exp12_hb.sh",
+      "main/tests/test_exp12_hb_qualification.py"
+    ]
+  },
+  {
+    "commit": "515a238b45267a09c3dd63be50a2743453afa1bb",
+    "subject": "Record per-Q float32 oracle errors and semantic mutation margins",
+    "files": [
+      "main/docs/exp12_approved_evidence/twin_numpy_characterization.json",
+      "main/scripts/characterize_exp12_twin_numerics.py"
+    ]
+  },
+  {
+    "commit": "08f74746c8ae2e505aa9767ea9ae1c562548d760",
+    "subject": "Preserve canonical Q1 and Q2 fields and expose separate twin curves",
+    "files": [
+      "main/analysis/exp1_analysis.py",
+      "main/analysis/exp2_analysis.py",
+      "main/experiments/exp12/ledger.py",
+      "main/tests/test_exp12_twin_reporting.py"
+    ]
+  },
+  {
+    "commit": "2dc8734fc79c04d44d5072644e9eb45f8389f90f",
+    "subject": "Certify complete Exp1 and Exp2 populations before confirmatory publication",
+    "files": [
+      "main/analysis/exp12_validation.py",
+      "main/analysis/exp1_analysis.py",
+      "main/analysis/exp2_analysis.py",
+      "main/experiments/exp1.py",
+      "main/experiments/exp12/exp2_ledger.py",
+      "main/experiments/exp12/ledger.py",
+      "main/experiments/exp2_arm.py",
+      "main/scripts/freeze_exp12_analysis_manifest.py",
+      "main/tests/exp12_break_checks.py",
+      "main/tests/exp12_complete_fixture.py",
+      "main/tests/test_exp12_completeness.py",
+      "main/tests/test_exp12_exp2_analysis.py",
+      "main/tests/test_exp12_fork.py",
+      "main/tests/test_exp12_phase3.py",
+      "main/tests/test_exp12_pipeline.py"
+    ]
+  },
+  {
+    "commit": "8d4cf46d09ddc8e03049156158c9a4b32fa0edf7",
+    "subject": "Preserve CPU failure reproductions and pre-implementation audit evidence",
+    "files": [
+      "main/docs/exp12_followup_evidence/analysis_acceptance.json",
+      "main/docs/exp12_followup_evidence/analysis_acceptance_probe.py",
+      "main/docs/exp12_followup_evidence/baoding_6ffccba.log",
+      "main/docs/exp12_followup_evidence/baoding_6ffccba/baoding.json",
+      "main/docs/exp12_followup_evidence/baoding_6ffccba/baoding_arrays.npz",
+      "main/docs/exp12_followup_evidence/baoding_b554d45.log",
+      "main/docs/exp12_followup_evidence/baoding_b554d45/baoding.json",
+      "main/docs/exp12_followup_evidence/baoding_b554d45/baoding_arrays.npz",
+      "main/docs/exp12_followup_evidence/baoding_current_1.log",
+      "main/docs/exp12_followup_evidence/baoding_current_1/baoding.json",
+      "main/docs/exp12_followup_evidence/baoding_current_1/baoding_arrays.npz",
+      "main/docs/exp12_followup_evidence/baoding_current_2.log",
+      "main/docs/exp12_followup_evidence/baoding_current_2/baoding.json",
+      "main/docs/exp12_followup_evidence/baoding_current_2/baoding_arrays.npz",
+      "main/docs/exp12_followup_evidence/baoding_differences.csv",
+      "main/docs/exp12_followup_evidence/baoding_exact_summary.json",
+      "main/docs/exp12_followup_evidence/baoding_original_6ffccba.log",
+      "main/docs/exp12_followup_evidence/baoding_original_b554d45.log",
+      "main/docs/exp12_followup_evidence/baoding_original_current_1.log",
+      "main/docs/exp12_followup_evidence/baoding_original_current_2.log",
+      "main/docs/exp12_followup_evidence/baoding_probe.py",
+      "main/docs/exp12_followup_evidence/cuda_metric_probe.py",
+      "main/docs/exp12_followup_evidence/cuda_metric_scope.json",
+      "main/docs/exp12_followup_evidence/exp12_restore.json",
+      "main/docs/exp12_followup_evidence/exp12_restore_probe.py",
+      "main/docs/exp12_followup_evidence/exp1_ledger_acceptance.json",
+      "main/docs/exp12_followup_evidence/exp1_ledger_probe.py",
+      "main/docs/exp12_followup_evidence/metadata.json",
+      "main/docs/exp12_followup_evidence/numpy_reference.py",
+      "main/docs/exp12_followup_evidence/original_test_results.json",
+      "main/docs/exp12_followup_evidence/pre_exp12_single_pair.npz",
+      "main/docs/exp12_followup_evidence/pre_exp12_twin_probe.json",
+      "main/docs/exp12_followup_evidence/pre_exp12_twin_probe.py",
+      "main/docs/exp12_followup_evidence/run_originals.py",
+      "main/docs/exp12_followup_evidence/sha256.json",
+      "main/docs/exp12_followup_evidence/summarize_evidence.py",
+      "main/docs/exp12_followup_evidence/twin_c293b9a.log",
+      "main/docs/exp12_followup_evidence/twin_c293b9a/twin.json",
+      "main/docs/exp12_followup_evidence/twin_c293b9a/twin_arrays.npz",
+      "main/docs/exp12_followup_evidence/twin_c293b9a/twin_params.npz",
+      "main/docs/exp12_followup_evidence/twin_current_1.log",
+      "main/docs/exp12_followup_evidence/twin_current_1/numpy64_reference.json",
+      "main/docs/exp12_followup_evidence/twin_current_1/numpy64_reference.npz",
+      "main/docs/exp12_followup_evidence/twin_current_1/twin.json",
+      "main/docs/exp12_followup_evidence/twin_current_1/twin_arrays.npz",
+      "main/docs/exp12_followup_evidence/twin_current_1/twin_params.npz",
+      "main/docs/exp12_followup_evidence/twin_current_2.log",
+      "main/docs/exp12_followup_evidence/twin_current_2/twin.json",
+      "main/docs/exp12_followup_evidence/twin_current_2/twin_arrays.npz",
+      "main/docs/exp12_followup_evidence/twin_current_2/twin_params.npz",
+      "main/docs/exp12_followup_evidence/twin_differences.csv",
+      "main/docs/exp12_followup_evidence/twin_later_gradient_assertion.log",
+      "main/docs/exp12_followup_evidence/twin_original_2f67915.log",
+      "main/docs/exp12_followup_evidence/twin_original_current_1.log",
+      "main/docs/exp12_followup_evidence/twin_original_current_2.log",
+      "main/docs/exp12_followup_evidence/twin_probe.py",
+      "main/docs/exp12_followup_investigation.md"
+    ]
+  }
+]

@@ -1,0 +1,13 @@
+test_actual_shell_exit_propagates_required_failures (tests.test_exp12_hb_qualification.HbQualificationTest.test_actual_shell_exit_propagates_required_failures) ... ok
+test_complete_bookkeeping_passes (tests.test_exp12_hb_qualification.HbQualificationTest.test_complete_bookkeeping_passes) ... ok
+test_each_required_failure_and_timeout_propagates (tests.test_exp12_hb_qualification.HbQualificationTest.test_each_required_failure_and_timeout_propagates) ... ok
+test_environment_contract (tests.test_exp12_hb_qualification.HbQualificationTest.test_environment_contract) ... ok
+test_identity_requires_pass_and_both_1000_step_snapshots (tests.test_exp12_hb_qualification.HbQualificationTest.test_identity_requires_pass_and_both_1000_step_snapshots) ... ok
+test_missing_duplicate_and_extra_steps_fail (tests.test_exp12_hb_qualification.HbQualificationTest.test_missing_duplicate_and_extra_steps_fail) ... ok
+test_missing_nonfinite_and_duplicate_profile_values_fail (tests.test_exp12_hb_qualification.HbQualificationTest.test_missing_nonfinite_and_duplicate_profile_values_fail) ... ok
+test_skips_and_no_tests_fail_qualification (tests.test_exp12_hb_qualification.HbQualificationTest.test_skips_and_no_tests_fail_qualification) ... ok
+
+----------------------------------------------------------------------
+Ran 8 tests in 2.041s
+
+OK
