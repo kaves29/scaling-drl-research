@@ -408,7 +408,7 @@ def metadata_without_critic_count(resolved_cfg, identity, launch):
 exp1_module._real_build_run_metadata = exp1_module.build_run_metadata
 
 MUTATIONS += [
-    ("twin probe: per-round L from network 1 only", twin_module, "combine",
+    ("twin probe: aggregate P from network 1 only", twin_module, "combine",
      source_mutation(twin_module, "combine", 'np.mean([p["score"] for p in parts], axis=0)', 'parts[0]["score"]'),
      f"{TWIN}.TwinProbeTest.test_combined_loss_is_the_mean_of_the_two_networks"),
     ("twin probe: both views take network 1's parameters", twin_module, "expand",
@@ -432,6 +432,12 @@ MUTATIONS += [
      f"{TWIN}.TwinCheck1Test.test_panel_values"),
     ("twin metadata: critic count not recorded", exp1_module, "build_run_metadata", metadata_without_critic_count,
      f"{TWIN}.TwinForkEndToEndTest.test_runs_are_twin_and_record_the_critic_count"),
+    ("twin probe: difference of mean scores instead of mean paired FP32 losses", probe, "paired_loss",
+     source_mutation(probe, "paired_loss",
+                     'return np.mean([result[f"{fresh}_q{q}"]["score"] -\n'
+                     '                        result[f"{current}_q{q}"]["score"] for q in (1, 2)], axis=0)',
+                     'return result[fresh]["score"] - result[current]["score"]'),
+     "tests.test_exp12_methodology_corrections.TwinLossOrderTest.test_mean_of_paired_losses"),
     ("Check 1: original-to-restored control comparison skipped", fork, "validate_control_restore",
      lambda *args, **kwargs: None,
      "tests.test_exp12_fork.ForkEndToEndTest.test_control_stops_before_ready_if_restore_changes_panel"),

@@ -52,6 +52,7 @@ def check_matches_parent(cfg, source: Path) -> None:
 
 def check2(trainer, probes, plan, pre_params) -> dict:
     """Probe copies of the injected and the control critic at the fork, paired with the fresh reference."""
+    from experiments.exp12.probe import paired_loss
     critics = {"injected": probes.current_critic(trainer), "control": (probes.critic_def, pre_params),
                "fresh": (probes.critic_def, probes.fresh)}
     k = plan["fork_check_index"]
@@ -64,8 +65,8 @@ def check2(trainer, probes, plan, pre_params) -> dict:
         "check_index": k,
         **{f"score_{n}_rounds": result[n]["score"].tolist() for n in critics},
         **{f"score_{n}_iqm": iqm(result[n]["score"]) for n in critics},
-        "loss_injected_rounds": (result["fresh"]["score"] - result["injected"]["score"]).tolist(),
-        "loss_control_rounds": (result["fresh"]["score"] - result["control"]["score"]).tolist(),
+        "loss_injected_rounds": paired_loss(result, "injected").tolist(),
+        "loss_control_rounds": paired_loss(result, "control").tolist(),
         # Paired difference P(injected) - P(control) per round, its IQM and percentile bootstrap
         # interval (over 5 rounds only; see the Methodology limitations).
         "paired_difference_rounds": diff.tolist(), "paired_difference_iqm": iqm(diff),

@@ -9,6 +9,7 @@ the previous complete state as LATEST. Large arrays are stored with np.savez
 import pickle
 import shutil
 import uuid
+import zipfile
 from pathlib import Path
 from typing import Any, Dict, Optional
 
@@ -25,7 +26,13 @@ def latest_state_dir(root) -> Optional[Path]:
     pointer = Path(root) / LATEST
     if not pointer.exists():
         return None
-    return Path(root) / pointer.read_text().strip()
+    name = pointer.read_text().strip()
+    path = Path(root) / name
+    if not name or Path(name).name != name or name in (".", "..") or not path.is_dir():
+        raise ValueError(f"{pointer}: invalid or missing state directory")
+    if path.resolve().parent != Path(root).resolve():
+        raise ValueError(f"{pointer}: state directory escapes root")
+    return path
 
 
 def new_state_dir(root, interaction_step: int) -> Path:
@@ -59,8 +66,24 @@ def save_buffer(buffer, path: Path) -> None:
 def load_buffer(buffer, path: Path) -> None:
     with open(path / "buffer_meta.pkl", "rb") as f:
         meta = pickle.load(f)
-    n = meta["num_in_buffer"]
-    with np.load(path / "buffer.npz") as data:
+    n, idx = meta["num_in_buffer"], meta["current_idx"]
+    capacity = len(buffer._observations)
+    if (type(n) is not int or type(idx) is not int or not 0 <= n <= capacity or not 0 <= idx < capacity):
+        raise ValueError("invalid replay count or index")
+    # Validate all array headers before mutating any replay array; avoid loading
+    # a second full replay into RAM just for structural validation.
+    with zipfile.ZipFile(path / "buffer.npz") as archive:
+        expected = {k.lstrip("_") + ".npy" for k in BUFFER_ARRAYS}
+        if set(archive.namelist()) != expected or len(archive.namelist()) != len(expected):
+            raise ValueError("replay array members differ")
+        for k in BUFFER_ARRAYS:
+            with archive.open(k.lstrip("_") + ".npy") as member:
+                version = np.lib.format.read_magic(member)
+                shape, _, dtype = np.lib.format._read_array_header(member, version)
+            target = getattr(buffer, k)
+            if shape != (n, *target.shape[1:]) or dtype != target.dtype:
+                raise ValueError(f"replay {k}: shape or dtype differs")
+    with np.load(path / "buffer.npz", allow_pickle=False) as data:
         for k in BUFFER_ARRAYS:
             getattr(buffer, k)[:n] = data[k.lstrip("_")]
     buffer._num_in_buffer = n

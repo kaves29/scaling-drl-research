@@ -9,8 +9,8 @@ fresh check (SimBa random warm-up, obs_rms updated). WandB is stubbed.
   real settings at each --pools size, giving per-round P and b, the IQM, and the
   std and range of P across rounds. At the configured pool size (25,600) this is
   the run's own check-0 probe. The verdict applies the pre-specified rule
-  (docs/exp12_decisions.md, 2026-10-04): PASS when 0.1*b <= IQM(P) <= 0.9*b at
-  the configured pool, at every size.
+  (amendment (w)): PASS when IQM(P)/IQM(b) >= 0.9 at the configured pool,
+  at every size. Exit 3 means rule failure; the old 10-90% rule is information only.
 
 --mode null: the trigger's behaviour when neither critic has lost plasticity.
   Each pair is two independently initialised fresh critics of the same
@@ -146,11 +146,25 @@ def range_mode(args, name, blocks, width, out_dir):
     return rows
 
 
-def _done_pairs(path):
+def _done_pairs(path, provenance=None):
     if not path.exists():
         return {}
     with open(path) as f:
-        return {r["pair"]: r for r in map(json.loads, f) if r.get("pair") is not None}
+        done = {}
+        for row in map(json.loads, f):
+            pair = row.get("pair")
+            if not isinstance(pair, int) or isinstance(pair, bool) or pair < 0 or pair in done:
+                raise ValueError(f"{path}: invalid or duplicate null pair {pair}")
+            if provenance is not None:
+                if row.get("provenance") != provenance:
+                    raise ValueError(f"{path}: stale or unverified null provenance; preserve it and use a fresh output directory")
+                for field in ("arch", "env", "seed"):
+                    if row.get(field) != provenance[field]:
+                        raise ValueError(f"{path}: null {field} differs")
+                if row.get("check_index") != pair + 1:
+                    raise ValueError(f"{path}: null check index differs")
+            done[pair] = row
+        return done
 
 
 def null_mode(args, name, blocks, width, out_dir):
@@ -165,7 +179,17 @@ def null_mode(args, name, blocks, width, out_dir):
     obs = jax.numpy.zeros((1, trainer.buffer._observations.shape[1]))
     act = jax.numpy.zeros((1, trainer.buffer._actions.shape[1]))
     path = out_dir / f"null_pairs_{name}.jsonl"
-    done = _done_pairs(path)
+    from omegaconf import OmegaConf
+    from utils.run_metadata import _strip_locations, code_version
+    from experiments.exp12.precision import runtime_info
+    runtime = runtime_info()
+    runtime.pop("compilation_cache_dir", None)
+    provenance = {"arch": name, "env": args.env, "seed": args.seed,
+                  "resolved_config": _strip_locations(OmegaConf.to_container(trainer.cfg, resolve=True)),
+                  "code": code_version(), "runtime": runtime}
+    if path.exists() and provenance["code"]["dirty"] is not False:
+        raise ValueError(f"{path}: cannot certify null resumption from dirty or unknown source")
+    done = _done_pairs(path, provenance)
     for pair in range(args.null_pairs):
         if pair in done:
             continue
@@ -178,6 +202,7 @@ def null_mode(args, name, blocks, width, out_dir):
         low, high = bootstrap_interval(s["loss_rounds"], args.seed, 1 + pair, tc.resamples, tc.confidence)
         row = {
             "arch": name, "env": args.env, "seed": args.seed, "pair": pair, "check_index": 1 + pair,
+            "provenance": provenance,
             "init_keys": [NULL_PAIR_KEY_OFFSET + pair, 0, 1],
             "score_fresh_rounds": s["score_fresh_rounds"].tolist(),
             "score_current_rounds": s["score_current_rounds"].tolist(),
@@ -229,17 +254,16 @@ def main():
         blocks, width = ARCHS[name]
         results.append((range_mode if args.mode == "range" else null_mode)(args, name, blocks, width, out_dir))
     if args.mode == "range":
-        configured = [r for rows in results for r in rows if r["is_configured_pool"]]
-        verdict = {
-            "rule": f"{RANGE_LOW} * b <= IQM(P) <= {RANGE_HIGH} * b at the configured pool, at every size",
-            "per_size": {r["arch"]: r["within_10_90_pct_of_b"] for r in configured},
-            "PASS": bool(configured) and all(r["within_10_90_pct_of_b"] for r in configured)
-            and len(configured) == len(args.archs),
-        }
+        from exp12_reports import range_criterion_rows, RANGE_MIN_P_OVER_B
+        criterion = range_criterion_rows([r for rows in results for r in rows], args.archs)
+        verdict = {"rule": f"IQM(P) / IQM(b) >= {RANGE_MIN_P_OVER_B} at the configured pool, every size",
+                   **criterion, "PASS": criterion["pass"]}
         with open(out_dir / "range_verdict.json", "w") as f:
             json.dump(verdict, f, indent=2)
         print(json.dumps(verdict), flush=True)
+        return 0 if verdict["PASS"] else 3
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

@@ -89,7 +89,12 @@ def load(results_root=None, include_dev: bool = False) -> Dict[str, pd.DataFrame
             row[f"{arm}_evals"] = int(e.eval_index.nunique()) if not e.empty else 0
             for name, store in (("eval_episodes", evals), ("checks", checks), ("metrics", metrics)):
                 if not frames[name].empty:
-                    store.append(frames[name].assign(**ident, arm=arm))
+                    frame = frames[name]
+                    if name == "checks":
+                        frame = frame.assign(measurement_phase=(
+                            np.where(frame.check_index == plan["fork_check_index"], "pre_injection", "post_injection")
+                            if arm == "injected" else "control"))
+                    store.append(frame.assign(**ident, arm=arm))
         row["complete"] = row["control_evals"] == n_evals and row["injected_evals"] == n_evals
         forks.append(row)
     cat = lambda xs: pd.concat(xs, ignore_index=True) if xs else pd.DataFrame()
@@ -186,10 +191,18 @@ def plot_both_arms(df: pd.DataFrame, arch: str, value: str, path: Path, ylabel: 
     fig, axes = _grid(plt, len(envs))
     for ax, env in zip(axes, envs):
         for (arm, _), g in df[df.environment == env].groupby(["arm", "run_key"]):
-            ax.plot(g.steps_since_fork, g[value], color=ARM_COLORS[arm], linewidth=1, alpha=0.8)
+            pre = (g.measurement_phase == "pre_injection") if "measurement_phase" in g else np.zeros(len(g), bool)
+            ax.plot(g.loc[~pre, "steps_since_fork"], g.loc[~pre, value], color=ARM_COLORS[arm], linewidth=1, alpha=0.8)
+            if np.any(pre):
+                ax.scatter(g.loc[pre, "steps_since_fork"], g.loc[pre, value], facecolors="none",
+                           edgecolors=ARM_COLORS[arm], marker="o")
         ax.set_title(env, loc="left")
     handles = [plt.Line2D([], [], color=c, linewidth=2) for c in ARM_COLORS.values()]
-    fig.legend(handles, list(ARM_COLORS), frameon=False, loc="upper right")
+    labels = list(ARM_COLORS)
+    if "measurement_phase" in df and (df.measurement_phase == "pre_injection").any():
+        handles.append(plt.Line2D([], [], color=ARM_COLORS["injected"], marker="o", markerfacecolor="none", linestyle="none"))
+        labels.append("injected arm: pre-injection reference")
+    fig.legend(handles, labels, frameon=False, loc="upper right")
     fig.supxlabel("interaction steps since fork")
     fig.supylabel(ylabel)
     fig.tight_layout()

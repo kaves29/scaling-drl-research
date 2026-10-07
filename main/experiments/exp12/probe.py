@@ -158,10 +158,22 @@ def run_probe(agent, buffer, target_def, critics: Dict[str, tuple], tx, seed: in
     }
 
 
+def paired_loss(result, current="current", fresh="fresh"):
+    """Amendment (z): subtract each paired network's FP32 scores before averaging.
+
+    Single-critic subtraction retains its original arithmetic. Twin score means
+    remain useful for reporting P, but are not the operands of longitudinal L.
+    """
+    if f"{fresh}_q1" in result:
+        return np.mean([result[f"{fresh}_q{q}"]["score"] -
+                        result[f"{current}_q{q}"]["score"] for q in (1, 2)], axis=0)
+    return result[fresh]["score"] - result[current]["score"]
+
+
 def summarize(result: Dict[str, Dict[str, np.ndarray]], current: str = "current", fresh: str = "fresh") -> Dict:
     """Per-round paired plasticity loss L_r = P_r(fresh) - P_r(current) and its IQM."""
     p_cur, p_fresh = result[current]["score"], result[fresh]["score"]
-    loss = p_fresh - p_cur
+    loss = paired_loss(result, current, fresh)
     valid = bool(np.all(np.isfinite(loss)))
     return {
         "score_current_rounds": p_cur,

@@ -38,6 +38,11 @@ def select_m(recoveries: Dict[str, float], similar_within: float) -> str:
 def evaluate(loss: Dict[str, np.ndarray], noise_threshold: float, similar_within: float) -> Dict:
     """loss: per-round L for 'degraded' and 'injected_<m>' on one shared pool, all with the real probe
     settings; the noise is their pooled SD. A stop leaves chosen_m None and states the reason."""
+    expected = {"degraded", *(f"injected_{m}" for m in M_LABELS)}
+    if set(loss) != expected or any(np.asarray(x).shape != (5,) for x in loss.values()):
+        return {"chosen_m": None, "stop": "require exactly four series of five paired rounds"}
+    if not all(np.isfinite(x).all() for x in loss.values()):
+        return {"chosen_m": None, "stop": "all positive-control loss rounds must be finite"}
     l_trigger = iqm(loss["degraded"])
     noise_sd = pooled_sd(loss)
     out = {"l_trigger": l_trigger, "l_injected": {m: iqm(loss[f"injected_{m}"]) for m in M_LABELS},

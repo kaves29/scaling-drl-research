@@ -109,21 +109,48 @@ def record_numerics(name, **values):
             f.write(line + "\n")
 
 
-def max_relative_deviation(xs, ys):
-    """Largest |x - y| / max|y| over pairs of float arrays (y is the reference)."""
+def max_relative_deviation(xs, ys, allow_nan_indices=()):
+    """Float deviations use the existing scale; integer state must match exactly.
+
+    Only explicitly designated diagnostic leaves may carry matching NaN masks.
+    Model leaves, infinities, differing shapes, dtypes or leaf counts fail closed.
+    """
     import numpy as np
 
+    if len(xs) != len(ys):
+        raise ValueError("state leaf counts differ")
+    if any(i < 0 or i >= len(xs) for i in allow_nan_indices):
+        raise ValueError("invalid diagnostic NaN leaf index")
     worst = 0.0
-    for x, y in zip(xs, ys):
-        x, y = np.asarray(x, np.float64), np.asarray(y, np.float64)
-        if x.dtype.kind != "f" or x.size == 0:
+    for i, (x, y) in enumerate(zip(xs, ys)):
+        x, y = np.asarray(x), np.asarray(y)
+        if x.shape != y.shape or x.dtype != y.dtype:
+            raise ValueError(f"leaf {i}: shape or dtype differs")
+        if x.dtype.kind in "biu":
+            if not np.array_equal(x, y):
+                worst = float("inf")
             continue
+        if x.dtype.kind != "f":
+            raise ValueError(f"leaf {i}: unsupported dtype {x.dtype}")
+        if i in allow_nan_indices:
+            if not np.array_equal(np.isnan(x), np.isnan(y)):
+                raise ValueError(f"leaf {i}: diagnostic NaN masks differ")
+            keep = ~np.isnan(x)
+            x, y = x[keep], y[keep]
+        if not np.isfinite(x).all() or not np.isfinite(y).all():
+            raise ValueError(f"leaf {i}: nonfinite state")
+        if not x.size:
+            continue
+        x, y = x.astype(np.float64), y.astype(np.float64)
         scale = np.abs(y).max()
         worst = max(worst, float(np.abs(x - y).max() / scale) if scale > 0 else float(np.abs(x - y).max()))
     return worst
 
 
 def check_gpu_tolerance(testcase, name, deviation, **context):
+    import math
+
+    testcase.assertTrue(math.isfinite(deviation), "nonfinite deviation or unequal integer state")
     tolerance = GPU_TOLERANCES.get(name)
     record_numerics(name, deviation=deviation, tolerance=tolerance, **context)
     if tolerance is None:
