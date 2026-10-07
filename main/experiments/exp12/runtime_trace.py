@@ -3,6 +3,7 @@
 import contextlib
 import functools
 import json
+import os
 import time
 from pathlib import Path
 from unittest import mock
@@ -23,8 +24,26 @@ class RuntimeTrace:
 
     def __enter__(self):
         self.file = self.stack.enter_context(self.path.open("x"))
+        self.emit("trace_start", synchronize=self.synchronize, pid=os.getpid())
+        self.emit("begin", stage="backend_init")
+        start = time.perf_counter()
+        try:
+            device = str(jax.devices()[0])
+        except BaseException as exc:
+            self.emit(
+                "end",
+                stage="backend_init",
+                error=type(exc).__name__,
+                seconds=time.perf_counter() - start,
+            )
+            self.stack.close()
+            raise
         self.emit(
-            "trace_start", synchronize=self.synchronize, device=str(jax.devices()[0])
+            "end",
+            stage="backend_init",
+            error=None,
+            device=device,
+            seconds=time.perf_counter() - start,
         )
         return self
 
@@ -40,7 +59,15 @@ class RuntimeTrace:
 
     def emit(self, event, **fields):
         self.file.write(
-            json.dumps({"event": event, "wall_time": time.time(), **fields}) + "\n"
+            json.dumps(
+                {
+                    "event": event,
+                    "wall_time": time.time(),
+                    "monotonic_time": time.perf_counter(),
+                    **fields,
+                }
+            )
+            + "\n"
         )
         self.file.flush()
 
@@ -71,7 +98,11 @@ class RuntimeTrace:
         @functools.wraps(original)
         def timed(*args, **kwargs):
             log_call = coarse or self.totals.get(label, {}).get("calls", 0) < 3
-            details = {}
+            details = {"call_index": self.totals.get(label, {}).get("calls", 0) + 1}
+            if label == "_probe":
+                details["check_index"] = kwargs.get(
+                    "k", args[1] if len(args) > 1 else None
+                )
             if label == "backend_compile":
                 module = kwargs.get("module", args[1] if len(args) > 1 else None)
                 if module is not None:
@@ -83,6 +114,10 @@ class RuntimeTrace:
             error = None
             try:
                 result = original(*args, **kwargs)
+                if label == "cache_read":
+                    details["cache_hit"] = result[0] is not None
+                if label == "configure_compilation_cache":
+                    details["cache_dir"] = result
                 if label == "trainer_init":
                     self.trainer = args[0]
                 self.ready(result)
@@ -115,6 +150,9 @@ class RuntimeTrace:
             * trainer.cfg.num_train_envs,
             update_step=trainer.update_step,
             evaluation_episodes=len(trainer.eval_rows),
+            post_fork_evaluation_episodes=len(
+                trainer.extra_state.get("post_fork_evals", [])
+            ),
             last_check=max(
                 (
                     r["check_index"]
@@ -136,9 +174,9 @@ class RuntimeTrace:
         for obj, names in (
             (
                 trainer.Exp12Trainer,
-                ("__init__", "start", "_evaluate", "save", "restore"),
+                ("__init__", "start", "_evaluate", "save", "restore", "inject"),
             ),
-            (run_probes.RunProbes, ("capture_fresh", "_probe")),
+            (run_probes.RunProbes, ("__init__", "capture_fresh", "_probe")),
             (probe, ("probe_round", "_base_targets", "_fit", "_mean_prediction")),
             (trainer, ("save_buffer", "load_buffer", "save_meta", "load_meta")),
             (fork, ("write_fork", "post_fork_eval", "panel_q_and_grad", "check1")),
@@ -148,7 +186,12 @@ class RuntimeTrace:
             (exp2_arm, ("configure_compilation_cache",)),
         ):
             for name in names:
-                self.wrap(obj, name, "trainer_init" if name == "__init__" else name)
+                label = (
+                    ("trainer_init" if obj is trainer.Exp12Trainer else "probe_init")
+                    if name == "__init__"
+                    else name
+                )
+                self.wrap(obj, name, label)
         self.wrap(SACAgent, "update_many", "update_many", coarse=False)
         self.wrap(SACAgent, "sample_actions", "sample_actions", coarse=False)
         self.wrap(SACAgent, "get_metrics", "structural_metrics")
@@ -196,7 +239,12 @@ class RuntimeTrace:
                 error = type(exc).__name__
                 raise
             finally:
-                self.progress(t)
+                try:
+                    self.progress(t)
+                except BaseException as exc:
+                    if error is None:
+                        raise
+                    self.emit("progress_error", error=type(exc).__name__)
                 self.emit(
                     "train_exit",
                     error=error,

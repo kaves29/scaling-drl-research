@@ -96,31 +96,56 @@ def state_differences(dir_a, dir_b, ignore_meta=("wandb_run_id",)):
     dir_a, dir_b = Path(dir_a), Path(dir_b)
     diffs = []
     tree_a, tree_b = load_agent_tree(dir_a), load_agent_tree(dir_b)
-    leaves_a, leaves_b = _leaves(tree_a), _leaves(tree_b)
-    if len(leaves_a) != len(leaves_b):
+    import jax
+
+    leaves_a, leaves_b = dict(_leaves(tree_a)), dict(_leaves(tree_b))
+    if jax.tree_util.tree_structure(tree_a) != jax.tree_util.tree_structure(tree_b):
         diffs.append("agent:structure")
-    for (path, a), (_, b) in zip(leaves_a, leaves_b):
+    for path in sorted(leaves_a.keys() & leaves_b.keys(), key=str):
+        a, b = leaves_a[path], leaves_b[path]
         if not np.array_equal(np.asarray(a), np.asarray(b)):
             diffs.append("agent:" + "/".join(str(p) for p in path))
     with open(dir_a / "obs_rms.pkl", "rb") as f:
         rms_a = pickle.load(f)
     with open(dir_b / "obs_rms.pkl", "rb") as f:
         rms_b = pickle.load(f)
-    for k in rms_a:
-        if not np.array_equal(rms_a[k], rms_b[k]):
+    for k in sorted(rms_a.keys() | rms_b.keys()):
+        if k not in rms_a or k not in rms_b or not np.array_equal(rms_a[k], rms_b[k]):
             diffs.append(f"obs_rms:{k}")
     with np.load(dir_a / "buffer.npz") as ba, np.load(dir_b / "buffer.npz") as bb:
-        for k in ba.files:
-            if not np.array_equal(ba[k], bb[k]):
+        for k in sorted(set(ba.files) | set(bb.files)):
+            if (
+                k not in ba.files
+                or k not in bb.files
+                or not np.array_equal(ba[k], bb[k])
+            ):
                 diffs.append(f"buffer:{k}")
+    with open(dir_a / "buffer_meta.pkl", "rb") as f:
+        buffer_a = pickle.load(f)
+    with open(dir_b / "buffer_meta.pkl", "rb") as f:
+        buffer_b = pickle.load(f)
+    for k in sorted(buffer_a.keys() | buffer_b.keys()):
+        if (
+            k not in buffer_a
+            or k not in buffer_b
+            or not _deep_equal(buffer_a[k], buffer_b[k])
+        ):
+            diffs.append(f"buffer_meta:{k}")
     with open(dir_a / "meta.pkl", "rb") as f:
         meta_a = pickle.load(f)
     with open(dir_b / "meta.pkl", "rb") as f:
         meta_b = pickle.load(f)
-    for k in meta_a:
+    for k in sorted(meta_a.keys() | meta_b.keys()):
         if k in ignore_meta:
             continue
-        if pickle.dumps(meta_a[k]) != pickle.dumps(meta_b[k]) and not _deep_equal(meta_a[k], meta_b[k]):
+        if (
+            k not in meta_a
+            or k not in meta_b
+            or (
+                pickle.dumps(meta_a[k]) != pickle.dumps(meta_b[k])
+                and not _deep_equal(meta_a[k], meta_b[k])
+            )
+        ):
             diffs.append(f"meta:{k}")
     return diffs
 
