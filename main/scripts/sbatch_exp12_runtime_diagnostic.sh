@@ -110,10 +110,10 @@ if [ "$DIAGNOSTIC_MODE" != profile ]; then
     parent_cache="$OUT/cache_single_writer"; arm_cache="$parent_cache"
   fi
   EXP12_JAX_CACHE_DIR="$parent_cache" python scripts/trace_exp12_runtime.py \
-    --out "$OUT/parent_trace.jsonl" --synchronize --progress-every 100 -- \
+    --out "$OUT/parent_trace.jsonl" --synchronize --progress-every 100 --boundary-detail --stack-after 60 -- \
     run.py --experiment exp1 "${common[@]}" --checkpoint_dir "$OUT/parent"
   EXP12_JAX_CACHE_DIR="$arm_cache" python scripts/trace_exp12_runtime.py \
-    --out "$OUT/identity_trace.jsonl" --synchronize --progress-every 100 -- \
+    --out "$OUT/identity_trace.jsonl" --synchronize --progress-every 100 --boundary-detail --stack-after 60 -- \
     run.py --experiment exp2_arm "${common[@]}" --overrides "fork.source=$OUT/parent" \
     --overrides fork.arm=identity --checkpoint_dir "$OUT/identity"
   python scripts/compare_identity_fork.py --run_dir "$OUT/parent" --arm_dir "$OUT/identity" \
@@ -146,7 +146,7 @@ PY
   exit 0
 fi
 python scripts/trace_exp12_runtime.py \
-  --out "$OUT/trace.jsonl" --synchronize --progress-every 100 -- \
+  --out "$OUT/trace.jsonl" --synchronize --progress-every 100 --boundary-detail --stack-after 60 -- \
   scripts/profile_exp12.py --env dog-run --env_group dmc_hard \
   --archs "$DIAGNOSTIC_ARCH" --seed 990 --warmup_steps 1001 --train_steps 60 \
   --probe_repeats 1 --fork_timing --eval_cost --out "$OUT/profile.json"

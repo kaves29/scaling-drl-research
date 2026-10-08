@@ -325,6 +325,8 @@ class RuntimeDiagnosticLauncherTest(unittest.TestCase):
         )
         args = json.loads((self.out / "profile-args.json").read_text())
         self.assertIn("--synchronize", args)
+        self.assertIn("--boundary-detail", args)
+        self.assertEqual(args[args.index("--stack-after") + 1], "60")
         self.assertEqual(args[args.index("--archs") + 1], "D4W1536")
         self.assertEqual(args[args.index("--train_steps") + 1], "60")
         self.assertEqual(args[args.index("--warmup_steps") + 1], "1001")

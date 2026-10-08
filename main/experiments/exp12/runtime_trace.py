@@ -12,18 +12,23 @@ import jax
 
 
 class RuntimeTrace:
-    def __init__(self, path, synchronize=False, progress_every=100):
+    def __init__(self, path, synchronize=False, progress_every=100, *,
+                 boundary_detail=False, stream=None):
         if progress_every < 1:
             raise ValueError("progress_every must be positive")
         self.path = Path(path)
         self.synchronize = synchronize
         self.progress_every = progress_every
+        self.boundary_detail = boundary_detail
+        self.stream = stream
+        self.flush_depth = 0
+        self.training = False
         self.totals = {}
         self.trainer = None
         self.stack = contextlib.ExitStack()
 
     def __enter__(self):
-        self.file = self.stack.enter_context(self.path.open("x"))
+        self.file = self.stream if self.stream is not None else self.stack.enter_context(self.path.open("x"))
         self.emit("trace_start", synchronize=self.synchronize, pid=os.getpid())
         self.emit("begin", stage="backend_init")
         start = time.perf_counter()
@@ -71,34 +76,63 @@ class RuntimeTrace:
         )
         self.file.flush()
 
-    def ready(self, result=None):
+    def ready(self, result=None, *, log=False, phase=None):
         if self.synchronize:
+            if log:
+                self.emit("begin", stage="synchronization", phase=phase)
             start = time.perf_counter()
-            jax.block_until_ready(result)
-            if self.trainer is not None and hasattr(self.trainer, "agent"):
-                agent = self.trainer._sac_agent
-                jax.block_until_ready(
-                    (
-                        agent._actor,
-                        agent._critic,
-                        agent._target_critic,
-                        agent._temperature,
-                        agent._rng,
+            error = None
+            try:
+                jax.block_until_ready(result)
+                if self.trainer is not None and hasattr(self.trainer, "agent"):
+                    agent = self.trainer._sac_agent
+                    jax.block_until_ready(
+                        (agent._actor, agent._critic, agent._target_critic,
+                         agent._temperature, agent._rng)
                     )
-                )
-            total = self.totals.setdefault(
-                "synchronization", {"calls": 0, "seconds": 0.0}
-            )
-            total["calls"] += 1
-            total["seconds"] += time.perf_counter() - start
+            except BaseException as exc:
+                error = type(exc).__name__
+                raise
+            finally:
+                elapsed = time.perf_counter() - start
+                total = self.totals.setdefault("synchronization", {"calls": 0, "seconds": 0.0})
+                total["calls"] += 1
+                total["seconds"] += elapsed
+                if log:
+                    self.emit("end", stage="synchronization", phase=phase,
+                              seconds=elapsed, error=error)
 
-    def wrap(self, obj, name, label, coarse=True):
+    def near_logging_boundary(self, label):
+        if not self.boundary_detail or self.trainer is None or not self.training:
+            return False
+        if label not in {"sample_actions", "train_env_step", "replay_sample", "update_many"}:
+            return False
+        cfg = self.trainer.cfg
+        cadence = getattr(cfg, "logging_per_interaction_step", None)
+        if not cadence:
+            return False
+        remaining = (-self.trainer.interaction_step) % cadence
+        return remaining < min(self.progress_every, cadence)
+
+    @staticmethod
+    def payload_metadata(tree):
+        # Shape/dtype inspection only: no array conversion, transfer, or synchronization.
+        leaves = jax.tree_util.tree_leaves(tree)
+        return {"array_leaves": sum(hasattr(x, "nbytes") for x in leaves),
+                "array_bytes": sum(int(x.nbytes) for x in leaves if hasattr(x, "nbytes"))}
+
+    def wrap(self, obj, name, label, coarse=True, *, sync=True, metadata=None):
         original = getattr(obj, name)
 
         @functools.wraps(original)
         def timed(*args, **kwargs):
-            log_call = coarse or self.totals.get(label, {}).get("calls", 0) < 3
-            details = {"call_index": self.totals.get(label, {}).get("calls", 0) + 1}
+            log_call = coarse or self.totals.get(label, {}).get("calls", 0) < 3 or self.near_logging_boundary(label)
+            details = {"call_index": self.totals.get(label, {}).get("calls", 0) + 1,
+                       "begin_recorded": log_call}
+            if self.trainer is not None:
+                details["interaction_step"] = self.trainer.interaction_step
+            if metadata is not None:
+                details.update(metadata(*args, **kwargs))
             if label == "_probe":
                 details["check_index"] = kwargs.get(
                     "k", args[1] if len(args) > 1 else None
@@ -109,10 +143,15 @@ class RuntimeTrace:
                     details["module"] = str(module.operation.attributes["sym_name"])
             if log_call:
                 self.emit("begin", stage=label, **details)
-            self.ready()
-            start = time.perf_counter()
+            wall_start = time.perf_counter()
+            start = None
+            phase = "before_sync"
             error = None
             try:
+                if sync:
+                    self.ready(log=log_call, phase="before:" + label)
+                start = time.perf_counter()
+                phase = "call"
                 result = original(*args, **kwargs)
                 if label == "cache_read":
                     details["cache_hit"] = result[0] is not None
@@ -120,13 +159,16 @@ class RuntimeTrace:
                     details["cache_dir"] = result
                 if label == "trainer_init":
                     self.trainer = args[0]
-                self.ready(result)
+                if sync:
+                    phase = "after_sync"
+                    self.ready(result, log=log_call, phase="after:" + label)
+                phase = "complete"
                 return result
             except BaseException as exc:
                 error = type(exc).__name__
                 raise
             finally:
-                elapsed = time.perf_counter() - start
+                elapsed = 0.0 if start is None else time.perf_counter() - start
                 total = self.totals.setdefault(
                     label, {"calls": 0, "seconds": 0.0, "max_seconds": 0.0}
                 )
@@ -135,13 +177,14 @@ class RuntimeTrace:
                 total["max_seconds"] = max(total["max_seconds"], elapsed)
                 if log_call or error is not None:
                     self.emit(
-                        "end", stage=label, seconds=elapsed, error=error, **details
+                        "end", stage=label, seconds=elapsed, error=error,
+                        phase=phase, wall_seconds=time.perf_counter() - wall_start, **details
                     )
 
         self.stack.enter_context(mock.patch.object(obj, name, timed))
 
     def progress(self, trainer):
-        self.ready()
+        self.ready(log=True, phase="progress")
         self.emit(
             "progress",
             interaction_step=trainer.interaction_step,
@@ -170,6 +213,51 @@ class RuntimeTrace:
         from experiments.exp12 import fork, precision, probe, run_probes, trainer
         from scale_rl.agents.sac.sac_agent import SACAgent
         from scale_rl.buffers.numpy_buffer import NpyUniformBuffer
+        from experiments.exp12.diagnostics import ActorDiagnostics, DiagnosticPendingUpdateMetrics
+        from experiments.angle_1 import PendingUpdateMetrics
+        from scale_rl.common.logger import WandbTrainerLogger
+
+        def pending_metadata(pending):
+            return {"pending_groups": len(pending._pending),
+                    **self.payload_metadata([info for _, info in pending._pending])}
+
+        # These observer wrappers add no readiness calls or new transfers.
+        self.wrap(DiagnosticPendingUpdateMetrics, "flush", "diagnostic_metric_flush",
+                  sync=False, metadata=pending_metadata)
+        self.wrap(PendingUpdateMetrics, "flush", "metric_replay", sync=False,
+                  metadata=pending_metadata)
+        original_flush = DiagnosticPendingUpdateMetrics.flush
+
+        def flush(pending):
+            self.flush_depth += 1
+            try:
+                return original_flush(pending)
+            finally:
+                self.flush_depth -= 1
+
+        self.stack.enter_context(mock.patch.object(DiagnosticPendingUpdateMetrics, "flush", flush))
+        original_get = jax.device_get
+
+        def device_get(value):
+            if not self.flush_depth:
+                return original_get(value)
+            details = self.payload_metadata(value)
+            self.emit("begin", stage="metric_device_get", **details)
+            start = time.perf_counter()
+            error = None
+            try:
+                return original_get(value)
+            except BaseException as exc:
+                error = type(exc).__name__
+                raise
+            finally:
+                self.emit("end", stage="metric_device_get", seconds=time.perf_counter() - start,
+                          error=error, **details)
+
+        self.stack.enter_context(mock.patch.object(jax, "device_get", device_get))
+        self.wrap(ActorDiagnostics, "window_metrics", "diagnostic_window", sync=False)
+        self.wrap(WandbTrainerLogger, "log_metric", "logger_log", sync=False)
+        self.wrap(WandbTrainerLogger, "reset", "logger_reset", sync=False)
 
         for obj, names in (
             (
@@ -220,6 +308,8 @@ class RuntimeTrace:
 
         def train(t, last_step, after_step=None, before_first_update=None):
             self.trainer = t
+            previous_training = self.training
+            self.training = True
             self.emit(
                 "train_begin",
                 interaction_step=t.interaction_step,
@@ -239,6 +329,7 @@ class RuntimeTrace:
                 error = type(exc).__name__
                 raise
             finally:
+                self.training = previous_training
                 try:
                     self.progress(t)
                 except BaseException as exc:
