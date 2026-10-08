@@ -78,5 +78,4 @@ class DiagnosticPendingUpdateMetrics(PendingUpdateMetrics):
         host_infos = jax.device_get([info for _, info in self._pending])
         for info in host_infos:
             self._diagnostics.collect(info)
-        self._pending = [(step, host) for (step, _), host in zip(self._pending, host_infos)]
-        super().flush()
+        self._replay(host_infos)

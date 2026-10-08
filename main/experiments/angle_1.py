@@ -103,6 +103,9 @@ class PendingUpdateMetrics:
 
     def flush(self) -> None:
         host_infos = jax.device_get([info for _, info in self._pending])
+        self._replay(host_infos)
+
+    def _replay(self, host_infos) -> None:
         for (first_update_step, _), info in zip(self._pending, host_infos):
             for i in range(len(info[ACTOR_GRAD_COSINE_KEY])):
                 row = {key: float(values[i]) for key, values in info.items()}

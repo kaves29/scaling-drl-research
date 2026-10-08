@@ -224,8 +224,10 @@ class RuntimeTrace:
         # These observer wrappers add no readiness calls or new transfers.
         self.wrap(DiagnosticPendingUpdateMetrics, "flush", "diagnostic_metric_flush",
                   sync=False, metadata=pending_metadata)
-        self.wrap(PendingUpdateMetrics, "flush", "metric_replay", sync=False,
-                  metadata=pending_metadata)
+        self.wrap(PendingUpdateMetrics, "_replay", "metric_replay", sync=False,
+                  metadata=lambda pending, host_infos: {
+                      "pending_groups": len(pending._pending),
+                      **self.payload_metadata(host_infos)})
         original_flush = DiagnosticPendingUpdateMetrics.flush
 
         def flush(pending):
