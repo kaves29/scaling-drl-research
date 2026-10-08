@@ -1,169 +1,248 @@
 # Metric-transfer investigation: Delta job 22756705
 
-Work is isolated on `codex/metric-transfer-fix`, based on `f6b7f73`.
-The A100 root cause is **not established**. The verified change removes a
-redundant traversal after the first transfer; it cannot fix a stall inside
-that first transfer. No GPU was accessed, no job was submitted, and no remote
-file was changed. No push, merge, or research-branch modification was performed.
+## Conclusion and scope
 
-## Evidence access and limits
+The complete downloaded evidence confirms a stall inside **native CUDA host-copy
+submission for already-ready metric arrays**. Python tree traversal, metric
+replay, and outstanding SAC updates are not the observed blocking operations.
+Exact upstream source also exposes a concrete conditional self-deadlock: a full
+worker queue can execute a transfer task inline while its caller holds the same
+buffer-event mutex that the task tries to acquire.
 
-The supplied diagnostic directory is
-`/work/hdd/biqc/skaveti1/exp12_diagnostic_outputs/f6b7f73_20261008T184434Z_692401`.
-Read-only SSH reached Delta's authentication banner but failed with
-`Permission denied (gssapi-with-mic,password)`. Local `klist` reports no ticket.
-Authentication was requested from the user; credentials were not requested in
-chat. Consequently, **none of the four required remote artifacts has been read**:
-`trace.jsonl`, `trace.stacks.log`, `profile.log`, or `backend.json`.
+**The existing Python stacks cannot prove that this job took that native lock
+cycle.** They do not identify the native wait, the leaf index, or whether any
+copies completed between samples. General CUDA/runtime contention remains an
+alternative. The corrected accumulator drains one existing metric group before
+submitting another, removing the unbounded prefetch pattern without changing
+values or training. An A100 validation is still required.
 
-The following is user-supplied evidence, not an independently verified trace:
-interaction 6000 completed SAC updates; `diagnostic_metric_flush` began with
-1,001 pending groups; `metric_device_get` began with 19,019 leaves / 152,152
-bytes; neither operation ended before the 300-second timeout; exit status 124.
-Do not substitute job 22740708's earlier artifacts or report for this job.
+Work continues from `bf20692e16700a87cd8375b2e3a851089ba83074` on
+`codex/metric-transfer-fix`. That previous commit removed a redundant host-tree
+traversal; it did not address the first transfer. No GPU access, SSH, Delta
+modification, Slurm submission, push, merge, or other research-branch change was
+performed during this follow-up. Original artifacts remain unchanged.
 
-## Source findings
+## Complete artifact inspection
 
-JAX/JAXLIB 0.4.34 is installed in the existing local Python 3.12.13 environment.
-Inspection of that installed JAX source confirms that `jax.device_get(tree)`:
+All four files under `/Users/shouryakaveti/Downloads/a100-job-22756705/` were
+read in full. Every JSONL record was parsed and checked for monotonic ordering,
+matched stage nesting, errors, and terminal state. The stack file contains four
+complete watchdog snapshots. Profile and backend contents were inspected in full.
 
-1. Flattens the tree and calls `copy_to_host_async()` separately on each leaf.
-2. Maps a host conversion over the tree; array conversion can wait for readiness.
+| File | Bytes | SHA-256 |
+| --- | ---: | --- |
+| trace.jsonl | 2,195,691 | `6ebdeb1c9647b8afc2451920d228966743b66dff4a3c59ef5931a8819f6cb0fd` |
+| trace.stacks.log | 11,807 | `7b3f645e8b77544ced0880a2183d40b6c86345638968894ab65b3c379376830e` |
+| profile.log | 326 | `73b52186d94b83c91153e8aedc75212003a1f742838d244b69ccf7a28f140588` |
+| backend.json | 329 | `fef906c25ed93acf38daba92c18b98632520009038883e30629c7841deda8ad8` |
 
-Passing the entire tree in one call does not pack its buffers into one transfer.
-The shape agrees with 1,001 groups × 19 metrics × two float32 values = 152,152
-bytes. The payload is independent of the critic's parameter count.
+Backend: A100-SXM4-40GB, Python 3.12.13, JAX/JAXLIB 0.4.34, `cuda,cpu`, source
+`f6b7f73b018eac365819ce64c90d22942b211f42`. Profile reports 76.12M parameters
+and contains no additional error. Exit 124 and the 300-second timeout were
+reported by the user; these four files do not include Slurm accounting/status.
 
-Before this change, `DiagnosticPendingUpdateMetrics.flush` transferred the
-whole tree, collected diagnostics, replaced pending entries with host copies,
-then called the parent's flush. The parent called `device_get` again on NumPy
-arrays. That second traversal is redundant; it is not a second GPU transfer.
-It occurs after the operation reported stalled in this job.
+The trace has **10,935 records**: 5,438 begins, 5,435 ends, 59 progress records,
+one wrapper start, one trace start, and one training begin. All recorded ends
+match their begins; no error is recorded. The final line is newline-complete.
+Only `entrypoint`, `diagnostic_metric_flush`, and `metric_device_get` remain open.
+There is no terminal summary or train exit.
 
-The checked-in diagnostic launcher enables synchronization. If this job used
-that unchanged invocation, the trace's `update_many` wrapper waits for both
-returned metrics and agent state after each call. Completed updates would then
-argue against an accumulated training backlog, but the actual trace and stacks
-must be inspected before drawing that conclusion about this job.
+Times below are seconds from `wrapper_start`:
 
-## CPU reproduction
+| Time | Evidence |
+| ---: | --- |
+| 25.201 | Trace initialized with `synchronize=true`; entrypoint starts |
+| 43.863 | Trainer initialization completed |
+| 52.931 | Initial evaluation/start completed |
+| 59.842 | Interaction 2000 flush completed with zero pending groups |
+| 91.363 | First structural metrics completed |
+| 98.177 | Interaction 4000 flush completed with zero pending groups |
+| 98.321 | Second structural metrics completed |
+| 150.859 | Last progress: interaction 5900, update 1802 |
+| 153.333 | Interaction 6000 `update_many` call 1001 begins |
+| 153.353 | Its post-update synchronization and update call complete |
+| 153.511 | Flush begins: 1001 groups, 19019 leaves, 152152 bytes |
+| 153.666 | `metric_device_get` begins; no later trace record |
 
-`scripts/reproduce_metric_transfer_cpu.py` forces CPU before importing JAX and
-separately measures readiness, flattening, copy requests, materialization, a
-redundant host-tree traversal, and fresh `device_get`. It uses distinct arrays
-returned by a compiled synthetic metric function. There is no training or GPU
-performance claim. One run of the exact 1,001-group payload measured:
+The last post-update synchronization took 8.262 ms. `RuntimeTrace.ready` waits
+for the returned metric tree and the actor, critic, target critic, temperature,
+and RNG state. Thus this is not simply a logging call waiting for a backlog of
+unsynchronized updates. There are 2002 completed update rows at this boundary.
+No nonempty previous bulk metric flush exists to establish a failure threshold.
 
-| Phase | Seconds |
-| --- | ---: |
-| Readiness before measuring transfers | 0.00614 |
-| Flattening | 0.00104 |
-| Per-leaf copy requests | 0.04297 |
-| Host materialization | 0.01026 |
-| Redundant host-tree traversal | 0.00736 |
-| Fresh complete `device_get` | 0.09500 |
+The first watchdog snapshot is in an earlier structural-metric compilation;
+the second is in an earlier post-update readiness wait. The final **two**, one
+watchdog interval apart, are both:
 
-Counts 1, 1,001, 2,000, and 4,096 all completed. These timings do not bound CUDA
-latency. Python traversal alone does not reproduce the stall on CPU. Excessive
-CUDA per-buffer overhead, waits in transfer/materialization, native runtime
-failure, and node contention remain unconfirmed possibilities.
-
-The existing real SAC/DMControl fixture was also run before and after the
-change, in plain, traced, and synchronized-trace modes. Each of the six runs
-reached interaction 6001, performed 2004 updates, and saved four metric rows.
-All three old-versus-new complete-state comparisons returned `[]`, including
-agent/optimizer state, replay, normalizer, environment state, global RNG,
-counters, diagnostics, and metrics. The existing comparator ignores only the
-WandB run ID. Within each version, traced-versus-plain comparisons also returned
-`[]`. Tiny D1W8 networks and replay capacity 7000 are engineering fixtures;
-production configurations were not edited. Concurrent local tests and cache
-warming prevent using run durations as speedup estimates.
-
-## Verified change
-
-- `experiments/angle_1.py`: extract the existing row loop into `_replay`.
-- `experiments/exp12/diagnostics.py`: replay the already-materialized host tree
-  directly, avoiding replacement of pending entries and the second `device_get`.
-- `experiments/exp12/runtime_trace.py`: observe `_replay` so transfer and host
-  aggregation remain separately visible without adding waits.
-- `tests/test_metric_transfer.py`: compare all 2,002 rows and every meter field
-  with the literal old implementation, including diagnostics, cosine filtering,
-  mixed group lengths, host float64 values, cancellation order, transfer errors,
-  and empty/repeated flushes.
-- `tests/test_runtime_observability.py`: require one transfer and ordered,
-  completed transfer/replay stage events.
-- `scripts/reproduce_metric_transfer_cpu.py`: retain the CPU phase reproduction.
-
-The nested replay loop and its Python float accumulation order are unchanged.
-No reduction, dtype conversion, packing, changed cadence, or additional barrier
-was introduced. SAC, networks, optimizers, trainer, probes, methodology,
-configuration, precision policy, and evaluation code remain unchanged.
-For base `PendingUpdateMetrics`, `metric_replay` now times host replay alone;
-its previous trace span included the transfer. Account for this when comparing
-trace timings between revisions.
-
-Independent review found no actionable correctness defects and independently
-passed the 15 focused metric/observability methods. It confirmed that this
-cleanup does not resolve a stall in the first transfer.
-
-## Validation and local environment errors
-
-The initial 15 focused tests passed. The final relevant suite passed all
-**38 methods in 54.786 seconds**, covering metric transfer, observability,
-actor diagnostics and precision, cosine cadence, Exp12 runtime, and SAC
-checkpointing. The CPU reproduction script, `git diff --check`, and Black
-checks for the two new Python files also passed.
-
-An expanded attempt including the unchanged Linux Slurm launcher suite ran
-67 methods but failed with 15 failure reports and 10 error reports. The launcher
-requires GNU `realpath -m`; macOS's installed `realpath` rejects `-m`, causing
-preflight failure and missing output artifacts in those fixtures. The launcher
-and its tests have no diff from the base. This is an unresolved local platform
-limitation, not a passing launcher qualification. No launcher change was made.
-An initial import also aborted in GLFW; rerunning with `MUJOCO_GL=disable`
-resolved it. A new dependency-install attempt encountered sandbox DNS failure;
-the existing pinned environment was then found and used without modification.
-
-CPU commands, from `main/` with the existing environment:
-
-```bash
-export JAX_PLATFORMS=cpu MUJOCO_GL=disable EXP12_JAX_CACHE_DIR=off
-export PYTHONPATH=/private/tmp/exp12-validation-deps:.
-CPU_PYTHON=/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/bin/python
-"$CPU_PYTHON" scripts/reproduce_metric_transfer_cpu.py
-"$CPU_PYTHON" -m unittest -v tests.test_metric_transfer \
-  tests.test_runtime_observability tests.test_exp12_diagnostics \
-  tests.test_angle1_real_entry_point.ActorGradCosineCadenceTest \
-  tests.test_exp12_runtime tests.test_sac_agent_checkpoint
-"$CPU_PYTHON" scripts/reproduce_runtime_logging_cpu.py --out-dir NEW_ABSOLUTE_DIRECTORY
+```text
+array.py:612 copy_to_host_async
+api.py:2481 device_get
+runtime_trace.py:249 device_get
+exp12/diagnostics.py:78 flush
+exp12/trainer.py:184 train
 ```
 
-Generated evidence is local under `/private/tmp/metric-transfer-*`: CPU phase
-JSONL, before/after fixture checkpoints and traces, complete-state comparison,
-and test logs. These are not remote research outputs or committed binaries.
+At JAX 0.4.34 line 612, Python has called the native single-device host-copy
+method. `device_get` is still in its copy-submission loop; its subsequent
+`tree_map` materialization has not been reached. These are Python snapshots,
+not native CUDA stacks. They cannot distinguish one blocked request from a
+sequence of very slow native requests.
 
-## Remaining investigation and A100 validation
+## Native source investigation and CPU/GPU difference
 
-First restore read-only SSH authentication and read all four complete artifacts,
-recording sizes and hashes. Match repeated stacks to the complete trace timeline
-and confirm backend, synchronization mode, timeout provenance, and errors.
-A stack in `copy_to_host_async` favors transfer submission/runtime; a stack in
-array conversion can represent waiting or materialization; neither proves a
-native deadlock. A Python traversal stack requires inspection for repeated work
-and host contention. Native transfer/synchronization failures may require a
-CUDA timeline and node telemetry.
+[JAX 0.4.34's XLA pin](https://github.com/jax-ml/jax/blob/jax-v0.4.34/third_party/xla/workspace.bzl)
+is `cd6e808c59f53b40a99df1f1b860db9a3e598bff`; that tree pins Eigen
+`33d0937c6bdf5ec999939fb17f2a553183d14a74`. Both reviewers inspected these
+specific versions, rather than assuming current-main behavior. These are the
+upstream version pins, not independently recovered build IDs from Delta's binary.
 
-Only after explicit approval for GPU access and new Delta work, measure the
-unchanged transfer path and the relevant remedy on the same A100 model and
-pinned runtime. Separate already-ready leaf transfer cost from readiness cost.
-If evidence supports packing, compare exact byte-preserving, bounded packing
-against the original path without changing metric reductions or SAC outputs;
-qualify CPU state and metric parity before proposing an A100 trial.
+[PyHostValue](https://github.com/openxla/xla/blob/cd6e808c59f53b40a99df1f1b860db9a3e598bff/xla/python/py_array.cc#L1459)
+returns immediately from async-copy submission for ordinary zero-copyable CPU
+buffers, and NumPy conversion acquires their host memory. CUDA buffers instead
+allocate a destination and invoke IFRT/PJRT host-copy machinery. Consequently,
+a fast CPU run does **not** exercise CUDA staging, stream events, host callbacks,
+or the GPU transfer-task queue, and cannot disprove a GPU-specific failure.
 
-Then repeat the original workload through its first populated logging boundary,
-retaining complete trace, stacks, backend, profile, and exit status in fresh
-output locations. Require completed transfer/replay events, unchanged counters,
-metric keys/cadence, numerical precision and training state, and the existing
-output validator. Passing this cleanup alone would not establish that the
-original transfer bottleneck is fixed, that the entire profile fits 300 seconds,
-or that the scientific campaign is qualified.
+The exact upstream lock cycle is:
+
+1. [BufferSequencingEvent scheduling](https://github.com/openxla/xla/blob/cd6e808c59f53b40a99df1f1b860db9a3e598bff/xla/pjrt/tracked_device_buffer.cc#L140)
+   holds its mutex while scheduling the task for an already-defined buffer.
+2. [TSL's scheduler](https://github.com/openxla/xla/blob/cd6e808c59f53b40a99df1f1b860db9a3e598bff/third_party/tsl/tsl/platform/threadpool.cc#L128)
+   delegates to Eigen. [Pinned Eigen](https://github.com/eigen-mirror/eigen/blob/33d0937c6bdf5ec999939fb17f2a553183d14a74/Eigen/src/ThreadPool/NonBlockingThreadPool.h#L100)
+   has queues of 1024 tasks each and executes a task synchronously on the caller
+   when pushing onto the selected queue fails.
+3. The [ToLiteral task](https://github.com/openxla/xla/blob/cd6e808c59f53b40a99df1f1b860db9a3e598bff/xla/pjrt/pjrt_stream_executor_client.cc#L1749)
+   accesses the same buffer's definition event, whose
+   [GetDefinedStatus](https://github.com/openxla/xla/blob/cd6e808c59f53b40a99df1f1b860db9a3e598bff/xla/pjrt/tracked_device_buffer.h#L140)
+   acquires that mutex again. Inline execution therefore self-deadlocks.
+
+This establishes a conditional implementation defect in the pinned upstream
+path. A burst of 19019 requests is a credible trigger. It does not establish
+that a queue filled in job 22756705: no native backtrace, queue occupancy,
+thread-pool size, per-leaf progress, or GPU/node telemetry was captured.
+Queue capacity is per worker, not one global 1024-copy limit. No pinned-memory
+exhaustion or driver deadlock is claimed as confirmed.
+
+| Explanation | Result |
+| --- | --- |
+| Python traversal or logger replay | Excluded as the observed blocking site by both stalled snapshots |
+| Pending SAC computation | The final update's output/state readiness completed before transfer |
+| Compilation or trace-file I/O | Earlier costs completed; stalled samples are inside native copy submission |
+| Raw payload bandwidth | 152 KB alone is insufficient to characterize 19019 native request sequences |
+| Queue overflow and inline mutex reentry | Concrete upstream failure mechanism; actual occurrence needs native evidence |
+| Other CUDA/runtime wait or severe per-copy overhead | Remains possible without native stacks and copy progress |
+
+## Minimal engineering correction
+
+`PendingUpdateMetrics._materialize` now calls `jax.device_get` separately for
+each existing group and finishes that group's host conversion before submitting
+the next. Both base and diagnostic flushes use it. For this job that changes the
+prefetch bound from 19019 arrays to **19 arrays**, while still copying every
+value. All groups are materialized before diagnostics or row replay begins, so
+a later transfer failure does not partially update either collector.
+
+There is no new compiled program, packing, dtype promotion, reduction, RNG use,
+per-update synchronization, early logging, or changed metric. The original row
+loop, Python float accumulation order, cosine filtering, diagnostic definitions,
+precision policy, and logging cadence remain unchanged. Scientific configs,
+trainer/SAC/network/optimizer/probe/evaluation code are untouched. Tracing now
+naturally records one transfer event per group; aggregate flush metadata remains
+19019 leaves / 152152 bytes. This changes diagnostic event volume, not research
+metric cadence.
+
+Files changed relative to `bf20692`:
+
+- `experiments/angle_1.py`: shared group-draining materializer.
+- `experiments/exp12/diagnostics.py`: use the shared materializer.
+- `tests/test_metric_transfer.py`: copy-queue bound, late-failure atomicity,
+  exact float bits/mixed dtypes, and full-payload row/meter/diagnostic parity.
+- `tests/test_runtime_observability.py`: expect one completed transfer per group
+  before replay, with no added readiness calls.
+- `scripts/diagnose_metric_transfer.py`: isolated targeted transfer diagnostic.
+- This report: complete evidence, source reasoning, validation, and next test.
+
+## Validation and independent review
+
+All **41 relevant methods passed in 56.977 seconds**: metric transfer,
+observability, actor diagnostics/precision, cosine cadence, Exp12 runtime, and
+SAC checkpointing. The exact 1001-group fixture compares all 2002 replayed rows,
+every meter field, diagnostic values/std, and cosine sample selection against
+the original bulk implementation. Float32 signed zero, infinities, a NaN payload,
+a subnormal, int32, and host float64 precision are preserved by materialization.
+
+A finite-capacity test backend demonstrates that bulk prefetch can exceed its
+capacity while the new path peaks at 19 pending requests. This is a regression
+of the bound, **not a reproduction of CUDA or the native self-deadlock**. A failure
+on the second group leaves pending rows, diagnostics and meters unconsumed;
+retry collects and replays each row once.
+
+The real SAC/DMControl engineering fixture reached interaction 6001 / 2004
+updates / four metric rows in plain, traced, and synchronized modes. Compared
+with both the original bulk fixture and the previous-commit fixture, all six
+complete-state comparisons returned `[]`. Every one of the 107 agent-state
+leaves had identical dtype, shape, and bytes, and metric rows serialized
+identically. Within the new version, both traced modes also matched plain state.
+D1W8 networks/capacity 7000 are isolated test fixtures; production config was
+not edited. Durations are not a claimed CUDA speedup.
+
+The targeted diagnostic transferred and bit-verified all 19019 leaves on CPU
+under bulk, groups, and serial strategies in separate processes. Each transfer
+phase took approximately 0.05 seconds. Forced timeouts, unavailable-debugger
+reporting, native-collector invocation using a fake debugger, and refusal to
+reuse an existing evidence directory were verified. No real debugger attachment
+or GPU execution occurred locally. Existing Linux-launcher checks were not
+repeated: the prior run documented macOS's missing GNU `realpath -m`; those
+unchanged launcher files remain outside this change.
+
+Independent review of the complete evidence, pinned native source, correction,
+diagnostic and report found no actionable correctness defects. The reviewer
+independently passed all 18 focused methods in 3.131 seconds and confirmed the
+limits of the native-deadlock attribution. Generated logs/checkpoints, source
+extracts with provenance, and comparisons remain outside Git under
+`/private/tmp/metric-transfer-*`.
+
+## Smallest next A100 experiment — prepared, not executed
+
+After explicit approval for GPU access and a fresh Delta output directory,
+run the following inside an approved A100 allocation with the pinned environment:
+
+```bash
+python scripts/diagnose_metric_transfer.py \
+  --platform cuda --groups 1001 --strategies bulk groups \
+  --timeout 30 --native-stacks --out-dir NEW_ABSOLUTE_OUTPUT_DIRECTORY
+```
+
+This launches each strategy in a fresh process, creates the identical number
+and size of metric arrays, explicitly waits for readiness, then changes only
+prefetch depth. It defaults to CPU unless `--platform cuda` is supplied. It
+records backend metadata, copy/materialization phase and sampled leaf progress,
+five-second Python stacks, exact output-bit verification, and process status.
+A timed-out worker optionally gets a five-second `gdb` native-backtrace attempt
+before termination. Missing debugger, missing symbols, or ptrace restrictions
+can prevent native identification; failure is reported without changing
+permissions/settings or requesting privilege escalation. No Slurm command is
+embedded in the diagnostic.
+
+Interpretation:
+
+- **Bulk stalls, groups succeeds:** isolates concurrency in native copy
+  submission. A native stack showing inline scheduling under
+  `ExecuteOrAddToFutureTasks` followed by the same event's `GetDefinedStatus`
+  mutex acquisition confirms the predicted lock cycle.
+- **Both stall:** run the optional `serial` strategy to test one-request depth;
+  inspect the native wait for general driver/runtime/transfer failure.
+- **Bulk progresses slowly:** sampled leaf progress and transfer/materialization
+  timing distinguish per-request overhead from a complete stop.
+- **Both succeed:** the synthetic case does not reproduce the actual context.
+  The next necessary experiment is the original dog-run D4W1536, seed 990 warm-up
+  only through interaction 6000, with bulk/group transfer selection and native
+  stacks at the first populated flush. Retain the original precision, batch,
+  UTD, sampling onset and cadence; do not substitute a shortened scientific run
+  as evidence of campaign qualification.
+
+A successful targeted test must then be followed by one approved original-workload
+validation of the committed correction, checking completed transfer/replay,
+unchanged counters/metric keys/cadence, and the existing profile validator.
+No claim is made that the full diagnostic now fits 300 seconds. The remaining
+uncertainty is native CUDA behavior and the unobserved native wait, which cannot
+be resolved by rerunning equivalent zero-copy CPU tests.

@@ -102,8 +102,11 @@ class PendingUpdateMetrics:
         self._pending.append((first_update_step, update_info))
 
     def flush(self) -> None:
-        host_infos = jax.device_get([info for _, info in self._pending])
-        self._replay(host_infos)
+        self._replay(self._materialize())
+
+    def _materialize(self):
+        # Drain each group's copies before submitting another group.
+        return [jax.device_get(info) for _, info in self._pending]
 
     def _replay(self, host_infos) -> None:
         for (first_update_step, _), info in zip(self._pending, host_infos):

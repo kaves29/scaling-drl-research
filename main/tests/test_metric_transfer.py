@@ -51,6 +51,99 @@ def legacy_flush(pending):
 
 
 class MetricTransferTest(unittest.TestCase):
+    def test_group_transfers_bound_outstanding_copy_requests(self):
+        class CopyQueue:
+            def __init__(self):
+                self.pending = 0
+                self.peak = 0
+
+        class Array:
+            def __init__(self, queue):
+                self.queue = queue
+                self.requested = False
+
+            def copy_to_host_async(self):
+                if not self.requested:
+                    self.requested = True
+                    self.queue.pending += 1
+                    self.queue.peak = max(self.queue.peak, self.queue.pending)
+                if self.queue.pending > 32:
+                    raise RuntimeError("copy queue capacity exceeded")
+
+            def __array__(self):
+                if self.requested:
+                    self.queue.pending -= 1
+                    self.requested = False
+                return np.ones(2, np.float32)
+
+        for diagnostic in (False, True):
+            with self.subTest(diagnostic=diagnostic):
+                queue = CopyQueue()
+                log, pending = make_pending(diagnostic)
+                for group in range(5):
+                    info = {f"metric_{key}": Array(queue) for key in range(17)}
+                    info[ACTOR_GRAD_COSINE_KEY] = Array(queue)
+                    info["train/actor_gnorm"] = Array(queue)
+                    pending.add(2 * group, info)
+                pending.flush()
+                self.assertEqual(queue.peak, 19)
+                self.assertEqual(queue.pending, 0)
+                self.assertEqual(log.average_meter_dict["train/actor_gnorm"].count, 10)
+                bulk = [
+                    {f"metric_{key}": Array(queue) for key in range(19)}
+                    for _ in range(5)
+                ]
+                with self.assertRaisesRegex(
+                    RuntimeError, "copy queue capacity exceeded"
+                ):
+                    jax.device_get(bulk)
+
+    def test_later_group_failure_does_not_partially_collect_or_replay(self):
+        log, pending = make_pending()
+        for first in (0, 2):
+            pending.add(
+                first,
+                {
+                    ACTOR_GRAD_COSINE_KEY: jax.device_put(np.zeros(2, np.float32)),
+                    "train/actor_gnorm": jax.device_put(np.ones(2, np.float32)),
+                },
+            )
+        original = pending._pending
+        first_host = jax.device_get(original[0][1])
+        with mock.patch(
+            "jax.device_get", side_effect=[first_host, OSError("second group")]
+        ):
+            with self.assertRaisesRegex(OSError, "second group"):
+                pending.flush()
+        self.assertIs(pending._pending, original)
+        self.assertEqual(pending._diagnostics.gnorm, [])
+        self.assertEqual(log.average_meter_dict.averages(), {})
+        pending.flush()
+        self.assertEqual(pending._diagnostics.gnorm, [1.0] * 4)
+        self.assertEqual(log.average_meter_dict["train/actor_gnorm"].count, 4)
+
+    def test_materialization_preserves_float32_bits_and_mixed_dtypes(self):
+        _, pending = make_pending()
+        bits = np.array(
+            [0, 0x80000000, 0x7F800000, 0xFF800000, 0x7FC00001, 0x00000001], np.uint32
+        )
+        for group in range(3):
+            pending.add(
+                group,
+                {
+                    "bits": jax.device_put(bits.view(np.float32)),
+                    "integer": jax.device_put(np.array([group], np.int32)),
+                    "host64": np.array([1 + 2**-40], np.float64),
+                },
+            )
+        host = pending._materialize()
+        for group, info in enumerate(host):
+            np.testing.assert_array_equal(info["bits"].view(np.uint32), bits)
+            self.assertEqual(info["integer"].dtype, np.int32)
+            np.testing.assert_array_equal(info["integer"], [group])
+            self.assertEqual(info["host64"].dtype, np.float64)
+            self.assertEqual(info["host64"][0], 1 + 2**-40)
+
     def test_full_payload_matches_legacy_rows_meters_and_diagnostics(self):
         log, pending = make_pending()
         reference_log, reference = make_pending()
@@ -72,7 +165,13 @@ class MetricTransferTest(unittest.TestCase):
         with mock.patch.object(log, "update_metric", wraps=log.update_metric) as rows:
             with mock.patch("jax.device_get", wraps=jax.device_get) as transfer:
                 pending.flush()
-            transfer.assert_called_once()
+            self.assertEqual(transfer.call_count, 1001)
+            self.assertTrue(
+                all(
+                    len(jax.tree_util.tree_leaves(call.args[0])) == 19
+                    for call in transfer.call_args_list
+                )
+            )
         with mock.patch.object(
             reference_log, "update_metric", wraps=reference_log.update_metric
         ) as reference_rows:
