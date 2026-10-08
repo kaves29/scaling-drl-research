@@ -59,10 +59,10 @@ mkdir "$OUT/temp" "$OUT/cache_single_writer" || fail 1 "cannot create temporary/
 export OUT EXPECTED_COMMIT EXPECTED_GPU_MODEL
 export DIAGNOSTIC_MODE DIAGNOSTIC_ARCH DIAGNOSTIC_BLOCKS DIAGNOSTIC_WIDTH
 export TMPDIR="$OUT/temp" WANDB_MODE=disabled PYTHONUNBUFFERED=1
-export JAX_PLATFORMS=cuda MUJOCO_GL=disable JAX_ENABLE_X64=false
+export JAX_PLATFORMS=cuda,cpu MUJOCO_GL=disable JAX_ENABLE_X64=false
 export OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1
 export XLA_PYTHON_CLIENT_PREALLOCATE=false
-unset XLA_PYTHON_CLIENT_MEM_FRACTION JAX_DEFAULT_MATMUL_PRECISION NVIDIA_TF32_OVERRIDE
+unset XLA_PYTHON_CLIENT_MEM_FRACTION JAX_DEFAULT_MATMUL_PRECISION NVIDIA_TF32_OVERRIDE JAX_PLATFORM_NAME
 export EXP12_JAX_CACHE_DIR="$OUT/cache_single_writer"
 git rev-parse HEAD > "$OUT/commit.txt"
 set +e
@@ -81,12 +81,16 @@ assert jax.__version__ == jaxlib.__version__ == "0.4.34"
 devices = jax.devices()
 assert len(devices) == 1 and devices[0].platform == "gpu"
 assert devices[0].device_kind == os.environ["EXPECTED_GPU_MODEL"]
+cpu_devices = jax.local_devices(backend="cpu")
+assert cpu_devices and all(d.platform == "cpu" for d in cpu_devices), "SAC initialization requires a local CPU backend"
 metadata = dict(
     python=sys.version,
     jax=jax.__version__,
     jaxlib=jaxlib.__version__,
     device_kind=devices[0].device_kind,
     device=str(devices[0]),
+    cpu_devices=[str(d) for d in cpu_devices],
+    jax_platforms=jax.config.jax_platforms,
     commit=os.environ["EXPECTED_COMMIT"],
 )
 Path(os.environ["OUT"], "backend.json").write_text(json.dumps(metadata, indent=2))

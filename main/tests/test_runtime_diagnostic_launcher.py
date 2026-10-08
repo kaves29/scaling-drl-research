@@ -18,10 +18,37 @@ import json, os, sys
 from pathlib import Path
 root = Path(os.environ['OUT'])
 mode = os.environ.get('FAKE_MODE', '')
+backend_env = {name: os.environ.get(name) for name in
+    ('JAX_PLATFORMS', 'JAX_PLATFORM_NAME', 'JAX_ENABLE_X64')}
+with (root / 'python-envs.jsonl').open('a') as calls:
+    calls.write(json.dumps(dict(args=sys.argv[1:], env=backend_env)) + '\n')
 if sys.argv[1:] == ['-']:
     source = sys.stdin.read()
     if 'import jax' in source:
-        (root / 'backend.json').write_text('{"mock": true}')
+        (root / 'backend-env.json').write_text(json.dumps({name: os.environ.get(name) for name in
+            ('JAX_PLATFORMS', 'JAX_PLATFORM_NAME', 'JAX_ENABLE_X64')}))
+        if mode in ('backend-startup', 'missing-cpu', 'cpu-only'):
+            import jax
+            from jax._src import xla_bridge
+            from types import SimpleNamespace
+            device = SimpleNamespace(platform='gpu', device_kind=os.environ['EXPECTED_GPU_MODEL'])
+            class FakeCudaClient:
+                platform = 'gpu'
+                def device_count(self): return 1
+                def process_index(self): return 0
+                def devices(self): return [device]
+                def local_devices(self): return [device]
+            if mode != 'cpu-only':
+                xla_bridge.register_backend_factory('cuda', FakeCudaClient, priority=200, fail_quietly=False)
+            xla_bridge.hardware_utils.has_visible_nvidia_gpu = lambda: mode != 'cpu-only'
+            if mode == 'missing-cpu':
+                xla_bridge.register_backend_factory('cpu', lambda: None, priority=0, fail_quietly=False)
+            exec(compile(source, '<real backend preflight; mock CUDA client>', 'exec'))
+            cpu = jax.local_devices(backend='cpu')[0]
+            with jax.default_device(cpu):
+                assert jax.config.jax_default_device is cpu
+        else:
+            (root / 'backend.json').write_text('{"mock": true}')
     else:
         exec(compile(source, '<real output validator>', 'exec'))
 elif sys.argv[1] == 'scripts/compare_identity_fork.py':
@@ -306,6 +333,65 @@ class RuntimeDiagnosticLauncherTest(unittest.TestCase):
         validation = json.loads((self.out / "validation.json").read_text())
         self.assertFalse(validation["memory_measurement_available"])
         self.assertEqual(validation["sac_updates"], 2124)
+
+    def test_all_modes_export_cuda_and_cpu_without_legacy_default_override(self):
+        for mode in ("profile", "identity_cold", "identity_warm"):
+            with self.subTest(mode=mode):
+                out = self.root / mode
+                result = self.run_script(
+                    OUT=str(out),
+                    DIAGNOSTIC_MODE=mode,
+                    JAX_PLATFORMS="cpu",
+                    JAX_PLATFORM_NAME="cpu",
+                )
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual(
+                    json.loads((out / "backend-env.json").read_text()),
+                    {
+                        "JAX_PLATFORMS": "cuda,cpu",
+                        "JAX_PLATFORM_NAME": None,
+                        "JAX_ENABLE_X64": "false",
+                    },
+                )
+                calls = [
+                    json.loads(line)
+                    for line in (out / "python-envs.jsonl").read_text().splitlines()
+                ]
+                self.assertGreater(len(calls), 1)
+                for call in calls:
+                    self.assertEqual(
+                        call["env"],
+                        {
+                            "JAX_PLATFORMS": "cuda,cpu",
+                            "JAX_PLATFORM_NAME": None,
+                            "JAX_ENABLE_X64": "false",
+                        },
+                    )
+
+    def test_real_jax_registry_allows_explicit_cpu_device_with_mock_cuda(self):
+        result = self.run_script(FAKE_MODE="backend-startup", JAX_PLATFORM_NAME="cpu")
+        log = (self.out / "profile.log").read_text()
+        self.assertEqual(result.returncode, 0, result.stderr + log)
+        metadata = json.loads((self.out / "backend.json").read_text())
+        self.assertEqual(metadata["jax_platforms"], "cuda,cpu")
+        self.assertTrue(metadata["cpu_devices"])
+        self.assertTrue((self.out / "validation.json").exists())
+
+    def test_missing_cpu_backend_stops_before_profile_execution(self):
+        result = self.run_script(FAKE_MODE="missing-cpu")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn(
+            "Unable to initialize backend 'cpu'", (self.out / "profile.log").read_text()
+        )
+        self.assertFalse((self.out / "profile-calls.txt").exists())
+        self.assertFalse((self.out / "validation.json").exists())
+
+    def test_cpu_only_backend_cannot_pass_gpu_preflight(self):
+        result = self.run_script(FAKE_MODE="cpu-only")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("AssertionError", (self.out / "profile.log").read_text())
+        self.assertFalse((self.out / "profile-calls.txt").exists())
+        self.assertFalse((self.out / "backend.json").exists())
 
     def test_real_probe_schedule_matches_validator(self):
         import jax.numpy as jnp
