@@ -139,15 +139,19 @@ def range_rows(range_dir):
     return rows
 
 
+def range_criterion_rows(rows, archs):
+    """Amendment (w): exactly one finite configured P/b >= 0.9 per architecture."""
+    configured = {a: [r for r in rows if r["arch"] == a and r["is_configured_pool"]] for a in archs}
+    ratios = {a: rs[0]["score_over_b"] for a, rs in configured.items() if len(rs) == 1}
+    per_size = {a: bool(a in ratios and np.isfinite(ratios[a]) and ratios[a] >= RANGE_MIN_P_OVER_B) for a in archs}
+    old = {a: bool(a in ratios and np.isfinite(ratios[a]) and OLD_RANGE_RULE[0] <= ratios[a] <= OLD_RANGE_RULE[1]) for a in archs}
+    return {"pass": bool(archs) and all(per_size.values()), "per_size": per_size, "old_rule_per_size": old,
+            "missing": [a for a in archs if not configured[a]],
+            "duplicates": [a for a in archs if len(configured[a]) > 1]}
+
+
 def range_criterion(range_dir, archs):
-    """Amendment (w): PASS iff P/b >= 0.9 at the configured pool for every arch. The superseded
-    10-90% rule is evaluated for information."""
-    configured = {r["arch"]: r for r in range_rows(range_dir) if r["is_configured_pool"]}
-    per_size = {a: (a in configured and configured[a]["score_over_b"] >= RANGE_MIN_P_OVER_B) for a in archs}
-    old = {a: (a in configured and OLD_RANGE_RULE[0] <= configured[a]["score_over_b"] <= OLD_RANGE_RULE[1])
-           for a in archs}
-    return {"pass": all(per_size.values()), "per_size": per_size, "old_rule_per_size": old,
-            "missing": [a for a in archs if a not in configured]}
+    return range_criterion_rows(range_rows(range_dir), archs)
 
 
 def format_range(range_dir, archs):

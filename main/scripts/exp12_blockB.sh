@@ -230,7 +230,9 @@ step_break_checks() { python tests/exp12_break_checks.py; }
 step_range_hopper() {
   local o=""; local x; for x in $PROBE_EXTRA; do o+="--override $x "; done
   python scripts/probe_fresh_checks.py --mode range --env hopper-hop --env_group dmc_medium \
-    --archs $RANGE_ARCHS --pools $RANGE_POOLS --out_dir "$OUT/gpu2/range_hopper_hop" $o || return 1
+    --archs $RANGE_ARCHS --pools $RANGE_POOLS --out_dir "$OUT/gpu2/range_hopper_hop" $o || {
+      local code=$?; if [ "$code" = 3 ]; then return 4; else return 1; fi
+    }
   python scripts/exp12_reports.py range-check "$OUT/gpu2/range_hopper_hop" $RANGE_ARCHS || return 4  # amendment (w)
 }
 

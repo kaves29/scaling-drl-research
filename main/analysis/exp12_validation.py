@@ -15,6 +15,7 @@ import pandas as pd
 from scipy.stats import trim_mean
 
 from experiments.exp12 import exp2_ledger, ledger, trigger
+from experiments.exp12.probe import paired_loss
 from utils.run_metadata import _hash, _strip_locations, training_protocol
 
 ARCHITECTURES = ("D2W512", "D4W1024", "D4W1536")
@@ -144,6 +145,9 @@ def _state(snapshot, root):
     name = snapshot.read(root / "LATEST").decode().strip()
     require(name and Path(name).name == name, f"{root}: invalid LATEST")
     state = root / name
+    require(name not in (".", "..") and state.is_dir()
+            and state.resolve().parent == root.resolve(),
+            f"{root}: state directory escapes root or is missing")
     for name in ("meta.pkl", "buffer.npz", "buffer_meta.pkl", "obs_rms.pkl"):
         require(
             (state / name).is_file() and (state / name).stat().st_size > 0,
@@ -338,7 +342,11 @@ def _checks(snapshot, path, meta, n, end, seed, config, architecture, environmen
         else:
             require(
                 np.array_equal(
-                    loss, fresh.astype(np.float32) - current.astype(np.float32)
+                    loss, paired_loss({
+                        name: {"score": np.array([row[f"score_{name}_r{r}"] for r in range(5)], np.float32)}
+                        for name in (("fresh_q1", "fresh_q2", "current_q1", "current_q2")
+                                     if suite(environment) == "humanoid_bench" else ("fresh", "current"))
+                    })
                 ),
                 f"{path}: inconsistent round losses at {k}",
             )
@@ -905,10 +913,13 @@ def _check2(snapshot, result, path, k, seed, config, twin, key):
                 f"{key}: stale Check 2 IQM",
             )
         diff = scores["injected"] - scores["control"]
+        loss_inputs = {name: {"score": data[f"{name}_score"]}
+                       for name in (("fresh_q1", "fresh_q2", "injected_q1", "injected_q2",
+                                     "control_q1", "control_q2") if twin else scores)}
         for field, values in (
             ("paired_difference_rounds", diff),
-            ("loss_injected_rounds", scores["fresh"] - scores["injected"]),
-            ("loss_control_rounds", scores["fresh"] - scores["control"]),
+            ("loss_injected_rounds", paired_loss(loss_inputs, "injected")),
+            ("loss_control_rounds", paired_loss(loss_inputs, "control")),
         ):
             require(
                 np.array_equal(result[field], values, equal_nan=True),

@@ -156,6 +156,8 @@ class PositiveControlEndToEndTest(unittest.TestCase):
         self.assertEqual(code, 0 if report["status"] == "m_chosen" else 3)
         self.assertEqual(report["trigger_check"]["check_index"], 5)
         self.assertTrue(report["trigger_check"]["forced"])
+        self.assertEqual(report["status"], "stop")
+        self.assertIsNone(report["chosen_m"])
         # The degraded critic on the trigger check's own streams reproduces the run's recorded probe exactly.
         self.assertEqual(report["trigger_reproduction_max_abs_diff"], 0.0)
         self.assertEqual(set(report["loss_rounds"]), {"degraded", "injected_last", "injected_half", "injected_all"})

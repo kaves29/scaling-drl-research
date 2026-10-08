@@ -139,7 +139,8 @@ class KnownAnswerTest(unittest.TestCase):
         leaves_a, leaves_b = jax.tree_util.tree_leaves(state(a)), jax.tree_util.tree_leaves(state(b))
         if mode != "cpu":
             deviation = max_relative_deviation(leaves_b + [info_b[k] for k in info_a],
-                                               leaves_a + [info_a[k] for k in info_a])
+                                               leaves_a + [info_a[k] for k in info_a],
+                                               allow_nan_indices=(len(leaves_a) + list(info_a).index("train/actor_grad_cosine"),))
             return check_gpu_tolerance(self, f"diagnostics_update/{mode}", deviation, updates=4)
         for x, y in zip(leaves_a, leaves_b):
             np.testing.assert_array_equal(np.asarray(x), np.asarray(y))

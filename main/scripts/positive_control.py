@@ -66,6 +66,25 @@ def _setting_errors(cfg, allow_any_setting: bool):
             errors.append(f"architecture {get_architecture_id(cfg)} is not {pc.architecture}")
         if cfg.env_name != pc.env_name:
             errors.append(f"environment {cfg.env_name} is not {pc.env_name}")
+        if cfg.testing.force_trigger_check is not None:
+            errors.append("forced triggers cannot qualify a positive control")
+        from experiments.exp1 import compose_config
+        from utils.run_metadata import _strip_locations, differing_keys
+        canonical = compose_config(str(Path(__file__).resolve().parents[1] / "configs"),
+                                   "base_exp12", ["env_name=dog-run", "env=dmc_hard",
+                                   "critic_num_blocks=4", "critic_hidden_dim=1536",
+                                   "run_role=dev", f"seed={cfg.seed}"])
+        import omegaconf
+        actual = omegaconf.OmegaConf.to_container(cfg, resolve=True)
+        approved = omegaconf.OmegaConf.to_container(canonical, resolve=True)
+        # Reuse the repository's scientific protocol projection, excluding storage locations.
+        from utils.run_metadata import training_protocol
+        def protocol(config):
+            return {**training_protocol(_strip_locations(config)),
+                    **{k: config[k] for k in ("probe", "trigger", "positive_control", "testing", "diagnostics")}}
+        differences = differing_keys(protocol(approved), protocol(actual))
+        if differences:
+            errors.append(f"noncanonical positive-control settings: {sorted(differences)}")
     return errors
 
 
@@ -147,7 +166,11 @@ def run(args) -> int:
     report["trigger_check"] = {"check_index": k, "interaction_step": trigger_record["interaction_step"],
                                "loss_rounds_recorded": loss_rounds(trigger_record).tolist(),
                                "loss_iqm_recorded": trigger_record["loss_iqm"],
-                               "forced": bool(cfg.testing.force_trigger_check is not None)}
+                               "forced": bool(cfg.testing.force_trigger_check is not None or any(r.get("forced", False) for r in records))}
+
+    if report["trigger_check"]["forced"] and not args.allow_any_setting:
+        trainer.close()
+        return finish("stop", "forced records cannot qualify a positive control")
 
     fresh = orbax.checkpoint.PyTreeCheckpointer().restore(str(run_dir / FRESH_CRITIC_DIR))["params"]
     critic_def, critics = probe_critics(trainer, fresh)
@@ -180,6 +203,10 @@ def run(args) -> int:
     report["selection"] = selection
     report["chosen_m"] = selection["chosen_m"]
     trainer.close()
+    if args.allow_any_setting or report["trigger_check"]["forced"]:
+        report["chosen_m"] = None
+        selection["chosen_m"] = None
+        return finish("stop", "test-only or forced evidence cannot qualify m; consult the project lead")
     if selection["stop"] is not None:
         return finish("stop", selection["stop"])
     return finish("m_chosen")
@@ -190,7 +217,7 @@ def main(argv=None) -> int:
     parser.add_argument("--run_dir", required=True)
     parser.add_argument("--out_dir", required=True)
     parser.add_argument("--allow_any_setting", action="store_true",
-                        help="TEST-ONLY: skip the D4W1536 / dog-run requirement (recorded in the output)")
+                        help="TEST-ONLY: permit diagnostic reports for other settings; never qualify m")
     args = parser.parse_args(argv)
     _stub_wandb()
     return run(args)

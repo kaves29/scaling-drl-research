@@ -147,8 +147,14 @@ class Exp12GridTest(unittest.TestCase):
         try:
             gm.main(["--grid", "exp12", "--ckpt-root", self.ckpt, "--results-root", self.results])
             self.assertEqual(len(Path(self.root, "exp12_exp1_jobs.txt").read_text().splitlines()), 195)
-            with self.assertRaises(ValueError):
-                gm.main(["--grid", "exp12", "--ckpt-root", "relative/path", "--results-root", self.results])
+            # Isolate the negative path check from the new existing-manifest guard.
+            with tempfile.TemporaryDirectory() as invalid_cwd:
+                os.chdir(invalid_cwd)
+                try:
+                    with self.assertRaisesRegex(ValueError, "--ckpt-root.*absolute"):
+                        gm.main(["--grid", "exp12", "--ckpt-root", "relative/path", "--results-root", self.results])
+                finally:
+                    os.chdir(self.root)
         finally:
             os.chdir(cwd)
 

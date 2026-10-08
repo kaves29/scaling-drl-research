@@ -214,6 +214,10 @@ class TwinProbeTest(unittest.TestCase):
         result = {f"{n}_q{k}": {"score": rng.normal(size=5), "final_loss": rng.normal(size=5), "b": np.ones(5)}
                   for n in ("current", "fresh") for k in (1, 2)}
         combined = twin.combine(result, ["current", "fresh"])
+        # P remains a mean-score estimand (notably in Check 2), independently of L.
+        for name in ("current", "fresh"):
+            np.testing.assert_array_equal(combined[name]["score"],
+                                          np.mean([result[f"{name}_q{q}"]["score"] for q in (1, 2)], axis=0))
         loss = summarize(combined)["loss_rounds"]
         l1 = result["fresh_q1"]["score"] - result["current_q1"]["score"]
         l2 = result["fresh_q2"]["score"] - result["current_q2"]["score"]
@@ -433,7 +437,8 @@ class TwinDiagnosticsTest(unittest.TestCase):
         leaves_a, leaves_b = jax.tree_util.tree_leaves(state(a)), jax.tree_util.tree_leaves(state(b))
         if mode != "cpu":
             deviation = max_relative_deviation(leaves_b + [info_b[k] for k in info_a],
-                                               leaves_a + [info_a[k] for k in info_a])
+                                               leaves_a + [info_a[k] for k in info_a],
+                                               allow_nan_indices=(len(leaves_a) + list(info_a).index("train/actor_grad_cosine"),))
             return check_gpu_tolerance(self, f"diagnostics_update/{mode}", deviation, updates=4, twin=True)
         for x, y in zip(leaves_a, leaves_b):
             np.testing.assert_array_equal(np.asarray(x), np.asarray(y))

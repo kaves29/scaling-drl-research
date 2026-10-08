@@ -316,8 +316,11 @@ def main(argv=None):
         ckpt_root = require_absolute(args.ckpt_root or "", "--ckpt-root")
         status, manifests = {}, {}
         add_exp12_grid(manifests, status, ckpt_root, results_root, args.injection_m)
+        existing = sorted({*Path.cwd().glob("exp12_*_jobs.txt"), *Path.cwd().glob("exp2_arms_*.txt")})
+        if existing:
+            raise ValueError(f"existing Exp12 manifests must be preserved; generate in a fresh directory: {existing}")
         for path, jobs in manifests.items():
-            with open(path, "w") as f:
+            with open(path, "x") as f:
                 f.write("\n".join(jobs) + ("\n" if jobs else ""))
             print(f"{path}: queued {len(jobs)}")
         for state, dirs in sorted(status.items()):

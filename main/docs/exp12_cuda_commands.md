@@ -252,9 +252,9 @@ EXPECTED_COMMIT=<commit hash I give you> sbatch scripts/sbatch_exp12_blockA.sh  
     SKIPPED.
   - A2 fails (exit 3, `FAIL_RULE`) when amendment (w)'s criterion fails
     (P/b < 0.9 at the configured pool at any size), not only when it
-    crashes. `probe_fresh_checks.py` itself exits 0 (its `range_verdict.json`
-    still holds the old 10–90% rule). The runner applies (w) through
-    `scripts/exp12_reports.py range-check`.
+    crashes. `probe_fresh_checks.py` applies (w) in `range_verdict.json` and exits 3
+    on rule failure. The runner also verifies the saved evidence through
+    `scripts/exp12_reports.py range-check`; the old 10–90% rule is information only.
   - Any other failure or timeout is logged, and the runner continues.
   - The runner exits nonzero if any step failed.
 - **Environment the runner sets:**
@@ -810,12 +810,15 @@ done
 ## Block F: the grid (NOT run by me; for when you decide to launch)
 ```bash
 GRID=/abs/path/exp12_grid; RESULTS=/abs/path/exp12_results
-python generate_manifest.py --grid exp12 --ckpt-root $GRID --results-root $RESULTS   # 195 Exp 1 jobs
-python scripts/claim_launcher.py --concurrency <from the packing test> --num-gpus <n> --phase-files exp12_exp1_jobs.txt
-# once the positive control froze m, and as forks complete; on the GPU model each file is named after:
-python generate_manifest.py --grid exp12 --ckpt-root $GRID --results-root $RESULTS --injection-m <m>
-python scripts/check_manifest_overlap.py exp12_exp1_jobs.txt exp2_arms_<device>.txt   # must print OK
-python scripts/claim_launcher.py --concurrency <n> --num-gpus <n> --phase-files exp2_arms_<device>.txt
+MAIN_DIR=$PWD  # run this block from the reviewed main/ directory
+PARENTS=$(mktemp -d "$OUT/F_parent_manifests.XXXXXX")
+(cd "$PARENTS"; python "$MAIN_DIR/generate_manifest.py" --grid exp12 --ckpt-root "$GRID" --results-root "$RESULTS")
+python scripts/claim_launcher.py --concurrency <from the packing test> --num-gpus <n> --phase-files "$PARENTS/exp12_exp1_jobs.txt"
+# once the positive control froze m, and as forks complete; use a NEW directory each time:
+ARMS=$(mktemp -d "$OUT/F_arm_manifests.XXXXXX")
+(cd "$ARMS"; python "$MAIN_DIR/generate_manifest.py" --grid exp12 --ckpt-root "$GRID" --results-root "$RESULTS" --injection-m <m>)
+python scripts/check_manifest_overlap.py "$ARMS/exp12_exp1_jobs.txt" "$ARMS/exp2_arms_<device>.txt"   # must print OK
+python scripts/claim_launcher.py --concurrency <n> --num-gpus <n> --phase-files "$ARMS/exp2_arms_<device>.txt"
 ```
 - Every grid job sets its own matmul precision (TF32 on GPU, amendment (v));
   do not export `JAX_DEFAULT_MATMUL_PRECISION` or `NVIDIA_TF32_OVERRIDE`.
@@ -826,9 +829,11 @@ python scripts/claim_launcher.py --concurrency <n> --num-gpus <n> --phase-files 
   from the packing test's measured per-job and total memory.
 - Every job uses the persistent compilation cache under
   `main/jax_cache/<GPU model>` (shared by all jobs on that model).
-- Re-running generate_manifest.py is safe. Runs with DONE are skipped, and
-  unfinished ones resume: from state/LATEST, from the saved fork state, or
-  from scratch before their first save.
+- Re-run generation in a fresh output directory; existing parent/arm manifests
+  are preserved and cause an explicit refusal rather than being overwritten or
+  mixed with stale arm files. Runs with DONE are skipped, and unfinished ones
+  resume from state/LATEST, the saved fork state, or scratch before their first save.
+  DONE discovery is scheduling only; confirmatory source completeness is certified separately.
 - Scaled runs (D4W1024, D4W1536) that fork continue as the control on their
   device model. A control resumed on another model refuses to run, so keep
   every D4W1024 and D4W1536 Exp 1 job on the grid's GPU model (amendment (u)).
