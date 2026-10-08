@@ -1,5 +1,7 @@
 # Exp1/Exp2 next validation and deployment commands
 
+**Historical pre-integration command snapshot.** Candidate integration and current CPU setup/adoption commands are now in [exp12_integrated_validation_commands.md](exp12_integrated_validation_commands.md) and [exp12_cpu_validation_setup.md](exp12_cpu_validation_setup.md). The same-budget published-f6 runtime commands below remain the reviewed comparison commands. Earlier claims that integration is uncreated or HB execution absent are superseded; no GPU stage has been run here.
+
 Companion to `exp12_launch_readiness.md`. These are manual instructions, not executed submissions. No command below grants approval to merge, push, submit jobs, select m, choose CUDA bounds, or launch production. Run GPU sections only after explicit lead authorization. Never reuse or alter frozen checkouts or diagnostic outputs.
 
 ## Reproduce CPU validation

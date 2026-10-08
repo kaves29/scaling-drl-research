@@ -1,5 +1,7 @@
 # Exp1/Exp2 engineering launch readiness
 
+**Historical pre-integration snapshot.** The separate candidate integration was subsequently authorized and completed. Its current591-test/73-mutation CPU evidence, actual HB coverage and scientific blockers are in [exp12_integrated_readiness.md](exp12_integrated_readiness.md). The prior uncreated/integration-permission/HB-skipped status below describes this earlier revision, not the new candidate. Entropy authority/notation is clarified in [entropy_temperature_reconciliation.md](entropy_temperature_reconciliation.md); no target sign was changed.
+
 2026-10-08 (America/New_York). **Production: BLOCKED.** Reviewed engineering work is ready for local review and separately approved GPU validation. CPU results do not establish scientific qualification, A100 performance, or HumanoidBench execution. No Delta access, job submission, push, methodology merge, historical deletion, or scientific-setting change occurred in this sprint.
 
 ## Authority and revision identity

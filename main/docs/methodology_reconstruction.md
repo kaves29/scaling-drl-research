@@ -1,5 +1,7 @@
 # Approved methodology reconstruction
 
+**Revision context:** this reconstruction describes the separately approved a3 corrections, now retained in the isolated integrated candidate. See [exp12_integrated_readiness.md](exp12_integrated_readiness.md) for current engineering evidence and [entropy_temperature_reconciliation.md](entropy_temperature_reconciliation.md) for the more precise interpretation of the unsigned entropy wording. No authoritative amendment or implementation setting is changed by these contextual links.
+
 Reconstructed on 2026-10-07 from the approved sources, independently of test outcomes. Baseline: `781dc6c93022a82b68a3210617db93225284b268`. Work is isolated on `codex/methodology-reconstruction`; the pending diagnostic's checkout/revision is unchanged. This document specifies the science; [the audit](methodology_implementation_audit.md) describes implementation and evidence.
 
 ## Authority and unresolved conventions

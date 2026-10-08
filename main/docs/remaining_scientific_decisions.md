@@ -1,5 +1,7 @@
 # Remaining scientific decisions and readiness
 
+**Historical a3 snapshot.** Current candidate status and completed CPU/HB coverage are in [exp12_integrated_readiness.md](exp12_integrated_readiness.md). The earlier entropy-conflict wording below overstates the original unsigned line as an explicitly positive-H target; [the independent equation/authority audit](entropy_temperature_reconciliation.md) corrects that interpretation while retaining the approved G1 implementation. This annotation changes no scientific criterion or recorded historical result.
+
 2026-10-07. Baseline/pending diagnostic revision: `781dc6c93022a82b68a3210617db93225284b268`. Isolated implementation branch: `codex/methodology-reconstruction`. **The195-run campaign is not scientifically ready.** No queued A100 result is available here; none is inferred. No Delta access, CUDA calibration, submission or push occurred.
 
 The engineering tree can be reviewed for a future A100 qualification after the completed CPU checks below. CPU evidence is not GPU qualification, and the existing diagnostic wrapper pins the original `claude/eloquent-fermat-inxqlt` checkout. This branch must not be substituted into the pending job or represented as the same source revision. Any future qualification of this corrected revision requires a separately reviewed launch/revision choice.

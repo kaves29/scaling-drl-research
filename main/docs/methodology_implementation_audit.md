@@ -1,5 +1,7 @@
 # Methodology-to-implementation audit
 
+**Revision context:** this table audits781→a3. The corrections are subsequently integrated on a separate candidate, with current additional engineering guards and CPU evidence in [exp12_integrated_readiness.md](exp12_integrated_readiness.md). The [entropy equation/authority audit](entropy_temperature_reconciliation.md) supersedes any assertion that the original unsigned wording explicitly specifies positive differential entropy; current G1 behavior remains unchanged.
+
 Baseline `781dc6c93022a82b68a3210617db93225284b268`; isolated corrections on `codex/methodology-reconstruction`, 2026-10-07. No Delta access, job submission, push or modification of the pending diagnostic checkout. [Reconstruction](methodology_reconstruction.md) supplies equations/authority; [decisions](remaining_scientific_decisions.md) separates evidence, hypotheses and approvals.
 
 Classes: **A** confirmed scientific implementation defect; **B** engineering/reporting defect; **C** approved-source ambiguity; **D** failed scientific gate without established cause; **E** correct implementation. MATCH means source-level agreement, not CUDA qualification. References are relative to `main/`; line numbers identify the computation's entry point. Test outcomes corroborate, rather than define, the specification.
