@@ -11,7 +11,11 @@
 #SBATCH --output=logs/%x_%j.out
 #SBATCH --error=logs/%x_%j.err
 set -e
-cd /work/hdd/biqc/skaveti1/exp12/main
+[ -n "${SLURM_SUBMIT_DIR:-}" ] || { echo "exp12 validation: SLURM_SUBMIT_DIR is required" >&2; exit 2; }
+cd "$SLURM_SUBMIT_DIR" || exit 2
+[ -f scripts/check_exp12_validation_checkout.sh ] || { echo "exp12 validation: missing checkout preflight (submit from reviewed main/)" >&2; exit 2; }
+source scripts/check_exp12_validation_checkout.sh
+exp12_check_checkout scripts/exp12_blockA.sh scripts/probe_fresh_checks.py scripts/profile_exp12.py run.py configs/base_exp12.yaml
 module reset
 source /sw/rh9.4/python/miniforge3/etc/profile.d/conda.sh
 conda activate scaling-drl-py31213
@@ -24,9 +28,6 @@ echo "=== job $SLURM_JOB_ID on $(hostname), $(date) ==="
 nvidia-smi --query-gpu=name,memory.total,driver_version --format=csv
 echo "branch: $(git rev-parse --abbrev-ref HEAD)  commit: $(git rev-parse HEAD)"
 git status --short | head -20
-if [ -n "${EXPECTED_COMMIT:-}" ] && [ "$(git rev-parse HEAD)" != "$EXPECTED_COMMIT" ]; then
-  echo "ERROR: HEAD is not $EXPECTED_COMMIT"; exit 2
-fi
 python - <<'EOF'
 import sys, jax
 print("python", sys.version.split()[0], "| jax", jax.__version__, "| devices", jax.devices())

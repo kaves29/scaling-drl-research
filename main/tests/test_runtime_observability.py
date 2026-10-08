@@ -166,12 +166,14 @@ class RuntimeObservabilityTest(unittest.TestCase):
             trace = root / "trace.jsonl"
             result = subprocess.run([sys.executable, str(script), "--out", str(trace),
                                      "--stack-after", ".1", "--", str(entry)],
-                                    env={**os.environ, "JAX_PLATFORMS": "cpu"},
+                                    env={**os.environ, "JAX_PLATFORMS": "cpu", "SLURM_JOB_ID": "123"},
                                     capture_output=True, text=True, timeout=30)
             self.assertNotEqual(result.returncode, 0)
             self.assertIn("entry failed", result.stderr)
             events = self.events(trace)
             self.assertEqual(events[0]["event"], "wrapper_start")
+            self.assertEqual(events[0]["command"], [str(entry)])
+            self.assertEqual(events[0]["slurm_job_id"], "123")
             self.assertEqual(events[-1]["error"], "ValueError")
             self.assertIn("blocked_entry.py", trace.with_suffix(".stacks.log").read_text())
             before = trace.read_bytes()

@@ -5,6 +5,7 @@ import argparse
 import faulthandler
 import json
 import math
+import os
 import runpy
 import sys
 import time
@@ -45,7 +46,7 @@ def main():
                                          monotonic_time=time.perf_counter(), **fields)) + "\n")
             stream.flush()
 
-        emit("wrapper_start")
+        emit("wrapper_start", command=command, slurm_job_id=os.environ.get("SLURM_JOB_ID"))
         stacks = None
         if args.stack_after is not None:
             stacks = resources.enter_context(Path(args.out).with_suffix(".stacks.log").open("x"))
