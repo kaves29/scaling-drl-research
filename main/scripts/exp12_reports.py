@@ -299,6 +299,32 @@ def _a1_followup(out, mode):
     return lines
 
 
+def null_criterion_rows(rows, archs):
+    """Enforce the pre-specified population without trusting a stored verdict flag."""
+    per_size, invalid = {}, []
+    for arch in archs:
+        matching = [row for row in rows if row.get("arch") == arch]
+        if len(matching) != 1:
+            invalid.append(f"{arch}: require one summary, found {len(matching)}")
+            per_size[arch] = False
+            continue
+        row = matching[0]
+        count, rate = row.get("null_pairs"), row.get("per_check_fire_rate")
+        if (type(count) is not int or count < 100 or type(rate) not in (int, float) or
+                not np.isfinite(rate) or not 0 <= rate <= 1):
+            invalid.append(f"{arch}: require at least 100 pairs and a finite fire rate")
+            per_size[arch] = False
+            continue
+        if row.get("fire_rate_exceeds_5pct") != (rate > 0.05):
+            invalid.append(f"{arch}: inconsistent saved fire-rate flag")
+            per_size[arch] = False
+            continue
+        per_size[arch] = rate <= 0.05
+    return {"pass": not invalid and all(per_size.values()), "per_size": per_size, "invalid": invalid,
+            "invalid_pair_counts": {row.get("arch"): row.get("invalid_pairs") for row in rows},
+            "validity_note": "This is the recorded count/rate rule only. Missing or nonzero invalid-pair counts require review; no new invalid-pair acceptance criterion is selected."}
+
+
 def blockB_report(out):
     import pandas as pd
 
@@ -407,10 +433,10 @@ def blockB_report(out):
     rng = out / "gpu2" / "range_hopper_hop"
     archs = ["D2W512", "D4W1024", "D4W1536"]
     if list(rng.glob("range_D*.json")):
-        c = range_criterion(rng, sorted({r["arch"] for r in range_rows(rng)}) or archs)
+        c = range_criterion(rng, archs)
         gate("hopper-hop range, amendment (w)", c["pass"], str(c["per_size"]))
         _section(lines, "hopper-hop fresh-critic range (B2)",
-                 lambda: lines.extend(format_range(rng, sorted({r["arch"] for r in range_rows(rng)}))))
+                 lambda: lines.extend(format_range(rng, archs)))
     else:
         gate("hopper-hop range, amendment (w)", "NOT RUN", by_step.get("range_hopper", {}).get("result", "no output"))
 
@@ -440,14 +466,20 @@ def blockB_report(out):
     _section(lines, "Identity forks (reduced budget, Block C)", identity)
 
     def null():
+        summaries = []
         for f in sorted((out / "gpu3" / "null_dog_run").glob("null_summary_*.json")):
             d = json.loads(f.read_text())
-            gate(f"fresh-pair null {d['arch']} (fire rate <= 5%)", not d["fire_rate_exceeds_5pct"],
-                 f"{d['per_check_fire_rate']:.3f}")
+            summaries.append(d)
+            gate(f"fresh-pair null {d['arch']} (fire rate <= 5%, descriptive)",
+                 d["per_check_fire_rate"] <= 0.05, f"{d['per_check_fire_rate']:.3f}")
             lines.append(f"{d['arch']}: pairs {d['null_pairs']}, per-check fire rate {d['per_check_fire_rate']:.3f}, "
                          f"p95 of L {d['would_be_null_threshold_p95_of_L']:.4g}, IQM of L {d['iqm_of_L']:.4g}, "
                          f"SD of L {d['std_of_L']:.4g}")
-        if not list((out / "gpu3" / "null_dog_run").glob("null_summary_*.json")):
+        if summaries:
+            criterion = null_criterion_rows(summaries, archs)
+            gate("reported fresh-pair null rule (all three sizes, >=100 pairs each)",
+                 criterion["pass"], str(criterion))
+        else:
             gate("fresh-pair null", "NOT RUN", by_step.get("null_dog_run", {}).get("result", "no output"))
     _section(lines, "Fresh-pair null (GPU 3)", null)
 

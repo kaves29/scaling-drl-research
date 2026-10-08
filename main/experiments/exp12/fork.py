@@ -133,6 +133,13 @@ def check1(pre: Dict, after: Dict, control: Dict, tolerance_eps: float, injected
     """Check 1 on the panel (values from panel_q_and_grad, full FP32). The control (and an identity arm)
     must equal the pre-fork critic bit for bit; an injected critic may differ by tolerance_eps * float32
     eps * the pre-injection max magnitude (the reverse-mode summation order of dQ/da changes)."""
+    for name, panel in (("pre", pre), ("after", after), ("control", control)):
+        for field in ("q", "dq_da"):
+            value = np.asarray(panel[field])
+            if (value.ndim != (1 if field == "q" else 2) or
+                    value.shape != np.asarray(pre[field]).shape or value.size == 0 or
+                    value.dtype != np.dtype("float32") or not np.isfinite(value).all()):
+                raise ValueError(f"Check 1 {name}.{field}: require matching nonempty finite FP32 panels")
     eps = float(np.finfo(np.float32).eps)
     scale_q, scale_g = float(np.abs(pre["q"]).max()), float(np.abs(pre["dq_da"]).max())
     out = {"tolerance_eps": tolerance_eps, "after_is_injected": injected, "matmul_precision": CHECK1_PRECISION,

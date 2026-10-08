@@ -160,6 +160,9 @@ class PositiveControlEndToEndTest(unittest.TestCase):
         self.assertIsNone(report["chosen_m"])
         # The degraded critic on the trigger check's own streams reproduces the run's recorded probe exactly.
         self.assertEqual(report["trigger_reproduction_max_abs_diff"], 0.0)
+        self.assertEqual(report["analysis_runtime"]["platform"], "cpu")
+        self.assertIn("commit", report["analysis_code"])
+        self.assertIn("no unapproved", report["trigger_reproduction_policy"])
         self.assertEqual(set(report["loss_rounds"]), {"degraded", "injected_last", "injected_half", "injected_all"})
         self.assertEqual(report["healthy_reference"], "fresh critic (check 0), L_healthy = 0")
         self.assertEqual(set(report["shared_offset_sensitivity"]), {"degraded", "fresh", "mean"})

@@ -146,7 +146,30 @@ def range_mode(args, name, blocks, width, out_dir):
     return rows
 
 
-def _done_pairs(path, provenance=None):
+def _validate_null_row(row, cfg, tc):
+    """Recompute saved CPU statistics without refitting or selecting a new criterion."""
+    from experiments.exp12.probe import iqm
+    from experiments.exp12.trigger import bootstrap_interval, triggered
+
+    arrays = {key: np.asarray(row[key], np.float32) for key in
+              ("score_fresh_rounds", "score_current_rounds", "loss_rounds", "b_rounds")}
+    if any(value.shape != (cfg.rounds,) for value in arrays.values()):
+        raise ValueError("null row: incorrect number or shape of rounds")
+    loss = arrays["score_fresh_rounds"] - arrays["score_current_rounds"]
+    if not np.array_equal(loss, arrays["loss_rounds"], equal_nan=True):
+        raise ValueError("null row: paired losses differ from saved scores")
+    valid = bool(np.isfinite(loss).all())
+    low, high = bootstrap_interval(loss, row["seed"], row["check_index"], tc.resamples, tc.confidence)
+    expected = {"valid": valid, "loss_iqm": iqm(loss) if valid else float("nan"),
+                "ci_low": low, "ci_high": high, "resamples": tc.resamples,
+                "confidence": tc.confidence, "null_threshold": tc.null_threshold,
+                "fired": triggered(low, tc.null_threshold) and valid}
+    for field, value in expected.items():
+        if field not in row or not np.array_equal(row[field], value, equal_nan=True):
+            raise ValueError(f"null row: inconsistent {field}")
+
+
+def _done_pairs(path, provenance=None, cfg=None, tc=None):
     if not path.exists():
         return {}
     with open(path) as f:
@@ -163,6 +186,8 @@ def _done_pairs(path, provenance=None):
                         raise ValueError(f"{path}: null {field} differs")
                 if row.get("check_index") != pair + 1:
                     raise ValueError(f"{path}: null check index differs")
+            if cfg is not None:
+                _validate_null_row(row, cfg, tc)
             done[pair] = row
         return done
 
@@ -189,7 +214,7 @@ def null_mode(args, name, blocks, width, out_dir):
                   "code": code_version(), "runtime": runtime}
     if path.exists() and provenance["code"]["dirty"] is not False:
         raise ValueError(f"{path}: cannot certify null resumption from dirty or unknown source")
-    done = _done_pairs(path, provenance)
+    done = _done_pairs(path, provenance, cfg, tc)
     for pair in range(args.null_pairs):
         if pair in done:
             continue
@@ -221,6 +246,7 @@ def null_mode(args, name, blocks, width, out_dir):
     summary = {
         "arch": name, "env": args.env, "null_pairs": len(rows), "per_check_fire_rate": rate,
         "fire_rate_exceeds_5pct": rate > NULL_FIRE_RATE_LIMIT,
+        "invalid_pairs": sum(not r["valid"] for r in rows),
         "would_be_null_threshold_p95_of_L": float(np.percentile(losses, 95)),
         "iqm_of_L": iqm(losses), "std_of_L": float(np.std(losses, ddof=1)),
         "note": "Reported only. Adopting a null-calibrated threshold is the lead's decision.",
