@@ -22,10 +22,14 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-import numpy as np  # noqa: E402
-
 from experiments.exp12 import fork  # noqa: E402
-from experiments.exp12.state import latest_state_dir, load_meta, state_differences  # noqa: E402
+from experiments.exp12.state import (  # noqa: E402
+    _deep_equal,
+    bitwise_equal,
+    latest_state_dir,
+    load_meta,
+    state_differences,
+)
 
 SNAPSHOT_IGNORE_META = ("wandb_run_id", "extra_state")
 
@@ -44,18 +48,28 @@ def compare(run_dir: Path, arm_dir: Path) -> dict:
     diffs = state_differences(control, identity, ignore_meta=SNAPSHOT_IGNORE_META)
     meta_c, meta_i = load_meta(control), load_meta(identity)
     a, b = meta_c["extra_state"], meta_i["extra_state"]
-    if a.get("probe_records") != b.get("probe_records"):
+    if a.get("probe_records") != b.get("probe_records") or not _deep_equal(
+        a.get("probe_records"), b.get("probe_records")
+    ):
         diffs.append("extra_state:probe_records")
-    if _without_arm(a.get("post_fork_evals", [])) != _without_arm(b.get("post_fork_evals", [])):
+    evals_c = _without_arm(a.get("post_fork_evals", []))
+    evals_i = _without_arm(b.get("post_fork_evals", []))
+    if evals_c != evals_i or not _deep_equal(evals_c, evals_i):
         diffs.append("extra_state:post_fork_evals")
-    if a.get("fork") != b.get("fork"):
+    if a.get("fork") != b.get("fork") or not _deep_equal(
+        a.get("fork"), b.get("fork")
+    ):
         diffs.append("extra_state:fork")
     if "injection" in b:
         diffs.append("extra_state:injection (the identity arm was injected)")
     panel_c = fork.load_npz(fork.fork_dir(run_dir) / "check1_control.npz")
     panel_i = fork.load_npz(arm_dir / "check1_after.npz")
-    for k in panel_c:
-        if not np.array_equal(panel_c[k], panel_i[k]):
+    for k in sorted(panel_c.keys() | panel_i.keys()):
+        if (
+            k not in panel_c
+            or k not in panel_i
+            or not bitwise_equal(panel_c[k], panel_i[k])
+        ):
             diffs.append(f"check1_panel:{k}")
     return {"pass": not diffs, "differences": diffs, "control_snapshot": str(control),
             "identity_snapshot": str(identity), "interaction_step": meta_c["interaction_step"],

@@ -128,6 +128,18 @@ def load_agent_tree(state_dir):
     )
 
 
+def bitwise_equal(a, b):
+    """Compare array shape, dtype and bits without accepting NaN values."""
+    a, b = np.asarray(a), np.asarray(b)
+    return (
+        a.shape == b.shape
+        and a.dtype == b.dtype
+        and np.array_equal(a, b)
+        and not a.dtype.hasobject
+        and a.tobytes() == b.tobytes()
+    )
+
+
 def state_differences(dir_a, dir_b, ignore_meta=("wandb_run_id",)):
     """Names of every component that differs bit-wise between two saved states."""
     dir_a, dir_b = Path(dir_a), Path(dir_b)
@@ -140,21 +152,21 @@ def state_differences(dir_a, dir_b, ignore_meta=("wandb_run_id",)):
         diffs.append("agent:structure")
     for path in sorted(leaves_a.keys() & leaves_b.keys(), key=str):
         a, b = leaves_a[path], leaves_b[path]
-        if not np.array_equal(np.asarray(a), np.asarray(b)):
+        if not bitwise_equal(a, b):
             diffs.append("agent:" + "/".join(str(p) for p in path))
     with open(dir_a / "obs_rms.pkl", "rb") as f:
         rms_a = pickle.load(f)
     with open(dir_b / "obs_rms.pkl", "rb") as f:
         rms_b = pickle.load(f)
     for k in sorted(rms_a.keys() | rms_b.keys()):
-        if k not in rms_a or k not in rms_b or not np.array_equal(rms_a[k], rms_b[k]):
+        if k not in rms_a or k not in rms_b or not bitwise_equal(rms_a[k], rms_b[k]):
             diffs.append(f"obs_rms:{k}")
     with np.load(dir_a / "buffer.npz") as ba, np.load(dir_b / "buffer.npz") as bb:
         for k in sorted(set(ba.files) | set(bb.files)):
             if (
                 k not in ba.files
                 or k not in bb.files
-                or not np.array_equal(ba[k], bb[k])
+                or not bitwise_equal(ba[k], bb[k])
             ):
                 diffs.append(f"buffer:{k}")
     with open(dir_a / "buffer_meta.pkl", "rb") as f:
@@ -188,12 +200,18 @@ def state_differences(dir_a, dir_b, ignore_meta=("wandb_run_id",)):
 
 
 def _deep_equal(a, b):
+    if isinstance(a, float) and isinstance(b, float) and np.isnan(a) and np.isnan(b):
+        return type(a) is type(b) and pickle.dumps(a) == pickle.dumps(b)
+    if type(a) is not type(b):
+        return False
     if isinstance(a, dict) and isinstance(b, dict):
         return a.keys() == b.keys() and all(_deep_equal(a[k], b[k]) for k in a)
     if isinstance(a, (list, tuple)) and isinstance(b, (list, tuple)):
         return len(a) == len(b) and all(_deep_equal(x, y) for x, y in zip(a, b))
-    if isinstance(a, np.ndarray) or isinstance(b, np.ndarray):
-        return np.array_equal(np.asarray(a), np.asarray(b))
-    if isinstance(a, float) and isinstance(b, float) and np.isnan(a) and np.isnan(b):
-        return True
+    if isinstance(a, (np.ndarray, np.generic)) or isinstance(
+        b, (np.ndarray, np.generic)
+    ):
+        return bitwise_equal(a, b)
+    if isinstance(a, (float, complex)):
+        return a == b and pickle.dumps(a) == pickle.dumps(b)
     return a == b

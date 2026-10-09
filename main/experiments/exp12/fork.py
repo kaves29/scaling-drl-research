@@ -21,6 +21,7 @@ import numpy as np
 from experiments.exp12 import exp2_ledger
 from experiments.exp12.envs import create_eval_env
 from experiments.exp12.precision import runtime_info
+from experiments.exp12.state import bitwise_equal
 from experiments.exp12.trainer import evaluate_episodes
 from experiments.exp12.twin import is_twin
 from utils.atomic_io import atomic_write_text
@@ -149,11 +150,15 @@ def check1(pre: Dict, after: Dict, control: Dict, tolerance_eps: float, injected
         tol = tolerance_eps if injected and "after" in (a, b) else 0.0
         dq = float(np.abs(named[a]["q"] - named[b]["q"]).max())
         dg = float(np.abs(named[a]["dq_da"] - named[b]["dq_da"]).max())
+        exact = (injected and "after" in (a, b)) or (
+            bitwise_equal(named[a]["q"], named[b]["q"])
+            and bitwise_equal(named[a]["dq_da"], named[b]["dq_da"])
+        )
         out["pairs"][f"{a}_vs_{b}"] = {
             "max_abs_dq": dq, "max_abs_d_dq_da": dg, "tolerance_eps": tol,
             "dq_eps_units": dq / (eps * scale_q) if scale_q else 0.0,
             "d_dq_da_eps_units": dg / (eps * scale_g) if scale_g else 0.0,
-            "pass": dq <= tol * eps * scale_q and dg <= tol * eps * scale_g,
+            "pass": exact and dq <= tol * eps * scale_q and dg <= tol * eps * scale_g,
         }
     out["max_eps_units"] = max(max(p["dq_eps_units"], p["d_dq_da_eps_units"]) for p in out["pairs"].values())
     out["pass"] = all(p["pass"] for p in out["pairs"].values())

@@ -325,8 +325,12 @@ class RuntimeTrace:
                     self.progress(current)
 
             error = None
+            control_flow = None
             try:
                 return original_train(t, last_step, after, before_first_update)
+            except (exp1.ForkNow, fork.ValidationDone) as exc:
+                control_flow = type(exc).__name__
+                raise
             except BaseException as exc:
                 error = type(exc).__name__
                 raise
@@ -335,13 +339,14 @@ class RuntimeTrace:
                 try:
                     self.progress(t)
                 except BaseException as exc:
-                    if error is None:
+                    if error is None and control_flow is None:
                         raise
                     self.emit("progress_error", error=type(exc).__name__)
                 self.emit(
                     "train_exit",
                     error=error,
                     counter_semantics="Loop counters; current interaction may be incomplete on exception",
+                    **({"control_flow": control_flow} if control_flow is not None else {}),
                 )
 
         self.stack.enter_context(
