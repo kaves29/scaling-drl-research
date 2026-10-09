@@ -15,7 +15,6 @@ interaction steps) with no new host syncs:
 
 from typing import Dict, List, Optional
 
-import jax
 import numpy as np
 
 from experiments.angle_1 import PendingUpdateMetrics
@@ -75,8 +74,7 @@ class DiagnosticPendingUpdateMetrics(PendingUpdateMetrics):
         self._diagnostics = diagnostics
 
     def flush(self) -> None:
-        host_infos = jax.device_get([info for _, info in self._pending])
+        host_infos = self._materialize()
         for info in host_infos:
             self._diagnostics.collect(info)
-        self._pending = [(step, host) for (step, _), host in zip(self._pending, host_infos)]
-        super().flush()
+        self._replay(host_infos)

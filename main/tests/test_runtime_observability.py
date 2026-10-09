@@ -70,9 +70,17 @@ class RuntimeObservabilityTest(unittest.TestCase):
         self.assertEqual(plain._diagnostics.state(), traced._diagnostics.state())
         self.assertEqual(traced._pending, [])
         transfers = [e for e in events if e.get("stage") == "metric_device_get" and e["event"] == "begin"]
-        self.assertEqual(len(transfers), 2)  # Device copy, then the original host-tree traversal.
-        self.assertEqual(transfers[0]["array_bytes"], 32)
-        self.assertEqual(transfers[0]["array_leaves"], 4)
+        self.assertEqual(len(transfers), 2)
+        self.assertTrue(all(event["array_bytes"] == 16 for event in transfers))
+        self.assertTrue(all(event["array_leaves"] == 2 for event in transfers))
+        stages = {"diagnostic_metric_flush", "metric_device_get", "metric_replay"}
+        self.assertEqual(
+            [(event["event"], event["stage"]) for event in events if event.get("stage") in stages],
+            [("begin", "diagnostic_metric_flush"), ("begin", "metric_device_get"),
+             ("end", "metric_device_get"), ("begin", "metric_device_get"),
+             ("end", "metric_device_get"), ("begin", "metric_replay"),
+             ("end", "metric_replay"), ("end", "diagnostic_metric_flush")],
+        )
 
     def test_boundary_detail_is_limited_to_training_window(self):
         with tempfile.TemporaryDirectory() as root:
