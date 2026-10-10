@@ -25,24 +25,29 @@ Such a run would require an explicitly approved separate development budget and
 new plan/source qualification. None is selected here. Clarify the unit before
 submission; no `num_env_steps`/`num_interaction_steps` override is introduced.
 
-The owner officially reports the four-stage gate PASS, comparator exit 0 and all
-reference/resume/round-trip differences empty. Reported jobs: cold 22791700;
-failed warm 22791701 retained; successful warm 22793638 with 172 GPU cache hits;
-expected crash 22793941; resume 22795539. The complete new receipts, payloads,
-logs and corrected JSON are **not accessible in this Cloud workspace**. Their
-Delta location is known, but no Delta access was attempted:
-`/work/hdd/biqc/skaveti1/exp12_validation/7d21eaa106a336168464cd5418a59136b6936a64_fullwidth_20261010T163647Z`.
-The final corrected comparator output path was not supplied. Thus PASS is
-owner-reported, not an independently repeated artifact audit in this task.
+The newly uploaded `exp12_gate_small.tar.gz` has now been opened and audited.
+The final PASS JSON agrees with separately archived stage receipts, source/spec,
+accepted job IDs, exits, GPU placement and cache sums. All four reported bitwise
+comparison lists are empty. See [the uploaded metadata audit](exp12_uploaded_fullwidth_gate_audit.md)
+for exact hashes, measurements and evidence limits. Its byte-exact final JSON
+SHA-256 is `a963655cb5fd948e1afcd7afacf4d2e56a816639b41faabcbcfe39b0a29b634d`;
+bind the matching real Delta receipt in owner approval. GPU source remains7d21eaa
+and comparator07721bf, as before.
 
-Original gate provenance/attempt-accounting implementation and launch-readiness
-reports were reviewed. Before launch, retain the real corrected PASS JSON at its
-original external path and hash-bind it in the owner approval. It must say
-`expected_commit=7d21eaa...`, `comparator_commit=07721bf...`,
-`qualification=fullwidth_resume_identity`, cover dog-run/D4W1536/DMC, identify the
-accepted jobs and preserve the failed warm attempt. Review stage timings,
-compilation totals, allocator peaks, host RSS, actual allocations and checkpoint
-bytes from each receipt. Missing evidence is not filled with inferred values.
+Reported/receipt-verified jobs: cold22791700/0; failed warm22791701/1 preserved;
+successful warm22793638/0; crash22793941/3; resume22795539/0, restored6000/2002,
+ended6061/2124. The failed warm log establishes an unavailable cold cache at
+preflight. The old nested INCOMPLETE report and stale warm error are historical
+records, not a second failed final verdict. Successful receipts have no scientific
+invariant failures and cold online/target Check 1 both pass.
+
+This small archive does not include full checkpoints, attempt checksum manifests,
+Slurm accounting or comparator exit-status file. Full bitwise/manifest comparisons
+cannot be rerun from it; comparator exit0 remains owner-reported. Stage receipt
+hashes and process exits are independently checked. Actual allocation/partition
+limits still require Delta checks before submission. The actual stage root is
+`/work/hdd/biqc/skaveti1/exp12_validation/7d21eaa106a336168464cd5418a59136b6936a64_fullwidth_20261010T163647Z/evidence`,
+inside the previously supplied parent directory.
 
 Accessible older evidence: job 22765261 at `9d6a82d4aef81299901177865e383640439cde2a`.
 Original ZIP SHA-256 reverified:
@@ -71,6 +76,17 @@ confirmatory Exp3 source. No recording selection decision is made here.
 
 ## Runtime, memory and storage: measured versus estimated
 
+**Updated actual gate evidence:** cold/warm61-step windows measure45.748/45.217
+interactions/s, projecting3.036–3.072 training-only hours at500k, or3.643–3.686 h
+at600k. Cold backend compilation25.545 s; warm0 s. Cold host peak11.878 GiB,
+allocator in-use peak3.510 GiB, pool peak4.006 GiB. Reference saves at6000 take
+3.806–4.520 s; they cannot substitute for full replay save costs. Resume restored
+in2.267 s, but its61-step window includes6.412 s recompilation and other unresolved
+restart costs; its26.553-hour extrapolation is not a steady-state prediction.
+Full probes and long-run RSS remain unmeasured. The historical component table
+below retains the older conservative42.44/s calculation rather than presenting
+it as a measurement from the new gate.
+
 Actual accessible job 22765261 measured 42.4411 interactions/s over only 60 warm
 interactions with probes off, 35.8204 s per warmed paired probe check, 6.0740 s per
 save at synthetic 475,000 replay transitions, 2.5124 s per restore and 22.8342 s
@@ -87,7 +103,7 @@ do not add every interval as independent overhead.
 | Routine saves | 20 x 6.074 s = **2.02 min** | Up to 24 routine saves, plus fork save/rebuild | State/replay size and filesystem load vary |
 | Ordinary evaluations | 100 episodes x 2.2834 s = **3.81 min** | 200 episodes = **7.61 min** | Derived from actual trainer schedule; source multiplies final/extended 50k evaluations to 50 episodes |
 | Post-fork evaluations | None | 26 x 22.8342 s = **9.89 min** | Separate from ordinary evaluations; early forks also incur these |
-| Startup/recompilation | Cold import/init/compilation/first structural work | Additional restore/rebuild may recompile | Latest cold/warm gate receipts needed; no fixed measured full-run total |
+| Startup/recompilation | Cold import/init/compilation/first structural work | Additional restore/rebuild may recompile | New gate25.545s cold/0s warm compile available; no measured full-run total |
 | Metric/logging windows | 250 windows; costs additional to the 60-step rate | Up to 300 windows | 2,000-interaction groups larger than the measured 1,001-group flush; scaling is a hypothesis |
 
 Existing readiness planning gives about **3.7 h without a fork / 4.6 h with a late
@@ -95,8 +111,9 @@ fork**. Treat roughly 3.7–5 h as planning scenarios, not confidence intervals 
 completion guarantee. The pre-mitigation Block B timeout beyond six hours remains
 historical caution; the new short gate does not prove full-run sustained runtime.
 Eight hours is a reasonable provisional envelope for the **canonical** run, with
-about 1.6–2.2x scenario margin. It is not yet independently verified against the
-latest gate's timing/RSS receipts or Delta's partition/account limits. A literal
+about 1.6–2.2x scenario margin. The uploaded gate timing/RSS
+now supports short-run headroom; full-run duration and Delta partition/account
+limits remain unverified. A literal
 1M-interaction run would already project 6.55 h of training alone; these commands
 and estimates must not be reused to justify that unapproved doubled budget.
 
@@ -104,8 +121,8 @@ Old diagnostic allocator peak: **3,763,942,656 bytes = 3.51 GiB**, not total GPU
 reservation or a full-run bound. One 40-GB A100 is plausible; no packing is proposed.
 The older snapshot was 2,035,145,345 bytes at 475k transitions. Replay capacity is
 1M transitions but checkpoint files contain only populated transitions. Host peak
-at full probes/control/restore is unmeasured. The passed short stages' 32-GB
-requests, without their RSS records, do not prove a 32-GB full-run requirement.
+at full probes/control/restore is unmeasured. The uploaded short-stage cold
+process peaked at11.878 GiB RSS; that does not prove a 32-GB full-run requirement.
 64 GB is provisional headroom. Sixteen CPUs are requested capacity, not 16
 parallel environments; preserve the wrapper's existing thread/environment setup.
 
@@ -321,8 +338,7 @@ unchanged. Bash/Python snippets are syntax-checked; no Slurm command executed.
 Only this report is committed on the isolated branch. Generated preparation
 receipt stays outside Git at /workspace/scratch/exp12-full-length-pilot-preparation.json.
 
-Before submission: clarify raw-versus-interaction budget wording; make the real
-new gate receipts/comparator JSON available for independent timing/integrity
-review; confirm Delta account/partition/quota suitability; approve the dev-only
+Before submission: clarify raw-versus-interaction budget wording; retain/hash-bind the actual
+corrected report and original full evidence (metadata now audited); confirm Delta account/partition/quota suitability; approve the dev-only
 natural-trigger disposition, allocation and one actual submission. None is
 silently inferred from the gate's engineering PASS.
