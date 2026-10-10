@@ -63,6 +63,8 @@ def record_exp2_scope(root, chunk_size, benchmark=None, resume=False):
                 "fork_state": str(fork_state),
                 "fork_state_sha256": state_fingerprint(fork_state),
                 "arm": trainer.extra_state.get("arm", "control"),
+                # The passive I learner must reproduce the source arm's actual injection.
+                "injection": trainer.extra_state.get("injection"),
             }
             if resume:
                 previous = StreamReader(root, require_complete=False).manifest[
@@ -78,6 +80,7 @@ def record_exp2_scope(root, chunk_size, benchmark=None, resume=False):
                     "source_identity",
                     "source_code",
                     "arm",
+                    "injection",
                 ):
                     if previous.get(k) != provenance[k]:
                         raise ValueError(f"source recording resume mismatch: {k}")

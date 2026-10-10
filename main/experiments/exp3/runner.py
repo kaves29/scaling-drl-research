@@ -309,6 +309,15 @@ def make_passive(spec, reader, source="u", benchmark=None):
     ):
         if provenance.get(key) != value:
             raise ValueError(f"source stream/fork provenance mismatch: {key}")
+    # An I stream must come from an arm injected exactly as the passive I learner;
+    # a U stream must be uninjected. Streams without this record are refused.
+    expected = (
+        {"m": spec["injection_m"], "seed": spec["injection_seed"]}
+        if source == "i"
+        else None
+    )
+    if "injection" not in provenance or provenance["injection"] != expected:
+        raise ValueError("source stream injection differs from passive protocol")
     i.inject(spec["injection_m"], spec["injection_seed"])
     pair = PassivePair(
         u,

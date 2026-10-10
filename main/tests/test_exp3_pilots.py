@@ -359,6 +359,7 @@ class FixtureTest(unittest.TestCase):
             "config_hash": json.loads(cls.metadata.read_text())["config_hash"],
             "arm": "untreated",
             "fork_state_sha256": state_fingerprint(cls.fstate),
+            "injection": None,
         }
         plan = {
             "fork_step": 20,
@@ -372,7 +373,13 @@ class FixtureTest(unittest.TestCase):
         t.inject("last", 11)
         t.extra_state["fork"] = plan
         writer = StreamWriter(
-            cls.root / "stream_i", {**cls.provenance, "arm": "injected"}, 2
+            cls.root / "stream_i",
+            {
+                **cls.provenance,
+                "arm": "injected",
+                "injection": {"m": "last", "seed": 11},
+            },
+            2,
         )
         record_training(t, 24, writer)
         cls.istate = t.save(cls.root / "i_state")
