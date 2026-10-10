@@ -75,13 +75,19 @@ def atomic_cache_writes() -> None:
     def atomic_put(self, key: str, val: bytes) -> None:
         if self.eviction_enabled or not lru_cache._is_local_filesystem(str(self.path)):
             return put(self, key, val)
+        if not key:
+            raise ValueError("key cannot be empty")
         cache_path = self.path / f"{key}{lru_cache._CACHE_SUFFIX}"
         if cache_path.exists():
             return
         fd, tmp = tempfile.mkstemp(dir=self.path, prefix=f".{key}.", suffix=".tmp")
-        with os.fdopen(fd, "wb") as f:
-            f.write(val)
-        os.replace(tmp, cache_path)
+        try:
+            with os.fdopen(fd, "wb") as f:
+                f.write(val)
+            os.replace(tmp, cache_path)
+        finally:
+            if os.path.exists(tmp):
+                os.unlink(tmp)
         (self.path / f"{key}{lru_cache._ATIME_SUFFIX}").write_bytes(time.time_ns().to_bytes(8, "little"))
 
     atomic_put.atomic = True

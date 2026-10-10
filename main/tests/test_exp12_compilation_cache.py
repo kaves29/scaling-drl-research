@@ -1,6 +1,7 @@
 """Persistent compilation cache: entries are written atomically, so a concurrent reader never decompresses a
 truncated entry ("Error -5 while decompressing data"); the bytes written and the compiled results are unchanged."""
 
+from concurrent.futures import ThreadPoolExecutor
 import multiprocessing as mp
 import os
 import sys
@@ -8,6 +9,9 @@ import tempfile
 import time
 import unittest
 import zlib
+from unittest import mock
+
+import numpy as np
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -51,10 +55,12 @@ class AtomicCacheWriteTest(unittest.TestCase):
     def setUp(self):
         self.original = _original_put()
         lru_cache.LRUCache.put = self.original  # each test starts from jax's own put
-        self.dir = tempfile.mkdtemp()
+        self.temp = tempfile.TemporaryDirectory()
+        self.dir = self.temp.name
 
     def tearDown(self):
         lru_cache.LRUCache.put = self.original
+        self.temp.cleanup()
 
     def test_concurrent_reader_never_sees_a_truncated_entry(self):
         precision.atomic_cache_writes()
@@ -70,8 +76,51 @@ class AtomicCacheWriteTest(unittest.TestCase):
             time.sleep(0.01)
         failures, read = out.get(timeout=180)
         reader.join(timeout=30)
+        self.assertEqual(reader.exitcode, 0)
         self.assertEqual(read, ENTRIES)
         self.assertEqual(failures, 0, "a reader decompressed a partially written cache entry")
+
+    def test_empty_key_retains_jax_error(self):
+        precision.atomic_cache_writes()
+        cache = lru_cache.LRUCache(self.dir, max_size=-1)
+        with self.assertRaisesRegex(ValueError, "key cannot be empty"):
+            cache.put("", b"value")
+        self.assertEqual(os.listdir(self.dir), [])
+
+    def test_failed_publication_leaves_no_visible_or_temporary_entry(self):
+        precision.atomic_cache_writes()
+        cache = lru_cache.LRUCache(self.dir, max_size=-1)
+        with mock.patch.object(precision.os, "replace", side_effect=OSError("write failed")):
+            with self.assertRaisesRegex(OSError, "write failed"):
+                cache.put("key", b"complete")
+        self.assertIsNone(cache.get("key"))
+        self.assertEqual(os.listdir(self.dir), [])
+        cache.put("key", b"complete")
+        self.assertEqual(cache.get("key"), b"complete")
+
+    def test_entry_is_invisible_until_publication(self):
+        precision.atomic_cache_writes()
+        cache = lru_cache.LRUCache(self.dir, max_size=-1)
+        replace = os.replace
+        payload = zlib.compress(os.urandom(4096))
+
+        def publish(source, destination):
+            self.assertIsNone(cache.get("key"))
+            self.assertEqual(Path(source).read_bytes(), payload)
+            replace(source, destination)
+
+        with mock.patch.object(precision.os, "replace", side_effect=publish):
+            cache.put("key", payload)
+        self.assertEqual(cache.get("key"), payload)
+
+    def test_concurrent_writers_publish_only_complete_payloads(self):
+        precision.atomic_cache_writes()
+        cache = lru_cache.LRUCache(self.dir, max_size=-1)
+        payloads = [zlib.compress(os.urandom(1 << 20)) for _ in range(4)]
+        with ThreadPoolExecutor(max_workers=4) as pool:
+            list(pool.map(lambda value: cache.put("key", value), payloads))
+        self.assertIn(cache.get("key"), payloads)
+        self.assertEqual(sorted(os.listdir(self.dir)), ["key-atime", "key-cache"])
 
     def test_entry_bytes_and_layout_unchanged(self):
         precision.atomic_cache_writes()
@@ -108,7 +157,10 @@ class AtomicCacheWriteTest(unittest.TestCase):
             jax.clear_caches()
             second = f(x)
             self.assertGreater(precision._cache_events.get("/jax/compilation_cache/cache_hits", 0), hits)
-            self.assertTrue(bool((first == second).all()))
+            first, second = np.asarray(first), np.asarray(second)
+            self.assertEqual(first.dtype, second.dtype)
+            self.assertEqual(first.shape, second.shape)
+            self.assertEqual(first.tobytes(), second.tobytes())
         finally:
             for k, v in old.items():
                 os.environ.pop(k, None) if v is None else os.environ.__setitem__(k, v)
