@@ -82,7 +82,11 @@ d23191b are now reviewed and incorporated with original history. Cache follow-up
 are engineering-only. The executable/test checkpoint is
 `813de566c4b169961fd4ec6a13063ac0ffa809d5`; resolve its enclosing published
 integration HEAD as described in AGENT_HANDOFF.md. Final edits are documentation.
-The newer pilot tip2879b644 is outside this authorization and remains unmerged.
+PR #1 at4afc772d is now separately authorized/reviewed, with original history
+preserved and diagnostic-only follow-ups at
+`78d04d167a5f65c35f6905cb261876bfe709d85a`. All production/scientific files
+remain byte-unchanged from8bb0c0f. Exact final integration HEAD is delivered
+separately; use a pinned detached checkout for qualification.
 
 Fresh focused CPU coverage:74 passes/1 optional eviction skip out of75 tests;
 25/25 fork/kill/resume/identity methods;56/56 methodology/config/analysis methods;
@@ -109,3 +113,30 @@ cannot run the full parent. Require genuine GPU resume evidence first if restart
 qualification is a launch prerequisite. This is not clearance for the195-parent
 campaign or Exp2, and no m, numerical bound, statistical alternative or failure
 disposition is selected. No jobs were submitted or resources changed.
+
+## First targeted A100 qualification after PR #1 review
+
+[pr1_gpu_resume_review.md](pr1_gpu_resume_review.md) records23 final probe unit
+passes,46 focused regression passes/one optional dependency skip, complete
+eight-child CPU kill/resume PASS, five full-state equivalence comparisons
+against the original probe, and195 unchanged parent fingerprints. Final
+completed CPU endpoints are300 interactions/582 updates; actual step60/update102
+restores, completion and state placement are observed. None is GPU evidence.
+
+The first prepared job is the explicit crash95 GPU shard with two references
+and a real checkpoint restore/replay, using the tracked
+`scripts/sbatch_exp12_gpu_resume_gate.sh`. It requires exact source verification,
+pinned JAX/CPU+CUDA, GPU-backed trained/saved/restored parameters, complete states
+and approved exact comparison. Logs, specs, receipts and original checkpoint
+are preserved even if the300-second workload cap interrupts execution. Exit2
+reference variability is an observation with an unproven cause, not authorization
+to relax identity or choose deterministic flags. Any nonzero/partial gate blocks
+qualification. Timing on A100 is unmeasured.
+
+The full-width identity_warm hold and all scientific decisions remain unchanged.
+Current-source GPU Check1/fork and D4W1536 checkpoint smoke are subsequent relevant
+checks; a tiny resume pass cannot be called full-width/Exp2 qualification. Beyond
+GPU gates and trigger disposition, the owner must approve the full-length
+development/positive-control role and appropriate allocation/execution. No
+eight-hour resource proposal is adopted here. No demonstrated unresolved
+production engineering defect was introduced by this review.
