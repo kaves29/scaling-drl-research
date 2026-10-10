@@ -451,7 +451,7 @@ from experiments.exp12 import precision as precision_module  # noqa: E402
 MUTATIONS += [
     ("compilation cache: entries written in place (no atomic rename)", precision_module, "atomic_cache_writes",
      lambda: None,
-     "tests.test_exp12_compilation_cache.AtomicCacheWriteTest.test_concurrent_reader_never_sees_a_truncated_entry"),
+     "tests.test_exp12_compilation_cache.AtomicCacheWriteTest.test_entry_is_invisible_until_publication"),
 ]
 
 def _run(test_id):

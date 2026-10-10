@@ -109,8 +109,9 @@ class AtomicCacheWriteTest(unittest.TestCase):
             self.assertEqual(Path(source).read_bytes(), payload)
             replace(source, destination)
 
-        with mock.patch.object(precision.os, "replace", side_effect=publish):
+        with mock.patch.object(precision.os, "replace", side_effect=publish) as publication:
             cache.put("key", payload)
+        publication.assert_called_once()
         self.assertEqual(cache.get("key"), payload)
 
     def test_concurrent_writers_publish_only_complete_payloads(self):
