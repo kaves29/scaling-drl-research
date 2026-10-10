@@ -11,7 +11,8 @@ configuration, SAC update, optimizer, checkpoint format or scientific rule chang
    runs without introducing action selection, RNG consumption or save calls.
 3. Three isolated pilots reuse Trainer/AdamW, SAC distributions, clipped-double-Q
    semantics, ordinary SAC updates and evaluation. Direction/magnitude are explicit
-   action-gradient diagnostic interventions, never ordinary training modifications.
+   action-space or per-state parameter-space diagnostic interventions, never
+   ordinary training modifications. The owner must select the space explicitly.
 4. CPU end-to-end and negative tests cover state, pairing, stream corruption,
    passivity, targets, optimizer matching, recording parity and restart fidelity.
 5. Versioned config/manifest and CLI reject unresolved scientific settings. GPU
@@ -29,7 +30,7 @@ Historical artifact dependency matrix (each selected environment × seed):
 | Immutable complete fork + run metadata | required | required | required for pairing | supported if retained |
 | Matched U/I post-fork checkpoints | required | active references only | frozen actors/evaluators | only actual retained checkpoints |
 | Initial replay + normalization + optimizers/RNG | required | required | required | complete state, not weights-only exports |
-| Fixed fork panel | reusable optional panel | evaluation panel optional | reusable optional panel | panel.npz, with original provenance |
+| Fixed fork panel | reusable panel; fork Check1 needs original panel | original 256-pair panel required for immediate Check1 | reusable optional panel | panel.npz, with original provenance |
 | Ordered raw U stream | optional source panel | required A/B | batches can come from replay | NOT reconstructible from replay snapshot |
 | Ordered raw I stream | optional source panel | required B only | optional sensitivity input | NOT reconstructible from replay snapshot |
 | Evaluation returns | existing reference outcomes | active references only | descriptive reference only | raw saved episode records |
