@@ -28,6 +28,7 @@ import unittest
 from pathlib import Path
 
 EXACTNESS = (
+    "tests.test_exp3_capture_boundaries",
     "tests.test_exp3_streams",
     "tests.test_exp3_review.PassiveReviewTest",
     "tests.test_exp3_capture",

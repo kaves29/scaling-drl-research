@@ -144,6 +144,10 @@ class StreamWriter:
             or np.any(norm["count"] < 0)
         ):
             raise ValueError("invalid source normalization")
+        for k in self.captures:
+            value = np.asarray(extras[k])
+            if value.dtype != CAPTURES[k] or value.shape != (2,):
+                raise ValueError("invalid source agent key shape/dtype")
         self.pending.append(
             {
                 **arrays,
@@ -159,61 +163,127 @@ class StreamWriter:
         if self.autoflush and len(self.pending) >= self.chunk_size:
             self.flush()
 
+    def _prepare_manifest(self):
+        """Write orphan-safe chunks; publish the entire interval in one manifest."""
+        import uuid
+
+        candidate = copy.deepcopy(self.manifest)
+        for start in range(0, len(self.pending), self.chunk_size):
+            rows = self.pending[start : start + self.chunk_size]
+            name = f"chunk_{len(candidate['chunks']):08d}_{uuid.uuid4().hex}.npz"
+            values = {k: np.stack([r[k] for r in rows]) for k in FIELDS}
+            values.update(
+                {
+                    k: np.asarray([r[k] for r in rows], np.int64)
+                    for k in ("step", "updates")
+                }
+            )
+            for k in ("mean", "var", "count"):
+                values[f"rms_{k}"] = np.stack(
+                    [np.asarray(r["normalization"][k]) for r in rows]
+                )
+            for k in self.captures:
+                values[k] = np.stack([r[k] for r in rows])
+            temp = self.root / (name + ".tmp")
+            with open(temp, "xb") as f:
+                np.savez(f, **values)
+                f.flush()
+                os.fsync(f.fileno())
+            os.replace(temp, self.root / name)
+            candidate["chunks"].append(
+                {
+                    "name": name,
+                    "sha256": digest(self.root / name),
+                    "count": len(rows),
+                    "bytes": (self.root / name).stat().st_size,
+                }
+            )
+            candidate["count"] += len(rows)
+        return candidate
+
     def flush(self):
         if not self.pending:
             return
-        # Generation IDs avoid overwriting an orphan from an interrupted publication.
-        import uuid
-
-        name = f"chunk_{len(self.manifest['chunks']):08d}_{uuid.uuid4().hex}.npz"
-        if not self.autoflush and len(self.pending) > self.chunk_size:
-            # Several chunks per save interval; all published together at the save.
-            pending, self.pending = self.pending, []
-            for start in range(0, len(pending), self.chunk_size):
-                self.pending = pending[start : start + self.chunk_size]
-                self.flush()
-            return
-        values = {k: np.stack([r[k] for r in self.pending]) for k in FIELDS}
-        values.update(
-            {
-                "step": np.asarray([r["step"] for r in self.pending], np.int64),
-                "updates": np.asarray([r["updates"] for r in self.pending], np.int64),
-            }
-        )
-        for k in ("mean", "var", "count"):
-            values[f"rms_{k}"] = np.stack(
-                [np.asarray(r["normalization"][k]) for r in self.pending]
-            )
-        for k in self.captures:
-            values[k] = np.stack([r[k] for r in self.pending])
-        temp = self.root / (name + ".tmp")
-        with open(temp, "xb") as f:
-            np.savez(f, **values)
-            f.flush()
-            os.fsync(f.fileno())
-        os.replace(temp, self.root / name)
-        self.manifest["chunks"].append(
-            {
-                "name": name,
-                "sha256": digest(self.root / name),
-                "count": len(self.pending),
-                "bytes": (self.root / name).stat().st_size,
-            }
-        )
-        self.manifest["count"] += len(self.pending)
+        candidate = self._prepare_manifest()
+        write_json(self.root / "manifest.json", candidate)
+        self.manifest = candidate
         self.pending.clear()
-        self._commit()
+
+    def prepare_checkpoint(self, step):
+        """Prepare a recoverable interval before the source's existing save."""
+        journal = self.root / "checkpoint_publication.json"
+        if journal.exists():
+            raise ValueError("unfinished checkpoint publication requires recovery")
+        candidate = self._prepare_manifest()
+        if candidate["provenance"]["start_step"] + candidate["count"] != step:
+            raise ValueError("prepared stream/source step mismatch")
+        write_json(
+            journal,
+            {
+                "schema_version": 1,
+                "source_step": step,
+                "base_sha256": digest(self.root / "manifest.json"),
+                "manifest": candidate,
+            },
+        )
+
+    def publish_checkpoint(self, step):
+        recover_checkpoint_publication(self.root, step)
+        self.manifest = StreamReader(self.root, require_complete=False).manifest
+        self.pending.clear()
 
     def seal(self):
         self.flush()
-        self.manifest["complete"] = True
-        self._commit()
+        candidate = copy.deepcopy(self.manifest)
+        candidate["complete"] = True
+        write_json(self.root / "manifest.json", candidate)
+        self.manifest = candidate
+
+
+def recover_checkpoint_publication(root, source_step):
+    """Resolve a crash on either side of LATEST without inventing arrivals."""
+    root = Path(root)
+    journal = root / "checkpoint_publication.json"
+    if not journal.exists():
+        return
+    prepared = json.loads(journal.read_text())
+    if prepared.get("schema_version") != 1:
+        raise ValueError("invalid checkpoint publication journal")
+    reader = StreamReader(root, require_complete=False)
+    current = reader.manifest
+    candidate = prepared["manifest"]
+    # Validate all staged bytes before publishing, including chunk order/checksums.
+    staged = StreamReader(root, require_complete=False, manifest=candidate)
+    if sum(1 for _ in staged) != candidate["count"]:
+        raise ValueError("incomplete prepared interval")
+    old_step = current["provenance"]["start_step"] + current["count"]
+    new_step = candidate["provenance"]["start_step"] + candidate["count"]
+    if (
+        new_step != prepared["source_step"]
+        or current["provenance"] != candidate["provenance"]
+    ):
+        raise ValueError("prepared publication lineage/step differs")
+    if (
+        current != candidate
+        and digest(root / "manifest.json") != prepared["base_sha256"]
+    ):
+        raise ValueError("committed manifest changed during publication")
+    if source_step == new_step:
+        write_json(root / "manifest.json", candidate)
+    elif source_step != old_step or current == candidate:
+        raise ValueError("source checkpoint matches neither publication cursor")
+    # Old checkpoint: retain staged chunks as unreferenced evidence, not source data.
+    journal.unlink()
 
 
 class StreamReader:
-    def __init__(self, root, require_complete=True):
+    def __init__(self, root, require_complete=True, manifest=None):
         self.root = Path(root).resolve()
-        self.manifest = json.loads((self.root / "manifest.json").read_text())
+        self.manifest = (
+            json.loads((self.root / "manifest.json").read_text())
+            if manifest is None
+            else manifest
+        )
         m = self.manifest
         if (
             m.get("schema_version") != 1
@@ -249,13 +319,17 @@ class StreamReader:
             ):
                 raise ValueError(f"stream path/checksum mismatch: {name}")
             with np.load(path, allow_pickle=False) as arrays:
-                fields = set(FIELDS) | set(self.captures) | {
-                    "step",
-                    "updates",
-                    "rms_mean",
-                    "rms_var",
-                    "rms_count",
-                }
+                fields = (
+                    set(FIELDS)
+                    | set(self.captures)
+                    | {
+                        "step",
+                        "updates",
+                        "rms_mean",
+                        "rms_var",
+                        "rms_count",
+                    }
+                )
                 if set(arrays.files) != fields or any(
                     len(arrays[k]) != chunk["count"] for k in fields
                 ):
@@ -299,7 +373,8 @@ class StreamReader:
                     ):
                         raise ValueError("invalid stream terminal mask")
                     if any(
-                        arrays[k].dtype != CAPTURES[k] for k in self.captures
+                        arrays[k].dtype != CAPTURES[k] or arrays[k].shape[1:] != (2,)
+                        for k in self.captures
                     ):
                         raise ValueError("invalid stream capture dtype")
                     yield {

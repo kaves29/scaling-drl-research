@@ -808,6 +808,7 @@ class FixtureTest(unittest.TestCase):
                 t.restore(saved[0])
                 with record_exp2_scope(root / "stream", 10, resume=True):
                     t.train(24)
+                    t.save(t.run_dir / "state")
                 self.assertIs(Exp12Trainer.train, original)
                 self.assertEqual(
                     [r["step"] for r in StreamReader(root / "stream")], [21, 22, 23, 24]

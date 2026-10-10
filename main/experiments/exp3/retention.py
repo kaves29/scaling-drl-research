@@ -29,11 +29,22 @@ def validate_retention(retain):
         raise ValueError("retention needs exactly root, until_step and replay")
     if not Path(retain["root"]).is_absolute():
         raise ValueError("retention root must be absolute")
-    if type(retain["until_step"]) is not int or retain["until_step"] < 0:
-        raise ValueError("explicit retention until_step required")
+    if retain["until_step"] != "arm_end" and (
+        type(retain["until_step"]) is not int or retain["until_step"] < 0
+    ):
+        raise ValueError("explicit retention until_step or arm_end policy required")
     if retain["replay"] not in ("retain", "omit"):
         raise ValueError("explicit retention replay mode required: retain | omit")
     return retain
+
+
+def retention_end(retain, plan):
+    """Resolve only an explicitly selected storage window from the actual fork."""
+    return (
+        int(plan["arm_end_step"])
+        if retain["until_step"] == "arm_end"
+        else retain["until_step"]
+    )
 
 
 def replay_dimensions(state_dir):
@@ -64,16 +75,31 @@ def retain_state(state_dir, root, step, replay):
     Exp3 adapters refuse conflicted snapshots. The source run is not interrupted.
     """
     state_dir, root = Path(state_dir).resolve(), Path(root).resolve()
+    if root == state_dir or root.is_relative_to(state_dir):
+        raise ValueError("retention root must be outside the source state")
+    routine_root = state_dir.parent
+    if (routine_root / "LATEST").exists() and (
+        root == routine_root or root.is_relative_to(routine_root)
+    ):
+        raise ValueError(
+            "retention root must be outside the mutable routine checkpoint root"
+        )
     root.mkdir(parents=True, exist_ok=True)
     target = root / f"step_{step:09d}"
     files = _files(state_dir, replay)
     hashes = {str(f): digest(state_dir / f) for f in files}
     if target.exists():
         existing = json.loads((target / SNAPSHOT).read_text())
-        if existing["files"] != hashes or existing["replay"] != replay:
+        if existing["files"] != hashes or existing["replay"] != (
+            "retained" if replay == "retain" else "omitted"
+        ):
             conflict = root / f"CONFLICT_{target.name}_{uuid.uuid4().hex}.json"
-            conflict.write_text(json.dumps({"step": step, "source_state": str(state_dir),
-                                            "files": hashes}, indent=1))
+            conflict.write_text(
+                json.dumps(
+                    {"step": step, "source_state": str(state_dir), "files": hashes},
+                    indent=1,
+                )
+            )
         return target
     obs_dim, act_dim = replay_dimensions(state_dir)
     temporary = root / f".{target.name}.{uuid.uuid4().hex}.pending"
@@ -88,12 +114,22 @@ def retain_state(state_dir, root, step, replay):
             except OSError:
                 shutil.copy2(state_dir / f, temporary / f)
                 modes.add("copy")
-        (temporary / SNAPSHOT).write_text(json.dumps({
-            "schema_version": 1, "step": step, "source_state": str(state_dir),
-            "replay": "retained" if replay == "retain" else "omitted",
-            "observation_dim": obs_dim, "action_dim": act_dim,
-            "files": hashes, "link_modes": sorted(modes),
-        }, indent=1, sort_keys=True))
+        (temporary / SNAPSHOT).write_text(
+            json.dumps(
+                {
+                    "schema_version": 1,
+                    "step": step,
+                    "source_state": str(state_dir),
+                    "replay": "retained" if replay == "retain" else "omitted",
+                    "observation_dim": obs_dim,
+                    "action_dim": act_dim,
+                    "files": hashes,
+                    "link_modes": sorted(modes),
+                },
+                indent=1,
+                sort_keys=True,
+            )
+        )
         os.replace(temporary, target)
     finally:
         if temporary.exists():
@@ -108,12 +144,20 @@ def read_snapshot(state_dir):
     if not path.exists():
         return None
     record = json.loads(path.read_text())
-    if record.get("schema_version") != 1 or record.get("replay") not in ("retained", "omitted"):
+    if record.get("schema_version") != 1 or record.get("replay") not in (
+        "retained",
+        "omitted",
+    ):
         raise ValueError("invalid retained snapshot record")
     if any(state_dir.parent.glob(f"CONFLICT_{state_dir.name}_*.json")):
-        raise ValueError("retained snapshot has a conflicting re-save; refuse to use it")
-    present = {str(p.relative_to(state_dir)) for p in state_dir.rglob("*")
-               if p.is_file() and p.name != SNAPSHOT}
+        raise ValueError(
+            "retained snapshot has a conflicting re-save; refuse to use it"
+        )
+    present = {
+        str(p.relative_to(state_dir))
+        for p in state_dir.rglob("*")
+        if p.is_file() and p.name != SNAPSHOT
+    }
     if present != set(record["files"]):
         raise ValueError("retained snapshot files differ from its record")
     for name, sha in record["files"].items():

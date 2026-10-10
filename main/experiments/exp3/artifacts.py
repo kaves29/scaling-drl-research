@@ -38,6 +38,14 @@ def state_fingerprint(state):
     )
 
 
+def metadata_fingerprint(path):
+    """Immutable source contract; launch-history append does not change it."""
+    import json
+
+    record = json.loads(Path(path).read_text())
+    return _hash({k: v for k, v in record.items() if k != "launches"})
+
+
 def tree_equal(a, b):
     from flax.serialization import to_state_dict
     from experiments.exp12.state import _deep_equal

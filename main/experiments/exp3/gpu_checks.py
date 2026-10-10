@@ -21,20 +21,42 @@ PRECISIONS = ("highest", "tensorfloat32")
 
 
 def difference(a, b):
+    original_a, original_b = np.asarray(a), np.asarray(b)
+    exact = (
+        original_a.dtype == original_b.dtype
+        and original_a.shape == original_b.shape
+        and not original_a.dtype.hasobject
+        and np.array_equal(original_a, original_b)
+        and original_a.tobytes() == original_b.tobytes()
+    )
     a, b = np.asarray(a, np.float64), np.asarray(b, np.float64)
     if a.shape != b.shape:
         raise ValueError("compared measurements have different shapes")
     if a.size == 0:
         # Nothing was compared (e.g. every synthetic draw saturated): never report a match.
-        return {"max_abs": None, "max_rel": None, "nonfinite": False, "bitwise_equal": None,
-                "not_measured": "no elements to compare"}
+        return {
+            "max_abs": None,
+            "max_rel": None,
+            "nonfinite": False,
+            "bitwise_equal": None,
+            "not_measured": "no elements to compare",
+        }
     if not (np.isfinite(a).all() and np.isfinite(b).all()):
-        return {"max_abs": None, "max_rel": None, "nonfinite": True, "bitwise_equal": False}
+        return {
+            "max_abs": None,
+            "max_rel": None,
+            "nonfinite": True,
+            "bitwise_equal": False,
+        }
     d = np.abs(a - b)
     scale = np.maximum(np.abs(a), np.abs(b))
     rel = np.divide(d, scale, out=np.zeros_like(d), where=scale > 0)
-    return {"max_abs": float(d.max(initial=0.0)), "max_rel": float(rel.max(initial=0.0)),
-            "nonfinite": False, "bitwise_equal": bool(np.array_equal(a, b))}
+    return {
+        "max_abs": float(d.max(initial=0.0)),
+        "max_rel": float(rel.max(initial=0.0)),
+        "nonfinite": False,
+        "bitwise_equal": bool(exact),
+    }
 
 
 def make_agent(cfg_agent, obs_dim, act_dim):
@@ -69,25 +91,36 @@ def oracle_measurements(u, i, batch, key, twin):
         return (alpha * d.log_prob(a) - _q(u.critic, obs, a, twin))[row]
 
     # Alternative graph: gradient of one state's loss vs that row of the per-state Jacobian.
-    first = difference(values["sac_parameter_gradient_u"][0],
-                       ravel_pytree(jax.grad(row_loss)(u.actor.params, 0))[0])
-    ordinary = update_actor(key, u.actor, u.critic, u.temperature, {"observation": obs}, twin)[0]
+    first = difference(
+        values["sac_parameter_gradient_u"][0],
+        ravel_pytree(jax.grad(row_loss)(u.actor.params, 0))[0],
+    )
+    ordinary = update_actor(
+        key, u.actor, u.critic, u.temperature, {"observation": obs}, twin
+    )[0]
     via_gradient = optimizer_step(u.actor, grads["u"])
-    actor_update = difference(ravel_pytree(via_gradient.params)[0], ravel_pytree(ordinary.params)[0])
+    actor_update = difference(
+        ravel_pytree(via_gradient.params)[0], ravel_pytree(ordinary.params)[0]
+    )
     noise = jax.random.normal(key, (len(obs), batch["action"].shape[-1]))
     jb = {k: jnp.asarray(v) for k, v in batch.items()}
-    target, info = targets(u.actor, u._target_critic, jb, noise, float(alpha), 0.99, 1, twin)
+    target, info = targets(
+        u.actor, u._target_critic, jb, noise, float(alpha), 0.99, 1, twin
+    )
     dist = u.actor(observations=jb["next_observation"])
     q = _q(u._target_critic, jb["next_observation"], info["action"], twin)
     unsaturated = np.asarray((jnp.abs(info["action"]) < 0.99).all(-1))
     production_lp = dist.log_prob(info["action"])
-    production_target = jb["reward"] + 0.99 * (1 - jb["terminated"]) * (q - float(alpha) * production_lp)
+    production_target = jb["reward"] + 0.99 * (1 - jb["terminated"]) * (
+        q - float(alpha) * production_lp
+    )
     fitted, _ = fit_target(u.critic, jb, target)
     return {
         "per_state_jacobian_row_vs_row_grad": first,
         "panel_gradient_update_vs_update_actor": actor_update,
         "target_vs_production_formula_unsaturated": difference(
-            np.asarray(target)[unsaturated], np.asarray(production_target)[unsaturated]),
+            np.asarray(target)[unsaturated], np.asarray(production_target)[unsaturated]
+        ),
         "unsaturated_rows": int(unsaturated.sum()),
         "critic_fit_finite": bool(np.isfinite(ravel_pytree(fitted.params)[0]).all()),
     }
@@ -99,7 +132,9 @@ def _q(critic, obs, actions, twin):
 
 
 def measurement_fields(u, i, obs, key, twin):
-    values, _ = measure_chunk(u.actor, u.critic, i.critic, jnp.asarray(obs), key, u.temperature(), twin)
+    values, _ = measure_chunk(
+        u.actor, u.critic, i.critic, jnp.asarray(obs), key, u.temperature(), twin
+    )
     return {k: np.asarray(v) for k, v in values.items()}
 
 
@@ -115,8 +150,12 @@ def tf32_sensitivity(u, i, obs, key, twin):
             report[k] = {"changed": int((high[k] != tf32[k]).sum())}
         elif k.endswith("_cosine"):
             defined = np.isfinite(high[k]) & np.isfinite(tf32[k])
-            report[k] = {**difference(high[k][defined], tf32[k][defined]),
-                         "sign_flips": int((np.sign(high[k][defined]) != np.sign(tf32[k][defined])).sum())}
+            report[k] = {
+                **difference(high[k][defined], tf32[k][defined]),
+                "sign_flips": int(
+                    (np.sign(high[k][defined]) != np.sign(tf32[k][defined])).sum()
+                ),
+            }
         else:
             report[k] = difference(high[k], tf32[k])
     return report
@@ -126,4 +165,10 @@ def repeat_bitwise(u, i, obs, key, twin):
     """Two identical measurement calls must be bitwise identical (same program, same inputs)."""
     a = measurement_fields(u, i, obs, key, twin)
     b = measurement_fields(u, i, obs, key, twin)
-    return all(np.array_equal(a[k], b[k], equal_nan=True) for k in a)
+    return set(a) == set(b) and all(
+        a[k].shape == b[k].shape
+        and a[k].dtype == b[k].dtype
+        and np.array_equal(a[k], b[k], equal_nan=True)
+        and a[k].tobytes() == b[k].tobytes()
+        for k in a
+    )

@@ -24,14 +24,23 @@ def main():
     # Optional retention of the routine post-fork saves the source already makes
     # (experiments/exp3/retention.py). All three or none; no defaults.
     parser.add_argument("--retain-root")
-    parser.add_argument("--retain-until-step", type=int)
+    window = parser.add_mutually_exclusive_group()
+    window.add_argument("--retain-until-step", type=int)
+    window.add_argument(
+        "--retain-until-arm-end",
+        action="store_true",
+        help="explicitly derive storage window from the actual natural fork",
+    )
     parser.add_argument("--retain-replay", choices=("retain", "omit"))
     opts = parser.parse_args()
-    given = [opts.retain_root, opts.retain_until_step, opts.retain_replay]
+    until = "arm_end" if opts.retain_until_arm_end else opts.retain_until_step
+    given = [opts.retain_root, until, opts.retain_replay]
     if any(v is not None for v in given) and not all(v is not None for v in given):
-        parser.error("--retain-root, --retain-until-step and --retain-replay go together")
+        parser.error(
+            "--retain-root, one retention window and --retain-replay go together"
+        )
     retain = (
-        {"root": opts.retain_root, "until_step": opts.retain_until_step, "replay": opts.retain_replay}
+        {"root": opts.retain_root, "until_step": until, "replay": opts.retain_replay}
         if opts.retain_root is not None
         else None
     )

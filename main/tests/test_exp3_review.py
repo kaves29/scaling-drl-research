@@ -214,6 +214,7 @@ class PassiveReviewTest(unittest.TestCase):
                 t.restore(latest_state_dir(t.run_dir / "state"))
                 with record_exp2_scope(root / "stream", 1, resume=True):
                     t.train(24)
+                    t.save(t.run_dir / "state")
                 self.assertEqual([r["step"] for r in StreamReader(root / "stream")], [21, 22, 23, 24])
                 self.assertEqual(state_differences(t.save(root / "final"), self.ustate), [])
             finally:

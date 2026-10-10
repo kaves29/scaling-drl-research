@@ -297,13 +297,20 @@ def make_passive(spec, reader, source="u", benchmark=None):
     if u.meta["extra_state"].get("injection"):
         raise ValueError("passive common fork must be pre-injection")
     provenance = reader.manifest["provenance"]
+    from experiments.exp3.artifacts import metadata_fingerprint
+
+    metadata_binding = (
+        ("fork_metadata_fingerprint", metadata_fingerprint(u.metadata))
+        if "fork_metadata_fingerprint" in provenance
+        else ("fork_metadata_sha256", digest(u.metadata))
+    )
     if provenance.get("arm") not in (
         {"control", "untreated"} if source == "u" else {"injected"}
     ):
         raise ValueError("source stream arm assignment differs")
     for key, value in (
         ("start_step", u.meta["interaction_step"]),
-        ("fork_metadata_sha256", digest(u.metadata)),
+        metadata_binding,
         ("config_hash", u.info["config_hash"]),
         ("fork_state_sha256", state_fingerprint(u.state)),
     ):
