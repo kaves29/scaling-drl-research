@@ -380,13 +380,200 @@ def execute_stage(root, spec, stage):
         compiler.compile_or_get_cached = original_cached
 
 
-def compare(root, spec):
+STAGES = ("reference_cold", "reference_warm", "crash", "resume")
+
+
+def strict_json(path):
+    def pairs(items):
+        result = {}
+        for key, value in items:
+            if key in result:
+                raise ValueError("duplicate JSON key")
+            result[key] = value
+        return result
+
+    return json.loads(
+        Path(path).read_text(),
+        object_pairs_hook=pairs,
+        parse_constant=lambda x: (_ for _ in ()).throw(ValueError(x)),
+    )
+
+
+def file_sha(path):
+    h = hashlib.sha256()
+    with Path(path).open("rb") as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def attempt_accounting(root, spec, records):
+    """Bind one accepted process per stage to the immutable launcher checksum receipt.
+
+    Failed attempts remain audited. Earlier manifests describe historical global
+    files, so only their own attempt files are checked against current bytes.
+    Accepted manifests must additionally bind every current stage artifact.
+    Checksums establish consistency, not authenticity against wholesale forgery.
+    """
+    root = Path(root)
+    audit = {stage: {"attempts": [], "accepted": None} for stage in STAGES}
+    directories = sorted((root / "attempts").iterdir())
+    jobs = set()
+    for directory in directories:
+        match = re.fullmatch(
+            r"(reference_cold|reference_warm|crash|resume)_([0-9]+)", directory.name
+        )
+        if not match or not directory.is_dir() or directory.is_symlink():
+            raise ValueError("malformed attempt directory: " + directory.name)
+        stage, job = match.groups()
+        if job in jobs:
+            raise ValueError("job ID reused across stages: " + job)
+        jobs.add(job)
+        process = strict_json(directory / "process.json")
+        if not isinstance(process, dict):
+            raise ValueError("process must be an object")
+        code = process.get("exit")
+        if (
+            type(code) is not int
+            or not 0 <= code <= 255
+            or process.get("stage") != stage
+        ):
+            raise ValueError("malformed process/stage: " + directory.name)
+        verdict = {
+            0: "PROCESS_COMPLETE",
+            2: "INFRASTRUCTURE_FAILURE",
+            124: "TIMEOUT",
+            137: "KILLED_OR_TIMEOUT",
+        }.get(code, "INCOMPLETE")
+        if code == 3 and stage == "crash":
+            verdict = "EXPECTED_CRASH"
+        if (
+            process.get("verdict") != verdict
+            or type(process.get("timeout")) is not bool
+            or process["timeout"] != (code in (124, 137))
+        ):
+            raise ValueError("inconsistent process verdict: " + directory.name)
+        if (directory / "exit_status.txt").read_text().strip() != str(code):
+            raise ValueError("exit status mismatch: " + directory.name)
+        if (directory / "commit.txt").read_text().strip() != spec[
+            "expected_commit"
+        ] or json.dumps(
+            strict_json(directory / "submitted-spec.json"), sort_keys=True
+        ) != json.dumps(
+            spec, sort_keys=True
+        ):
+            raise ValueError("attempt provenance mismatch: " + directory.name)
+        if (directory / "SHA256SUMS").is_symlink():
+            raise ValueError("symlink checksum manifest")
+        manifest = {}
+        for line in (directory / "SHA256SUMS").read_text().splitlines():
+            m = re.fullmatch(r"([0-9a-f]{64})  (\./.+)", line)
+            if not m:
+                raise ValueError("malformed checksum record")
+            digest, name = m.groups()
+            relative = Path(name)
+            if ".." in relative.parts or relative.is_absolute() or name in manifest:
+                raise ValueError("unsafe or duplicate checksum record")
+            if name != "./" + relative.as_posix():
+                raise ValueError("noncanonical checksum path")
+            manifest[name] = digest
+        accepted = code == (3 if stage == "crash" else 0)
+        required = [
+            p for p in directory.rglob("*") if p.is_file() and p.name != "SHA256SUMS"
+        ]
+        # Check deleted files too: a current file enumeration alone misses them.
+        own_prefix = "./attempts/" + directory.name + "/"
+        required += [
+            root / name[2:]
+            for name in manifest
+            if name.startswith(own_prefix) and not name.endswith("/SHA256SUMS")
+        ]
+        if accepted:
+            for name in ("dependencies.txt", "nvidia-smi.csv", "workload.log"):
+                if not (directory / name).is_file():
+                    raise ValueError("missing accepted process evidence: " + name)
+            stage_root = root / stage
+            if stage_root.is_symlink() or not stage_root.is_dir():
+                raise ValueError("invalid stage directory")
+            required += [
+                root / name[2:]
+                for name in manifest
+                if name.startswith("./" + stage + "/")
+            ]
+            required += [p for p in stage_root.rglob("*") if p.is_file()]
+            if not (stage_root / "receipt.json").is_file():
+                raise ValueError("missing stage receipt")
+        for path in required:
+            if path.is_symlink() or any(
+                parent.is_symlink()
+                for parent in path.parents
+                if parent != root and root in parent.parents
+            ):
+                raise ValueError("symlink evidence")
+            name = "./" + path.relative_to(root).as_posix()
+            if manifest.get(name) != file_sha(path):
+                raise ValueError("missing or corrupt checksummed evidence: " + name)
+        entry = {
+            "job_id": job,
+            "directory": directory.name,
+            "exit": code,
+            "verdict": verdict,
+            "manifest_sha256": file_sha(directory / "SHA256SUMS"),
+            "expected_commit": spec["expected_commit"],
+            "spec_sha256": hashlib.sha256(
+                json.dumps(spec, sort_keys=True).encode()
+            ).hexdigest(),
+        }
+        audit[stage]["attempts"].append(entry)
+        if accepted:
+            if audit[stage]["accepted"] is not None:
+                raise ValueError("ambiguous successful attempts: " + stage)
+            receipt = records[stage]
+            if (
+                not isinstance(receipt, dict)
+                or type(receipt.get("complete")) is not bool
+            ):
+                raise ValueError("malformed stage receipt")
+            if any(
+                type(receipt.get(k)) is not int
+                for k in ("interaction_step", "update_step")
+            ):
+                raise ValueError("malformed stage counters")
+            if (
+                receipt.get("stage") != stage
+                or receipt.get("expected_commit") != spec["expected_commit"]
+                or receipt.get("spec_sha256") != entry["spec_sha256"]
+            ):
+                raise ValueError("stage receipt provenance mismatch: " + stage)
+            entry["receipt_sha256"] = file_sha(root / stage / "receipt.json")
+            audit[stage]["accepted"] = entry
+    if any(not value["accepted"] for value in audit.values()):
+        raise ValueError("missing accepted attempt")
+    return audit
+
+
+def compare(root, spec, report_path, comparator_commit):
     from experiments.exp12.state import latest_state_dir, state_differences, load_meta
 
+    if Path(report_path).resolve().is_relative_to(Path(root).resolve()):
+        raise ValueError("report must be outside immutable evidence")
     records = {
-        s: json.loads((root / s / "receipt.json").read_text())
+        s: strict_json(root / s / "receipt.json")
         for s in ("reference_cold", "reference_warm", "crash", "resume")
     }
+    try:
+        accounting = attempt_accounting(root, spec, records)
+    except (ValueError, OSError, KeyError, TypeError) as exc:
+        write(
+            report_path,
+            {
+                "verdict": "INCOMPLETE",
+                "error": str(exc),
+                "expected_commit": spec["expected_commit"],
+                "comparator_commit": comparator_commit,
+            },
+        )
+        return 1
     for name, r in records.items():
         if (
             r.get("expected_commit") != spec["expected_commit"]
@@ -397,11 +584,6 @@ def compare(root, spec):
         expected = spec["crash_step"] if name == "crash" else spec["end_step"]
         if r.get("interaction_step") != expected or r.get("update_step") != 2 * (
             expected - 4999
-        ):
-            r["complete"] = False
-        attempts = list((root / "attempts").glob(f"{name}_*/process.json"))
-        if len(attempts) != 1 or json.loads(attempts[0].read_text()).get("exit") != (
-            3 if name == "crash" else 0
         ):
             r["complete"] = False
     checkpoint = latest_state_dir(root / "crash" / "state")
@@ -442,10 +624,12 @@ def compare(root, spec):
         ],
         "expected_commit": spec["expected_commit"],
         "records": records,
+        "attempt_accounting": accounting,
+        "comparator_commit": comparator_commit,
         "differences": differences,
         "scope": "full-width engineering, not natural-trigger/probe/scientific qualification",
     }
-    write(root / "validation.json", report)
+    write(report_path, report)
     return 0 if verdict == "PASS" else 1
 
 
@@ -458,14 +642,26 @@ def main():
         choices=("reference_cold", "reference_warm", "crash", "resume", "compare"),
         required=True,
     )
+    parser.add_argument(
+        "--comparison-commit", help="exact clean CPU reviewer revision; compare only"
+    )
+    parser.add_argument(
+        "--report", type=Path, help="new comparison report outside immutable evidence"
+    )
     args = parser.parse_args()
-    spec = json.loads(args.spec.read_text())
+    spec = strict_json(args.spec)
     validate_spec(spec)
     from utils.run_metadata import code_version
     import subprocess
 
+    if args.comparison_commit and (
+        args.stage != "compare"
+        or not re.fullmatch("[0-9a-f]{40}", args.comparison_commit)
+    ):
+        raise ValueError("comparison revision is valid only for CPU compare")
+    execution_commit = args.comparison_commit or spec["expected_commit"]
     if (
-        code_version() != {"commit": spec["expected_commit"], "dirty": False}
+        code_version() != {"commit": execution_commit, "dirty": False}
         or subprocess.check_output(
             ["git", "status", "--porcelain", "--untracked-files=all"], cwd=MAIN
         ).strip()
@@ -476,6 +672,34 @@ def main():
     root = args.out.resolve()
     if not args.out.is_absolute() or root.is_relative_to(MAIN.parent):
         raise ValueError("absolute evidence directory outside checkout required")
+    if args.stage == "compare":
+        if (
+            not args.report
+            or not args.report.is_absolute()
+            or args.report.resolve().is_relative_to(root)
+            or args.report.resolve().is_relative_to(MAIN.parent)
+            or args.report.exists()
+        ):
+            raise ValueError(
+                "CPU comparison requires a fresh absolute report outside evidence and checkout"
+            )
+        if strict_json(root / "spec.json") != spec:
+            raise ValueError("gate specification changed")
+        try:
+            return compare(root, spec, args.report, execution_commit)
+        except Exception as exc:
+            write(
+                args.report,
+                {
+                    "verdict": "INCOMPLETE",
+                    "error": f"{type(exc).__name__}: {exc}",
+                    "expected_commit": spec["expected_commit"],
+                    "comparator_commit": execution_commit,
+                },
+            )
+            return 1
+    if args.report:
+        raise ValueError("external report is compare-only")
     root.mkdir(parents=True, exist_ok=True)
     canonical = root / "spec.json"
     if canonical.exists() and json.loads(canonical.read_text()) != spec:
@@ -483,8 +707,6 @@ def main():
     if not canonical.exists():
         write(canonical, spec)
     try:
-        if args.stage == "compare":
-            return compare(root, spec)
         execute_stage(root, spec, args.stage)
         return 0
     except Exception as exc:
