@@ -1,0 +1,16 @@
+{
+  "approved": false,
+  "stage": "parents",
+  "expected_commit": null,
+  "gates": {
+    "cuda_identity_scaled_suites": {"status": "UNVERIFIED", "decision_reference": null, "evidence": []},
+    "fresh_null_disposition": {"status": "UNRESOLVED", "decision_reference": null},
+    "hopper_range_disposition": {"status": "UNRESOLVED", "decision_reference": null},
+    "positive_control": {"status": "UNQUALIFIED", "decision_reference": null},
+    "suite_runtime_storage": {"status": "UNVERIFIED", "decision_reference": null},
+    "grid_allocation": {"status": "UNAPPROVED", "decision_reference": null},
+    "cuda_numeric_bounds": {"status": "UNRESOLVED", "decision_reference": null},
+    "study_methodology_freeze": {"status": "UNAPPROVED", "decision_reference": null}
+  },
+  "resources": {"gpus": 1, "cpus": null, "memory_gb": null, "wall_minutes": null, "concurrency": null}
+}

@@ -1,0 +1,11 @@
+{
+  "approved": false,
+  "stage": "pilot",
+  "expected_commit": null,
+  "gates": {
+    "fullwidth_resume_identity": {"status": "UNVERIFIED", "decision_reference": null, "evidence": []},
+    "pilot_natural_trigger_disposition": {"status": "UNRESOLVED", "decision_reference": null},
+    "pilot_allocation": {"status": "UNAPPROVED", "decision_reference": null}
+  },
+  "resources": {"gpus": 1, "cpus": null, "memory_gb": null, "wall_minutes": null, "concurrency": null}
+}
