@@ -446,6 +446,14 @@ MUTATIONS += [
      "tests.test_exp12_fork.ForkEndToEndTest.test_control_stops_before_ready_if_restore_changes_panel"),
 ]
 
+from experiments.exp12 import precision as precision_module  # noqa: E402
+
+MUTATIONS += [
+    ("compilation cache: entries written in place (no atomic rename)", precision_module, "atomic_cache_writes",
+     lambda: None,
+     "tests.test_exp12_compilation_cache.AtomicCacheWriteTest.test_concurrent_reader_never_sees_a_truncated_entry"),
+]
+
 def _run(test_id):
     suite = unittest.defaultTestLoader.loadTestsFromName(test_id)
     result = unittest.TextTestRunner(stream=open("/dev/null", "w"), verbosity=0).run(suite)

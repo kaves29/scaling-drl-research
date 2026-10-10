@@ -7,9 +7,12 @@ are affected; every dtype stays float32. Check 1 and the A0 measurement use a lo
 """
 
 import atexit
+import functools
 import importlib.metadata
 import os
 import re
+import tempfile
+import time
 from pathlib import Path
 from typing import Dict, Optional
 
@@ -42,6 +45,7 @@ def configure_compilation_cache() -> Optional[str]:
     if path == "off":
         return None
     os.makedirs(path, exist_ok=True)
+    atomic_cache_writes()
     jax.config.update("jax_compilation_cache_dir", path)
     jax.config.update("jax_persistent_cache_min_compile_time_secs", 0.0)
     jax.config.update("jax_persistent_cache_min_entry_size_bytes", 0)
@@ -55,6 +59,33 @@ def configure_compilation_cache() -> Optional[str]:
             f"hits {_cache_events.get('/jax/compilation_cache/cache_hits', 0)}, "
             f"misses {_cache_events.get('/jax/compilation_cache/cache_misses', 0)}", flush=True))
     return path
+
+
+def atomic_cache_writes() -> None:
+    """jax 0.4.34's LRUCache.put writes the entry in place, so a process reading it meanwhile gets a truncated entry
+    ("Error -5 while decompressing data"), and a writer killed mid-write leaves one that stays truncated. Each entry
+    is written to its own temporary file and renamed into place instead; the bytes written are unchanged."""
+    from jax._src import lru_cache
+
+    if getattr(lru_cache.LRUCache.put, "atomic", False):
+        return
+    put = lru_cache.LRUCache.put
+
+    @functools.wraps(put)
+    def atomic_put(self, key: str, val: bytes) -> None:
+        if self.eviction_enabled or not lru_cache._is_local_filesystem(str(self.path)):
+            return put(self, key, val)
+        cache_path = self.path / f"{key}{lru_cache._CACHE_SUFFIX}"
+        if cache_path.exists():
+            return
+        fd, tmp = tempfile.mkstemp(dir=self.path, prefix=f".{key}.", suffix=".tmp")
+        with os.fdopen(fd, "wb") as f:
+            f.write(val)
+        os.replace(tmp, cache_path)
+        (self.path / f"{key}{lru_cache._ATIME_SUFFIX}").write_bytes(time.time_ns().to_bytes(8, "little"))
+
+    atomic_put.atomic = True
+    lru_cache.LRUCache.put = atomic_put
 
 
 def runtime_info() -> Dict:
