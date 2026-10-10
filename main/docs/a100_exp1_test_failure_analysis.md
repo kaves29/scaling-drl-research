@@ -36,13 +36,13 @@ Re-checked on the integration tip (CPU): see "CPU validation on the integration 
 - **Kill tests run training on CPU.** Both kill tests force CPU in their training subprocesses, so even a passing A100
   rerun does not qualify kill-and-resume on the GPU.
 - **Block B's A100 Check 1 evidence is in-process only.** `ForkEndToEndTest` runs `exp1.run`/`exp2_arm.run`
-  in-process, so its bit-exact control/identity pairs come from one process, at tiny scale, with a forced trigger.
+  in-process, so its reported zero numerical-difference control/identity pairs come from one process, at tiny scale, with a forced trigger. Those old norms do not independently qualify the newer dtype/signed-zero byte checks.
   Production's control restart after a fork is also in-process (`exp1.py`: `ForkNow` → `build(fork state)`), so
   that evidence matches the pilot's path.
 - **The real gap:** cross-process resume (a job restarted after a timeout or preemption) and cross-process identity
   (Exp2 arms) have never run on an A100.
 
-`scripts/sci_investigation/gpu_resume_probe.py` (added here) closes the first gap without changing production code:
+`scripts/sci_investigation/gpu_resume_probe.py` (added here) provides a test of the first gap without changing production code; actual GPU qualification remains pending:
 - it runs the kill-test scenario (tiny hopper-hop, crash at interaction steps 5, 60 and 95, relaunch) through the
   existing `tests/exp12_subprocess_runner.py` entry and crash hook, without overriding the backend;
 - every child process records the JAX backend and device kinds it actually initialised; with `--require-backend gpu`
@@ -53,8 +53,8 @@ Re-checked on the integration tip (CPU): see "CPU validation on the integration 
 
 | Exit | Verdict | Meaning |
 |---|---|---|
-| 0 | `PASS` | references identical; each crash exits 3 without DONE; each relaunch exits 0 with DONE and a bit-identical final state |
-| 1 | `RESUME_DEFECT` | references identical (backend run-to-run deterministic) but a relaunch failed or differs: a save/restore defect |
+| 0 | `PASS` | two references identical; selected crashes exit 3 without DONE; relaunches exit 0 with DONE and complete bit-identical states; actual backend/restore evidence required |
+| 1 | `RESUME_DEFECT` | references identical in these two samples, but a relaunch failed or differs: suspected resume-path problem |
 | 2 | `NONDETERMINISTIC_BACKEND` | the two uninterrupted references differ, so bit-exact resume cannot be judged; resume diffs are still reported against both references |
 | 3 | `INCOMPLETE` | harness/environment failure: reference failed, crash hook did not fire, state missing, or wrong backend |
 
@@ -75,65 +75,40 @@ The verdict logic is unit-tested on synthetic reports (`scripts/sci_investigatio
 | KillAndResumeEntryPointTest | No (same reason) | No | `python -m unittest -v tests.test_exp12_foundations.KillAndResumeEntryPointTest` | `OK` | None |
 | GPU cross-process resume (new probe) | Recommended. It matters only if the pilot is interrupted; required before the grid. | Only on a timeout or restart | `python scripts/sci_investigation/gpu_resume_probe.py --out <new dir> --require-backend gpu` | exit 0, verdict `PASS` | None expected |
 
-**Reading the probe.** If the verdict is `NONDETERMINISTIC_BACKEND` (`reference_repeat_differences` non-empty), default-ops GPU training is not run-to-run
-deterministic. Resume can then not be bit-exact (an Exp1 resume would still be a valid but different trajectory),
-and cross-process identity forks for Exp2 would face the same limit. That would be a finding for your decision, not
+**Reading the probe.** If the verdict is `NONDETERMINISTIC_BACKEND` (`reference_repeat_differences` non-empty), these two reference executions differ; the cause is not established. This does
+not by itself show a GPU operation caused the difference, nor justify changed
+resume or cross-process identity expectations. That would be a finding for your decision, not
 something to fix in code.
 
-## Minimal A100 validation job: NOT AUTHORIZED FOR EXECUTION
-Run it on the reviewed `integration/exp12` commit that contains this probe (after this PR is reviewed and merged by
-Codex), from a clean checkout. One A100, 1 h. Expected about 30 min: the whole Block B suite took 25 min per mode.
-```bash
-cd /work/hdd/biqc/skaveti1/exp12_pilot/main && mkdir -p logs && export EXPECTED_COMMIT=<pilot commit>
-sbatch <<'EOF'
-#!/bin/bash
-#SBATCH --job-name=exp12_a100_exp1_gate
-#SBATCH --account=biqc-delta-gpu
-#SBATCH --partition=gpuA100x4
-#SBATCH --nodes=1
-#SBATCH --ntasks=1
-#SBATCH --gpus=1
-#SBATCH --cpus-per-task=16
-#SBATCH --mem=64G
-#SBATCH --time=01:00:00
-#SBATCH --output=logs/%x_%j.out
-#SBATCH --error=logs/%x_%j.err
-set -e
-cd "$SLURM_SUBMIT_DIR"
-source scripts/check_exp12_validation_checkout.sh
-exp12_check_checkout tests/test_exp12_fork.py tests/test_exp12_foundations.py
-OUT="$PWD/logs/a100_exp1_gate_$SLURM_JOB_ID"; mkdir -p "$OUT"
-module reset; source /sw/rh9.4/python/miniforge3/etc/profile.d/conda.sh; conda activate scaling-drl-py31213
-unset JAX_DEFAULT_MATMUL_PRECISION NVIDIA_TF32_OVERRIDE XLA_PYTHON_CLIENT_MEM_FRACTION XLA_FLAGS
-export XLA_PYTHON_CLIENT_PREALLOCATE=false OMP_NUM_THREADS=1 WANDB_MODE=disabled MUJOCO_GL=disable
-export EXP12_JAX_CACHE_DIR="$OUT/jax_cache"
-python -c "import jax; d=jax.devices(); print(d); assert d[0].device_kind=='NVIDIA A100-SXM4-40GB'" | tee "$OUT/devices.txt"
-set +e
-python -m unittest -v tests.test_exp12_fork.ForkEndToEndTest tests.test_exp12_fork.KillMatrixTest \
-  tests.test_exp12_foundations.KillAndResumeEntryPointTest > "$OUT/tests.log" 2>&1; t=$?
-python scripts/sci_investigation/gpu_resume_probe.py --out "$OUT/resume_probe" --require-backend gpu > "$OUT/resume_probe.log" 2>&1; p=$?
-printf "tests\t%s\nresume_probe\t%s\n" "$t" "$p" | tee "$OUT/status.tsv"
-exit $(( t || p ))
-EOF
-```
-**Return:**
-- `logs/a100_exp1_gate_<jobid>/` containing `status.tsv`, `tests.log`, `resume_probe/gpu_resume_probe.json`,
-  `resume_probe.log` and `devices.txt`;
-- `logs/exp12_a100_exp1_gate_<jobid>.out`.
+## Reviewed first A100 gate (not authorized for execution)
 
-**Gate decision:**
-- both statuses 0: the historical A100 red is closed and GPU resume is qualified at this scale;
-- any test failure: send `tests.log` before the pilot;
-- probe status 1 (`RESUME_DEFECT`): engineering defect for Codex; diagnose from the `differences` component names and
-  the kept run directories;
-- probe status 2 (`NONDETERMINISTIC_BACKEND`): a finding for the research owner, not a code fix. The pilot can still
-  run, but resume and Exp2 identity expectations change;
-- probe status 3 (`INCOMPLETE`): fix the environment (for example the child backend) and rerun; it is not evidence
-  either way.
+The original PR proposed a one-hour/16-CPU/64GB job running the whole relevant
+suite plus the eight-child probe. That allocation is **not approved**. Use
+[exp1_a100_minimal_gate.md](exp1_a100_minimal_gate.md), `STAGE=gpu_resume_95`,
+with the final delivered integration SHA: oneA100/fourCPUs/32GB/seven minutes,
+300-second total workload limit. Completion within that cap is unmeasured.
+The explicit crash95 subset includes two references, a crash, and a relaunch;
+it does not claim all three scenarios or D4W1536-scale qualification.
 
-This is a tiny-scale qualification (1×8 networks, 300 interaction steps). It does not cover D4W1536-sized states
-at production scale or exp2_arm/fork-state resume; those remain in the final-source CUDA
-qualification listed in `EXPERIMENT_STATUS.md`.
+Codex review corrected diagnostic-only gaps in the original head4afc772:
+actual trained/saved/restored parameter placement is observed, restore path and
+counters are checked, missing/unreadable state is INCOMPLETE, all declared
+scenarios and both comparisons are required, and child logs/provenance are
+streamed/persisted before completion. Step5 starts fresh (no checkpoint); steps60
+and95 must demonstrably restore a trained step60 checkpoint. Copies retain the
+crash checkpoint when later saves replace it. Production code is unchanged.
+
+The verdict names are retained for compatibility, not as causal findings.
+`NONDETERMINISTIC_BACKEND` establishes only a difference between two references;
+CUDA, initialization, environment or harness causes remain unproven.
+`RESUME_DEFECT` indicates an error/mismatch conditional on those two references
+agreeing, not an independently established save/restore root cause. Two samples
+do not establish backend determinism. Missing/corrupt evidence and fallback must
+not qualify. Any changed scientific interpretation requires owner approval.
+
+The old paragraph suggesting that a different resumed trajectory is valid
+merely because references differ is withdrawn: it cannot authorize relaxing
+approved exact equality. Tiny-scale PASS is not full-width or Exp2 qualification.
 
 ## For Codex
 No source correction is needed for these failures. One suggestion only: the kill tests' docstrings claim
