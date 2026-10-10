@@ -1,5 +1,31 @@
 # Shared agent handoff
 
+## Isolated launch-readiness task (2026-10-10)
+
+Owner: Codex. Approved task base is844e3c0cc24998b25c3d1e667bcbfe056b1b336c;
+branch `codex/exp12-launch-readiness`. Integration remains untouched. New full-width
+qualification and guarded launch preparation are described in
+[exp12_full_grid_readiness.md](exp12_full_grid_readiness.md); null count memo in
+[exp12_null_threshold_decision.md](exp12_null_threshold_decision.md).
+Resolve this task's enclosing final SHA from Git/the delivery. No source/scientific
+integration or job submission is implied. Claude's ongoing Exp3 review and the
+published Exp3 implementation branch are untouched. No current PR number is
+assumed from an unavailable GitHub API.
+
+Owner-reported GPU resume22783981 PASS and null replication22779974 count6/100
+are not independently verified without their new artifacts. The original
+13/100 and new6/100 both fail the unchanged empirical gate. Existing small
+resume evidence is not full-width qualification. Pending owner actions: provide
+raw new evidence; decide natural-zero-trigger dev disposition; authorize a staged
+full-width gate if desired; approve actual pilot allocation/role. Production
+requires the separate grid/scientific/Exp2 lists in the new report. Tests and
+publication verification are recorded in the delivery and validation report.
+
+[CPU validation receipt](exp12_launch_validation_report.md): fresh base suite
+620 passed/one optional skip (621 run), final focused51/51, mutation74/74,
+environment restoration65/65, all195 parent fingerprints unchanged. New GPU
+paths are prepared, not executed; no scientific gate is promoted.
+
 Branch: `integration/exp12`. This file establishes the shared protocol; it does
 not authorize scientific changes, main merges or Delta submissions.
 

@@ -1,5 +1,23 @@
 # Exp1/Exp2 scientific and validation status
 
+## Isolated readiness update, 2026-10-10
+
+No scientific status is promoted by the new `codex/exp12-launch-readiness` work.
+Approved integration remains844e3c0. The owner reports small A100 cross-process
+resume PASS at844e3c0 (job22783981) and independent D4W1024 null6/100 at9d6a82d
+(job22779974). New raw artifacts are not available here for independent audit.
+Both null samples13/100 and6/100 fail the existing≤5/100 criterion; threshold0
+and every scientific setting remain unchanged. Full-width qualification and
+guarded parent/pilot preparation are implemented, not GPU-qualified. Read
+[exp12_full_grid_readiness.md](exp12_full_grid_readiness.md) for separate pilot,
+Exp1-grid and Exp2 NO-GO lists and
+[exp12_null_threshold_decision.md](exp12_null_threshold_decision.md) for the owner
+decision. All earlier evidence tables below retain their historical scope.
+
+The [readiness CPU receipt](exp12_launch_validation_report.md) records620 broad
+passes/one optional skip,51 focused passes,74 mutation checks and65 restoration
+cells. Production settings and all195 parent fingerprints remain unchanged.
+
 This is a status index, not a methodology amendment. Read the canonical
 [methodology and amendments](../.claude/methodology-exp1-exp2.md) and the
 [approved decisions](exp12_decisions.md). Historical reports retain their original
