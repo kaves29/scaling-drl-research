@@ -24,6 +24,10 @@ def difference(a, b):
     a, b = np.asarray(a, np.float64), np.asarray(b, np.float64)
     if a.shape != b.shape:
         raise ValueError("compared measurements have different shapes")
+    if a.size == 0:
+        # Nothing was compared (e.g. every synthetic draw saturated): never report a match.
+        return {"max_abs": None, "max_rel": None, "nonfinite": False, "bitwise_equal": None,
+                "not_measured": "no elements to compare"}
     if not (np.isfinite(a).all() and np.isfinite(b).all()):
         return {"max_abs": None, "max_rel": None, "nonfinite": True, "bitwise_equal": False}
     d = np.abs(a - b)

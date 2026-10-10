@@ -201,6 +201,7 @@ The new tests cover:
 | C1 mutation (guard removed), real-entry-point test | the test fails, as intended |
 | Harness self-checks (`tests/test_exp3_gpu_harness.py`) | 6/6 OK |
 | Full Exp3 suite (Codex's 39 + review 13 + capture 6 + harness 6) | **64/64 OK**, 814 s (log SHA-256 `f557c7f2…e8c77e`) |
+| Harness CPU dry run at `9dec0b8` (dog-run D4W1536, 8 synthetic states, exactness at `highest`) | `CPU_DRY_RUN_EXACTNESS_PASS` (exit 3 by design): 25 exactness tests, 0 failures/skips, 541 s on CPU; repeat bitwise at both precisions. The synthetic target oracle had 0 unsaturated rows yet reported 0.0, so empty comparisons now report `not_measured`. On the A100, both precisions will not fit the 300 s envelope unless much faster than CPU: **runtime budget is an owner decision** |
 
 ## Minimum GPU validation before any execution (not submitted)
 1. **Harness repair (done in round 2, `scripts/exp3_gpu_validation.py`):**

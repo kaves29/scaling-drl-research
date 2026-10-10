@@ -34,6 +34,9 @@ class MeasurementTest(unittest.TestCase):
         self.assertTrue(gpu_checks.difference([np.nan], [0.0])["nonfinite"])
         with self.assertRaises(ValueError):
             gpu_checks.difference([1.0], [1.0, 2.0])
+        empty = gpu_checks.difference([], [])
+        self.assertIsNone(empty["bitwise_equal"])
+        self.assertIn("not_measured", empty)
 
     def test_oracle_measurements_are_finite_and_small_on_cpu_fp32(self):
         with jax.default_matmul_precision("highest"):
