@@ -1,5 +1,8 @@
 # Exp3 decisions requiring owner approval (2026-10-10)
 
+> **Superseded (2026-10-10):** the S1–S9 table below predates the recovered original request. See
+> [exp3_methodology_reconciled.md](exp3_methodology_reconciled.md) for the reconciled requirements and decisions.
+
 Recommendations only; nothing here is adopted. "Changes methodology?" asks whether choosing the option would amend
 an approved rule, as opposed to filling an explicitly open Exp3 choice. Because the approved Exp3 specification
 text is not in the repository (S9), every "No" for an Exp3 choice is provisional until that text can be cited.

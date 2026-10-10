@@ -90,16 +90,31 @@ def retain_state(state_dir, root, step, replay):
     hashes = {str(f): digest(state_dir / f) for f in files}
     if target.exists():
         existing = json.loads((target / SNAPSHOT).read_text())
-        if existing["files"] != hashes or existing["replay"] != (
-            "retained" if replay == "retain" else "omitted"
-        ):
-            conflict = root / f"CONFLICT_{target.name}_{uuid.uuid4().hex}.json"
-            conflict.write_text(
-                json.dumps(
-                    {"step": step, "source_state": str(state_dir), "files": hashes},
-                    indent=1,
-                )
+        mode = "retained" if replay == "retain" else "omitted"
+        if existing["files"] == hashes and existing["replay"] == mode:
+            return target
+        # A resumed source can legitimately re-save the same step (e.g. a death
+        # between its final save and DONE). Orbax/pickle bytes are not reproducible
+        # across saves, so compare the logical state bitwise before declaring a
+        # conflict; identical state is recorded, never silently replaced.
+        differences = (
+            ["replay mode"]
+            if existing["replay"] != mode
+            else logical_differences(target, state_dir, replay)
+        )
+        kind = "CONFLICT" if differences else "EQUIVALENT"
+        record = root / f"{kind}_{target.name}_{uuid.uuid4().hex}.json"
+        record.write_text(
+            json.dumps(
+                {
+                    "step": step,
+                    "source_state": str(state_dir),
+                    "files": hashes,
+                    "logical_differences": differences,
+                },
+                indent=1,
             )
+        )
         return target
     obs_dim, act_dim = replay_dimensions(state_dir)
     temporary = root / f".{target.name}.{uuid.uuid4().hex}.pending"
@@ -135,6 +150,56 @@ def retain_state(state_dir, root, step, replay):
         if temporary.exists():
             shutil.rmtree(temporary)
     return target
+
+
+def logical_differences(snapshot, state_dir, replay):
+    """Bitwise differences between a retained snapshot and a source state, using the
+    existing exact comparator (shape, dtype and bytes; wandb_run_id ignored as in
+    state_differences). Replay files are compared only when they were retained."""
+    import pickle
+
+    from experiments.exp12.state import (
+        _deep_equal,
+        _leaves,
+        bitwise_equal,
+        load_agent_tree,
+        state_differences,
+    )
+
+    if replay == "retain":
+        return state_differences(snapshot, state_dir)
+    import jax
+
+    diffs = []
+    tree_a, tree_b = load_agent_tree(snapshot), load_agent_tree(state_dir)
+    if jax.tree_util.tree_structure(tree_a) != jax.tree_util.tree_structure(tree_b):
+        diffs.append("agent:structure")
+    leaves_a, leaves_b = dict(_leaves(tree_a)), dict(_leaves(tree_b))
+    for path in sorted(leaves_a.keys() & leaves_b.keys(), key=str):
+        if not bitwise_equal(leaves_a[path], leaves_b[path]):
+            diffs.append("agent:" + "/".join(str(p) for p in path))
+    loaded = {}
+    for name in ("obs_rms.pkl", "meta.pkl"):
+        with open(Path(snapshot) / name, "rb") as a, open(Path(state_dir) / name, "rb") as b:
+            loaded[name] = (pickle.load(a), pickle.load(b))
+    rms_a, rms_b = loaded["obs_rms.pkl"]
+    for k in sorted(rms_a.keys() | rms_b.keys()):
+        if k not in rms_a or k not in rms_b or not bitwise_equal(rms_a[k], rms_b[k]):
+            diffs.append(f"obs_rms:{k}")
+    meta_a, meta_b = loaded["meta.pkl"]
+    for k in sorted(meta_a.keys() | meta_b.keys()):
+        if k == "wandb_run_id":
+            continue
+        if (
+            k not in meta_a
+            or k not in meta_b
+            or (
+                pickle.dumps(meta_a[k]) != pickle.dumps(meta_b[k])
+                and not _deep_equal(meta_a[k], meta_b[k])
+            )
+        ):
+            diffs.append(f"meta:{k}")
+    return diffs
 
 
 def read_snapshot(state_dir):
