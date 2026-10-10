@@ -26,8 +26,10 @@ production entry points or authorization to adopt exploratory criteria.
 
 The authoritative equations, evaluation details and amendments remain in the
 linked specifications and production configs; this summary does not replace them.
-All configurations, production source and scientific authority files are byte-
-unchanged from recovered dcb7491 in this integration.
+All scientific configurations, SAC/training/probe/statistical implementation and
+authority files remain byte-unchanged from recovered dcb7491. The reviewed
+precision-module exception changes persistent-cache I/O publication only; it does
+not change any precision setting or compiled payload.
 
 ## Evidence and validation
 
@@ -73,11 +75,37 @@ production launch BLOCKED; final-source GPU/scientific qualification UNVERIFIED.
 job submission, scientific change, resource increase, or main merge is authorized
 by this document.
 
-## Later remote work outside this validated baseline
+## Current cache/report integration and next development gate
 
-The final refresh observed scientific handoff `cb33733aee96e882b10417316227a64bf732f38d`,
-pilot-readiness branch `3734215e7c546e53871a7da87d6871b627bafbbe`, and atomic-cache
-correction branch `d23191befd1d6a3254c61ac1edbad363b9b744e5`. These are not integrated
-or covered by this baseline's CPU results. See AGENT_HANDOFF.md for ownership and
-review actions. No pilot command, new resource estimate or cache change is adopted
-by this publication.
+The pinned scientific handoff cb33733, pilot report3734215 and atomic cache patch
+d23191b are now reviewed and incorporated with original history. Cache follow-ups
+are engineering-only. The executable/test checkpoint is
+`813de566c4b169961fd4ec6a13063ac0ffa809d5`; resolve its enclosing published
+integration HEAD as described in AGENT_HANDOFF.md. Final edits are documentation.
+The newer pilot tip2879b644 is outside this authorization and remains unmerged.
+
+Fresh focused CPU coverage:74 passes/1 optional eviction skip out of75 tests;
+25/25 fork/kill/resume/identity methods;56/56 methodology/config/analysis methods;
+74 mutations (final deterministic cache oracle also checked independently);
+65/65 canonical simulator restoration;195/195 exact resolved config matches.
+Strict checkpoint-state restore checks passed3/3; intentional diagnostic metric
+NaNs remain governed by the unchanged metric behavior. The final cache module
+and CPU-adapted command harness passed7/8 with the same optional filelock skip.
+The earlier613-test full suite is historical baseline evidence, not a newly run
+full suite for this cache revision. See AGENT_HANDOFF.md for scope and receipts.
+
+[exp1_a100_minimal_gate.md](exp1_a100_minimal_gate.md) prepares cache, restore,
+in-process exact Check1/identity and pilot-size dog-run/D4W1536/seed102 smoke
+checks, keeping one A100/four CPUs/32GB/seven minutes and the300-second workload
+cap. None has run on CUDA at this revision. The historical kill tests force CPU
+training subprocesses; an A100 rerun must not be called GPU resume qualification.
+Full-width cold/warm identity and actual GPU cross-process restart remain gaps.
+
+After those gates pass, the proposed full-length **development** pilot can be
+considered for an explicitly approved allocation/execution. Its existing full
+scientific settings and natural trigger remain unchanged. The eight-hour pilot
+report allocation is a proposal, not an authorization. A seven-minute diagnostic
+cannot run the full parent. Require genuine GPU resume evidence first if restart
+qualification is a launch prerequisite. This is not clearance for the195-parent
+campaign or Exp2, and no m, numerical bound, statistical alternative or failure
+disposition is selected. No jobs were submitted or resources changed.

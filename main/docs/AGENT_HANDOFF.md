@@ -5,9 +5,10 @@ not authorize scientific changes, main merges or Delta submissions.
 
 ## Exact source checkpoint and live integration HEAD
 
-The integrated executable tree is pinned at
-`53cc476b16bb7707484c7c049d2e77c0600568e2` (scientific-history merge plus the three
-historical diagnostic files). Final shared-instructions/status commits are
+The current integrated executable/test tree is pinned at
+`813de566c4b169961fd4ec6a13063ac0ffa809d5` (reviewed pinned Claude reports plus atomic cache fix and
+engineering review follow-ups). The previous executable checkpoint was
+`53cc476b16bb7707484c7c049d2e77c0600568e2`. Final handoff/gate/status edits are
 documentation only. Resolve the exact published integration HEAD with:
 
 ```bash
@@ -41,35 +42,70 @@ HEAD claim. Update the approved base when a subsequent integration is authorized
 | Owner | Task | State / next action |
 |---|---|---|
 | Codex | Establish integration, preserve diagnostics, publish shared protocol | Complete integration and CPU verification; publication is authorized after these checks. Exact live remote verification is supplied in the delivery report. |
-| Codex | Engineering/runtime/infrastructure/integration | No other active task branch declared; start future work from approved integration HEAD. |
+| Codex | Engineering/runtime/infrastructure/integration | Pinned handoff/cache/pilot review branches are listed below; start future work from the exact published integration HEAD in the delivery report. |
 | Claude | Scientific investigation and validation | Original analysis now included. Start a new isolated task branch from integration; investigate remaining gates without adopting alternatives. |
 | Research owner | Scientific and deployment decisions | Review blockers in EXPERIMENT_STATUS.md; authorize any follow-up experiments or changed staging. |
 
-The current GitHub public PR page was rechecked during integration: zero open
-and zero closed PRs.
+At the previous2d baseline publication, the public PR page showed zero open
+and zero closed PRs; this remains a historical snapshot, not a current API result.
 No PR is created by this branch-establishment task. Recheck GitHub before claiming
 that another agent has no active work; inventory is a snapshot, not a lock service.
 Repository protection/CI settings and collaborator permissions are unverified.
 
-## Concurrent remote work awaiting review
+## Pinned remote work now reviewed
 
-The final live-ref check found new work published while the CPU suite ran.
-The authorized scientific merge remains pinned to **8a888ef998dd2055d43faea26b78e8f555d00bc6**;
-none of these later changes is silently included or covered by the613-test receipt.
-The GitHub PR page was rechecked: zero open/closed PRs.
+The owner authorized these exact pins after publication of baseline2d007663.
+Separate review branches preserve the original non-squashed history; their
+sequential integration includes only the reviewed changes. GitHub CLI/API
+credentials are unavailable (`gh auth status`: invalid injected GH_TOKEN); native
+Git fetch/push works. The user explicitly allowed review branches instead of PRs.
+No PR numbers/links are invented. These are the reviewed branch checkpoints:
 
-| Owner / branch | Exact observed tip | Scope / next action |
+| Review branch | Exact reviewed tip | Scope |
 |---|---|---|
-| Claude: claude/scientific-validation-investigation | `cb33733aee96e882b10417316227a64bf732f38d` | One later scientific-handoff documentation commit above the authorized8a tip; review separately. |
-| Claude: claude/exp1-pilot-readiness | `3734215e7c546e53871a7da87d6871b627bafbbe` | Pilot-readiness documentation atop scientific work; review proposed experiments/resources with owner before any execution. |
-| Claude: claude/precision-cache-fix | `d23191befd1d6a3254c61ac1edbad363b9b744e5` | Atomic persistent-cache write correction, with precision-module and test/harness changes; Codex engineering review and separate regression validation required. Not integrated. |
+| codex/review-exp12-scientific-handoff | `5365e43077631b09d62933eb130762790f283588` | Merge of cb33733; one historical handoff document. |
+| codex/review-exp12-pilot-report | `dc8fc37b1463b976dd24e45e4fe20da099ba2dcf` | Merge of pinned3734215 atop the accepted handoff; one pilot report. |
+| codex/review-exp12-atomic-cache | `813de566c4b169961fd4ec6a13063ac0ffa809d5` | Merge of d23191b; two review follow-ups preserve empty-key errors, clean failed publications, strengthen bytes/concurrency coverage and make the mutation oracle deterministic. |
 
-Publication proves the work exists, not that an agent session is currently active
-or that these changes are approved. Do not edit these branches directly. Their
-next handoff should be PRs to integration after synchronizing with its approved
-HEAD. Current-task approval does not authorize additional production changes or
-pilot submissions. `claude/jolly-keller-lwr6xi` and `delta-fixes` remain
-INVESTIGATE and untouched; the two new task branches also await full classification.
+No scientific proposal or resource request in either historical report is adopted.
+The pilot branch advanced to `2879b64499490e93bc6374465a6b7b2bcbd2724e` after the
+pinned373 revision; its failure-analysis document and GPU-resume probe are not
+included. They require a separate review. `claude/jolly-keller-lwr6xi` and
+`delta-fixes` remain INVESTIGATE and untouched. No further broad cleanup is active.
+
+Current engineering receipts (source/cache production at27da3eb, with the final
+813de56 test-only oracle additionally checked; final shared documents do not alter
+execution):
+
+| Check | Result |
+|---|---|
+| Focused cache/runtime/launcher/comparator/checkpoint/orchestration suite | 75 tests:74 pass,1 optional filelock/eviction skip; exit0 |
+| Full relevant fork/kill/resume/identity classes | 25/25 pass; exit0, including all kill subtests |
+| Methodology/manifest/hardware/isolated null-follow-up suite | 56/56 pass; exit0 |
+| Mutations | 74/74 pass; final deterministic cache oracle also independently rejects mutant and passes restored implementation |
+| Final cache module | 8 tests:7 pass,1 optional eviction skip; exit0 |
+| Strict checkpoint-state restore command helper | 3/3 pass; existing intentional diagnostic-NaN metric behavior preserved |
+| Canonical simulator restoration | 65/65 pass, including actual H1 reach/run |
+| Resolved configs against untouched2d baseline | 195/195 exact fingerprint matches |
+| Independent methodology census | 195 parents,39 cells,130 scaled eligibility candidates; exit0 |
+| Mock-CUDA controls | Both reported startup cases pass on untouched baseline and candidate in this pinned environment; reported failures not reproduced here |
+| Prepared A100 command harness | Bash/Python syntax checked; CPU-only adapted cache execution exits0 and retains valid JSON; CUDA assertions were not executed |
+
+An initial test command named a nonexistent `test_exp12_production_config` module;
+the corrected56-test invocation passed. Draft command checks also caught stdin
+multiprocessing and skipped-TestCase JSON serialization defects; the delivered
+file-based guarded harness corrects both. An overbroad draft exact comparator
+rejected intentional unscheduled `actor_grad_cosine` NaNs in metrics; the scoped
+state comparator passes while retaining the existing metric oracle. These were
+validation-command defects, not production regressions or relaxed scientific
+rules. Raw attempts/receipts remain outside Git at
+`/workspace/scratch/exp12-pilot-integration/review/`.
+
+Next A100 stages, exact checkout/setup/log-preservation commands, coverage limits
+and acceptance criteria are in [exp1_a100_minimal_gate.md](exp1_a100_minimal_gate.md).
+No Delta access, GPU run or submission occurred. Codex owns next engineering
+review; the owner must authorize execution and the full-length pilot allocation.
+Claude owns scientific gate disposition and any new investigation branch.
 
 ## Claude synchronization
 
@@ -150,7 +186,8 @@ and a fresh external `--out-dir`; this does not request CUDA or submit a job.
 
 ## Remaining handoff blockers
 
-Production scientific qualification remains blocked by fresh-null, hopper range,
+The pinned cache/report work is now incorporated; A100 qualification of the final
+source remains pending. Production scientific qualification remains blocked by fresh-null, hopper range,
 positive-control/m and final-source CUDA coverage. D4W1536 identity_warm is held
 under the existing 300-second internal timeout/seven-minute Slurm allocation;
 changing staging or budgets requires owner approval. No current CPU result grants
