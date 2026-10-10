@@ -79,7 +79,7 @@ by this document.
 
 The pinned scientific handoff cb33733, pilot report3734215 and atomic cache patch
 d23191b are now reviewed and incorporated with original history. Cache follow-ups
-are engineering-only. The executable/test checkpoint is
+are engineering-only. That cache-review executable/test checkpoint is
 `813de566c4b169961fd4ec6a13063ac0ffa809d5`; resolve its enclosing published
 integration HEAD as described in AGENT_HANDOFF.md. Final edits are documentation.
 PR #1 at4afc772d is now separately authorized/reviewed, with original history
