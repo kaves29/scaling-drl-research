@@ -51,6 +51,26 @@ No PR is created by this branch-establishment task. Recheck GitHub before claimi
 that another agent has no active work; inventory is a snapshot, not a lock service.
 Repository protection/CI settings and collaborator permissions are unverified.
 
+## Concurrent remote work awaiting review
+
+The final live-ref check found new work published while the CPU suite ran.
+The authorized scientific merge remains pinned to **8a888ef998dd2055d43faea26b78e8f555d00bc6**;
+none of these later changes is silently included or covered by the613-test receipt.
+The GitHub PR page was rechecked: zero open/closed PRs.
+
+| Owner / branch | Exact observed tip | Scope / next action |
+|---|---|---|
+| Claude: claude/scientific-validation-investigation | `cb33733aee96e882b10417316227a64bf732f38d` | One later scientific-handoff documentation commit above the authorized8a tip; review separately. |
+| Claude: claude/exp1-pilot-readiness | `3734215e7c546e53871a7da87d6871b627bafbbe` | Pilot-readiness documentation atop scientific work; review proposed experiments/resources with owner before any execution. |
+| Claude: claude/precision-cache-fix | `d23191befd1d6a3254c61ac1edbad363b9b744e5` | Atomic persistent-cache write correction, with precision-module and test/harness changes; Codex engineering review and separate regression validation required. Not integrated. |
+
+Publication proves the work exists, not that an agent session is currently active
+or that these changes are approved. Do not edit these branches directly. Their
+next handoff should be PRs to integration after synchronizing with its approved
+HEAD. Current-task approval does not authorize additional production changes or
+pilot submissions. `claude/jolly-keller-lwr6xi` and `delta-fixes` remain
+INVESTIGATE and untouched; the two new task branches also await full classification.
+
 ## Claude synchronization
 
 From a clean normal checkout (do not switch another active agent's checkout):

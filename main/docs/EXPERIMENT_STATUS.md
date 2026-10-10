@@ -72,3 +72,12 @@ Status: **engineering integration CPU-validated and READY for shared development
 production launch BLOCKED; final-source GPU/scientific qualification UNVERIFIED.** No Delta access,
 job submission, scientific change, resource increase, or main merge is authorized
 by this document.
+
+## Later remote work outside this validated baseline
+
+The final refresh observed scientific handoff `cb33733aee96e882b10417316227a64bf732f38d`,
+pilot-readiness branch `3734215e7c546e53871a7da87d6871b627bafbbe`, and atomic-cache
+correction branch `d23191befd1d6a3254c61ac1edbad363b9b744e5`. These are not integrated
+or covered by this baseline's CPU results. See AGENT_HANDOFF.md for ownership and
+review actions. No pilot command, new resource estimate or cache change is adopted
+by this publication.
