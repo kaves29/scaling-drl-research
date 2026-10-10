@@ -172,8 +172,58 @@ class PassiveReviewTest(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "injection differs"):
                 make_passive({**spec, **change}, reader, source="i")
 
-    def test_fork_time_pilot1_needs_an_injected_artifact_that_exp2_never_saves(self):
-        """require_matched demands injection provenance in a saved I checkpoint at the same step as U."""
+    def test_recorder_resumes_after_a_crash_between_checkpoints(self):
+        """A crash after stream chunks were published past the last routine save must not strand the
+        stream ahead of the restored checkpoint (production jobs resume across Slurm segments)."""
+        import json
+        import shutil
+        import tempfile
+        from pathlib import Path
+
+        from experiments.exp12.state import state_differences
+        from experiments.exp12.trainer import Exp12Trainer
+        from experiments.exp3.recording import record_exp2_scope
+        from tests.exp12_helpers import compose, tiny_overrides
+
+        cfg = compose(tiny_overrides(steps=40, extra=["run_role=dev", "diagnostics.kl_reference_size=4",
+                                                      "actor_grad_cosine_every=10000"]))
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            t = Exp12Trainer(cfg, str(root / "source"))
+            t.run_dir.mkdir()
+            shutil.copyfile(self.metadata, t.run_dir / "run_metadata.json")
+            froot = t.run_dir / "fork/state"
+            froot.mkdir(parents=True)
+            shutil.copytree(self.fstate, froot / self.fstate.name)
+            (froot / "LATEST").write_text(self.fstate.name)
+            try:
+                t.restore(self.fstate)
+                t.extra_state["fork"] = {"fork_step": 20,
+                                         "run_key": json.loads(self.metadata.read_text())["identity"]["run_key"]}
+
+                def save_then_crash(trainer):
+                    if trainer.interaction_step == 22:
+                        trainer.save(trainer.run_dir / "state")
+                    if trainer.interaction_step == 23:
+                        raise RuntimeError("simulated timeout between checkpoints")
+
+                with self.assertRaisesRegex(RuntimeError, "simulated timeout"):
+                    with record_exp2_scope(root / "stream", 1):  # chunk_size 1: publish eagerly
+                        t.train(24, after_step=save_then_crash)
+                from experiments.exp12.state import latest_state_dir
+                t.restore(latest_state_dir(t.run_dir / "state"))
+                with record_exp2_scope(root / "stream", 1, resume=True):
+                    t.train(24)
+                self.assertEqual([r["step"] for r in StreamReader(root / "stream")], [21, 22, 23, 24])
+                self.assertEqual(state_differences(t.save(root / "final"), self.ustate), [])
+            finally:
+                t.close()
+
+    def test_fork_time_pilot1_needs_an_injected_fork_step_artifact_that_exp2_does_not_retain(self):
+        """require_matched demands injection provenance in a saved I checkpoint at the same step as U.
+
+        exp2_arm does write a post-injection save at the fork step, but the next routine save deletes
+        it; retention (tests.test_exp3_capture) keeps it."""
         f = Artifact(**self.fork)
         with self.assertRaisesRegex(ValueError, "injection provenance"):
             require_matched(Artifact(**self.fork), Artifact(**self.fork), f)

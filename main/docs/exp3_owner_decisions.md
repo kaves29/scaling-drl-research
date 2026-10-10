@@ -1,0 +1,41 @@
+# Exp3 decisions requiring owner approval (2026-10-10)
+
+Recommendations only; nothing here is adopted. "Changes methodology?" asks whether choosing the option would amend
+an approved rule, as opposed to filling an explicitly open Exp3 choice. Because the approved Exp3 specification
+text is not in the repository (S9), every "No" for an Exp3 choice is provisional until that text can be cited.
+
+## S1–S9
+
+| # | Issue | Recommended option | Causal justification | Alternatives | Changes methodology? |
+|---|---|---|---|---|---|
+| S1 | Passive learners do not reproduce the source's actor-sampling key stream | **Capture the source key per arrival (done, 8 B) and run passive learners with the source key at each arrival, as a protocol variant used as a positive control.** Keep the current independent-key protocol as the primary passive design unless the spec says otherwise. | The causal contrast is passive U vs passive I: same arrivals, same keys, differing only in the injected critic. Isolation is proven bit-exact on CPU. Feeding source keys makes passive U a bit-exact replica of the active control (shown on the real Exp1 entry point), so any passive-vs-active gap is attributable to experience control, not to SAC noise. | (a) independent keys only: valid contrast, no replica check; (b) source keys as the primary design: maximal fidelity for U, but the I learner then uses U's noise sequence, which is still matched between passive arms. | No for the variant (diagnostic). Yes, a protocol choice, if (b) becomes primary. |
+| S2 | Exp3 measurements run in TF32 on the A100 | **Compute Exp3 measurements (Pilot 1 gradients, cosines, norms, Q, dQ/da; Pilot 3 final-panel guidance) at "highest" (FP32), and keep training and fitting updates at the production precision.** Decide after the harness reports measured TF32-vs-FP32 sensitivity. | A measurement instrument should not add precision noise of its own to small or near-orthogonal per-state signals. Exp12 already uses FP32 for Check 1 and the policy diagnostics, so this extends an existing principle to new measurements. | (a) TF32 everywhere: matches training numerics, adds measurement noise of unknown size; (b) FP32 everywhere, including Pilot 3 fits: diverges from production updates. | Yes (a precision rule for Exp3 measurements); consistent with the existing FP32 diagnostics policy. |
+| S3 | Pilot 1 also measures the fork actor against post-fork critics; Pilot 3 final guidance uses only the fork actor | **Spec decides.** Recommend: Pilot 1 keeps actors U and I as primary and labels `f` a secondary reference. Pilot 3 measures final guidance on the fork actor (common reference) and also on actors U and I. | Guidance is a property of the (actor, critic) pair. Comparing critics on a common actor isolates the critic difference; on each arm's own actor it measures the realised guidance. Both are informative but answer different questions. | Fork actor only (pure critic contrast); own actors only (realised guidance). | Depends on the spec wording. |
+| S4 | Pilot 1 outcomes after one AdamW step are not informative | **Keep the one-step outcomes as descriptive only, and do not add a longer horizon to Pilot 1.** Pilot 2 already provides the multi-step consequence of guidance under controlled experience. | One step at lr 1e-4 changes the policy imperceptibly, so returns differences would be noise. A longer intervention horizon would turn Pilot 1 into a new training experiment with its own confounds. | A k-step guided continuation (new design, new budget). | No (if kept descriptive); yes, if a horizon is added. |
+| S5 | Pilot 1 fork-time Check 1 uses a new panel; Pilot 2's Check 1 control argument is trivial | **Use the approved `fork/panel.npz` and the saved `check1_after.npz` from the actual injected arm.** Require Pilot 1's injected-at-fork state to reproduce the arm's recorded Check 1 values bitwise. | Ties every Exp3 I-at-fork state to the exact Exp2 injection that generated the I data, with the approved panel and rule. | Keep Codex's fresh-panel check (weaker provenance). | No: it applies the existing Check 1 rule and panel. |
+| S6 | Injection inputs: m not frozen; `injection_seed` free | **Bind Pilot 2's `injection_m` to the lead-frozen m and `injection_seed` to the cell's `cfg.seed` (the Exp2 convention), and block Pilot 2 until m is frozen.** Stage B is already enforced against the I stream (C1). | Passive I must start from the same injected critic as the Exp2 I arm whose consequences are being decomposed; otherwise passive I and active I are different interventions. | A distinct m (a sensitivity analysis, explicitly labelled). | No: it reuses existing Exp2 choices, but **m itself is an open Exp2 decision**. |
+| S7a | Pilot 1 noise draw depends on `chunk_size` | **Fix `chunk_size` in the approved protocol and record it.** Optionally switch to per-state keys (`fold_in(key, state_index)`), making results chunk-invariant. | A memory knob should not change the measured quantity. Per-state keys remove that coupling without changing the estimator. | Keep chunk-dependent draws, fixed per protocol. | No (noise-key bookkeeping); the per-state key option is a small engineering change, not yet made. |
+| S7b | Pilot 3 trains post-fork critics on fork-replay batches | **Spec decides.** Recommend fork replay (common data for both learners) as primary. | Common batches isolate the target-policy effect; each arm's own replay would confound the target policy with the data distribution. | Arm-specific post-fork replay, which requires retaining replay in snapshots (≈ +10 GB per dog-run cell). | Depends on the spec. |
+| S7c | Manifest cells carry no architecture | **State explicitly which scaled parent(s) each cell uses** (D4W1024, D4W1536 or both). | Each (env, seed) has two independent scaled parents with different forks; mixing them silently confounds width with cell. | — | No (an open Exp3 choice). |
+| S7d | MyoSuite pair unselected (4 candidates) | **Select the pair before Exp1 scaled parents of those tasks run**, so that capture (or its absence) is planned per task. | Determines which Exp1 parents must be recorded (capture plan §5). | — | No (an open Exp3 choice). |
+| S8 | Pilot 3 log density from the retained latent, not production's `log_prob(sample)` | **Keep Codex's latent-based density.** It equals production on unsaturated draws (test) and avoids artificial non-finite values at saturation. | A target that fails only because of an inverse-tanh round trip would bias the sample toward unsaturated states. | Literal production formula (can produce NaN/inf at saturated actions). | No (an engineering-level identity, documented). |
+| S9 | Approved Exp3 spec not in the repository | **Commit the approved Pilot 1–3 specification to `main/.claude/` before execution.** | Reviews, qualification and receipts must cite the authority they implement. | — | No (records an existing approval). |
+
+## Other decisions requiring approval (from the capture plan and review)
+
+1. **Capture scope:**
+   - which Exp1 scaled parents and Exp2 arms are designated Exp3 sources (tasks × seeds × architectures);
+   - whether to hold those parents until capture is GPU-validated (recommended), or run them unrecorded and accept
+     later U continuations.
+2. **Retention:**
+   - the window `until_step` (recommended: `arm_end_step`) and which offsets to keep (default: all five N/20 saves);
+   - replay `omit` (recommended; Pilots 1 and 3 do not use post-fork replay) vs `retain` (only needed if S7b chooses
+     arm-specific replay);
+   - storage allocation (about 135–420 GB for 20 cells, see the plan).
+3. **U stream length:** stop recording U at `arm_end` (recommended; Stage B cannot use later arrivals), or record
+   to `control_end`. This needs a small engineering option, not yet implemented.
+4. **Pilot 1 storage:** full per-state parameter gradients (about 8 GB per cell) or summaries only.
+5. **GPU validation:** authorization of the corrected harness run, and of one real-width cell afterwards. These
+   are owner choices: the precisions to run, the sensitivity task and architecture, and the synthetic state count.
+6. **Engineering review:** Codex's review of C1, C3, retention, lean snapshots, key capture and the harness before
+   integration. This branch is not to be merged without it.

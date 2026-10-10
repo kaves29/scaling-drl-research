@@ -22,6 +22,24 @@ FIELDS = (
     "truncated",
     "next_observation",
 )
+# Optional per-arrival captures, declared in provenance["captures"]. agent_key is the
+# source agent's JAX key when the transition is added (after this step's action
+# sample, before its updates): a read-only observation. A count of sample_actions
+# calls is deliberately NOT captured: post-fork evaluations call sample_actions under
+# an isolated, restored key (fork.post_fork_eval), so call counts do not describe
+# how the training key advanced.
+CAPTURES = {"agent_key": np.uint32}
+
+
+def declared_captures(provenance):
+    captures = provenance.get("captures", [])
+    if (
+        not isinstance(captures, list)
+        or len(set(captures)) != len(captures)
+        or not set(captures) <= set(CAPTURES)
+    ):
+        raise ValueError("invalid stream capture declaration")
+    return captures
 
 
 def write_json(path, value):
@@ -45,12 +63,18 @@ def atomic_pickle(path, value):
 class StreamWriter:
     """Single-writer atomic chunks; an incomplete prefix is never a complete source."""
 
-    def __init__(self, root, provenance, chunk_size, resume=False):
+    def __init__(self, root, provenance, chunk_size, resume=False, autoflush=True):
+        """autoflush=False publishes chunks only on explicit flush(): a source recorder
+        flushes at routine checkpoint saves, so the committed stream never runs ahead
+        of a restorable source state (pending memory is then bounded by the save
+        interval, not by chunk_size)."""
         if type(chunk_size) is not int or chunk_size <= 0:
             raise ValueError("stream chunk_size must be explicitly positive")
         self.root = Path(root).resolve()
         self.chunk_size = chunk_size
+        self.autoflush = autoflush
         self.pending = []
+        self.captures = declared_captures(provenance)
         if resume:
             reader = StreamReader(self.root, require_complete=False)
             if reader.manifest["provenance"] != provenance:
@@ -76,7 +100,10 @@ class StreamWriter:
     def _commit(self):
         write_json(self.root / "manifest.json", self.manifest)
 
-    def append(self, step, transition, updates, normalization):
+    def append(self, step, transition, updates, normalization, extras=None):
+        extras = {} if extras is None else extras
+        if set(extras) != set(self.captures):
+            raise ValueError("stream extras differ from declared captures")
         if self.manifest["complete"]:
             raise ValueError("sealed stream")
         expected = (
@@ -123,9 +150,13 @@ class StreamWriter:
                 "step": step,
                 "updates": updates,
                 "normalization": copy.deepcopy(normalization),
+                **{
+                    k: np.asarray(extras[k], dtype=CAPTURES[k]).copy()
+                    for k in self.captures
+                },
             }
         )
-        if len(self.pending) >= self.chunk_size:
+        if self.autoflush and len(self.pending) >= self.chunk_size:
             self.flush()
 
     def flush(self):
@@ -135,6 +166,13 @@ class StreamWriter:
         import uuid
 
         name = f"chunk_{len(self.manifest['chunks']):08d}_{uuid.uuid4().hex}.npz"
+        if not self.autoflush and len(self.pending) > self.chunk_size:
+            # Several chunks per save interval; all published together at the save.
+            pending, self.pending = self.pending, []
+            for start in range(0, len(pending), self.chunk_size):
+                self.pending = pending[start : start + self.chunk_size]
+                self.flush()
+            return
         values = {k: np.stack([r[k] for r in self.pending]) for k in FIELDS}
         values.update(
             {
@@ -146,6 +184,8 @@ class StreamWriter:
             values[f"rms_{k}"] = np.stack(
                 [np.asarray(r["normalization"][k]) for r in self.pending]
             )
+        for k in self.captures:
+            values[k] = np.stack([r[k] for r in self.pending])
         temp = self.root / (name + ".tmp")
         with open(temp, "xb") as f:
             np.savez(f, **values)
@@ -194,6 +234,7 @@ class StreamReader:
             or sum(c["count"] for c in m["chunks"]) != m["count"]
         ):
             raise ValueError("duplicated chunks or incorrect stream length")
+        self.captures = declared_captures(m["provenance"])
         self.fingerprint = digest(self.root / "manifest.json")
 
     def __iter__(self):
@@ -208,7 +249,7 @@ class StreamReader:
             ):
                 raise ValueError(f"stream path/checksum mismatch: {name}")
             with np.load(path, allow_pickle=False) as arrays:
-                fields = set(FIELDS) | {
+                fields = set(FIELDS) | set(self.captures) | {
                     "step",
                     "updates",
                     "rms_mean",
@@ -257,11 +298,16 @@ class StreamReader:
                         for k in ("terminated", "truncated")
                     ):
                         raise ValueError("invalid stream terminal mask")
+                    if any(
+                        arrays[k].dtype != CAPTURES[k] for k in self.captures
+                    ):
+                        raise ValueError("invalid stream capture dtype")
                     yield {
                         "step": int(step),
                         "updates": int(updates),
                         "transition": transition,
                         "normalization": norm,
+                        **{k: arrays[k][i].copy() for k in self.captures},
                     }
                     expected += 1
 
@@ -279,6 +325,10 @@ class RecordingBuffer:
     def add(self, transition):
         if self.pending is not None:
             raise RuntimeError("recording after_step hook was not called")
+        extras = {}
+        if "agent_key" in self.writer.captures:
+            sac = getattr(self.trainer.agent, "agent", self.trainer.agent)
+            extras["agent_key"] = np.asarray(sac._rng).copy()
         self.pending = (
             copy.deepcopy(transition),
             {
@@ -286,15 +336,20 @@ class RecordingBuffer:
                 for k in ("mean", "var", "count")
             },
             self.trainer.update_step,
+            extras,
         )
         self.buffer.add(transition)
 
     def after_step(self, trainer):
         if self.pending is None:
             raise RuntimeError("missing raw source arrival")
-        transition, norm, before = self.pending
+        transition, norm, before, extras = self.pending
         self.writer.append(
-            trainer.interaction_step, transition, trainer.update_step - before, norm
+            trainer.interaction_step,
+            transition,
+            trainer.update_step - before,
+            norm,
+            extras,
         )
         self.pending = None
 

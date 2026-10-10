@@ -791,7 +791,8 @@ class FixtureTest(unittest.TestCase):
 
                 def stop_at_checkpoint(trainer):
                     if trainer.interaction_step == 22:
-                        saved.append(trainer.save(root / "source_checkpoints"))
+                        # Routine root: the recorder publishes arrivals only with routine saves (C3).
+                        saved.append(trainer.save(trainer.run_dir / "state"))
                         raise RuntimeError("simulated source interruption")
 
                 with self.assertRaisesRegex(RuntimeError, "simulated source"):

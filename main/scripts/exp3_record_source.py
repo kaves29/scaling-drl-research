@@ -21,7 +21,20 @@ def main():
     parser.add_argument("--authorized-source-run", action="store_true", required=True)
     parser.add_argument("--benchmark", action="store_true")
     parser.add_argument("--resume-stream", action="store_true")
+    # Optional retention of the routine post-fork saves the source already makes
+    # (experiments/exp3/retention.py). All three or none; no defaults.
+    parser.add_argument("--retain-root")
+    parser.add_argument("--retain-until-step", type=int)
+    parser.add_argument("--retain-replay", choices=("retain", "omit"))
     opts = parser.parse_args()
+    given = [opts.retain_root, opts.retain_until_step, opts.retain_replay]
+    if any(v is not None for v in given) and not all(v is not None for v in given):
+        parser.error("--retain-root, --retain-until-step and --retain-replay go together")
+    retain = (
+        {"root": opts.retain_root, "until_step": opts.retain_until_step, "replay": opts.retain_replay}
+        if opts.retain_root is not None
+        else None
+    )
     from importlib import import_module
     from experiments.exp3.recording import record_exp2_scope
     from experiments.exp3.streams import Benchmark
@@ -32,6 +45,7 @@ def main():
         opts.chunk_size,
         Benchmark() if opts.benchmark else None,
         opts.resume_stream,
+        retain,
     ):
         import_module("experiments." + opts.experiment).run(args)
 

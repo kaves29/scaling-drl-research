@@ -59,13 +59,13 @@ def inspect_artifact(state, metadata):
     """Fail before construction for missing provenance or checkpoint components."""
     import orbax.checkpoint
 
+    from experiments.exp3.retention import read_snapshot
+
     state, metadata = Path(state).resolve(), Path(metadata).resolve()
-    required = (
-        "agent_ckpt",
-        "meta.pkl",
-        "buffer.npz",
-        "buffer_meta.pkl",
-        "obs_rms.pkl",
+    snapshot = read_snapshot(state)  # verified checksums; None for ordinary states
+    lean = snapshot is not None and snapshot["replay"] == "omitted"
+    required = ("agent_ckpt", "meta.pkl", "obs_rms.pkl") + (
+        () if lean else ("buffer.npz", "buffer_meta.pkl")
     )
     for name in required:
         if not (state / name).exists():
@@ -149,6 +149,13 @@ def inspect_artifact(state, metadata):
         rms["var"] < 0
     ):
         raise ValueError("invalid normalization shape/variance")
+    if lean:
+        # Replay deliberately omitted at retention; dimensions were read from the
+        # source state's replay headers when the snapshot was published.
+        obs_dim, act_dim = snapshot["observation_dim"], snapshot["action_dim"]
+        if np.asarray(rms["mean"]).shape not in ((obs_dim,), (1, obs_dim)):
+            raise ValueError("normalization/snapshot observation dimensions differ")
+        return info, meta, obs_dim, act_dim
     with zipfile.ZipFile(state / "buffer.npz") as archive:
         headers = {}
         for name in (
@@ -202,6 +209,8 @@ class Artifact:
         self.info, self.meta, obs_dim, act_dim = inspect_artifact(
             self.state, self.metadata
         )
+        if load_replay and not (self.state / "buffer.npz").exists():
+            raise ValueError("replay was omitted from this retained snapshot")
         self.cfg = OmegaConf.create(self.info["resolved_config"])
         obs = gym.spaces.Box(-np.inf, np.inf, (1, obs_dim), dtype=np.float32)
         act = gym.spaces.Box(-1, 1, (1, act_dim), dtype=np.float32)

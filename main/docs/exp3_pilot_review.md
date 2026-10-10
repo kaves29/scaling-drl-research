@@ -4,6 +4,12 @@ Reviewed: `codex/exp3-pilot-implementation` @ `142a7fc92ec8d19ff58e6022c6c60af84
 `integration/exp12` @ `844e3c0cc24998b25c3d1e667bcbfe056b1b336c`. Review branch: `claude/exp3-pilot-review`.
 No methodology is chosen or changed here, nothing is merged and no GPU job is submitted.
 
+> **Round 2 update (same branch).** Two corrections to round 1, marked inline: C2 (exp2_arm *does* write an
+> injected state at the fork step, then deletes it) and S1 (post-fork evaluations do not advance the training key).
+> A new critical engineering defect (C3: the source recorder could not resume after a crash between checkpoints)
+> is fixed and tested. The prospective capture plan is in [exp3_capture_plan.md](exp3_capture_plan.md), and the
+> S1–S9 decision table is in [exp3_owner_decisions.md](exp3_owner_decisions.md).
+
 **Specification caveat.** The owner's approved Pilot 1–3 specification text is not in the repository or in this
 review session. The only written statements are Codex's `docs/exp3_pilots.md` and `exp3_implementation_plan.md`.
 This review checks the code against those documents and against the owner's stated focus areas: causal validity,
@@ -49,8 +55,11 @@ target assignment and interpretation. Points that depend on the exact approved w
 - *Matched post-fork pairs are rare.* `require_matched` demands equal steps, so a pair exists only when
   `fork ≥ 0.75N`, and then only at the endpoint.
 - *Fork-time Pilot 1 is unreachable.* That branch needs an injected checkpoint carrying injection provenance at the
-  fork step, which `exp2_arm` never writes. `require_matched(fork, fork, fork)` refuses, as demonstrated in
-  `test_fork_time_pilot1_needs_an_injected_artifact_that_exp2_never_saves`.
+  fork step. **Correction (round 2):** `exp2_arm` does write one, its first save after injection and Check 1
+  (`if latest is None: save(trainer)`), but the next routine save deletes it. `require_matched(fork, fork, fork)`
+  refuses (`test_fork_time_pilot1_needs_an_injected_fork_step_artifact_that_exp2_does_not_retain`). Retention
+  (round 2) keeps it, and Pilot 1 then runs at fork time on real entry-point artifacts
+  (`tests/test_exp3_capture.py`).
 - *No streams exist.* Ordered U/I streams exist only if recording was enabled during the source run.
 - *No Exp2 forks exist.* The Block B dev run never triggered, and no grid has run.
 - *Discrepancy:* `exp3_pilots.md` says existing checkpoints "can be reused if compatibility passes". Structurally,
@@ -63,16 +72,20 @@ target assignment and interpretation. Points that depend on the exact approved w
 
 ### SCIENTIFIC (owner decisions; nothing chosen here)
 **S1. Passive vs active learners differ only in the actor-sampling key stream (demonstrated).**
-- The active loop splits `agent._rng` once per `sample_actions` call: every interaction step, plus every
-  evaluation step. Passive delivery does not.
+- The active loop advances `agent._rng` once per training `sample_actions` call and per routine-evaluation action.
+  **Correction (round 2):** post-fork evaluations do *not* advance it: `fork.post_fork_eval` evaluates under an
+  isolated key and restores the training key (`experiments/exp12/fork.py:224-234`). Passive delivery advances it
+  only through updates.
 - With that one split emulated before each arrival, passive U equals active U bit for bit: actor, critic, target and
   temperature (`test_passive_fidelity_when_action_key_consumption_is_emulated`). This also proves that arrival
   order, recorded normalization, replay contents, matched sampling and the update kernel are faithful.
 - Without the emulation, the passive and active learners diverge. Both passive arms still share keys, so the
   passive U vs passive I contrast stays matched.
-- *Decision:* whether the passive protocol should emulate source key consumption. That would make passive U an
-  exact replica of the active control, a built-in positive control. Evaluation-step consumption would also have to
-  be emulated.
+- *Decision:* whether the passive protocol should reproduce the source key stream. Round 2 makes this possible
+  without any counting model: the recorder now captures the source agent key at each arrival, and on the real Exp1
+  entry point a passive U learner given those keys reproduces the retained active U snapshot bit for bit
+  (`tests/test_exp3_capture.py`). A call-count capture was tried and rejected, because post-fork evaluations call
+  `sample_actions` under an isolated key.
 
 **S2. Measurement precision.**
 - `run()` calls `set_matmul_precision()`, which is TF32 on GPU. Every Pilot 1 per-state gradient, cosine, norm and
@@ -131,6 +144,25 @@ choosing panel and chunk sizes.
 **E3. Stream provenance** lacked the injection record (fixed with C1). Streams recorded before this fix would be
 refused by the new guard, which is the intended behaviour.
 
+**C3 (round 2; CRITICAL for production use, fixed). The source recorder could not resume after a crash between
+checkpoints.**
+- *Defect:* the recorder published a chunk whenever `chunk_size` arrivals were pending, which can happen between
+  routine saves. After a timeout or preemption, the job restores the last routine save, but the committed stream
+  is already ahead of it, so the recorder refuses to continue ("source state and committed stream cursor differ").
+  Production Exp1 parents run across several Slurm segments, so every recorded designated parent would have died
+  on its first mid-interval interruption.
+- *Fix:* during source recording, arrivals are published only together with a routine save under
+  `<run_dir>/state`. Validation snapshots elsewhere do not publish. The end-of-train flush is removed; the final
+  save, or sealing at scope exit, publishes the tail. A parent that crashed before its fork starts its stream
+  fresh at the fork, where the existing fork-step check still refuses any missing prefix.
+- *Cost:* pending arrivals are bounded by the save interval (25,000 arrivals; about 180 MB for dog-run), not by
+  `chunk_size`.
+- *Test:* `test_recorder_resumes_after_a_crash_between_checkpoints`. It fails on the unfixed recorder with exactly
+  that error, and passes after the fix, with the resumed stream and final state equal to the uninterrupted ones.
+- *Codex test adjusted:* `test_process_local_source_recorder_restart_is_exact_and_restores_original_loop` saved
+  its emulated checkpoint outside `<run_dir>/state`. It now saves to the routine root, where Exp1 and Exp2 resume
+  from. Its assertions are unchanged.
+
 ### OPTIONAL
 - **O1.** Require `sanity` in every Pilot 1 intervention list. It is the in-run check that the substitution path
   reproduces ordinary SAC. In a new test, direction and magnitude reduce to the ordinary gradient in both spaces
@@ -161,9 +193,20 @@ The new tests cover:
 - the Stage B injection guard;
 - the unreachable fork-time Pilot 1 path.
 
+## Round 2 verification (CPU)
+| Check | Result |
+|---|---|
+| Real-entry-point capture (`tests/test_exp3_capture.py`, 6 tests): real `exp1.run` with a forced dev trigger plus a real injected `exp2_arm.run`, both recorded and retained | 6/6 OK. C1 provenance from the real arms; retained steps exactly as predicted; routine roots unchanged; lean snapshots pair; Pilot 1 runs at fork time and post-fork; **recorded parent bit-identical to an unrecorded parent**; passive U with captured keys equals the retained active U, and without them does not |
+| C3 crash-between-checkpoints test | fails on the unfixed recorder ("source state and committed stream cursor differ"); OK after the fix |
+| C1 mutation (guard removed), real-entry-point test | the test fails, as intended |
+| Harness self-checks (`tests/test_exp3_gpu_harness.py`) | 6/6 OK |
+| Full Exp3 suite (Codex's 39 + review 13 + capture 6 + harness 6) | **64/64 OK**, 814 s (log SHA-256 `f557c7f2…e8c77e`) |
+
 ## Minimum GPU validation before any execution (not submitted)
-1. **Harness repair (engineering, after S2):** run the oracle tests at "highest" precision, and report TF32-vs-FP32
-   differences separately. Add the passive isolation, recording parity and passive restart tests.
+1. **Harness repair (done in round 2, `scripts/exp3_gpu_validation.py`):**
+   - bitwise exactness suites under each requested precision;
+   - oracle comparisons and TF32 sensitivity, measured and reported only;
+   - a repeat-determinism probe that separates GPU nondeterminism from defects.
 2. **GPU determinism of the pairing premise:** two passive runs from one fork must be bit-identical, and U vs
    uninjected I must be bit-identical, on the A100. If they are not, the passive U−I contrast contains GPU noise,
    and its size must be measured before any interpretation.
