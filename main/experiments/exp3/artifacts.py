@@ -224,6 +224,14 @@ class Artifact:
             for name in ("_actor", "_critic", "_target_critic", "_temperature")
         }
         self.agent.load_checkpoint(str(self.state))
+        if (
+            int(core(self.agent)._actor.update_step) != self.meta["update_step"]
+            or int(core(self.agent)._temperature.update_step)
+            != self.meta["update_step"]
+        ):
+            raise ValueError(
+                "agent actor/temperature counters differ from complete-state metadata"
+            )
         for name, expected in templates.items():
             actual = jax.tree_util.tree_map(
                 lambda x: (x.shape, np.dtype(x.dtype).str),
@@ -273,6 +281,11 @@ def require_matched(u, i, fork=None):
         raise ValueError("unmatched training protocol")
     if u.meta["interaction_step"] != i.meta["interaction_step"]:
         raise ValueError("unmatched post-fork checkpoint steps")
+    if (u.meta["update_step"], u.meta["update_counter"]) != (
+        i.meta["update_step"],
+        i.meta["update_counter"],
+    ):
+        raise ValueError("unmatched post-fork update counters")
     if fork is not None:
         for key in ("environment", "seed", "architecture"):
             if u.info["identity"].get(key) != fork.info["identity"].get(key):

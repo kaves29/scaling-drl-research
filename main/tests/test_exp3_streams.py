@@ -93,3 +93,23 @@ class StreamTest(unittest.TestCase):
         after = np.random.get_state()
         np.testing.assert_array_equal(before[1], after[1])
         self.assertEqual(before[2:], after[2:])
+
+    def test_partial_diagnostic_array_publication_is_never_visible(self):
+        from unittest.mock import patch
+        from experiments.exp3.runner import array_file
+
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d) / "measurement.npz"
+
+            def fail(stream, **values):
+                stream.write(b"partial")
+                raise OSError("simulated disk write failure")
+
+            with patch("experiments.exp3.runner.np.savez", side_effect=fail):
+                with self.assertRaisesRegex(OSError, "simulated"):
+                    array_file(path, {"a": np.ones(3, np.float32)})
+            self.assertFalse(path.exists())
+            self.assertEqual(list(Path(d).iterdir()), [])
+            array_file(path, {"a": np.ones(3, np.float32)})
+            with np.load(path) as actual:
+                np.testing.assert_array_equal(actual["a"], np.ones(3, np.float32))
