@@ -15,8 +15,11 @@ No job was submitted. No scientific settings or resource allocations were change
   empty-key exception, cleans ordinary failed writes and strengthens byte-exact,
   publication-boundary and concurrent-writer tests. No compiled payload, cache key,
   optimizer, RNG, math, precision or configuration is changed.
-- The pilot branch subsequently advanced to `2879b64499490e93bc6374465a6b7b2bcbd2724e`.
-  Its two extra files are **not integrated** under the pinned-review authorization.
+- PR [#1](https://github.com/kaves29/scaling-drl-research/pull/1), head
+  `4afc772d5f2beab625e3b513e6f53cc72ea8e1c6`, was separately authorized and
+  reviewed. Diagnostic-only follow-ups verify actual trained/saved/restored
+  parameter placement, selected checkpoint/counters, complete comparison inputs,
+  and streamed output. Production initialization, RNG and training are untouched.
 
 Atomicity is visibility of complete `-cache` entries through same-directory
 POSIX rename, not power-loss durability. Readers can miss an unpublished entry
@@ -47,6 +50,7 @@ owner decisions. No alternative is adopted by this review.
 | Stage | Existing checks | Meaning |
 |---|---|---|
 | CPU prerequisite | ForkEndToEndTest, ForkUnitTest, KillMatrixTest, IdentityValidationTest, KillAndResumeEntryPointTest; restore/comparator tests and mutations | Regression coverage, including interrupted saves/forks, exact state comparison and rejection of a corrupted control restore. Not CUDA qualification. |
+| A100 gpu_resume_95 (first priority) | GPU resume probe, two references and crash/relaunch at95 | Actual-backend tiny single-critic training; saved step60 checkpoint restored in another process with35 steps replayed. Explicit subset, not all crash scenarios or full-width qualification. |
 | A100 cache | AtomicCacheWriteTest | Concurrent-reader safety and CPU-process cache I/O; the JIT cold/warm equality test runs on the selected GPU. This is not full continuation identity. |
 | A100 fork | Three selected ForkEndToEndTest methods below | Actual-backend tiny single-critic fork/control/identity/injected continuations, Check 1 highest precision and existing exact/64-eps rules. Forced tiny validation fixture, not a natural positive control or D4W1536 qualification. |
 | A100 restore | RestoreRuntimeTest | Saved-device-independent comparison and single/twin parameter, optimizer, RNG/reference-batch restoration followed by updates; the wrapper checks shape/dtype/bytes. Tiny critics, not full pilot-size checkpoints. |
@@ -62,8 +66,8 @@ stronger dtype/byte comparator from dcb7491; no assertion is relaxed here.
 
 **Remaining gap:** GPU cross-process restart of actual training and full-width
 cold/warm identity. Neither CPU-forced kill tests nor in-process Check 1 proves
-this. The newer, excluded Claude revision proposes a GPU resume probe; review
-and authorization to incorporate that revision remain separate. A passing
+this. PR #1 supplies a separately reviewed probe, with actual placement and
+restore-call receipts added during review. Its first bounded GPU shard is below. A passing
 uninterrupted development pilot does not retrospectively qualify resume or Exp2.
 Default-mode GPU nondeterminism, if observed, must be reported and reviewed rather
 than cured by selecting flags/tolerances. No unset CUDA diagnostic bound is filled.
@@ -124,7 +128,8 @@ cd "$VALIDATION_ROOT/checkout/main"
 source scripts/check_exp12_validation_checkout.sh
 exp12_check_checkout tests/test_exp12_fork.py tests/test_exp12_foundations.py \
   tests/test_exp12_compilation_cache.py tests/test_exp12_runtime.py \
-  scripts/preflight_checkpoint_check.py configs/base_exp12.yaml
+  scripts/preflight_checkpoint_check.py configs/base_exp12.yaml \
+  scripts/sci_investigation/gpu_resume_probe.py tests/exp12_subprocess_runner.py
 export OUT="$VALIDATION_ROOT/${STAGE}_${SLURM_JOB_ID}"
 mkdir "$OUT"
 mkdir "$OUT/tmp" "$OUT/jax_cache"
@@ -168,6 +173,11 @@ def main():
         cache_max_size=jax.config.jax_compilation_cache_max_size,
         platforms=os.environ['JAX_PLATFORMS'], stage=sys.argv[1]), indent=2))
     stage = sys.argv[1]
+    if stage == 'gpu_resume_95':
+        import subprocess
+        sys.exit(subprocess.call([sys.executable, '-u',
+            'scripts/sci_investigation/gpu_resume_probe.py', '--out', str(out / 'resume_probe'),
+            '--require-backend', 'gpu', '--crash-step', '95']))
     if stage == 'pilot_smoke':
         import subprocess
         sys.exit(subprocess.call([sys.executable, '-u', 'scripts/preflight_checkpoint_check.py',
@@ -233,8 +243,8 @@ After approval, submit **sequentially**, review each artifact before the next:
 
 ```bash
 # Do not execute these submission commands without owner authorization.
-# Start cache, then restore, then fork, then pilot_smoke; one command per stage.
-export STAGE=cache  # then restore; then fork; then pilot_smoke
+# First targeted gate: gpu_resume_95. Review artifacts before any later stage.
+export STAGE=gpu_resume_95  # later: cache, restore, fork, pilot_smoke
 sbatch --job-name="exp12_gate_${STAGE}" \
   --output="$VALIDATION_ROOT/${STAGE}_%j.out" --error="$VALIDATION_ROOT/${STAGE}_%j.err" \
   --export=ALL,EXPECTED_COMMIT,VALIDATION_ROOT,STAGE "$VALIDATION_ROOT/a100_gate.sh"
@@ -279,3 +289,89 @@ from the CPU-forced tests. A lack of natural trigger is a result, not permission
 to force one. The 195-run campaign and Exp2 remain blocked by scientific gates,
 positive-control/m and broader final-source GPU qualification. No criteria are
 changed to remove these blockers.
+
+## First targeted GPU-resume gate: scope and interpretation
+
+Use `STAGE=gpu_resume_95` with the exact final integration SHA delivered by
+Codex. This uses one A100/four CPUs/32GB/seven minutes and the same300-second
+**total** workload cap, including backend startup and four child processes.
+It selects one existing test scenario, not a different training budget: each
+reference trains the original300-step tiny fixture; crash95 restores the
+step60 checkpoint and continues to300. The default probe still runs all5/60/95
+scenarios. Omitting a declared scenario is INCOMPLETE.
+
+There is no measured A100 wall time for this new probe. The corresponding four
+CPU child times in the full review run sum to181s (excluding parent startup,
+comparison and packaging); this is not a GPU timing or a separately measured
+shard. Planning estimate: roughly three to five minutes, uncertain. Plan for up to five
+minutes of workload plus setup/packaging within seven minutes; completion within
+300 seconds is **unverified**, not guaranteed by faster GPU arithmetic. CPU
+timings in the review receipt are not GPU projections. An outer124/137, missing
+final verdict, or truncated sequence is INCOMPLETE; retain artifacts, do not
+automatically enlarge the budget or shrink fixture settings. This shard removes
+four child startups versus the complete eight-child probe.
+
+Required evidence under `$VALIDATION_ROOT/gpu_resume_95_<jobid>/`:
+
+- `commit.txt`, clean `git-status.txt`, backend/dependency/GPU records, `tests.log`,
+  `exit_status.txt`, `SHA256SUMS` and Slurm stdout/stderr beside the stage directory.
+- `resume_probe/gpu_resume_probe.json`: declared `crash_steps=[95]`, all four
+  completed children, final verdict/pass/reasons and source/environment provenance.
+- Each child's spec, receipt/command/environment, streamed combined log and
+  atomically updated backend observations. Child logs survive an outer timeout.
+- Reference/repeat/final resumed run directories including metadata, checkpoints
+  and results; `crash95_checkpoint/` preserves the step60 state before continued
+  saves replace it. Cache files are excluded only from the packaged evidence.
+
+Pass requires outerexit0 and probeexit0/PASS; identical complete reference
+states; crash95exit3 without DONE; a unique trained step60 save with updates
+greater than0; observed restore of that exact path and saved interaction/update
+counters; actual trained/saved/restored actor, critic, target and temperature
+parameters onGPU; resumeexit0/DONE; final interaction300 and582 SACupdates;
+no full-state differences against **either** reference. Compare params/targets,
+optimizer/temperature/RNG, observation normalizer, replay arrays/header/n-step
+queue, global/environment/action RNG, counters, probes/logging/diagnostics and
+evaluation metadata. Only the existing `wandb_run_id` exemption applies. The
+approved shape/dtype/byte comparator and NaN policy are retained unchanged.
+
+Exit1 means a relaunch error or mismatch with two agreeing references, a
+**suspected** resume-path problem requiring inspection, not proof of its cause.
+Exit2's historical `NONDETERMINISTIC_BACKEND` label means the two references
+differed; it does not prove GPU operations caused this, or authorize changing
+identity/restore expectations. Concurrent relaunch failures remain in reasons.
+Two agreeing references likewise do not prove universal determinism. Exit3
+means missing/corrupt state, missing restore/device evidence or harness/backend
+failure. No nonzero result qualifies the gate; scientific interpretation goes
+to the owner without altering flags, tolerances or thresholds.
+
+This first gate does **not** certify full-width D4W1536 restore, twin/Humanoid
+critics, Exp2 arm restart, natural positive-control selection, or full-width
+cold/warm identity. The selected in-process Check1/fork and pilot-size smoke
+stages remain the next relevant GPU checks if those paths are required for the
+development run. Do not bundle the old CPU-forced kill suites into this300-second
+job. D4W1536 `identity_warm` remains held at the existing cap.
+
+Beyond GPU qualification and the owner's trigger-threshold decision, a
+full-length pilot still needs explicit approval of its allocation/execution
+and development/positive-control role. The historical proposed eight-hour
+allocation is not authorized by this integration. Full-grid scientific gates
+remain separate; an uninterrupted development run is not a confirmatory launch.
+
+### Direct submission of the first reviewed shard
+
+After the fresh detached checkout/setup above and explicit execution approval,
+use the tracked wrapper (no copy/edit of a Slurm script is required):
+
+```bash
+sbatch --output="$VALIDATION_ROOT/gpu_resume_95_%j.out" \
+  --error="$VALIDATION_ROOT/gpu_resume_95_%j.err" \
+  --export=ALL,EXPECTED_COMMIT,VALIDATION_ROOT \
+  "$VALIDATION_ROOT/checkout/main/scripts/sbatch_exp12_gpu_resume_gate.sh"
+```
+
+The wrapper checks exact HEAD, required tracked files and a completely clean
+checkout; it requires CPU plus CUDA on the pinned one-A100 environment, records
+provenance, runs the selected existing fixture under a single300-second cap,
+and writes an exit status/checksums even for ordinary preflight/test failures.
+Package outputs with the post-completion commands above, including both Slurm
+streams. No submission is performed by the wrapper itself.

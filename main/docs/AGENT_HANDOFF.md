@@ -6,10 +6,11 @@ not authorize scientific changes, main merges or Delta submissions.
 ## Exact source checkpoint and live integration HEAD
 
 The current integrated executable/test tree is pinned at
-`813de566c4b169961fd4ec6a13063ac0ffa809d5` (reviewed pinned Claude reports plus atomic cache fix and
-engineering review follow-ups). The previous executable checkpoint was
-`53cc476b16bb7707484c7c049d2e77c0600568e2`. Final handoff/gate/status edits are
-documentation only. Resolve the exact published integration HEAD with:
+`78d04d167a5f65c35f6905cb261876bfe709d85a` (reviewed PR #1 plus
+engineering-only GPU restore/evidence guards and the bounded gate wrapper).
+The previous executable checkpoint was
+`813de566c4b169961fd4ec6a13063ac0ffa809d5`. Final handoff/status edits and
+integration merge do not change that tested executable tree. Resolve the exact published integration HEAD with:
 
 ```bash
 git fetch origin '+refs/heads/integration/exp12:refs/remotes/origin/integration/exp12'
@@ -48,7 +49,7 @@ HEAD claim. Update the approved base when a subsequent integration is authorized
 
 At the previous2d baseline publication, the public PR page showed zero open
 and zero closed PRs; this remains a historical snapshot, not a current API result.
-No PR is created by this branch-establishment task. Recheck GitHub before claiming
+No PR was created by that original branch-establishment task; current PR #1 is reviewed below. Recheck GitHub before claiming
 that another agent has no active work; inventory is a snapshot, not a lock service.
 Repository protection/CI settings and collaborator permissions are unverified.
 
@@ -68,10 +69,38 @@ No PR numbers/links are invented. These are the reviewed branch checkpoints:
 | codex/review-exp12-atomic-cache | `813de566c4b169961fd4ec6a13063ac0ffa809d5` | Merge of d23191b; two review follow-ups preserve empty-key errors, clean failed publications, strengthen bytes/concurrency coverage and make the mutation oracle deterministic. |
 
 No scientific proposal or resource request in either historical report is adopted.
-The pilot branch advanced to `2879b64499490e93bc6374465a6b7b2bcbd2724e` after the
-pinned373 revision; its failure-analysis document and GPU-resume probe are not
-included. They require a separate review. `claude/jolly-keller-lwr6xi` and
-`delta-fixes` remain INVESTIGATE and untouched. No further broad cleanup is active.
+The subsequently authorized PR [#1](https://github.com/kaves29/scaling-drl-research/pull/1),
+head `4afc772d5f2beab625e3b513e6f53cc72ea8e1c6`, was reviewed on
+`codex/review-a100-resume-pr1`; original history is preserved by merge
+`09a0af582e4e49e3ec8dff3384292bf5385b89a5`, followed by tested engineering
+corrections at `78d04d167a5f65c35f6905cb261876bfe709d85a`. It adds
+investigation/diagnostic files only. Review/receipt details are in
+[pr1_gpu_resume_review.md](pr1_gpu_resume_review.md). GitHub CLI credentials
+remain unavailable, and the public API CONNECT proxy returned403; native Git
+merge/push and ancestry verification are separate from an unverified PR UI badge.
+`claude/jolly-keller-lwr6xi` and `delta-fixes` remain INVESTIGATE and untouched.
+No broad cleanup is active.
+
+Latest PR-specific checks:
+
+- Final23/23 probe unit tests pass, including fallback, failed/no-op restore,
+  missing/corrupt state, undeclared omissions, premature endpoint and retained logs.
+- Focused47-test regression passes46 with one optional cache-eviction/filelock skip.
+- Final complete eight-child CPU probe passes all5/60/95 scenarios; both saved
+  step60/update102 restores are observed completed. All completed states are300/582.
+- Its five complete states exactly match the original PR CPU probe's counterparts;
+  diagnostic observations introduce no observed CPU state/trajectory difference.
+- 195/195 config fingerprints still match the original2d baseline.
+- Gate Bash/embedded Python checks pass; no automatic submission; actual wrong-SHA
+  preflight exits2 and retains status/checksums before backend startup.
+
+These CPU results do not qualify GPU behavior. Raw evidence is under
+`/workspace/scratch/exp12-pr1-review/`; report includes the final receipt checksum.
+First GPU priority: tracked `scripts/sbatch_exp12_gpu_resume_gate.sh`, explicit
+crash95 shard, exact delivered integration SHA. It retains the approved
+one-A100/four-CPU/32GB/seven-minute allocation and300-second total workload cap.
+Later relevant GPU shards: in-process exact Check1/fork and full-width dog-run
+checkpoint smoke. No resource increase, trigger alternative or GPU pass is adopted.
 
 Current engineering receipts (source/cache production at27da3eb, with the final
 813de56 test-only oracle additionally checked; final shared documents do not alter
