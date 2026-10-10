@@ -8,7 +8,7 @@ No methodology is chosen or changed here, nothing is merged and no GPU job is su
 > injected state at the fork step, then deletes it) and S1 (post-fork evaluations do not advance the training key).
 > A new critical engineering defect (C3: the source recorder could not resume after a crash between checkpoints)
 > is fixed and tested. The prospective capture plan is in [exp3_capture_plan.md](exp3_capture_plan.md), and the
-> S1–S9 decision table is in [exp3_owner_decisions.md](exp3_owner_decisions.md).
+> owner decision package (all open choices, cell selection, holds, retention, budget, GPU plan) is [exp3_owner_decisions.md](exp3_owner_decisions.md).
 
 **Specification caveat.** The owner's approved Pilot 1–3 specification text is not in the repository or in this
 review session. The only written statements are Codex's `docs/exp3_pilots.md` and `exp3_implementation_plan.md`.
