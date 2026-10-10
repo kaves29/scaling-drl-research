@@ -29,17 +29,24 @@ class BoundaryTest(unittest.TestCase):
         return dict(mean=np.zeros((1, 2)), var=np.ones((1, 2)), count=1.0)
 
     def test_identical_retention_is_idempotent(self):
+        # Publication now requires a valid, restorable agent checkpoint (E2), so this
+        # uses a real saved state instead of a synthetic directory without one.
+        from experiments.exp12.trainer import Exp12Trainer
+        from tests.exp12_helpers import compose, patch_wandb, tiny_overrides
+
+        patchers = patch_wandb()
         with tempfile.TemporaryDirectory() as d:
             p = Path(d)
-            state = p / "state"
-            state.mkdir()
-            np.savez(
-                state / "buffer.npz",
-                observations=np.zeros((2, 2)),
-                actions=np.zeros((2, 1)),
-            )
-            (state / "buffer_meta.pkl").write_bytes(b"meta")
-            (state / "payload").write_bytes(b"same")
+            cfg = compose(tiny_overrides(steps=40, extra=["run_role=dev"]))
+            t = Exp12Trainer(cfg, str(p / "source"))
+            try:
+                t.start()
+                t.train(12)
+                state = t.save(p / "state")
+            finally:
+                t.close()
+                for patcher in patchers:
+                    patcher.stop()
             for mode in ("retain", "omit"):
                 snap = retain_state(state, p / mode, 10, mode)
                 retain_state(state, p / mode, 10, mode)

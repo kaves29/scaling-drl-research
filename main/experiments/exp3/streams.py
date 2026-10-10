@@ -217,6 +217,8 @@ class StreamWriter:
         candidate = self._prepare_manifest()
         if candidate["provenance"]["start_step"] + candidate["count"] != step:
             raise ValueError("prepared stream/source step mismatch")
+        # Published routine source checkpoints: the snapshots retention must supply.
+        candidate["checkpoint_steps"] = list(candidate.get("checkpoint_steps", [])) + [step]
         write_json(
             journal,
             {

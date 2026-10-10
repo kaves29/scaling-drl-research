@@ -7,7 +7,13 @@ from unittest.mock import patch
 from experiments.exp12.state import latest_state_dir
 from experiments.exp12.trainer import Exp12Trainer
 from experiments.exp3.artifacts import digest, state_fingerprint, metadata_fingerprint
-from experiments.exp3.retention import retain_state, validate_retention, retention_end
+from experiments.exp3.retention import (
+    record_failure,
+    retain_state,
+    retention_end,
+    retention_report,
+    validate_retention,
+)
 from experiments.exp3.streams import (
     RecordingBuffer,
     StreamReader,
@@ -18,6 +24,62 @@ from experiments.exp3.streams import (
 )
 from utils.run_metadata import code_version, load_run_metadata
 from utils.atomic_io import atomic_write_text
+
+
+class CaptureIncomplete(ValueError):
+    """The stream may be complete, but requested retention is not usable."""
+
+    def __init__(self, report):
+        self.report = report
+        super().__init__(
+            "capture incomplete: retention " + "; ".join(report["retention"]["reasons"])
+        )
+
+
+def _retain_safely(state_dir, retain, step):
+    """Retention never interrupts the source run; a failure is a visible FAILED record
+    that makes the retention verdict fail (retention_report)."""
+    try:
+        retain_state(state_dir, retain["root"], step, retain["replay"])
+    except Exception as exc:  # noqa: BLE001 - recorded, then surfaced by the report
+        record_failure(retain["root"], step, state_dir, exc)
+
+
+def required_retention_steps(manifest, arm, plan, retain):
+    """Routine saves published with the stream inside the window, plus a non-control
+    arm's post-injection save at the fork. None if the stream predates the record."""
+    if "checkpoint_steps" not in manifest:
+        return None
+    fork_step, end = int(plan["fork_step"]), retention_end(retain, plan)
+    steps = [s for s in manifest["checkpoint_steps"] if fork_step <= s <= end]
+    if arm != "control" and fork_step <= end:
+        steps.append(fork_step)
+    return sorted(set(steps))
+
+
+def capture_report(root, manifest, retain, plan):
+    """Separate stream and retention verdicts; COMPLETE only if both are."""
+    stream = "COMPLETE" if manifest.get("complete") else "INCOMPLETE"
+    if retain is None:
+        retention = {"verdict": "NOT_REQUESTED", "required_steps": [], "reasons": []}
+    else:
+        steps = required_retention_steps(manifest, manifest["provenance"]["arm"], plan, retain)
+        retention = (
+            {"verdict": "FAILED", "required_steps": [],
+             "reasons": ["stream predates the checkpoint-step record; coverage unverifiable"]}
+            if steps is None
+            else retention_report(retain["root"], steps)
+        )
+    ok = stream == "COMPLETE" and retention["verdict"] in ("COMPLETE", "NOT_REQUESTED")
+    report = {
+        "stream_verdict": stream,
+        "retention": retention,
+        "capture_verdict": "COMPLETE" if ok else "INCOMPLETE",
+        "scientific_qualification": False,
+        "count": manifest["count"],
+    }
+    write_json(Path(root) / "capture_report.json", report)
+    return report
 
 
 @contextlib.contextmanager
@@ -58,9 +120,7 @@ def _record_exp2_scope(root, chunk_size, benchmark=None, resume=False, retain=No
             <= trainer.interaction_step
             <= retention_end(retain, plan)
         ):
-            retain_state(
-                path, retain["root"], trainer.interaction_step, retain["replay"]
-            )
+            _retain_safely(path, retain, trainer.interaction_step)
         return path
 
     def recorded(trainer, last_step, after_step=None, before_first_update=None):
@@ -152,15 +212,18 @@ def _record_exp2_scope(root, chunk_size, benchmark=None, resume=False, retain=No
                 )
         if trainer is not recorded_trainer:
             raise ValueError("one stream cannot combine multiple source trainers")
+        if retain is not None:
+            state_root = (trainer.run_dir / "state").resolve()
+            keep = Path(retain["root"]).resolve()
+            if keep == state_root or keep.is_relative_to(state_root):
+                raise ValueError("retention root must be outside the routine state root")
         # Recover a death after source LATEST publication but before snapshot retention.
         if resume and retain is not None:
             state = latest_state_dir(trainer.run_dir / "state")
             if state is not None and int(
                 plan["fork_step"]
             ) <= trainer.interaction_step <= retention_end(retain, plan):
-                retain_state(
-                    state, retain["root"], trainer.interaction_step, retain["replay"]
-                )
+                _retain_safely(state, retain, trainer.interaction_step)
         expected = (
             writer.manifest["provenance"]["start_step"] + writer.manifest["count"]
         )
@@ -195,6 +258,11 @@ def _record_exp2_scope(root, chunk_size, benchmark=None, resume=False, retain=No
     writer.seal()
     if benchmark:
         write_json(Path(root) / "benchmark.json", benchmark.report(root))
+    report = capture_report(
+        root, writer.manifest, retain, recorded_trainer.extra_state["fork"]
+    )
+    if report["capture_verdict"] != "COMPLETE":
+        raise CaptureIncomplete(report)
 
 
 @contextlib.contextmanager
@@ -262,18 +330,22 @@ def finalize_capture(root, run):
         if sum(1 for _ in reader) != reader.manifest["count"]:
             raise ValueError("completed capture length differs")
         retain = p.get("retention")
+        plan = meta["extra_state"].get("fork")
+        if retain is not None and plan is None:
+            raise ValueError("completed source lacks its fork plan; retention unverifiable")
         if retain is not None and p["start_step"] <= meta[
             "interaction_step"
-        ] <= retention_end(retain, meta["extra_state"]["fork"]):
-            retain_state(
-                state, retain["root"], meta["interaction_step"], retain["replay"]
-            )
-        if not reader.manifest["complete"]:
-            manifest = dict(reader.manifest, complete=True)
+        ] <= retention_end(retain, plan):
+            _retain_safely(state, retain, meta["interaction_step"])
+        manifest = reader.manifest
+        if not manifest["complete"]:
+            # The stream itself is verified complete at the source endpoint.
+            manifest = dict(manifest, complete=True)
             write_json(root / "manifest.json", manifest)
-        return {
-            "capture_verdict": "COMPLETE",
-            "scientific_qualification": False,
-            "interaction_step": meta["interaction_step"],
-            "count": reader.manifest["count"],
-        }
+        report = dict(
+            capture_report(root, manifest, retain, plan),
+            interaction_step=meta["interaction_step"],
+        )
+        if report["capture_verdict"] != "COMPLETE":
+            raise CaptureIncomplete(report)
+        return report

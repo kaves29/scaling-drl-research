@@ -67,12 +67,122 @@ def _files(state_dir, replay):
     )
 
 
+def _local_device_strings():
+    import jax
+
+    found = set()
+    for backend in ("cpu", "gpu", "tpu"):
+        try:
+            found |= {str(d) for d in jax.local_devices(backend=backend)}
+        except RuntimeError:
+            continue
+    return found
+
+
+def validate_checkpoint(state_dir):
+    """Integrity and device-backed restorability of a saved agent checkpoint.
+
+    Independent of value equality (load_agent_tree reads NumPy without the saved
+    device, which cannot reveal broken Orbax sharding metadata). Requires: readable
+    Orbax tree metadata; a `_sharding` record that parses and covers exactly the
+    array leaves; every saved device present on this host; an actual Orbax restore
+    with the saved shardings; and restored values bitwise equal to the NumPy read.
+    Serialization/layout bytes may differ between valid saves; this checks meaning,
+    not bytes. Raises ValueError with an explicit reason.
+    """
+    import base64
+
+    import jax
+    import orbax.checkpoint
+
+    from experiments.exp12.state import _leaves, bitwise_equal, load_agent_tree
+
+    path = Path(state_dir) / "agent_ckpt"
+    checkpointer = orbax.checkpoint.PyTreeCheckpointer()
+    # The sharding record first: Orbax's own metadata reader consumes it, and its
+    # errors would otherwise hide the specific reason.
+    try:
+        raw = json.loads((path / "_sharding").read_text())
+        sharding = {
+            base64.b64decode(k, validate=True).decode(): json.loads(v)
+            for k, v in raw.items()
+        }
+    except Exception as exc:
+        raise ValueError(f"invalid Orbax sharding metadata: {exc!r}") from exc
+    devices = set()
+    for spec in sharding.values():
+        if (
+            not isinstance(spec, dict)
+            or spec.get("sharding_type") != "SingleDeviceSharding"
+            or not isinstance(spec.get("device_str"), str)
+        ):
+            raise ValueError(f"incompatible Orbax sharding entry: {spec!r}")
+        devices.add(spec["device_str"])
+    def dotted(key_path):
+        return ".".join(str(getattr(k, "key", getattr(k, "idx", k))) for k in key_path)
+
+    from orbax.checkpoint import aggregate_handlers
+
+    handler = aggregate_handlers.MsgpackHandler()
+    try:
+        structure = handler.deserialize(path / "checkpoint")
+    except Exception as exc:
+        raise ValueError(f"invalid Orbax checkpoint structure: {exc!r}") from exc
+    finally:
+        handler.close()
+    leaves = {dotted(k) for k, _ in jax.tree_util.tree_flatten_with_path(structure)[0]}
+    if set(sharding) != leaves:
+        raise ValueError("Orbax sharding metadata does not cover the checkpoint leaves")
+    missing = devices - _local_device_strings()
+    if missing:
+        raise ValueError(
+            f"saved checkpoint devices unavailable here, restore unverifiable: {sorted(missing)}"
+        )
+    try:
+        metadata = checkpointer.metadata(str(path))
+    except Exception as exc:
+        raise ValueError(f"invalid Orbax checkpoint metadata: {exc!r}") from exc
+    if {dotted(k) for k, _ in jax.tree_util.tree_flatten_with_path(metadata)[0]} != leaves:
+        raise ValueError("Orbax checkpoint metadata differs from its tree structure")
+    try:
+        restored = checkpointer.restore(str(path))
+    except Exception as exc:
+        raise ValueError(f"checkpoint restore with saved sharding failed: {exc!r}") from exc
+    values = dict(_leaves(load_agent_tree(state_dir)))
+    placed = dict(_leaves(restored))
+    if values.keys() != placed.keys() or not all(
+        bitwise_equal(np.asarray(placed[k]), values[k]) for k in values
+    ):
+        raise ValueError("device-backed restore differs from the checkpoint values")
+    return {
+        "orbax_metadata": "valid",
+        "sharding": "SingleDeviceSharding",
+        "devices": sorted(devices),
+        "restore": "device-backed with saved sharding",
+        "leaves": len(values),
+    }
+
+
+def record_failure(root, step, state_dir, error):
+    """Visible record that retention of a routine save failed; never a snapshot."""
+    root = Path(root)
+    root.mkdir(parents=True, exist_ok=True)
+    path = root / f"FAILED_step_{step:09d}_{uuid.uuid4().hex}.json"
+    path.write_text(
+        json.dumps({"step": step, "source_state": str(state_dir), "reason": str(error)}, indent=1)
+    )
+    return path
+
+
 def retain_state(state_dir, root, step, replay):
     """Publish one immutable snapshot of a committed state directory; returns its path.
 
-    A second save at the same step (a resumed source) must be byte-identical. A
-    differing one is recorded as a conflict marker and never overwrites the first;
-    Exp3 adapters refuse conflicted snapshots. The source run is not interrupted.
+    Every publication first validates the source checkpoint (validate_checkpoint).
+    At an existing step, the existing snapshot must pass read_snapshot (record
+    checksums, no conflict) before anything is accepted. Identical bytes are then
+    accepted; otherwise both checkpoints are validated and compared logically:
+    bitwise-equal state is recorded as EQUIVALENT, any difference as CONFLICT. The
+    first snapshot is never overwritten. Invalid input raises ValueError.
     """
     state_dir, root = Path(state_dir).resolve(), Path(root).resolve()
     if root == state_dir or root.is_relative_to(state_dir):
@@ -89,10 +199,15 @@ def retain_state(state_dir, root, step, replay):
     files = _files(state_dir, replay)
     hashes = {str(f): digest(state_dir / f) for f in files}
     if target.exists():
-        existing = json.loads((target / SNAPSHOT).read_text())
+        try:
+            existing = read_snapshot(target)  # current bytes vs record, no conflict
+        except ValueError as exc:
+            raise ValueError(f"existing retained snapshot failed integrity: {exc}") from exc
         mode = "retained" if replay == "retain" else "omitted"
         if existing["files"] == hashes and existing["replay"] == mode:
             return target
+        validate_checkpoint(state_dir)  # never certify an invalid incoming checkpoint
+        validate_checkpoint(target)
         # A resumed source can legitimately re-save the same step (e.g. a death
         # between its final save and DONE). Orbax/pickle bytes are not reproducible
         # across saves, so compare the logical state bitwise before declaring a
@@ -116,6 +231,7 @@ def retain_state(state_dir, root, step, replay):
             )
         )
         return target
+    validation = validate_checkpoint(state_dir)
     obs_dim, act_dim = replay_dimensions(state_dir)
     temporary = root / f".{target.name}.{uuid.uuid4().hex}.pending"
     temporary.mkdir()
@@ -140,6 +256,7 @@ def retain_state(state_dir, root, step, replay):
                     "action_dim": act_dim,
                     "files": hashes,
                     "link_modes": sorted(modes),
+                    "validation": validation,
                 },
                 indent=1,
                 sort_keys=True,
@@ -229,3 +346,27 @@ def read_snapshot(state_dir):
         if digest(state_dir / name) != sha:
             raise ValueError(f"retained snapshot checksum mismatch: {name}")
     return record
+
+
+def retention_report(root, required_steps):
+    """Separate retention verdict for a capture: required snapshots must exist and
+    pass read_snapshot; any CONFLICT or FAILED record fails the retention verdict."""
+    root = Path(root)
+    reasons = []
+    for step in sorted(set(required_steps)):
+        target = root / f"step_{step:09d}"
+        if not target.is_dir():
+            reasons.append(f"step {step}: required snapshot missing")
+            continue
+        try:
+            read_snapshot(target)
+        except ValueError as exc:
+            reasons.append(f"step {step}: {exc}")
+    for kind in ("CONFLICT", "FAILED"):
+        for marker in sorted(root.glob(f"{kind}_*.json")):
+            reasons.append(f"{kind} record: {marker.name}")
+    return {
+        "verdict": "FAILED" if reasons else "COMPLETE",
+        "required_steps": sorted(set(required_steps)),
+        "reasons": reasons,
+    }
