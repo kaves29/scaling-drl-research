@@ -1,0 +1,9 @@
+{
+  "schema_version": 1, "run_role": "dev", "approved": false, "pilot": 2,
+  "artifacts": {"fork": {"state": null, "metadata": null}},
+  "rng_seed": null, "chunk_size": null, "arrivals": null, "updates_per_arrival": null,
+  "streams": {"u": null, "i": null}, "stage_b": false,
+  "normalization": null, "injection_m": null, "injection_seed": null,
+  "evaluation_every": null, "evaluation_episodes": null, "checkpoint_every": null,
+  "active_references": {}, "fork_panel": null
+}

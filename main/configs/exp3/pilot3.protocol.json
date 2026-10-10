@@ -1,0 +1,8 @@
+{
+  "schema_version": 1, "run_role": "dev", "approved": false, "pilot": 3, "enabled": false,
+  "artifacts": {"fork": {"state": null, "metadata": null}, "untreated": {"state": null, "metadata": null}, "injected": {"state": null, "metadata": null}},
+  "rng_seed": null, "chunk_size": null, "updates": null, "batch_size": null,
+  "alpha_source": null, "critic_source": null, "evaluator_source": null,
+  "alternative_evaluator": null, "panel_size": null, "panel": null,
+  "checkpoint_every": null, "normalization": null
+}

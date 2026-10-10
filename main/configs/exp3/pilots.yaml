@@ -1,0 +1,42 @@
+schema_version: 1
+run_role: dev
+base_commit: 844e3c0cc24998b25c3d1e667bcbfe056b1b336c
+environments:
+  dmc: [dog-run, humanoid-walk]
+  myosuite: null # Owner must select two of the four registered tasks.
+seeds: [1, 2, 3, 4, 5] # generate_manifest.EXP12_SEEDS
+pilot1:
+  enabled: true
+  panel_size: null
+  chunk_size: null
+  checkpoint_steps: null
+  normalization: null # common_fork | artifact_specific (within-actor matching always enforced)
+  alpha_source: null # fork | actor_specific
+  intervention_space: null # action | parameter_per_state; owner must select the protocol
+  interventions: null # sanity, full, direction, magnitude
+  zero_signal_policy: null # error | keep_baseline
+  outcome_eval_episodes: null
+pilot2:
+  enabled: true
+  stage_b: false
+  arrivals: null
+  updates_per_arrival: null
+  evaluation_every: null
+  evaluation_episodes: null
+  checkpoint_every: null
+  chunk_size: null
+  normalization: null # source_statistics | frozen_fork
+  injection_m: null
+  injection_seed: null
+pilot3:
+  enabled: false
+  updates: null
+  batch_size: null
+  alpha_source: null # fork | untreated | injected
+  critic_source: null # untreated | injected
+  evaluator_source: null # fork | untreated | injected
+  alternative_evaluator: null
+  chunk_size: null
+  panel_size: null
+  checkpoint_every: null
+  normalization: null # common_fork | artifact_specific
