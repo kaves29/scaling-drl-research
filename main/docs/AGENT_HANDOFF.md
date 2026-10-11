@@ -1,5 +1,16 @@
 # Shared agent handoff
 
+## Production-readiness review (2026-10-11)
+
+Codex task branch `codex/exp12-production-readiness` starts at the explicitly
+requested W&B-online source `7d0883cfa99d27fed062d77a68cbbfa27e560061`.
+See `exp12_production_decision_2026_10_11.md` for the blocker ledger, proposed
+allocation and prepared commands. The branch adds an Exp2 arm/parent source
+preflight and focused regression; it does not modify queued pilot job 22800749,
+scientific settings, GPU evidence or integration. Resolve the branch's final
+commit from Git after publication. Claude retains scientific-gate decision
+ownership; the research owner must disposition null/range and freeze m.
+
 ## Isolated launch-readiness task (2026-10-10)
 
 Owner: Codex. Approved task base is844e3c0cc24998b25c3d1e667bcbfe056b1b336c;

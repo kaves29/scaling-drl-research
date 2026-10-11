@@ -10,6 +10,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 import omegaconf
 
@@ -20,7 +21,7 @@ sys.path.insert(0, str(REPO))
 import generate_manifest as gm  # noqa: E402
 from exp12_helpers import CONFIG_PATH  # noqa: E402
 from experiments.exp1 import compose_config  # noqa: E402
-from experiments.exp2_arm import ARM_KEYS  # noqa: E402
+from experiments.exp2_arm import ARM_KEYS, check_matches_parent  # noqa: E402
 from utils.run_metadata import differing_keys  # noqa: E402
 
 BUDGETS = {"swimmer-swimmer15": 500_000, "hopper-hop": 500_000, "h1-reach-v0": 2_000_000, "h1-run-v0": 2_000_000}
@@ -36,6 +37,29 @@ def _parse(cmd):
 
 
 class Exp12GridTest(unittest.TestCase):
+    def test_arm_refuses_parent_from_different_source(self):
+        with tempfile.TemporaryDirectory() as root:
+            source = Path(root)
+            cfg = omegaconf.OmegaConf.create({"seed": 1})
+            (source / "run_metadata.json").write_text(json.dumps({
+                "code": {"commit": "a" * 40, "dirty": False},
+                "resolved_config": {"seed": 1},
+            }))
+            with mock.patch("experiments.exp2_arm.code_version", return_value={
+                "commit": "a" * 40, "dirty": False,
+            }):
+                check_matches_parent(cfg, source)
+            with mock.patch("experiments.exp2_arm.code_version", return_value={
+                "commit": "b" * 40, "dirty": False,
+            }):
+                with self.assertRaisesRegex(ValueError, "source commit/dirty state"):
+                    check_matches_parent(cfg, source)
+            with mock.patch("experiments.exp2_arm.code_version", return_value={
+                "commit": "a" * 40, "dirty": True,
+            }):
+                with self.assertRaisesRegex(ValueError, "source commit/dirty state"):
+                    check_matches_parent(cfg, source)
+
     def setUp(self):
         self.root = tempfile.mkdtemp()
         self.ckpt, self.results = os.path.join(self.root, "ckpt"), os.path.join(self.root, "results")

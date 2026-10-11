@@ -1,5 +1,15 @@
 # Exp1/Exp2 scientific and validation status
 
+## Production-readiness update, 2026-10-11
+
+The W&B-online D4W1536 dog-run seed102 development pilot is queued as Slurm
+job 22800749; its outcome is unknown here. The separate review at
+`codex/exp12-production-readiness` is based on
+`7d0883cfa99d27fed062d77a68cbbfa27e560061`. It does not touch the pilot.
+See `exp12_production_decision_2026_10_11.md` for current NO-GO blockers and
+the same-source Exp2 arm preflight. This update does not supersede original
+evidence SHAs or certify a GPU gate.
+
 ## Isolated readiness update, 2026-10-10
 
 No scientific status is promoted by the new `codex/exp12-launch-readiness` work.

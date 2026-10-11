@@ -32,7 +32,7 @@ from experiments.exp12.trigger import bootstrap_interval, trigger_config
 from experiments.registry import register_experiment
 from utils.atomic_io import atomic_write_text
 from utils.paths import require_absolute
-from utils.run_metadata import RUN_METADATA_FILENAME, differing_keys, load_run_metadata
+from utils.run_metadata import RUN_METADATA_FILENAME, code_version, differing_keys, load_run_metadata
 from utils.run_metadata import _strip_locations as strip_locations
 
 ARM_KEYS = {"fork.source", "fork.arm", "injection.m"}
@@ -42,6 +42,8 @@ def check_matches_parent(cfg, source: Path) -> None:
     parent = load_run_metadata(source / RUN_METADATA_FILENAME)
     if parent is None:
         raise ValueError(f"{source} has no {RUN_METADATA_FILENAME}")
+    if parent.get("code") != code_version():
+        raise ValueError("arm source commit/dirty state differs from the parent fork")
     import omegaconf
 
     mine = omegaconf.OmegaConf.to_container(cfg, resolve=True)
