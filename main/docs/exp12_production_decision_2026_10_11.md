@@ -26,6 +26,12 @@ final-grid qualification. The pilot is a development/positive-control attempt,
 not a confirmatory seed. The old null and hopper failures are not optional test
 suggestions; entropy wording alone is not a reason to change the implemented
 approved `-0.5` target. Production remains **NO-GO**.
+If queued pilot 22800749 creates a fork at `7d0883c`, an injected/identity
+arm restoring that fork must run on that exact pilot source. The new guard
+rejects using this review branch's changed code for that fork. Pilot-derived
+positive-control evidence may still be reviewed as historical development
+evidence; its relevance to a later grid source requires explicit source-aware
+owner review, not a relabeled checkpoint or silent cross-revision restore.
 
 **Owner decisions after evidence review:** For the null gate, the conservative
 decision is to hold D4W1024 confirmatory use, verify the raw original and
