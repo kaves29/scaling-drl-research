@@ -1,5 +1,16 @@
 # Exp1/Exp2 scientific and validation status
 
+## Dynamic scheduler preparation, 2026-10-11
+
+The isolated `codex/exp12-production-readiness` branch prepares two
+independently queued A100 allocations with one shared persistent Exp1/Exp2
+ledger; see [exp12_dynamic_launch.md](exp12_dynamic_launch.md). This is
+engineering preparation, not GPU validation or launch authorization. The
+195-parent population, natural trigger, injection, scientific thresholds and
+statistics remain unchanged. D4W1024 null, D4W1536 hopper range, six
+final-source CUDA identity cells, positive-control/m, entropy and numerical
+decisions still block the confirmatory campaign. Pilot 22800749 is unaffected.
+
 ## Production-readiness update, 2026-10-11
 
 The W&B-online D4W1536 dog-run seed102 development pilot is queued as Slurm

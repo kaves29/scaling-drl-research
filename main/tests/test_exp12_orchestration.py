@@ -34,6 +34,15 @@ class ClaimOwnershipTest(unittest.TestCase):
             json.dumps(dict(slurm_job_id=job, hostname=host, pid=pid))
         )
 
+    def test_legacy_claim_refuses_dynamic_campaign_root(self):
+        campaign = self.root / "campaign"
+        campaign.mkdir()
+        (campaign / "EXP12_DYNAMIC_QUEUE.json").write_text("{}")
+        checkpoint = campaign / "parents" / "dog-run" / "D4W1536" / "102"
+        with self.assertRaisesRegex(ValueError, "dynamic scheduler"):
+            claims._try_claim(str(checkpoint), "legacy", "old-host")
+        self.assertFalse(checkpoint.exists())
+
     def test_stale_contenders_cannot_both_own_the_claim(self):
         self.old_claim()
         read, resume = threading.Event(), threading.Event()

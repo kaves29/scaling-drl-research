@@ -1,5 +1,16 @@
 # Shared agent handoff
 
+## Dynamic allocation task (2026-10-11)
+
+Codex's current isolated task branch is `codex/exp12-production-readiness`,
+based on `dafd7d3f3fa9f070ecb2047519f68e43094b4b62`. The new persistent
+scheduler, A/B Slurm wrapper, approval template and focused CPU checks are
+described in [exp12_dynamic_launch.md](exp12_dynamic_launch.md). Resolve its
+final source SHA from Git; this handoff does not approve either allocation,
+Exp2 injection, scientific-gate disposition or production. Pilot 22800749
+remains untouched. The historical fixed-wave commands are not the intended
+campaign path.
+
 ## Production-readiness review (2026-10-11)
 
 Codex task branch `codex/exp12-production-readiness` starts at the explicitly

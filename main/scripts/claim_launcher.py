@@ -129,6 +129,13 @@ def _claim_guard(ckpt_dir):
 
 def _try_claim(ckpt_dir: str, my_job_id: str, my_host: str) -> bool:
     """Claim fresh/stale work under the same atomic transition guard."""
+    if any(
+        (ancestor / "EXP12_DYNAMIC_QUEUE.json").exists()
+        for ancestor in Path(ckpt_dir).parents
+    ):
+        raise ValueError(
+            "campaign is owned by the shared Exp12 dynamic scheduler; legacy claim refused"
+        )
     Path(ckpt_dir).mkdir(parents=True, exist_ok=True)
     with _claim_guard(ckpt_dir) as acquired:
         if not acquired:

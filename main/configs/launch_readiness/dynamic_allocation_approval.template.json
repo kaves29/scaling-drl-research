@@ -1,0 +1,72 @@
+{
+  "approved": false,
+  "allocation": null,
+  "expected_commit": null,
+  "queue_sha256": null,
+  "decision_reference": null,
+  "resources": {
+    "nodes": null,
+    "gpus_per_node": 4,
+    "cpus_per_node": null,
+    "memory_gb_per_node": null,
+    "humanoid_bench_python": null,
+    "wall_minutes": null
+  },
+  "admission": {
+    "gpu_headroom_gb": null,
+    "host_headroom_gb": null,
+    "stop_margin_minutes": null,
+    "architectures": {
+      "D2W512": {
+        "cpus": null,
+        "host_ram_gb": null,
+        "gpu_memory_gb": null,
+        "estimated_minutes_by_group": {
+          "dmc_hard": null,
+          "myosuite_simba": null,
+          "humanoid_bench": null
+        },
+        "min_interactions_per_second": null
+      },
+      "D4W1024": {
+        "cpus": null,
+        "host_ram_gb": null,
+        "gpu_memory_gb": null,
+        "estimated_minutes_by_group": {
+          "dmc_hard": null,
+          "myosuite_simba": null,
+          "humanoid_bench": null
+        },
+        "estimated_arm_minutes_by_group": {
+          "dmc_hard": null,
+          "myosuite_simba": null,
+          "humanoid_bench": null
+        },
+        "min_interactions_per_second": null
+      },
+      "D4W1536": {
+        "cpus": null,
+        "host_ram_gb": null,
+        "gpu_memory_gb": null,
+        "estimated_minutes_by_group": {
+          "dmc_hard": null,
+          "myosuite_simba": null,
+          "humanoid_bench": null
+        },
+        "estimated_arm_minutes_by_group": {
+          "dmc_hard": null,
+          "myosuite_simba": null,
+          "humanoid_bench": null
+        },
+        "min_interactions_per_second": null
+      }
+    }
+  },
+  "exp2": {
+    "approved": false,
+    "decision_reference": null,
+    "injection_m": null,
+    "positive_control_evidence": null,
+    "positive_control_sha256": null
+  }
+}

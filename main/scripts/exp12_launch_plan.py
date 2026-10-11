@@ -398,6 +398,8 @@ def execute(plan_path, index, resume=False):
 
     plan_path = Path(plan_path)
     plan = json.loads(plan_path.read_text())
+    if (Path(plan["root"]) / "EXP12_DYNAMIC_QUEUE.json").exists():
+        raise ValueError("campaign is owned by the shared dynamic scheduler; array execution refused")
     if sha(plan["approval"]) != plan["approval_sha256"]:
         raise ValueError("approval changed after preparation")
     approve(
