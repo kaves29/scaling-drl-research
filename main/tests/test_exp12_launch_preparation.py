@@ -5,6 +5,7 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 from scripts.exp12_fullwidth_gate import (
     cache_observer,
@@ -176,6 +177,80 @@ class FullwidthContractTest(unittest.TestCase):
 
 
 class LaunchPreparationTest(unittest.TestCase):
+    def test_complete_eight_gpu_batch_schedule_rejects_omission_and_wrong_array(self):
+        from scripts.exp12_launch_plan import (
+            batch_submission_command, load_batch_schedule, prepare_batch_schedule,
+        )
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            plan_path, schedule_path = root / "plan.json", root / "batches.json"
+            plan_path.write_text(json.dumps({
+                "stage": "parents", "commit": "a" * 40, "root": str(root / "runs"),
+                "resources": dict(gpus=1, cpus=4, memory_gb=32, wall_minutes=480, concurrency=8),
+                "entries": [{"index": i} for i in range(195)],
+            }))
+            with mock.patch("scripts.exp12_launch_plan.submission_command", return_value="validated"):
+                schedule = prepare_batch_schedule(plan_path, schedule_path)
+                self.assertEqual(len(schedule["batches"]), 25)
+                self.assertEqual(
+                    [i for b in schedule["batches"] for i in range(b["first"], b["last"] + 1)],
+                    list(range(195)),
+                )
+                self.assertIn("--array=192-194%8", batch_submission_command(schedule_path, 24))
+                environment = dict(SLURM_ARRAY_TASK_ID="192", SLURM_ARRAY_TASK_COUNT="3",
+                                   SLURM_ARRAY_TASK_MIN="192", SLURM_ARRAY_TASK_MAX="194",
+                                   SLURM_ARRAY_TASK_STEP="1")
+                array_matches("parents", 192, False, environment, batch=(192, 194))
+                environment["SLURM_ARRAY_TASK_COUNT"] = "195"
+                with self.assertRaisesRegex(ValueError, "approved batch"):
+                    array_matches("parents", 192, False, environment, batch=(192, 194))
+                schedule["batches"][0]["last"] = 6
+                schedule_path.write_text(json.dumps(schedule))
+                with self.assertRaisesRegex(ValueError, "differs"):
+                    load_batch_schedule(schedule_path)
+
+    def test_parent_approval_caps_concurrency_and_wall_time(self):
+        from scripts.exp12_launch_plan import batch_submission_command, prepare_batch_schedule, submission_command
+
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "identity.json"
+            path.write_text(json.dumps(dict(
+                verdict="PASS", expected_commit="a" * 40,
+                qualification="cuda_identity_fork",
+                coverage=[dict(architecture=a, suite=s, environment="recorded")
+                          for a in ("D4W1024", "D4W1536")
+                          for s in ("dmc", "myosuite", "humanoid_bench")],
+            )))
+            approval = self.approval("parents")
+            approval["gates"]["cuda_identity_scaled_suites"]["evidence"] = [
+                dict(path=str(path), sha256=sha(path))
+            ]
+            approval["resources"].update(concurrency=8, wall_minutes=2880)
+            approve(approval, "parents", "a" * 40)
+            approval["resources"]["concurrency"] = 9
+            with self.assertRaisesRegex(ValueError, "8 A100s"):
+                approve(approval, "parents", "a" * 40)
+            approval["resources"].update(concurrency=8, wall_minutes=2881)
+            with self.assertRaisesRegex(ValueError, "48 hours"):
+                approve(approval, "parents", "a" * 40)
+            approval["resources"]["wall_minutes"] = 2880
+            approved, plan_path = Path(directory) / "approval.json", Path(directory) / "plan.json"
+            approved.write_text(json.dumps(approval))
+            entries = [{"index": i} for i in range(195)]
+            plan_path.write_text(json.dumps(dict(
+                stage="parents", commit="a" * 40, root=str(Path(directory) / "runs"),
+                approval=str(approved), approval_sha256=sha(approved),
+                resources=approval["resources"], entries=entries,
+            )))
+            with mock.patch("scripts.exp12_launch_plan.cells", return_value=entries):
+                with self.assertRaisesRegex(ValueError, "explicit per-job duration policy"):
+                    submission_command(plan_path)
+                self.assertIn("--array=0-194%8", submission_command(plan_path, per_job_policy=True))
+                schedule_path = Path(directory) / "batches.json"
+                prepare_batch_schedule(plan_path, schedule_path)
+                self.assertIn("--array=192-194%8", batch_submission_command(schedule_path, 24))
+
     def test_parent_array_cannot_silently_omit_runs(self):
         environment = dict(
             SLURM_ARRAY_TASK_ID="0",

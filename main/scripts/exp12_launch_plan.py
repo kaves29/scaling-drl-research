@@ -77,7 +77,7 @@ def allocation_matches(resources, environment, job_description):
         raise ValueError("actual wall time differs from approval")
 
 
-def array_matches(stage, index, resume, environment):
+def array_matches(stage, index, resume, environment, batch=None):
     """Refuse accidentally launching only index0 of the195-parent plan."""
     if stage == "pilot":
         if environment.get("SLURM_ARRAY_TASK_ID") is not None:
@@ -85,6 +85,22 @@ def array_matches(stage, index, resume, environment):
         return
     if int(environment.get("SLURM_ARRAY_TASK_ID", "-1")) != index:
         raise ValueError("parent execution requires the declared array index")
+    if batch is not None:
+        first, last = batch
+        if not first <= index <= last:
+            raise ValueError("parent index is outside the approved batch")
+        expected = (index, index) if resume else (first, last)
+        if any(
+            int(environment.get(k, "-1")) != v
+            for k, v in {
+                "SLURM_ARRAY_TASK_COUNT": expected[1] - expected[0] + 1,
+                "SLURM_ARRAY_TASK_MIN": expected[0],
+                "SLURM_ARRAY_TASK_MAX": expected[1],
+                "SLURM_ARRAY_TASK_STEP": 1,
+            }.items()
+        ):
+            raise ValueError("actual array does not match the approved batch")
+        return
     if not resume and any(
         int(environment.get(k, "-1")) != v
         for k, v in {
@@ -155,6 +171,8 @@ def approve(approval, stage, commit):
         raise ValueError("one A100 per parent is the prepared execution scope")
     if resources["concurrency"] > (1 if stage == "pilot" else 195):
         raise ValueError("concurrency exceeds stage population")
+    if stage == "parents" and (resources["concurrency"] > 8 or resources["wall_minutes"] > 48 * 60):
+        raise ValueError("parent batches require at most 8 A100s and 48 hours per task")
     return resources
 
 
@@ -260,7 +278,7 @@ def prepare(stage, root, commit, approval_path, out):
     return plan
 
 
-def submission_command(plan_path):
+def submission_command(plan_path, per_job_policy=False):
     """Print only; allocation values come from the immutable approved plan."""
     plan_path = Path(plan_path).resolve()
     plan = json.loads(plan_path.read_text())
@@ -274,6 +292,8 @@ def submission_command(plan_path):
         or cells(Path(plan["root"]), plan["stage"]) != plan["entries"]
     ):
         raise ValueError("plan differs from approved configuration/allocation")
+    if plan["stage"] == "parents" and not per_job_policy:
+        raise ValueError("195-task array requires explicit per-job duration policy; use prepare-batches for 48-hour waves")
     logs = Path(plan["root"]) / "slurm"
     command = [
         "env",
@@ -298,6 +318,74 @@ def submission_command(plan_path):
         + shlex.quote(reservation + "/job-id.txt")
         + " 2> "
         + shlex.quote(reservation + "/submission.stderr")
+    )
+
+
+def _batch_schedule_record(plan_path, plan):
+    if plan["stage"] != "parents":
+        raise ValueError("batch scheduling is only for the 195-parent plan")
+    width = plan["resources"]["concurrency"]
+    return {
+        "schema_version": 1,
+        "plan": str(Path(plan_path).resolve()),
+        "plan_sha256": sha(plan_path),
+        "commit": plan["commit"],
+        "batches": [
+            {"number": n, "first": first, "last": min(first + width, 195) - 1}
+            for n, first in enumerate(range(0, 195, width))
+        ],
+    }
+
+
+def prepare_batch_schedule(plan_path, out):
+    """Write a complete, non-submitting wave partition bound to an approved plan."""
+    submission_command(plan_path, per_job_policy=True)  # Validate without printing a full-array command.
+    plan = json.loads(Path(plan_path).read_text())
+    schedule = _batch_schedule_record(plan_path, plan)
+    with Path(out).open("x") as stream:
+        json.dump(schedule, stream, indent=2)
+    return schedule
+
+
+def load_batch_schedule(path):
+    schedule = json.loads(Path(path).read_text())
+    plan_path = Path(schedule["plan"])
+    submission_command(plan_path, per_job_policy=True)
+    plan = json.loads(plan_path.read_text())
+    if schedule != _batch_schedule_record(plan_path, plan):
+        raise ValueError("batch schedule differs from the complete approved parent plan")
+    return schedule, plan
+
+
+def batch_submission_command(schedule_path, number):
+    """Print one batch command; never submit, reserve, or infer overlap approval."""
+    schedule_path = Path(schedule_path).resolve()
+    schedule, plan = load_batch_schedule(schedule_path)
+    if type(number) is not int or not 0 <= number < len(schedule["batches"]):
+        raise ValueError("invalid batch number")
+    batch = schedule["batches"][number]
+    resources = plan["resources"]
+    logs = Path(plan["root"]) / "slurm"
+    command = [
+        "env",
+        f"EXPECTED_COMMIT={plan['commit']}",
+        f"LAUNCH_PLAN={schedule['plan']}",
+        f"EXP12_BATCH_SCHEDULE={schedule_path}",
+        f"EXP12_BATCH_SCHEDULE_SHA256={sha(schedule_path)}",
+        f"EXP12_BATCH_NUMBER={number}",
+        "sbatch", "--parsable", "--export=ALL",
+        f"--cpus-per-task={resources['cpus']}",
+        f"--mem={resources['memory_gb']}G",
+        f"--time={resources['wall_minutes']}",
+        f"--array={batch['first']}-{batch['last']}%{resources['concurrency']}",
+        f"--output={logs}/%x_%A_%a.out",
+        f"--error={logs}/%x_%A_%a.err",
+        "scripts/sbatch_exp12_prepared_parent.sh",
+    ]
+    reservation = str(schedule_path) + f".batch-{number:02d}.submission-reservation"
+    return (
+        shlex.join(command) + " > " + shlex.quote(reservation + "/job-id.txt")
+        + " 2> " + shlex.quote(reservation + "/submission.stderr")
     )
 
 
@@ -331,7 +419,20 @@ def execute(plan_path, index, resume=False):
         ["scontrol", "show", "job", "--oneliner", job_id], text=True
     )
     allocation_matches(plan["resources"], os.environ, description)
-    array_matches(plan["stage"], index, resume, os.environ)
+    batch = None
+    if os.environ.get("EXP12_BATCH_SCHEDULE"):
+        schedule_path = Path(os.environ["EXP12_BATCH_SCHEDULE"]).resolve()
+        if sha(schedule_path) != os.environ.get("EXP12_BATCH_SCHEDULE_SHA256"):
+            raise ValueError("batch schedule hash differs from submitted command")
+        schedule, _ = load_batch_schedule(schedule_path)
+        if Path(schedule["plan"]).resolve() != plan_path.resolve():
+            raise ValueError("batch schedule belongs to another plan")
+        number = int(os.environ.get("EXP12_BATCH_NUMBER", "-1"))
+        if not 0 <= number < len(schedule["batches"]):
+            raise ValueError("missing or invalid approved batch number")
+        record = schedule["batches"][number]
+        batch = (record["first"], record["last"])
+    array_matches(plan["stage"], index, resume, os.environ, batch=batch)
     import jax
     import jaxlib
 
@@ -389,6 +490,7 @@ def execute(plan_path, index, resume=False):
     )
     attempt.mkdir()
     os.environ["EXP12_JAX_CACHE_DIR"] = str(attempt / "jax_cache")
+    os.environ["WANDB_DIR"] = str(attempt)
     with (attempt / "training.log").open("x") as log:
         code = subprocess.call(
             row["command"], cwd=MAIN, stdout=log, stderr=subprocess.STDOUT
@@ -736,6 +838,13 @@ def main():
     run.add_argument("--resume", action="store_true")
     command = sub.add_parser("submission-command")
     command.add_argument("--plan", required=True)
+    command.add_argument("--duration-policy", choices=("per-job",))
+    schedule = sub.add_parser("prepare-batches")
+    schedule.add_argument("--plan", required=True)
+    schedule.add_argument("--out", required=True)
+    batch_command = sub.add_parser("batch-command")
+    batch_command.add_argument("--schedule", required=True)
+    batch_command.add_argument("--number", required=True, type=int)
     check = sub.add_parser("validate-run")
     for name in ("run", "commit", "out"):
         check.add_argument("--" + name, required=True)
@@ -749,7 +858,13 @@ def main():
     if args.action == "execute":
         return execute(args.plan, args.index, args.resume)
     if args.action == "submission-command":
-        print(submission_command(args.plan))
+        print(submission_command(args.plan, per_job_policy=args.duration_policy == "per-job"))
+        return 0
+    if args.action == "prepare-batches":
+        prepare_batch_schedule(args.plan, args.out)
+        return 0
+    if args.action == "batch-command":
+        print(batch_submission_command(args.schedule, args.number))
         return 0
     if args.action == "certify-identity":
         return (
