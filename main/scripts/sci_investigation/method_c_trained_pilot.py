@@ -23,6 +23,7 @@ from experiments.exp1 import compose_config, record_metadata
 from experiments.exp12.precision import configure_compilation_cache, runtime_info, set_matmul_precision
 from experiments.exp12.run_probes import RunProbes
 from experiments.exp12.trainer import Exp12Trainer
+from experiments.exp12.trigger import bootstrap_interval, f_star, triggered
 from utils.run_metadata import code_version
 
 
@@ -46,6 +47,51 @@ def validation_steps(cfg):
     if first <= int(cfg.buffer.min_length):
         raise ValueError("fresh critic must be captured before the first check")
     return first, 2 * first
+
+
+def verify_recorded_decisions(records, cfg):
+    """Recompute the saved bootstrap and first eligible consecutive trigger."""
+    for row in records[1:]:
+        losses = [row[f"loss_r{i}"] for i in range(int(cfg.probe.rounds))]
+        low, high = bootstrap_interval(losses, int(cfg.seed), row["check_index"],
+                                       int(cfg.trigger.resamples), float(cfg.trigger.confidence))
+        if (low, high) != (row["ci_low"], row["ci_high"]):
+            raise ValueError(f"check {row['check_index']}: saved bootstrap differs")
+        if row["triggered"] != (triggered(low, 0.0) and row["valid"]):
+            raise ValueError(f"check {row['check_index']}: saved decision differs")
+    return f_star(records, int(cfg.probe.checks), int(cfg.trigger.consecutive_checks),
+                  float(cfg.trigger.eligible_fraction))
+
+
+def replay_check(cfg, run_dir, out_dir, saved):
+    """Restore a complete saved state and reproduce its GPU probe bitwise."""
+    check_index = saved["check_index"]
+    replay_dir = out_dir / f"replay_check_{check_index:02d}"
+    replay_dir.mkdir()
+    trainer = Exp12Trainer(cfg, str(replay_dir))
+    try:
+        trainer.restore(out_dir / saved["state_dir"])
+        if (trainer.interaction_step, trainer.update_step) != (
+            saved["interaction_step"], saved["update_step"]
+        ):
+            raise ValueError("restored counters differ from checkpoint receipt")
+        probes = RunProbes(trainer, str(replay_dir), fresh_dir=str(run_dir / "fresh_critic"))
+        critics = {"current": probes.current_critic(trainer),
+                   "fresh": (probes.critic_def, probes.fresh)}
+        probes._probe(check_index, critics)
+        original = run_dir / "probes" / f"check_{check_index:02d}.npz"
+        reproduced = replay_dir / "probes" / original.name
+        with np.load(original, allow_pickle=False) as a, np.load(reproduced, allow_pickle=False) as b:
+            if set(a.files) != set(b.files):
+                raise ValueError(f"check {check_index}: replay array members differ")
+            for name in a.files:
+                x, y = a[name], b[name]
+                if x.dtype != y.dtype or x.shape != y.shape or x.tobytes() != y.tobytes():
+                    raise ValueError(f"check {check_index}: replay differs at {name}")
+        return {"check_index": check_index, "state_dir": saved["state_dir"],
+                "probe_replay_bitwise_equal": True}
+    finally:
+        trainer.close()
 
 
 def main():
@@ -94,15 +140,22 @@ def main():
         trainer.train(second, after_step=after_step, before_first_update=probes.capture_fresh)
         if len(checkpoints) != 2 or len(probes.records) != 3:
             raise RuntimeError("fresh check and both trained checks were not captured")
-        receipt = {"code": code, "runtime": runtime, "role": "exploratory Method C validation",
-                   "configured_interaction_budget": int(cfg.num_interaction_steps),
-                   "check_grid": [first, second], "checkpoints": checkpoints,
-                   "f_star": probes.f_star, "probe_records": probes.records,
-                   "note": "stopped at check 2; no completed parent or Exp2 arm"}
-        (args.out_dir / "receipt.json").write_text(json.dumps(receipt, allow_nan=False, indent=2))
-        print(json.dumps({"checkpoints": checkpoints, "f_star": probes.f_star}), flush=True)
+        records = list(probes.records)
+        observed_f_star = probes.f_star
     finally:
         trainer.close()
+
+    if verify_recorded_decisions(records, cfg) != observed_f_star:
+        raise ValueError("saved two-consecutive-check trigger differs from independent replay")
+    replay_receipts = [replay_check(cfg, run_dir, args.out_dir, state) for state in checkpoints]
+    receipt = {"code": code, "runtime": runtime, "role": "exploratory Method C validation",
+               "configured_interaction_budget": int(cfg.num_interaction_steps),
+               "check_grid": [first, second], "checkpoints": checkpoints,
+               "f_star": observed_f_star, "probe_records": records, "replays": replay_receipts,
+               "note": "stopped at check 2; no completed parent or Exp2 arm"}
+    (args.out_dir / "receipt.json").write_text(json.dumps(receipt, allow_nan=False, indent=2))
+    print(json.dumps({"checkpoints": checkpoints, "f_star": observed_f_star,
+                      "replays": replay_receipts}), flush=True)
 
 
 if __name__ == "__main__":
