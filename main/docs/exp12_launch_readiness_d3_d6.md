@@ -22,12 +22,13 @@ Branch `claude/exp12-production-launch`; this round builds on `f045cc5`.
 - records the SHA-256 of every evidence file.
 
 ```bash
-cd "$FINAL_CHECKOUT/main"   # clean checkout of the reviewed branch commit
+# Lightweight CPU environment (no JAX/GPU stack): numpy, scipy, omegaconf, hydra-core, plus git.
+python3 -m venv ~/exp12_inspect_env && ~/exp12_inspect_env/bin/pip install -r "$FINAL_CHECKOUT/main/requirements-inspect.txt"
+cd "$FINAL_CHECKOUT/main"   # clean checkout of the reviewed branch commit (full history: contains 7d0883c)
 PILOT=/work/hdd/biqc/skaveti1/exp12_pilot_runs/7d0883cfa99d27fed062d77a68cbbfa27e560061_dog_run_D4W1536_seed102
 D=/work/hdd/biqc/skaveti1/exp12_decisions; mkdir -p "$D"
-python scripts/exp12_pilot_inspect.py --root "$PILOT" --out "$D/pilot_inspection.json" \
-  --final-sha "$FINAL_SHA" --compat-out "$D/pilot_source_compat.json" \
-  $(for f in "$PILOT"/../*22800749*.out "$PILOT"/../*22800749*.err; do [ -f "$f" ] && echo --log "$f"; done)
+~/exp12_inspect_env/bin/python scripts/exp12_pilot_inspect.py --root "$PILOT" --out "$D/pilot_inspection.json" \
+  --final-sha "$(git rev-parse HEAD)" --compat-out "$D/pilot_source_compat.json"
 ```
 
 Evidence it reads, in the layout written by `exp1.py`, `run_probes.py`, `fork.py` and `ledger.py`:

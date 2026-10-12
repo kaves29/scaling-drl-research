@@ -1,18 +1,35 @@
-"""Read-only pilot inspection on real tiny Exp1 runs: no trigger, natural fork, forced fork."""
+"""Read-only, lightweight pilot inspection.
+
+Fixtures are real tiny Exp1 runs (no trigger, natural fork, forced fork) produced by the
+production code. The inspector is then checked (a) in-process, (b) in a subprocess whose
+import system refuses JAX, pandas, the `experiments` package and other heavy frameworks,
+and (c) helper-by-helper against the production implementations it re-states.
+"""
 
 import hashlib
 import json
+import os
+import shutil
+import subprocess
 import sys
 import tempfile
+import textwrap
 import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from exp12_helpers import patch_wandb, tiny_overrides  # noqa: E402
+from exp12_helpers import CONFIG_PATH, compose, patch_wandb, tiny_overrides  # noqa: E402
 from test_exp12_fork import fork_overrides, run_exp1  # noqa: E402
 
-from scripts import exp12_pilot_inspect  # noqa: E402
+from scripts import exp12_pilot_inspect as light  # noqa: E402
+
+MAIN = Path(__file__).resolve().parents[1]
+PILOT_COMMIT = "7d0883cfa99d27fed062d77a68cbbfa27e560061"
+OLD_COMMIT = "b4a90cb"  # Block B source: scientific paths differ from today's
+BLOCKED = ("jax", "jaxlib", "flax", "optax", "orbax", "mujoco", "dm_control", "wandb", "pandas",
+           "experiments", "scale_rl", "gymnasium", "gym", "torch", "tensorflow", "humanoid_bench",
+           "myosuite")
 
 
 def tree_digest(root):
@@ -30,48 +47,254 @@ def natural_overrides(results, threshold):
         "fork.eval_episodes=1", f"trigger.null_threshold={threshold}", f"results_root={results}"])
 
 
-class PilotInspectTest(unittest.TestCase):
-    def setUp(self):
-        self.patchers = patch_wandb()
-        self.tmp = tempfile.TemporaryDirectory()
-        self.addCleanup(self.tmp.cleanup)
-        for p in self.patchers:
-            self.addCleanup(p.stop)
+def git_has(commit):
+    return not subprocess.run(["git", "-C", str(MAIN), "cat-file", "-e", commit + "^{commit}"],
+                              capture_output=True).returncode
 
-    def run_and_inspect(self, overrides):
-        root = Path(self.tmp.name) / "pilot"
-        run_exp1(str(root / "checkpoints" / "run"), overrides)
+
+class Fixtures:
+    root = None
+
+    @classmethod
+    def build(cls):
+        if cls.root is not None:
+            return cls.root
+        cls._tmp = tempfile.TemporaryDirectory()
+        root = Path(cls._tmp.name)
+        patchers = patch_wandb()
+        try:
+            run_exp1(str(root / "none" / "checkpoints" / "run"), natural_overrides(root / "none" / "results", 1e9))
+            run_exp1(str(root / "natural" / "checkpoints" / "run"),
+                     natural_overrides(root / "natural" / "results", -1e9))
+            run_exp1(str(root / "forced" / "checkpoints" / "run"), fork_overrides(root / "forced" / "results"))
+        finally:
+            for p in patchers:
+                p.stop()
+        cls.root = root
+        return root
+
+
+def tearDownModule():
+    if Fixtures.root is not None:
+        Fixtures._tmp.cleanup()
+
+
+def with_commit(source, destination, commit):
+    """A copy of a fixture whose provenance names another clean commit."""
+    shutil.copytree(source, destination)
+    path = destination / "checkpoints" / "run" / "run_metadata.json"
+    data = json.loads(path.read_text())
+    data["code"] = {"commit": commit, "dirty": False}
+    path.write_text(json.dumps(data))
+    return destination
+
+
+class VerdictTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.fixtures = Fixtures.build()
+
+    def inspect(self, name, *extra):
+        out = Path(tempfile.mkdtemp()) / "report.json"
+        root = self.fixtures / name
         before = tree_digest(root)
-        out = Path(self.tmp.name) / "report.json"
         with self.assertRaises(SystemExit):
-            exp12_pilot_inspect.main(["--root", str(root), "--out", str(root / "inside.json")])
-        exp12_pilot_inspect.main(["--root", str(root), "--out", str(out)])
+            light.main(["--root", str(root), "--out", str(root / "inside.json")])
+        light.main(["--root", str(root), "--out", str(out), *extra])
         self.assertEqual(tree_digest(root), before)  # read-only
         return json.loads(out.read_text())
 
     def test_no_natural_trigger_prescribes_stop_and_consult(self):
-        report = self.run_and_inspect(natural_overrides(Path(self.tmp.name) / "r", 1e9))
+        report = self.inspect("none")
         self.assertEqual(report["verdict"], "NO_NATURAL_TRIGGER")
         self.assertTrue(report["horizon"]["complete"])
         self.assertEqual(report["trigger"]["fired_checks"], [])
         self.assertIsNone(report["trigger"]["recomputed_f_star"])
+        self.assertIsNone(report["trigger"]["recorded_f_star"])
         self.assertFalse(report["fork"]["fork_dir_exists"])
         self.assertIn("stop and consult", report["next_step"])
 
-    def test_natural_trigger_yields_a_valid_fork_and_exact_statistics(self):
-        report = self.run_and_inspect(natural_overrides(Path(self.tmp.name) / "r", -1e9))
+    def test_natural_fork_statistics_match_the_saved_production_records(self):
+        report = self.inspect("natural")
         self.assertEqual(report["verdict"], "NATURAL_FORK_AVAILABLE", report["problems"])
-        self.assertEqual(report["trigger"]["recomputed_f_star"]["check_index"], 2)
-        self.assertEqual(report["trigger"]["recorded_f_star"]["check_index"], 2)
+        self.assertEqual(report["trigger"]["recomputed_f_star"], {"check_index": 2, "interaction_step": 40})
+        self.assertEqual(report["trigger"]["recorded_f_star"], report["trigger"]["recomputed_f_star"])
         self.assertTrue(report["fork"]["natural_fork_valid"])
         self.assertEqual(report["fork"]["plan"]["fork_check_index"], 2)
-        self.assertTrue(report["log_corroboration"]["files_scanned"] >= 0)
+        self.assertEqual(report["unsupported_pickled_classes"], [])
+        # Every recomputed bound equals the production run's recorded value.
+        import csv
+
+        run = self.fixtures / "natural" / "checkpoints" / "run"
+        with open(run / "probes" / "probe_checks.csv") as stream:
+            recorded = {int(float(r["check_index"])): r for r in csv.DictReader(stream)}
+        for row in report["trigger"]["checks"][1:]:
+            self.assertEqual(row["ci_low"], float(recorded[row["check_index"]]["ci_low"]))
+            self.assertEqual(row["triggered_recorded"], row["fired_recomputed"])
 
     def test_forced_fork_is_never_eligible(self):
-        report = self.run_and_inspect(fork_overrides(Path(self.tmp.name) / "r"))
+        report = self.inspect("forced")
         self.assertEqual(report["verdict"], "FORCED_FORK_NOT_ELIGIBLE")
         self.assertTrue(report["fork"]["fork_ready"])
         self.assertTrue(report["trigger"]["forced_checks"])
+
+    def test_tampered_trigger_record_is_inconsistent(self):
+        tmp = Path(tempfile.mkdtemp())
+        copy = shutil.copytree(self.fixtures / "natural", tmp / "tampered")
+        csv_path = copy / "checkpoints" / "run" / "probes" / "probe_checks.csv"
+        text = csv_path.read_text().splitlines()
+        header = text[0].split(",")
+        cells = text[3].split(",")
+        cells[header.index("ci_low")] = "123.0"
+        text[3] = ",".join(cells)
+        csv_path.write_text("\n".join(text) + "\n")
+        out = tmp / "report.json"
+        light.main(["--root", str(copy), "--out", str(out)])
+        report = json.loads(out.read_text())
+        self.assertEqual(report["verdict"], "INCONSISTENT_EVIDENCE")
+        self.assertTrue(any("ci_low" in p for p in report["problems"]))
+
+
+@unittest.skipUnless(git_has(PILOT_COMMIT) and git_has(OLD_COMMIT), "historical commits not in this clone")
+class CompatibilityPathTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.fixtures = Fixtures.build()
+        cls.head = subprocess.check_output(["git", "-C", str(MAIN), "rev-parse", "HEAD"], text=True).strip()
+
+    def test_pilot_commit_certificate_is_compatible_and_verifiable(self):
+        tmp = Path(tempfile.mkdtemp())
+        root = with_commit(self.fixtures / "natural", tmp / "pilot", PILOT_COMMIT)
+        out, cert = tmp / "report.json", tmp / "compat.json"
+        light.main(["--root", str(root), "--out", str(out), "--final-sha", self.head,
+                    "--compat-out", str(cert)])
+        report = json.loads(out.read_text())
+        self.assertEqual(report["source_compatibility"]["verdict"], "COMPATIBLE")
+        self.assertEqual(report["source_compatibility"]["differing"], ["main/experiments/exp2_arm.py"])
+        digest = hashlib.sha256(cert.read_bytes()).hexdigest()
+        self.assertEqual(report["source_compatibility"]["certificate_sha256"], digest)
+        light.compatibility.verify(cert, digest, PILOT_COMMIT, self.head)  # the scheduler's check
+
+    def test_old_source_is_incompatible(self):
+        tmp = Path(tempfile.mkdtemp())
+        old = subprocess.check_output(["git", "-C", str(MAIN), "rev-parse", OLD_COMMIT], text=True).strip()
+        root = with_commit(self.fixtures / "natural", tmp / "old", old)
+        out = tmp / "report.json"
+        light.main(["--root", str(root), "--out", str(out), "--final-sha", self.head])
+        report = json.loads(out.read_text())
+        self.assertEqual(report["source_compatibility"]["verdict"], "INCOMPATIBLE")
+        self.assertIn("main/experiments/exp12/probe.py", report["source_compatibility"]["unexplained_differences"])
+
+
+class LightweightIsolationTest(unittest.TestCase):
+    """A subprocess whose import system refuses every heavy framework still inspects correctly."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.fixtures = Fixtures.build()
+        cls.site = Path(tempfile.mkdtemp())
+        (cls.site / "sitecustomize.py").write_text(textwrap.dedent(f"""
+            import sys
+            BLOCKED = {BLOCKED!r}
+
+            class _Refuse:
+                def find_spec(self, name, path=None, target=None):
+                    if name.split(".")[0] in BLOCKED:
+                        raise ImportError("blocked heavy import: " + name)
+                    return None
+
+            sys.meta_path.insert(0, _Refuse())
+        """))
+
+    def run_blocked(self, name, *extra):
+        out = Path(tempfile.mkdtemp()) / "report.json"
+        env = dict(os.environ, PYTHONPATH=str(self.site))
+        result = subprocess.run(
+            [sys.executable, "-X", "importtime", str(MAIN / "scripts" / "exp12_pilot_inspect.py"),
+             "--root", str(self.fixtures / name), "--out", str(out), *extra],
+            cwd=str(MAIN), env=env, capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stderr[-3000:])
+        imported = {line.split("|")[-1].strip().split(".")[0] for line in result.stderr.splitlines()
+                    if line.startswith("import time:")}
+        self.assertFalse(imported & set(BLOCKED), imported & set(BLOCKED))
+        return json.loads(out.read_text())
+
+    def test_verdicts_without_heavy_frameworks(self):
+        self.assertEqual(self.run_blocked("none")["verdict"], "NO_NATURAL_TRIGGER")
+        report = self.run_blocked("natural")
+        self.assertEqual(report["verdict"], "NATURAL_FORK_AVAILABLE", report["problems"])
+        self.assertTrue(report["fork"]["natural_fork_valid"])
+        self.assertEqual(self.run_blocked("forced")["verdict"], "FORCED_FORK_NOT_ELIGIBLE")
+
+
+class ProductionEquivalenceTest(unittest.TestCase):
+    """Each helper the inspector re-states equals the production implementation."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.fixtures = Fixtures.build()
+
+    def test_helpers(self):
+        import numpy as np
+        from experiments.exp12 import fork, probe, state
+        from scale_rl.common.logger import get_architecture_id
+
+        rng = np.random.default_rng(0)
+        for _ in range(20):
+            values = rng.normal(size=5).astype(np.float32)
+            self.assertEqual(light.iqm(values), probe.iqm(values))
+        self.assertEqual(light.check_steps(500_000, 20), probe.check_steps(500_000, 20))
+        with self.assertRaises(ValueError):
+            light.check_steps(10, 3)
+        cfg = compose(["env_name=dog-run", "env=dmc_hard", "critic_num_blocks=4", "critic_hidden_dim=1536",
+                       "run_role=dev", "seed=102"])
+        for k in range(1, 20):
+            step = k * int(cfg.num_interaction_steps) // 20
+            self.assertEqual(light.fork_plan(cfg, step, k), fork.fork_plan(cfg, step, k))
+        self.assertEqual(light.architecture_id(cfg), get_architecture_id(cfg))
+        import omegaconf
+
+        self.assertEqual(
+            omegaconf.OmegaConf.to_container(light.compose_config(["env_name=dog-run", "env=dmc_hard",
+                                                                   "critic_num_blocks=4", "critic_hidden_dim=1536",
+                                                                   "run_role=dev", "seed=102"]), resolve=True),
+            omegaconf.OmegaConf.to_container(cfg, resolve=True))
+        run = self.fixtures / "natural" / "checkpoints" / "run"
+        self.assertEqual(light.latest_state_dir(run / "state"), state.latest_state_dir(run / "state"))
+
+    def test_meta_reader_and_natural_fork_validation_agree_with_production(self):
+        from omegaconf import OmegaConf
+        from experiments.exp12 import fork
+        from experiments.exp12.state import latest_state_dir, load_meta
+        from scripts.positive_control import _validate_natural_fork, _setting_errors
+
+        run = self.fixtures / "natural" / "checkpoints" / "run"
+        cfg = OmegaConf.create(json.loads((run / "run_metadata.json").read_text())["resolved_config"])
+        state_dir = latest_state_dir(run / "fork" / "state")
+        production_meta = load_meta(state_dir)
+        raw, opaque = light.read_meta(state_dir)
+        self.assertEqual(opaque, [])
+        self.assertEqual(light._plain(raw["extra_state"]), light._plain(production_meta["extra_state"]))
+        plan = fork.read_fork(run)
+        plan_light = {k: v for k, v in json.loads((run / "fork" / "fork.json").read_text()).items()
+                      if k not in ("run_dir", "fresh_critic_dir", "device")}
+        self.assertEqual(plan_light, plan)
+        _validate_natural_fork(cfg, plan, production_meta)  # both accept
+        light.validate_natural_fork(cfg, plan, {"interaction_step": light._plain(raw["interaction_step"]),
+                                                "extra_state": light._plain(raw["extra_state"])})
+        for field, value in (("fork_step", plan["fork_step"] + 20), ("arm_end_step", 1),
+                             ("fork_check_index", 3)):
+            bad = dict(plan, **{field: value})
+            with self.assertRaises(ValueError):
+                _validate_natural_fork(cfg, bad, production_meta)
+            with self.assertRaises(ValueError):
+                light.validate_natural_fork(cfg, bad, {"interaction_step": light._plain(raw["interaction_step"]),
+                                                       "extra_state": light._plain(raw["extra_state"])})
+        self.assertEqual(light.setting_errors(cfg), _setting_errors(cfg, False))
+        canonical = compose(["env_name=dog-run", "env=dmc_hard", "critic_num_blocks=4", "critic_hidden_dim=1536",
+                             "run_role=dev", "seed=102"])
+        self.assertEqual(light.setting_errors(canonical), _setting_errors(canonical, False))
+        self.assertEqual(light.setting_errors(canonical), [])
 
 
 if __name__ == "__main__":
