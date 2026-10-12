@@ -20,10 +20,13 @@ test -z "$(git status --porcelain --untracked-files=all)"
 repo=$(git rev-parse --show-toplevel)
 case "$(realpath -m "$METHOD_C_OUT")/" in "$repo/"*) echo 'output must be outside checkout' >&2; exit 2;; esac
 mkdir "$METHOD_C_OUT"
+telemetry_pid=''
 finish() {
   code=$?
+  if [ -n "$telemetry_pid" ]; then kill "$telemetry_pid" 2>/dev/null || true; wait "$telemetry_pid" 2>/dev/null || true; fi
   printf '%s\n' "$code" > "$METHOD_C_OUT/exit_status.txt"
   find "$METHOD_C_OUT" -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 -r sha256sum > "$METHOD_C_OUT/SHA256SUMS"
+  exit "$code"
 }
 trap finish EXIT
 module reset
@@ -33,6 +36,15 @@ export JAX_PLATFORMS=cuda,cpu JAX_ENABLE_X64=false MUJOCO_GL=disable
 export XLA_PYTHON_CLIENT_PREALLOCATE=false WANDB_MODE=disabled
 export OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1
 unset JAX_PLATFORM_NAME JAX_DEFAULT_MATMUL_PRECISION NVIDIA_TF32_OVERRIDE
+(
+  while :; do
+    date -u '+%Y-%m-%dT%H:%M:%SZ'
+    nvidia-smi --query-gpu=name,memory.used,memory.total,utilization.gpu --format=csv,noheader,nounits || true
+    free -b | head -2 || true
+    sleep 5
+  done
+) > "$METHOD_C_OUT/resource_telemetry.log" 2>&1 &
+telemetry_pid=$!
 timeout --signal=TERM --kill-after=30s 5400 \
   python -u scripts/sci_investigation/method_c_trained_pilot.py \
   --expected-commit "$EXPECTED_COMMIT" --out-dir "$METHOD_C_OUT/pilot" \
