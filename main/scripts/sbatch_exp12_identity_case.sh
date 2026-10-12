@@ -56,7 +56,29 @@ assert jax.local_devices(backend='cpu')
 assert not jax.config.jax_enable_x64
 PY
 mkdir "$IDENTITY_ROOT"
-finish() { code=$?; trap - EXIT; printf '%s\n' "$code" > "$IDENTITY_ROOT/exit_status.txt"; exit "$code"; }
+# Resource evidence only (never read by training): GPU memory/utilisation every 5 s,
+# GNU time per phase (max RSS, wall), phase timestamps for end-to-end throughput.
+(
+  while true; do
+    printf '%s,' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+    nvidia-smi --query-gpu=utilization.gpu,memory.used,memory.total --format=csv,noheader,nounits
+    sleep 5
+  done
+) > "$IDENTITY_ROOT/gpu_samples.csv" 2>&1 &
+sampler=$!
+timer=()
+[ -x /usr/bin/time ] && timer=(/usr/bin/time -v -o)
+phase() {  # phase NAME command...
+  local name=$1; shift
+  date +%s.%N > "$IDENTITY_ROOT/${name}.start"
+  if [ ${#timer[@]} -gt 0 ]; then "${timer[@]}" "$IDENTITY_ROOT/${name}.time" "$@"; else "$@"; fi
+  date +%s.%N > "$IDENTITY_ROOT/${name}.end"
+}
+finish() {
+  code=$?; trap - EXIT
+  kill "$sampler" 2>/dev/null || true
+  printf '%s\n' "$code" > "$IDENTITY_ROOT/exit_status.txt"; exit "$code"
+}
 trap finish EXIT
 printf '{"commit":"%s","case":"%s","cache_mode":"%s","job_id":"%s"}\n' \
   "$EXPECTED_COMMIT" "$IDENTITY_CASE" "$IDENTITY_CACHE_MODE" "$SLURM_JOB_ID" > "$IDENTITY_ROOT/submission.json"
@@ -75,9 +97,9 @@ if [ "$IDENTITY_CACHE_MODE" = warm ]; then
   parent_cache="$IDENTITY_ROOT/cache_shared"
   arm_cache="$parent_cache"
 fi
-EXP12_JAX_CACHE_DIR="$parent_cache" "$py" -u run.py --experiment exp1 "${common[@]}" \
+phase parent env EXP12_JAX_CACHE_DIR="$parent_cache" "$py" -u run.py --experiment exp1 "${common[@]}" \
   --checkpoint_dir "$IDENTITY_ROOT/parent" > "$IDENTITY_ROOT/parent.log" 2>&1
-EXP12_JAX_CACHE_DIR="$arm_cache" "$py" -u run.py --experiment exp2_arm "${common[@]}" \
+phase identity env EXP12_JAX_CACHE_DIR="$arm_cache" "$py" -u run.py --experiment exp2_arm "${common[@]}" \
   --overrides "fork.source=$IDENTITY_ROOT/parent" --overrides fork.arm=identity \
   --checkpoint_dir "$IDENTITY_ROOT/identity" > "$IDENTITY_ROOT/identity.log" 2>&1
 "$py" scripts/exp12_launch_plan.py certify-identity \

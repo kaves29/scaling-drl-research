@@ -192,6 +192,33 @@ class AllocationShapeTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "name"):
             shape("bad name", {"nodes": 1, "gpus_per_node": 4, "wall_minutes": 60})
 
+    def test_delta_partitions_gpu_counts(self):
+        shape = scheduler.allocation_shape
+        self.assertEqual(shape("B8", {"partition": "gpuA100x8", "nodes": 1, "gpus_per_node": 8,
+                                      "wall_minutes": 2880}), (1, 2880))
+        with self.assertRaisesRegex(ValueError, "whole A100 nodes"):
+            shape("B8", {"partition": "gpuA100x8", "nodes": 1, "gpus_per_node": 4, "wall_minutes": 60})
+        with self.assertRaisesRegex(ValueError, "whole A100 nodes"):
+            shape("X", {"partition": "gpuA40x4", "nodes": 1, "gpus_per_node": 4, "wall_minutes": 60})
+        with self.assertRaisesRegex(ValueError, "generic allocation"):
+            shape("B8", {"partition": "gpuA100x8", "nodes": 3, "gpus_per_node": 8, "wall_minutes": 60})
+        with self.assertRaisesRegex(ValueError, "legacy"):
+            shape("B", {"partition": "gpuA100x8", "nodes": 2, "gpus_per_node": 8, "wall_minutes": 2880})
+        self.assertEqual(shape("A35", {"nodes": 1, "gpus_per_node": 4, "wall_minutes": 2100}), (1, 2100))
+
+    def test_numeric_bound_rule_rounds_ten_times_the_maximum_up(self):
+        from scripts import exp12_numeric_bounds as bounds
+
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "n.jsonl"
+            rows = [{"name": n, "deviation": d} for n in bounds.NAMES for d in (1.1e-7, 2.3e-7)]
+            path.write_text("".join(json.dumps(r) + "\n" for r in rows))
+            report = bounds.propose([path])
+            self.assertTrue(report["complete"])
+            self.assertEqual(report["bounds"]["diagnostics_update/tf32"]["proposed_bound"], 3e-06)
+            path.write_text(json.dumps(rows[0]) + "\n")
+            self.assertFalse(bounds.propose([path])["complete"])
+
     def test_medium_dmc_group_requires_and_uses_its_own_estimate(self):
         """hopper-hop/swimmer rows (dmc_medium) previously had no admissible estimate."""
         profile = {
@@ -607,6 +634,84 @@ class PerRunQueueIntegrationTest(unittest.TestCase):
 
 class RunLoopGatingTest(unittest.TestCase):
     """The live allocation loop starts only runs whose prerequisites hold."""
+
+    def test_hold_file_prevents_every_start(self):
+        started = self._run_loop(hold={"reason": "shared-code defect under review"})
+        self.assertEqual(started, [])
+        started = self._run_loop(hold_text="not json")
+        self.assertEqual(started, [])
+
+    def _run_loop(self, hold=None, hold_text=None):
+        """Minimal live loop over four rows; returns the run keys started."""
+        parents = [run_item("D2W512", "dog-run"), run_item("D4W1536", "dog-run")]
+        queue = {"commit": COMMIT, "plan": "/plan", "plan_sha256": "p", "parents": parents}
+        st = state(identity=set(launch_plan.IDENTITY_REQUIRED))
+        profile = {
+            "cpus": 1, "host_ram_gb": 1, "gpu_memory_gb": 1, "min_interactions_per_second": 1,
+            "estimated_minutes_by_group": {g: 10 for g in scheduler.GROUPS},
+            "estimated_arm_minutes_by_group": {g: 5 for g in scheduler.GROUPS},
+        }
+        admission = {"stop_margin_minutes": 1, "host_headroom_gb": 1, "gpu_headroom_gb": 1,
+                     "architectures": {a: profile for a in scheduler.WEIGHTS}}
+        approval = {"queue_sha256": "q", "expected_commit": COMMIT, "admission": admission}
+        started = []
+
+        class Done:
+            def poll(self):
+                return 0
+
+        with tempfile.TemporaryDirectory() as directory:
+            if hold is not None:
+                (Path(directory) / "HOLD.json").write_text(json.dumps(hold))
+            if hold_text is not None:
+                (Path(directory) / "HOLD.json").write_text(hold_text)
+            approval_path = Path(directory) / "a.json"
+            approval_path.write_text("{}")
+
+            def fake_sha(path):
+                fixed = {"/plan": "p", "/ap": "s"}
+                if str(path) in fixed:
+                    return fixed[str(path)]
+                return "q" if str(path).endswith("queue.json") else _sha(path)
+
+            def fake_read(path):
+                if Path(path) == approval_path:
+                    return approval
+                if Path(path).name == "HOLD.json":
+                    return json.loads(Path(path).read_text())
+                return {"approval": "/ap", "approval_sha256": "s"}
+
+            env = {"EXP12_APPROVAL_SHA256": _sha(approval_path), "EXPECTED_COMMIT": COMMIT,
+                   "SLURM_JOB_ID": "123", "CUDA_VISIBLE_DEVICES": "0,1,2,3"}
+            patches = [
+                mock.patch.dict("os.environ", env),
+                mock.patch.object(scheduler, "load_queue", return_value=queue),
+                mock.patch.object(scheduler, "_read", side_effect=fake_read),
+                mock.patch.object(scheduler, "sha", side_effect=fake_sha),
+                mock.patch.object(scheduler, "validate_approval", return_value=({"cpus_per_node": 64, "memory_gb_per_node": 256}, admission)),
+                mock.patch.object(scheduler.subprocess, "check_output", return_value=""),
+                mock.patch.object(scheduler, "_actual_allocation", return_value=time.time() + 4 * 3600),
+                mock.patch.object(scheduler, "gpu_snapshot", return_value=(40960, 0)),
+                mock.patch.object(scheduler, "available_host_gb", return_value=200),
+                mock.patch.object(scheduler, "_source_preflight"),
+                mock.patch.object(scheduler, "release_state", return_value=st),
+                mock.patch.object(scheduler, "_start", side_effect=lambda item, token, *_: started.append(item["row"]["run_key"]) or {"item": item, "gpu": token, "process": Done(), "profile": profile}),
+                mock.patch.object(scheduler, "_finish", return_value=True),
+                mock.patch.object(scheduler.Ledger, "state", autospec=True, side_effect=lambda self, item: "complete" if item["row"]["run_key"] in started else "pending"),
+                mock.patch.object(scheduler, "POLL_SECONDS", 0),
+                mock.patch.object(scheduler.time, "sleep"),
+            ]
+            for p in patches:
+                p.start()
+            try:
+                self.assertEqual(scheduler.run(directory, approval_path, "C"), 0)
+            finally:
+                for p in reversed(patches):
+                    p.stop()
+        return started
+
+    def test_without_hold_the_same_loop_starts_eligible_runs(self):
+        self.assertEqual(sorted(self._run_loop()), ["exp1_D2W512_dog-run_seed1", "exp1_D4W1536_dog-run_seed1"])
 
     def test_only_released_runs_start_and_conflicting_m_refuses(self):
         parents = [

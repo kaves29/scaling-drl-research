@@ -70,6 +70,43 @@ def simulate(all_jobs, gpus):
     return end
 
 
+def simulate_windows(all_jobs, windows, stop_margin_h=0.25):
+    """Allocations as (start_h, gpus, hours). A job starts on a free GPU only if its
+    whole duration fits before that allocation's end minus the stop margin (the
+    scheduler's admission rule); arms become available at their parent's fork.
+    Returns completed/remaining GPU-hours and the finish time of completed work."""
+    slots = [[start, start + hours] for start, gpus, hours in windows for _ in range(gpus)]
+    queue = sorted(({"kind": "parent", "h": j["parent_h"], "ready": 0.0, "job": j} for j in all_jobs),
+                   key=lambda t: -t["h"])
+    done_h, finish, pending, arms = 0.0, 0.0, list(queue), []
+    while True:
+        best = None
+        # Earliest feasible start overall; ties go to arms, then the longest job.
+        for rank, task in enumerate(sorted(arms, key=lambda t: t["ready"]) + pending):
+            for slot in slots:
+                start = max(slot[0], task["ready"])
+                if start + task["h"] <= slot[1] - stop_margin_h:
+                    key = (start, rank)
+                    if best is None or key < best[0]:
+                        best = (key, slot, task)
+        if best is None:
+            break
+        (start, _), slot, task = best
+        slot[0] = start + task["h"]
+        (arms if task["kind"] == "arm" else pending).remove(task)
+        done_h += task["h"]
+        finish = max(finish, slot[0])
+        job = task["job"]
+        if task["kind"] == "parent" and job["arm_h"]:
+            arms.append({"kind": "arm", "h": job["arm_h"], "ready": start + job["fork_h"], "job": job})
+    remaining = sum(t["h"] for t in pending) + sum(t["h"] for t in arms)
+    remaining += sum(t["job"]["arm_h"] for t in pending if t["job"]["arm_h"])
+    return {"completed_gpu_h": round(done_h, 1), "remaining_gpu_h": round(remaining, 1),
+            "parents_left": len(pending), "arms_left": len(arms) + sum(bool(t["job"]["arm_h"]) for t in pending),
+            "last_finish_h": round(finish, 1),
+            "capacity_gpu_h": sum(g * h for _, g, h in windows)}
+
+
 def main(argv=None):
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--overhead", type=float, default=1.20,
@@ -81,6 +118,8 @@ def main(argv=None):
     p.add_argument("--control-ext", type=float, default=0.05,
                    help="mean control extension beyond B for forked parents (cap 0.20)")
     p.add_argument("--gpus", type=int, nargs="+", default=[8, 12, 16])
+    p.add_argument("--windows", nargs="*", default=[],
+                   help="allocations START_H:GPUS:HOURS, e.g. 0:4:35 6:8:48")
     args = p.parse_args(argv)
     work = jobs(args.overhead, args.hb_factor, args.fork_fraction, args.fork_at, args.control_ext)
     parent_h = sum(j["parent_h"] for j in work)
@@ -94,6 +133,9 @@ def main(argv=None):
         "longest_single_job_h": round(longest, 2),
         "elapsed_h": {g: round(simulate(work, g), 1) for g in args.gpus},
     }
+    if args.windows:
+        windows = [tuple(float(x) for x in w.split(":")) for w in args.windows]
+        report["windows"] = simulate_windows(work, [(a, int(b), c) for a, b, c in windows])
     print(json.dumps(report, indent=2))
 
 

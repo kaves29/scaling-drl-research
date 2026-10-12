@@ -13,6 +13,7 @@ import json
 import os
 import re
 import shlex
+import signal
 import socket
 import subprocess
 import sys
@@ -41,8 +42,10 @@ from scripts.exp12_launch_plan import (  # noqa: E402
 WEIGHTS = {"D2W512": 1 / 7, "D4W1024": 1 / 4, "D4W1536": 1 / 2}
 CEILINGS = {"D2W512": 7, "D4W1024": 4, "D4W1536": 2}
 # Legacy named shapes stay exact; any other approved name is a generic allocation of
-# 1..MAX_NODES four-A100 gpuA100x4 nodes for at most the partition's 48 hours.
+# whole Delta A100-SXM4-40GB nodes for at most the partitions' 48 hours: gpuA100x4
+# (4 GPUs/node, 1..MAX_NODES) or gpuA100x8 (8 GPUs/node; the partition has 6 nodes).
 ALLOCATIONS = {"A": (1, 30 * 60), "B": (2, 48 * 60)}
+PARTITIONS = {"gpuA100x4": (4, 4), "gpuA100x8": (8, 2)}  # gpus/node, max nodes per allocation
 ALLOCATION_NAME = re.compile(r"[A-Za-z0-9_-]{1,32}")
 MAX_NODES = 4
 MAX_WALL_MINUTES = 48 * 60
@@ -214,19 +217,23 @@ def allocation_shape(allocation, resources):
     if not isinstance(allocation, str) or not ALLOCATION_NAME.fullmatch(allocation):
         raise ValueError("invalid allocation name")
     nodes, minutes = resources.get("nodes"), resources.get("wall_minutes")
-    if resources.get("gpus_per_node") != 4:
-        raise ValueError("allocations use whole four-A100 nodes")
+    partition = resources.get("partition", "gpuA100x4")
+    if partition not in PARTITIONS or resources.get("gpus_per_node") != PARTITIONS[partition][0]:
+        raise ValueError("allocations use whole A100 nodes: gpuA100x4 (4/node) or gpuA100x8 (8/node)")
+    max_nodes = PARTITIONS[partition][1]
     if allocation in ALLOCATIONS:
+        if partition != "gpuA100x4":
+            raise ValueError("legacy A/B allocations are gpuA100x4")
         if (nodes, minutes) != ALLOCATIONS[allocation]:
             raise ValueError("allocation must be exactly A=4 A100/30h or B=8 A100/48h")
     elif (
         type(nodes) is not int
-        or not 1 <= nodes <= MAX_NODES
+        or not 1 <= nodes <= max_nodes
         or type(minutes) is not int
         or not 1 <= minutes <= MAX_WALL_MINUTES
     ):
         raise ValueError(
-            f"generic allocation needs 1..{MAX_NODES} nodes and at most 48 hours"
+            f"generic allocation needs 1..{max_nodes} {partition} nodes and at most 48 hours"
         )
     return nodes, minutes
 
@@ -610,8 +617,9 @@ def allocation_command(queue_root, approval_path, allocation):
         "--parsable",
         "--export=ALL",
         f"--nodes={resources['nodes']}",
+        f"--partition={resources.get('partition', 'gpuA100x4')}",
         "--ntasks-per-node=1",
-        "--gpus-per-node=4",
+        f"--gpus-per-node={resources['gpus_per_node']}",
         f"--cpus-per-task={resources['cpus_per_node']}",
         f"--mem={resources['memory_gb_per_node']}G",
         f"--time={resources['wall_minutes']}",
@@ -1361,8 +1369,8 @@ def _actual_allocation(approval, job_description, visible):
     }
     allocation_matches(per_node, os.environ, job_description)
     if (
-        len(visible) != 4
-        or int(os.environ.get("SLURM_GPUS_ON_NODE", "0")) != 4
+        len(visible) != resources["gpus_per_node"]
+        or int(os.environ.get("SLURM_GPUS_ON_NODE", "0")) != resources["gpus_per_node"]
         or int(os.environ.get("SLURM_JOB_NUM_NODES", "0")) != resources["nodes"]
         or len(os.sched_getaffinity(0)) < resources["cpus_per_node"]
     ):
@@ -1394,7 +1402,7 @@ def _source_preflight(queue, approval, queue_root, job_id):
         jax.__version__ != "0.4.34"
         or jaxlib.__version__ != "0.4.34"
         or jax.default_backend() != "gpu"
-        or len(jax.devices()) != 4
+        or len(jax.devices()) != approval["resources"]["gpus_per_node"]
         or not jax.local_devices(backend="cpu")
     ):
         raise ValueError("pinned CPU+CUDA backend policy is unavailable")
@@ -1539,6 +1547,25 @@ def _finish(job, ledger, commit, queue_root):
     return True
 
 
+def read_hold(queue_root):
+    """Containment switch: <queue>/HOLD.json pauses all new starts (parents and arms).
+
+    {"reason": "...", "terminate_active": false}: running jobs continue and are validated.
+    {"terminate_active": true}: running jobs receive SIGTERM once; they stop at their last
+    committed checkpoint and their rows are blocked for an explicit review-retry. Removing
+    the file (after review) resumes admission. A malformed file counts as a hold."""
+    path = Path(queue_root) / "HOLD.json"
+    if not path.exists():
+        return None
+    try:
+        hold = _read(path)
+        if not isinstance(hold, dict):
+            raise ValueError
+    except (OSError, ValueError):
+        return {"reason": "unreadable HOLD.json", "terminate_active": False}
+    return hold
+
+
 def _exp2_m(approval, state):
     """The frozen m in force: allocation approval or Exp2 release; never two values."""
     values = set()
@@ -1623,6 +1650,17 @@ def run(queue_root, approval_path, allocation):
                 time.sleep(POLL_SECONDS)
                 continue
             update_rates(active)
+            hold = read_hold(queue_root)
+            if hold is not None:
+                if hold.get("terminate_active") is True:
+                    for job in active:
+                        if not job.get("terminated"):
+                            os.killpg(job["process"].pid, signal.SIGTERM)
+                            job["terminated"] = True
+                if not active and not validating:
+                    break
+                time.sleep(POLL_SECONDS)
+                continue
             state = release_state(queue_root, queue)
             parents = effective_parents(queue, state)
             injection_m = _exp2_m(approval, state)
@@ -1734,6 +1772,7 @@ def queue_status(queue_root):
     )
     return {
         "commit": queue["commit"],
+        "hold": read_hold(queue_root),
         "release_mode": approval.get("release_mode", "all_gates"),
         "releases": state["releases"],
         "a2_staged_identity": state["a2"],
