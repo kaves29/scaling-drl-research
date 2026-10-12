@@ -1,5 +1,24 @@
 # Exp1/Exp2 scientific and validation status
 
+## D4W1536 hopper capture update (2026-10-11)
+
+Attached `hopper_capture_22817406.tar.gz`, SHA-256
+`e96cb06b953ed1acef29850861b5371c91766c58e1b4e0eb9a0b86acec0d4868`,
+records an A100/CUDA run at clean source
+`3d75a05789b9815cefd08cf3d8981a4be34c2352`. All eight capture files
+match the embedded SHA-256 manifest. The five configured-pool fresh-critic
+1,000-step fitting curves remain downward-trending at the final step; final
+full-pool losses are .21933/.19825/.17626/.20636/.19532. Saved replay-pool
+samples match the approved seeded with-replacement draws from 5,000 warm-up
+rows exactly; normalized observations, teacher target variance and P=b-loss
+arithmetic agree. P/b=.6023976348 again fails the approved >=.9 rule. This
+establishes underfitting within the approved budget, with no confirmed
+implementation defect and no proof of the cause of slow fitting. It does not
+establish trained-critic plasticity degradation. The legacy sections below
+describe the evidence available at their historical writing time. Current
+launch commands and owner decisions are in
+[`exp12_oct12_execution_handoff.md`](exp12_oct12_execution_handoff.md).
+
 ## Raw-null update, 2026-10-11
 
 Both uploaded D4W1024 datasets now have verified unique rows, paired losses,

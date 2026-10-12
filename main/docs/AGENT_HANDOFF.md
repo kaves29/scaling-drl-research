@@ -1,5 +1,19 @@
 # Shared agent handoff
 
+## Production execution preparation (2026-10-11)
+
+Codex's latest CPU-only handoff is
+[`exp12_oct12_execution_handoff.md`](exp12_oct12_execution_handoff.md).
+The published `codex/exp12-production-readiness` tip was
+`3d75a05789b9815cefd08cf3d8981a4be34c2352` at the start of this task;
+resolve the final tip from Git after publication. The new A100 hopper capture
+job 22817406 confirms the unchanged D4W1536 hopper-hop failure and preserves
+all five fitting curves and teacher/replay pools. Both D4W1024 null datasets
+still fail. No GPU job or methodology change was made in this task, and pilot
+22800749 remains untouched. Six final-source CUDA identities, one shared-mount
+preflight, a final-source natural positive control, resource evidence and owner
+scientific decisions remain outstanding.
+
 ## Remaining Exp1/Exp2 qualification (2026-10-11)
 
 The seed-990 and seed-991 D4W1024 null JSONL files were independently
