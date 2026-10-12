@@ -299,3 +299,60 @@ class ProductionEquivalenceTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TrajectoryAnalysisTest(unittest.TestCase):
+    """scripts/exp12_trigger_trajectory.py: descriptive classes and an end-to-end run."""
+
+    @staticmethod
+    def rows(values):
+        out = []
+        for k, (iqm, low, high) in enumerate(values, start=1):
+            out.append({"check_index": k, "eligible": True, "loss_iqm": iqm, "ci_low": low, "ci_high": high,
+                        "ci_width": high - low, "boundary_gap": low, "fires_registered_rule": low > 0,
+                        "near_boundary": low <= 0 and -low <= 0.25 * (high - low)})
+        return out
+
+    def test_classes(self):
+        from scripts import exp12_trigger_trajectory as t
+
+        self.assertEqual(t.classify(self.rows([(-0.2, -0.3, -0.1)] * 19), [], 0.0)[0], "NEGATIVE")
+        self.assertEqual(t.classify(self.rows([(0.02, -0.01, 0.06)] * 19), [], 0.0)[0], "POSITIVE_UNDERPOWERED")
+        wide = [(0.01 * (-1) ** k, -0.2, 0.2) for k in range(19)]
+        self.assertEqual(t.classify(self.rows(wide), [], 0.0)[0], "NEAR_ZERO_UNCERTAIN")
+        mixed = [(-0.2, -0.3, -0.1)] * 10 + [(0.05, 0.01, 0.1)] * 9
+        self.assertEqual(t.classify(self.rows(mixed), [], 0.0)[0], "UNDETERMINED")
+        self.assertEqual(t.classify(self.rows([(-0.2, -0.3, -0.1)] * 19), ["check 4: missing"], 0.0)[0],
+                         "UNDETERMINED")
+
+    def test_end_to_end_on_a_real_run_without_heavy_imports(self):
+        fixtures = Fixtures.build()
+        tmp = Path(tempfile.mkdtemp())
+        report = tmp / "report.json"
+        light.main(["--root", str(fixtures / "none"), "--out", str(report)])
+        site = Path(tempfile.mkdtemp())
+        (site / "sitecustomize.py").write_text(textwrap.dedent(f"""
+            import sys
+            BLOCKED = {BLOCKED + ("matplotlib", "scipy")!r}
+            class _Refuse:
+                def find_spec(self, name, path=None, target=None):
+                    if name.split(".")[0] in BLOCKED:
+                        raise ImportError("blocked: " + name)
+            sys.meta_path.insert(0, _Refuse())
+        """))
+        before = tree_digest(fixtures / "none")
+        result = subprocess.run([sys.executable, str(MAIN / "scripts" / "exp12_trigger_trajectory.py"),
+                                 "--report", str(report), "--out", str(tmp / "traj")],
+                                env=dict(os.environ, PYTHONPATH=str(site)), capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stderr[-2000:])
+        self.assertEqual(tree_digest(fixtures / "none"), before)
+        summary = json.loads((tmp / "traj" / "summary.json").read_text())
+        recomputed = json.loads(report.read_text())["trigger"]["checks"]
+        self.assertEqual(summary["statistics"]["eligible_checks"], 19)
+        self.assertEqual(summary["statistics"]["max_lower_bound"],
+                         max(r["ci_low"] for r in recomputed if 1 <= r["check_index"] <= 19))
+        self.assertTrue((tmp / "traj" / "trajectory.html").read_text().startswith("<!doctype html>"))
+        import csv
+
+        with open(tmp / "traj" / "trajectory.csv") as stream:
+            self.assertEqual(len(list(csv.DictReader(stream))), 21)
