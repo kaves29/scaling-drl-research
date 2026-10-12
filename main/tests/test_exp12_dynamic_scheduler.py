@@ -527,6 +527,7 @@ class ResourceAdmissionTest(unittest.TestCase):
         self.approval = {
             "resources": {"cpus_per_node": 16, "memory_gb_per_node": 64},
             "admission": {
+                "max_processes_per_gpu": 7,
                 "gpu_headroom_gb": 3,
                 "host_headroom_gb": 4,
                 "stop_margin_minutes": 10,
@@ -573,6 +574,11 @@ class ResourceAdmissionTest(unittest.TestCase):
             self.assertFalse(check())  # below approved throughput floor
             active[0]["rate"] = 11.0
             self.assertTrue(check())  # compatible mixed architecture
+            admission["max_processes_per_gpu"] = 1
+            self.assertFalse(check())  # unqualified packing can be disabled explicitly
+            del admission["max_processes_per_gpu"]
+            self.assertFalse(check())  # missing policy also fails closed to one process
+            admission["max_processes_per_gpu"] = 7
             self.assertFalse(
                 scheduler.can_admit(
                     d2,
@@ -697,6 +703,10 @@ class ResourceAdmissionTest(unittest.TestCase):
                     "humanoid_bench": 60,
                 }
             scheduler.validate_approval(approval, root, "B")
+            approval["admission"]["max_processes_per_gpu"] = 8
+            with self.assertRaisesRegex(ValueError, "GPU process cap"):
+                scheduler.validate_approval(approval, root, "B")
+            approval["admission"]["max_processes_per_gpu"] = 7
             with tempfile.TemporaryDirectory() as evidence_dir:
                 report = Path(evidence_dir) / "positive_control.json"
                 report.write_text(

@@ -1,5 +1,16 @@
 # Exp1/Exp2 scientific and validation status
 
+## Raw-null update, 2026-10-11
+
+Both uploaded D4W1024 datasets now have verified unique rows, paired losses,
+IQMs, CIs and firing flags: seed990=13/100 and seed991=6/100. Both fail the
+approved ≤5/100 rule. Seed991 contains clean A100 source/runtime provenance;
+the original source is documented by the separate Block B archive. Neither
+dataset establishes the production consecutive-check false-trigger rate.
+Hopper D4W1536 configured-pool P/b=.6024 still fails and original stepwise
+curves/targets are unavailable. Details and remaining actions are in
+`exp12_remaining_qualification.md`; no methodology or threshold changed.
+
 ## Dynamic scheduler preparation, 2026-10-11
 
 The isolated `codex/exp12-production-readiness` branch prepares two

@@ -1,5 +1,15 @@
 # Shared agent handoff
 
+## Remaining Exp1/Exp2 qualification (2026-10-11)
+
+The seed-990 and seed-991 D4W1024 null JSONL files were independently
+validated (13/100 and 6/100; both fail). `exp12_remaining_qualification.md`
+records the conditional pair/replay interpretation, the absent original
+hopper fitting curves, a source-bound two-node filesystem/binding preflight,
+a one-A100 packing profile and the six identity commands. No GPU job was
+submitted and pilot 22800749 remains untouched. Scientific dispositions,
+final-source positive control/m and actual allocation approvals remain open.
+
 ## Dynamic allocation task (2026-10-11)
 
 Codex's current isolated task branch is `codex/exp12-production-readiness`,

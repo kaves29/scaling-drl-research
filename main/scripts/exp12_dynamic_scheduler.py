@@ -212,6 +212,9 @@ def validate_approval(approval, queue_root, allocation):
         resources.get("memory_gb_per_node"), "allocated host RAM per node"
     )
     admission = approval.get("admission", {})
+    pack_limit = admission.get("max_processes_per_gpu", 1)
+    if type(pack_limit) is not int or not 1 <= pack_limit <= max(CEILINGS.values()):
+        raise ValueError("approved GPU process cap must be an integer from 1 to 7")
     margin_gpu = _positive_int(admission.get("gpu_headroom_gb"), "GPU headroom")
     margin_host = _positive_int(admission.get("host_headroom_gb"), "host headroom")
     stop = _positive_int(admission.get("stop_margin_minutes"), "stop margin")
@@ -998,6 +1001,8 @@ def can_admit(
     if host_free < profile["host_ram_gb"] + admission["host_headroom_gb"]:
         return False
     same_gpu = [job for job in active if job["gpu"] == token]
+    if len(same_gpu) >= admission.get("max_processes_per_gpu", 1):
+        return False
     if (
         sum(WEIGHTS[job["item"]["row"]["architecture"]] for job in same_gpu)
         + WEIGHTS[arch]

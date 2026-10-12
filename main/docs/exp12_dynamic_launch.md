@@ -19,6 +19,9 @@ on a GPU waits until the first has two real checkpoint observations. Slower
 than the approved throughput floor stops further placements, without
 interrupting scientific training. XLA preallocation is disabled. Each
 attempt has its own cache, W&B directory and training log outside Git.
+The allocation approval also caps all processes per GPU, defaulting to one;
+the owner can raise this only after reviewing actual packing evidence. The
+7/4/2 architecture ceilings do not themselves authorize those occupancies.
 
 The approval template leaves per-node CPU/RAM, per-architecture CPU/RAM/VRAM,
 suite parent/arm runtime estimates, minimum throughput and headroom blank. The owner

@@ -13,6 +13,7 @@
     "wall_minutes": null
   },
   "admission": {
+    "max_processes_per_gpu": 1,
     "gpu_headroom_gb": null,
     "host_headroom_gb": null,
     "stop_margin_minutes": null,
