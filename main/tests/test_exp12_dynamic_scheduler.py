@@ -694,11 +694,13 @@ class ResourceAdmissionTest(unittest.TestCase):
             for profile in approval["admission"]["architectures"].values():
                 profile["estimated_minutes_by_group"] = {
                     "dmc_hard": 60,
+                    "dmc_medium": 40,
                     "myosuite_simba": 90,
                     "humanoid_bench": 120,
                 }
                 profile["estimated_arm_minutes_by_group"] = {
                     "dmc_hard": 30,
+                    "dmc_medium": 20,
                     "myosuite_simba": 45,
                     "humanoid_bench": 60,
                 }

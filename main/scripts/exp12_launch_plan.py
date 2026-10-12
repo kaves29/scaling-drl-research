@@ -113,6 +113,42 @@ def array_matches(stage, index, resume, environment, batch=None):
         raise ValueError("initial parent submission must enumerate exactly0-194")
 
 
+# Amendment (p): both scaled sizes in every suite, on the grid's GPU model.
+IDENTITY_REQUIRED = frozenset(
+    (a, s) for a in ("D4W1024", "D4W1536") for s in ("dmc", "myosuite", "humanoid_bench")
+)
+DEFERRED = "DEFERRED_TO_RELEASE"
+
+
+def evidence_coverage(paths, commit, required_kind):
+    """Hash-pinned PASS certificates for this exact source -> covered (arch, suite, env)."""
+    coverage = set()
+    if not paths:
+        raise ValueError(f"verified evidence required: {required_kind}")
+    for evidence in paths:
+        p = Path(evidence["path"])
+        data = json.loads(p.read_text())
+        if (
+            sha(p) != evidence["sha256"]
+            or data.get("verdict") != "PASS"
+            or data.get("expected_commit") != commit
+        ):
+            raise ValueError(f"stale/failed evidence: {p}")
+        if data.get("qualification") != required_kind:
+            raise ValueError("GPU evidence has the wrong qualification scope")
+        for cell in data.get("coverage", []):
+            coverage.add((cell["architecture"], cell["suite"], cell.get("environment")))
+    return coverage
+
+
+def per_run_release(approval, stage):
+    """Per-run release mode: gates may be deferred to source-bound queue releases.
+
+    Only the dynamic scheduler evaluates releases, per run, before every start; the
+    fixed-array execution path refuses such plans."""
+    return stage == "parents" and approval.get("release_mode") == "per_run"
+
+
 def approve(approval, stage, commit):
     if (
         stage not in GATES
@@ -121,43 +157,25 @@ def approve(approval, stage, commit):
         or approval.get("expected_commit") != commit
     ):
         raise ValueError("explicit stage/source approval required")
+    if approval.get("release_mode", "all_gates") not in ("all_gates", "per_run") or (
+        stage != "parents" and "release_mode" in approval
+    ):
+        raise ValueError("invalid release mode")
     for name in GATES[stage]:
         gate = approval.get("gates", {}).get(name, {})
+        if per_run_release(approval, stage) and gate.get("status") == DEFERRED:
+            continue
         if gate.get("status") != "APPROVED" or not gate.get("decision_reference"):
             raise ValueError(f"unresolved mandatory gate: {name}")
         if name.startswith("fullwidth") or name.startswith("cuda_identity"):
-            coverage = set()
-            paths = gate.get("evidence", [])
-            if not paths:
-                raise ValueError(f"verified evidence required: {name}")
-            for evidence in paths:
-                p = Path(evidence["path"])
-                data = json.loads(p.read_text())
-                if (
-                    sha(p) != evidence["sha256"]
-                    or data.get("verdict") != "PASS"
-                    or data.get("expected_commit") != commit
-                ):
-                    raise ValueError(f"stale/failed evidence: {p}")
-                required_kind = (
-                    "cuda_identity_fork"
-                    if name.startswith("cuda_identity")
-                    else "fullwidth_resume_identity"
-                )
-                if data.get("qualification") != required_kind:
-                    raise ValueError("GPU evidence has the wrong qualification scope")
-                for cell in data.get("coverage", []):
-                    coverage.add(
-                        (cell["architecture"], cell["suite"], cell.get("environment"))
-                    )
+            required_kind = (
+                "cuda_identity_fork"
+                if name.startswith("cuda_identity")
+                else "fullwidth_resume_identity"
+            )
+            coverage = evidence_coverage(gate.get("evidence", []), commit, required_kind)
             if name.startswith("cuda_identity"):
-                # Later amendment(p) explicitly names both scaled sizes in every suite.
-                required = {
-                    (a, s)
-                    for a in ("D4W1024", "D4W1536")
-                    for s in ("dmc", "myosuite", "humanoid_bench")
-                }
-                if not required <= {(a, s) for a, s, _ in coverage}:
+                if not IDENTITY_REQUIRED <= {(a, s) for a, s, _ in coverage}:
                     raise ValueError(
                         "missing scaled-architecture/suite identity coverage"
                     )
@@ -294,6 +312,9 @@ def submission_command(plan_path, per_job_policy=False):
         raise ValueError("plan differs from approved configuration/allocation")
     if plan["stage"] == "parents" and not per_job_policy:
         raise ValueError("195-task array requires explicit per-job duration policy; use prepare-batches for 48-hour waves")
+    if per_run_release(json.loads(Path(plan["approval"]).read_text()), plan["stage"]):
+        # Validation only (the dynamic scheduler reuses this check); never an array command.
+        return None
     logs = Path(plan["root"]) / "slurm"
     command = [
         "env",
@@ -339,7 +360,9 @@ def _batch_schedule_record(plan_path, plan):
 
 def prepare_batch_schedule(plan_path, out):
     """Write a complete, non-submitting wave partition bound to an approved plan."""
-    submission_command(plan_path, per_job_policy=True)  # Validate without printing a full-array command.
+    # Validate without printing a full-array command.
+    if submission_command(plan_path, per_job_policy=True) is None:
+        raise ValueError("per-run release plans execute only through the dynamic scheduler")
     plan = json.loads(Path(plan_path).read_text())
     schedule = _batch_schedule_record(plan_path, plan)
     with Path(out).open("x") as stream:
@@ -350,7 +373,8 @@ def prepare_batch_schedule(plan_path, out):
 def load_batch_schedule(path):
     schedule = json.loads(Path(path).read_text())
     plan_path = Path(schedule["plan"])
-    submission_command(plan_path, per_job_policy=True)
+    if submission_command(plan_path, per_job_policy=True) is None:
+        raise ValueError("per-run release plans execute only through the dynamic scheduler")
     plan = json.loads(plan_path.read_text())
     if schedule != _batch_schedule_record(plan_path, plan):
         raise ValueError("batch schedule differs from the complete approved parent plan")
@@ -392,12 +416,14 @@ def batch_submission_command(schedule_path, number):
 def execute(plan_path, index, resume=False):
     from utils.run_metadata import code_version
 
+    plan_path = Path(plan_path)
+    plan = json.loads(plan_path.read_text())
+    if per_run_release(json.loads(Path(plan["approval"]).read_text()), plan["stage"]):
+        raise ValueError("per-run release plans execute only through the dynamic scheduler")
     require_pinned_stack()
     if sys.version_info[:3] != (3, 12, 13):
         raise ValueError("pinned Delta Python3.12.13 required for execution")
 
-    plan_path = Path(plan_path)
-    plan = json.loads(plan_path.read_text())
     if (Path(plan["root"]) / "EXP12_DYNAMIC_QUEUE.json").exists():
         raise ValueError("campaign is owned by the shared dynamic scheduler; array execution refused")
     if sha(plan["approval"]) != plan["approval_sha256"]:
@@ -538,8 +564,11 @@ def validate_replay_normalization(state):
                 raise ValueError("invalid replay payload")
 
 
-def postvalidate(run, commit, out):
-    """Engineering completeness is separate from canonical scientific certification."""
+def postvalidate(run, commit, out, extra_overrides=()):
+    """Engineering completeness is separate from canonical scientific certification.
+
+    extra_overrides: only the source-bound release overrides of the queued row
+    (e.g. an owner-selected D4W1024 trigger.null_threshold); never inferred."""
     import numpy as np
     from experiments.exp12.state import latest_state_dir, load_meta, load_agent_tree
     from utils.run_metadata import _hash, _strip_locations
@@ -566,6 +595,7 @@ def postvalidate(run, commit, out):
             identity["seed"],
             cfg["results_root"],
         )
+        expected_overrides += list(extra_overrides)
         if identity["run_role"] == "dev":
             expected_overrides += ["run_role=dev"]
         elif identity["run_role"] != "confirmatory" or identity["seed"] not in range(
@@ -860,7 +890,10 @@ def main():
     if args.action == "execute":
         return execute(args.plan, args.index, args.resume)
     if args.action == "submission-command":
-        print(submission_command(args.plan, per_job_policy=args.duration_policy == "per-job"))
+        command = submission_command(args.plan, per_job_policy=args.duration_policy == "per-job")
+        if command is None:
+            raise ValueError("per-run release plans execute only through the dynamic scheduler")
+        print(command)
         return 0
     if args.action == "prepare-batches":
         prepare_batch_schedule(args.plan, args.out)

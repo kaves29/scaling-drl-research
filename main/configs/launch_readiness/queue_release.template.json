@@ -1,0 +1,56 @@
+{
+  "approved": false,
+  "expected_commit": null,
+  "queue_sha256": null,
+  "decision_reference": null,
+  "release": {
+    "type": null,
+    "_types": {
+      "gate": {
+        "gate": "one of positive_control|suite_runtime_storage|grid_allocation|cuda_numeric_bounds|study_methodology_freeze",
+        "positive_control": {
+          "path": null,
+          "sha256": null,
+          "source_compatibility": {
+            "path": null,
+            "sha256": null
+          }
+        }
+      },
+      "identity": {
+        "evidence": [
+          {
+            "path": "<case>/certificate.json",
+            "sha256": null
+          }
+        ]
+      },
+      "a2_staged_identity": {
+        "amendment_reference": "owner approval of PROPOSED amendment A2"
+      },
+      "fresh_null": {
+        "decision": "keep_zero | adopt_threshold",
+        "selection": "pooled (adopt only)",
+        "override": "trigger.null_threshold=<exact repr> (adopt only)",
+        "computation": {
+          "path": null,
+          "sha256": null
+        }
+      },
+      "hopper_range": {
+        "decision": "release | exclude"
+      },
+      "exp2": {
+        "injection_m": "last|half|all",
+        "positive_control": {
+          "path": null,
+          "sha256": null,
+          "source_compatibility": {
+            "path": null,
+            "sha256": null
+          }
+        }
+      }
+    }
+  }
+}

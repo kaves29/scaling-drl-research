@@ -24,6 +24,7 @@
         "gpu_memory_gb": null,
         "estimated_minutes_by_group": {
           "dmc_hard": null,
+          "dmc_medium": null,
           "myosuite_simba": null,
           "humanoid_bench": null
         },
@@ -35,11 +36,13 @@
         "gpu_memory_gb": null,
         "estimated_minutes_by_group": {
           "dmc_hard": null,
+          "dmc_medium": null,
           "myosuite_simba": null,
           "humanoid_bench": null
         },
         "estimated_arm_minutes_by_group": {
           "dmc_hard": null,
+          "dmc_medium": null,
           "myosuite_simba": null,
           "humanoid_bench": null
         },
@@ -51,17 +54,20 @@
         "gpu_memory_gb": null,
         "estimated_minutes_by_group": {
           "dmc_hard": null,
+          "dmc_medium": null,
           "myosuite_simba": null,
           "humanoid_bench": null
         },
         "estimated_arm_minutes_by_group": {
           "dmc_hard": null,
+          "dmc_medium": null,
           "myosuite_simba": null,
           "humanoid_bench": null
         },
         "min_interactions_per_second": null
       }
-    }
+    },
+    "idle_wait_minutes": 0
   },
   "exp2": {
     "approved": false,

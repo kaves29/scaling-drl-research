@@ -26,8 +26,12 @@ MAIN = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(MAIN))
 
 from scripts.exp12_launch_plan import (  # noqa: E402
+    DEFERRED,
+    GATES,
+    IDENTITY_REQUIRED,
     cells,
     config_hash,
+    evidence_coverage,
     postvalidate,
     require_pinned_stack,
     sha,
@@ -36,7 +40,23 @@ from scripts.exp12_launch_plan import (  # noqa: E402
 
 WEIGHTS = {"D2W512": 1 / 7, "D4W1024": 1 / 4, "D4W1536": 1 / 2}
 CEILINGS = {"D2W512": 7, "D4W1024": 4, "D4W1536": 2}
+# Legacy named shapes stay exact; any other approved name is a generic allocation of
+# 1..MAX_NODES four-A100 gpuA100x4 nodes for at most the partition's 48 hours.
 ALLOCATIONS = {"A": (1, 30 * 60), "B": (2, 48 * 60)}
+ALLOCATION_NAME = re.compile(r"[A-Za-z0-9_-]{1,32}")
+MAX_NODES = 4
+MAX_WALL_MINUTES = 48 * 60
+GROUPS = ("dmc_hard", "dmc_medium", "myosuite_simba", "humanoid_bench")
+FORKING = ("D4W1024", "D4W1536")
+GLOBAL_GATES = (
+    "positive_control",
+    "suite_runtime_storage",
+    "grid_allocation",
+    "cuda_numeric_bounds",
+    "study_methodology_freeze",
+)
+NULL_ARCH = "D4W1024"
+HOPPER_CELL = ("D4W1536", "hopper-hop")
 GPU_KIND = "NVIDIA A100-SXM4-40GB"
 POLL_SECONDS = 15
 _VERIFIED_ARM_FILES = {}
@@ -189,9 +209,61 @@ def _positive_int(value, name):
     return value
 
 
+def allocation_shape(allocation, resources):
+    """Legacy A/B keep their exact shapes; other names are bounded generic allocations."""
+    if not isinstance(allocation, str) or not ALLOCATION_NAME.fullmatch(allocation):
+        raise ValueError("invalid allocation name")
+    nodes, minutes = resources.get("nodes"), resources.get("wall_minutes")
+    if resources.get("gpus_per_node") != 4:
+        raise ValueError("allocations use whole four-A100 nodes")
+    if allocation in ALLOCATIONS:
+        if (nodes, minutes) != ALLOCATIONS[allocation]:
+            raise ValueError("allocation must be exactly A=4 A100/30h or B=8 A100/48h")
+    elif (
+        type(nodes) is not int
+        or not 1 <= nodes <= MAX_NODES
+        or type(minutes) is not int
+        or not 1 <= minutes <= MAX_WALL_MINUTES
+    ):
+        raise ValueError(
+            f"generic allocation needs 1..{MAX_NODES} nodes and at most 48 hours"
+        )
+    return nodes, minutes
+
+
+def validate_positive_control(evidence, commit, require_m=None):
+    """Owner-referenced positive-control evidence for this campaign source.
+
+    The fork may come from an earlier commit only with a hash-pinned, re-verified
+    science-source compatibility certificate (scripts/exp12_source_compatibility.py)."""
+    path, digest = evidence.get("path"), evidence.get("sha256")
+    if not path or not digest or sha(path) != digest:
+        raise ValueError("positive-control evidence missing or changed")
+    control = _read(path)
+    if (
+        control.get("status") != "m_chosen"
+        or control.get("chosen_m") not in ("last", "half", "all")
+        or (require_m is not None and control.get("chosen_m") != require_m)
+        or control.get("allow_any_setting") is not False
+        or control.get("trigger_check", {}).get("forced") is not False
+        or control.get("analysis_code", {}).get("dirty") is not False
+    ):
+        raise ValueError("positive control does not qualify this final source/m")
+    source = control.get("source_code") or {}
+    if source.get("dirty") is not False:
+        raise ValueError("positive control does not qualify this final source/m")
+    if source.get("commit") != commit:
+        certificate = evidence.get("source_compatibility")
+        if not certificate:
+            raise ValueError("positive control does not qualify this final source/m")
+        from scripts.exp12_source_compatibility import verify
+
+        verify(certificate["path"], certificate["sha256"], source.get("commit"), commit)
+    return control
+
+
 def validate_approval(approval, queue_root, allocation):
     queue = load_queue(queue_root)
-    expected_nodes, expected_minutes = ALLOCATIONS[allocation]
     if (
         approval.get("approved") is not True
         or approval.get("allocation") != allocation
@@ -201,12 +273,7 @@ def validate_approval(approval, queue_root, allocation):
     ):
         raise ValueError("explicit allocation/source/queue approval is missing")
     resources = approval.get("resources", {})
-    if (
-        resources.get("nodes") != expected_nodes
-        or resources.get("gpus_per_node") != 4
-        or resources.get("wall_minutes") != expected_minutes
-    ):
-        raise ValueError("allocation must be exactly A=4 A100/30h or B=8 A100/48h")
+    _, expected_minutes = allocation_shape(allocation, resources)
     cpus = _positive_int(resources.get("cpus_per_node"), "allocated CPUs per node")
     ram = _positive_int(
         resources.get("memory_gb_per_node"), "allocated host RAM per node"
@@ -228,15 +295,17 @@ def validate_approval(approval, queue_root, allocation):
         _positive_int(profile.get("host_ram_gb"), f"{arch} host RAM")
         _positive_int(profile.get("gpu_memory_gb"), f"{arch} GPU memory")
         estimates = profile.get("estimated_minutes_by_group", {})
-        if set(estimates) != {"dmc_hard", "myosuite_simba", "humanoid_bench"}:
+        if set(estimates) != set(GROUPS):
             raise ValueError(
                 f"{arch} needs runtime estimates for every environment group"
             )
         for group, estimate in estimates.items():
             _positive_int(estimate, f"{arch}/{group} runtime")
-        if approval.get("exp2", {}).get("approved") is True and arch != "D2W512":
+        # Exp2 may be released while this allocation runs, so forking sizes always
+        # carry arm estimates.
+        if arch in FORKING:
             arms = profile.get("estimated_arm_minutes_by_group", {})
-            if set(arms) != {"dmc_hard", "myosuite_simba", "humanoid_bench"}:
+            if set(arms) != set(GROUPS):
                 raise ValueError(f"{arch} needs injected-arm runtime estimates")
             for group, estimate in arms.items():
                 _positive_int(estimate, f"{arch}/{group} injected-arm runtime")
@@ -259,19 +328,268 @@ def validate_approval(approval, queue_root, allocation):
             raise ValueError(
                 "Exp2 requires owner-frozen m and intact positive-control evidence"
             )
-        control = _read(exp2["positive_control_evidence"])
-        if (
-            control.get("status") != "m_chosen"
-            or control.get("chosen_m") != exp2["injection_m"]
-            or control.get("source_code") != {"commit": queue["commit"], "dirty": False}
-            or control.get("allow_any_setting") is not False
-            or control.get("trigger_check", {}).get("forced") is not False
-        ):
-            raise ValueError("positive control does not qualify this final source/m")
+        validate_positive_control(
+            {
+                "path": exp2["positive_control_evidence"],
+                "sha256": exp2["positive_control_sha256"],
+                "source_compatibility": exp2.get("source_compatibility"),
+            },
+            queue["commit"],
+            require_m=exp2["injection_m"],
+        )
     hb_python = resources.get("humanoid_bench_python")
     if not isinstance(hb_python, str) or not Path(hb_python).is_absolute():
         raise ValueError("approved absolute HumanoidBench Python path required")
     return resources, admission
+
+
+# ---------------------------------------------------------------------------
+# Per-run releases (plan approval release_mode = "per_run").
+#
+# The approved plan may mark gates DEFERRED_TO_RELEASE. A deferred gate is satisfied
+# only by an immutable, owner-signed release published under <queue>/releases, which
+# is re-validated against the queue source and hash-pinned evidence on every read.
+# Before each start the scheduler evaluates, per run, every prerequisite applicable to
+# that run; an unsatisfied prerequisite keeps the run pending, never failed.
+# ---------------------------------------------------------------------------
+RELEASE_TYPES = ("gate", "identity", "a2_staged_identity", "fresh_null", "hopper_range", "exp2")
+_RELEASE_CACHE = {}
+_EFFECTIVE_CACHE = {}
+
+
+def _plan_approval(queue):
+    plan = _read(queue["plan"])
+    return _read(plan["approval"])
+
+
+def _deferred(approval, gate):
+    from scripts.exp12_launch_plan import per_run_release
+
+    return (
+        per_run_release(approval, "parents")
+        and approval.get("gates", {}).get(gate, {}).get("status") == DEFERRED
+    )
+
+
+def release_name(release):
+    kind = release.get("type")
+    if kind == "gate":
+        return f"gate_{release.get('gate')}.json"
+    if kind == "identity":
+        return f"identity_{_digest(release)[:16]}.json"
+    return f"{kind}.json"
+
+
+def validate_release(decision, queue, queue_root):
+    """One owner decision -> normalized release; raises on anything not provable."""
+    approval = _plan_approval(queue)
+    commit = queue["commit"]
+    if (
+        decision.get("approved") is not True
+        or decision.get("expected_commit") != commit
+        or decision.get("queue_sha256") != sha(Path(queue_root) / "queue.json")
+        or not decision.get("decision_reference")
+    ):
+        raise ValueError("release needs an approved, source- and queue-bound owner decision")
+    release = decision.get("release") or {}
+    kind = release.get("type")
+    if kind not in RELEASE_TYPES:
+        raise ValueError("unknown release type")
+    if kind == "gate":
+        gate = release.get("gate")
+        if gate not in GLOBAL_GATES or not _deferred(approval, gate):
+            raise ValueError("gate release requires a gate deferred by the approved plan")
+        if gate == "positive_control":
+            validate_positive_control(release.get("positive_control") or {}, commit)
+    elif kind in ("identity", "a2_staged_identity"):
+        if not _deferred(approval, "cuda_identity_scaled_suites"):
+            raise ValueError("identity is not deferred by the approved plan")
+        if kind == "identity":
+            coverage = evidence_coverage(release.get("evidence", []), commit, "cuda_identity_fork")
+            if not {(a, s) for a, s, _ in coverage} <= IDENTITY_REQUIRED:
+                raise ValueError("identity evidence covers a case outside amendment (p)")
+        elif not release.get("amendment_reference"):
+            raise ValueError("staged identity requires the approved amendment A2 reference")
+    elif kind == "fresh_null":
+        if not _deferred(approval, "fresh_null_disposition"):
+            raise ValueError("fresh-null disposition is not deferred by the approved plan")
+        choice = release.get("decision")
+        if choice == "adopt_threshold":
+            computation = release.get("computation") or {}
+            if not computation.get("path") or sha(computation["path"]) != computation.get("sha256"):
+                raise ValueError("threshold computation report missing or changed")
+            report = _read(computation["path"])
+            if (
+                report.get("status") != "COMPUTED_NOT_ACTIVATED"
+                or report.get("architecture") != NULL_ARCH
+                or report.get("selection") != release.get("selection")
+                or report.get("override") != release.get("override")
+                or report.get("override")
+                != f"trigger.null_threshold={report.get('selected_threshold')!r}"
+            ):
+                raise ValueError("threshold release differs from the computed report")
+        elif choice != "keep_zero" or "override" in release:
+            raise ValueError("fresh-null decision must be keep_zero or adopt_threshold")
+    elif kind == "hopper_range":
+        if not _deferred(approval, "hopper_range_disposition"):
+            raise ValueError("hopper disposition is not deferred by the approved plan")
+        if release.get("decision") not in ("release", "exclude"):
+            raise ValueError("hopper decision must be release or exclude")
+    else:  # exp2
+        if release.get("injection_m") not in ("last", "half", "all"):
+            raise ValueError("Exp2 release requires the owner-frozen m")
+        validate_positive_control(
+            release.get("positive_control") or {}, commit, require_m=release["injection_m"]
+        )
+    return release
+
+
+def publish_release(queue_root, decision_path):
+    """Validate one owner decision and publish it write-once. Never invents a decision."""
+    from scripts.exp12_launch_plan import per_run_release
+
+    queue_root = Path(queue_root).resolve()
+    queue = load_queue(queue_root)
+    if not per_run_release(_plan_approval(queue), "parents"):
+        raise ValueError("the approved plan does not use per-run releases")
+    decision = _read(decision_path)
+    release = validate_release(decision, queue, queue_root)
+    target = queue_root / "releases" / release_name(release)
+    record = {
+        "decision": decision,
+        "decision_path": str(Path(decision_path).resolve()),
+        "decision_sha256": sha(decision_path),
+        "published_at": time.time(),
+    }
+    try:
+        _write_new(target, record)
+    except FileExistsError:
+        raise ValueError(f"release {target.name} already published; releases are immutable")
+    return target
+
+
+def release_state(queue_root, queue):
+    """Satisfied prerequisites: plan-approved gates plus valid published releases."""
+    approval = _plan_approval(queue)
+    gates = approval.get("gates", {})
+    state = {
+        "gates": {g for g in GATES["parents"] if gates.get(g, {}).get("status") == "APPROVED"},
+        "identity": set(),
+        "a2": False,
+        "fresh_null": None,
+        "hopper": None,
+        "exp2": None,
+        "releases": [],
+    }
+    if "cuda_identity_scaled_suites" in state["gates"]:
+        state["identity"] |= IDENTITY_REQUIRED
+    if "fresh_null_disposition" in state["gates"]:
+        state["fresh_null"] = {"decision": "keep_zero"}
+    if "hopper_range_disposition" in state["gates"]:
+        state["hopper"] = "release"
+    directory = Path(queue_root) / "releases"
+    for path in sorted(directory.glob("*.json")) if directory.is_dir() else ():
+        if path.is_symlink():
+            raise ValueError("release record cannot be a symlink")
+        key = (str(path), sha(path))
+        if key not in _RELEASE_CACHE:
+            # The record embeds the owner decision; its evidence is re-verified here.
+            release = validate_release(_read(path)["decision"], queue, queue_root)
+            if path.name != release_name(release):
+                raise ValueError(f"release file name differs from its content: {path.name}")
+            _RELEASE_CACHE[key] = release
+        release = _RELEASE_CACHE[key]
+        state["releases"].append(path.name)
+        kind = release["type"]
+        if kind == "gate":
+            state["gates"].add(release["gate"])
+        elif kind == "identity":
+            state["identity"] |= {
+                (a, s)
+                for a, s, _ in evidence_coverage(release["evidence"], queue["commit"], "cuda_identity_fork")
+            }
+        elif kind == "a2_staged_identity":
+            state["a2"] = True
+        elif kind == "fresh_null":
+            state["fresh_null"] = release
+        elif kind == "hopper_range":
+            state["hopper"] = release["decision"]
+        else:
+            state["exp2"] = release
+    return state
+
+
+def run_blockers(item, state, exp2_active=False):
+    """Every unsatisfied prerequisite applicable to this run (empty = may start)."""
+    from analysis.exp12_validation import suite
+
+    row = item["row"]
+    arch, environment = row["architecture"], row["environment"]
+    blockers = [f"gate:{g}" for g in GLOBAL_GATES if g not in state["gates"]]
+    if state["a2"]:
+        # Proposed amendment A2: D2W512 never forks, so identity cannot affect it;
+        # a forking run needs both scaled identity cases of its own suite.
+        needed = {(a, suite(environment)) for a in FORKING} if arch in FORKING else set()
+    else:
+        needed = set(IDENTITY_REQUIRED)  # (b): all six before any grid run
+    if not needed <= state["identity"]:
+        missing = sorted(f"{a}/{s}" for a, s in needed - state["identity"])
+        blockers.append("identity:" + ",".join(missing))
+    if arch == NULL_ARCH and state["fresh_null"] is None:
+        blockers.append("fresh_null_disposition")
+    if (arch, environment) == HOPPER_CELL and state["hopper"] != "release":
+        blockers.append(
+            "hopper_range_excluded" if state["hopper"] == "exclude" else "hopper_range_disposition"
+        )
+    if item["kind"] == "exp2_injected" and not exp2_active:
+        blockers.append("exp2_release")
+    return blockers
+
+
+def effective_parents(queue, state):
+    """Queue rows with only release-approved overrides applied (D4W1024 threshold)."""
+    release = state["fresh_null"]
+    override = release.get("override") if release and release.get("decision") == "adopt_threshold" else None
+    key = (queue["commit"], queue["plan_sha256"], override)
+    if key in _EFFECTIVE_CACHE:
+        return _EFFECTIVE_CACHE[key]
+    parents = []
+    for parent in queue["parents"]:
+        row = parent["row"]
+        if override is not None and row["architecture"] == NULL_ARCH:
+            row = dict(row)
+            row["overrides"] = list(row["overrides"]) + [override]
+            row["release_overrides"] = [override]
+            row["config_hash"] = config_hash(row["overrides"])
+            row["command"] = list(row["command"]) + ["--overrides", override]
+            parent = {"id": identity("exp1", row, queue["commit"]), "kind": "exp1", "row": row}
+        parents.append(parent)
+    if len({p["id"] for p in parents}) != len(parents):
+        raise ValueError("effective parent identities are not unique")
+    _EFFECTIVE_CACHE[key] = parents
+    return parents
+
+
+def estimated_minutes(item, profile):
+    """Approved estimate scaled by the unfinished fraction of a resumable parent."""
+    row = item["row"]
+    if item["kind"] == "exp2_injected":
+        return profile["estimated_arm_minutes_by_group"][row["group"]]
+    full = profile["estimated_minutes_by_group"][row["group"]]
+    try:
+        point = checkpoint_progress(item)
+    except (OSError, ValueError):
+        point = None
+    if point is None or not row.get("budget"):
+        return full
+    remaining = 1 - point[0] / (row["budget"] // 2)
+    return full * min(1.0, max(0.05, remaining))
+
+
+def priority(item, admission):
+    """Arms first (they gate Exp2 completion), then longest remaining work first."""
+    profile = admission["architectures"][item["row"]["architecture"]]
+    return (0 if item["kind"] == "exp2_injected" else 1, -estimated_minutes(item, profile))
 
 
 def allocation_command(queue_root, approval_path, allocation):
@@ -590,7 +908,9 @@ def validate_parent(item, commit, queue_root):
     import jax
 
     with jax.default_device(jax.local_devices(backend="cpu")[0]):
-        result = postvalidate(run, commit, receipt)
+        result = postvalidate(
+            run, commit, receipt, extra_overrides=item["row"].get("release_overrides", ())
+        )
     if (
         result["engineering_verdict"] != "COMPLETE"
         or result["scientific_verdict"] != "CANONICAL_CERTIFICATION_REQUIRED"
@@ -696,14 +1016,17 @@ def _arm_item(parent_item, commit, injection_m):
     }
 
 
-def discover_arms(queue_root, queue, injection_m):
-    """Idempotently publish eligible arms while parents continue training."""
+def discover_arms(queue_root, queue, injection_m, parents=None):
+    """Idempotently publish eligible arms while parents continue training.
+
+    parents: the effective (release-applied) parent items; defaults to the queue rows."""
     from generate_manifest import EXP12_FORKING
 
+    parents = queue["parents"] if parents is None else parents
     directory = Path(queue_root) / "arms"
     directory.mkdir(exist_ok=True)
     existing = {}
-    parents_by_id = {parent["id"]: parent for parent in queue["parents"]}
+    parents_by_id = {parent["id"]: parent for parent in parents}
     for path in directory.glob("*.json"):
         if path.is_symlink():
             raise ValueError("arm manifest cannot be a symlink")
@@ -730,7 +1053,7 @@ def discover_arms(queue_root, queue, injection_m):
         if source_id in existing and existing[source_id] != arm:
             raise ValueError("one parent has conflicting injected arm manifests")
         existing[source_id] = arm
-    for parent in queue["parents"]:
+    for parent in parents:
         if parent["row"]["architecture"] not in EXP12_FORKING:
             continue
         if parent["id"] in existing:
@@ -973,14 +1296,8 @@ def can_admit(
     row = item["row"]
     arch = row["architecture"]
     profile = admission["architectures"][arch]
-    group = row["group"]
-    estimates = (
-        profile["estimated_arm_minutes_by_group"]
-        if item["kind"] == "exp2_injected"
-        else profile["estimated_minutes_by_group"]
-    )
     if (
-        time.time() + 60 * (estimates[group] + admission["stop_margin_minutes"])
+        time.time() + 60 * (estimated_minutes(item, profile) + admission["stop_margin_minutes"])
         >= deadline
     ):
         return False
@@ -1222,6 +1539,18 @@ def _finish(job, ledger, commit, queue_root):
     return True
 
 
+def _exp2_m(approval, state):
+    """The frozen m in force: allocation approval or Exp2 release; never two values."""
+    values = set()
+    if approval.get("exp2", {}).get("approved") is True:
+        values.add(approval["exp2"]["injection_m"])
+    if state["exp2"] is not None:
+        values.add(state["exp2"]["injection_m"])
+    if len(values) > 1:
+        raise ValueError("allocation approval and Exp2 release name different m")
+    return values.pop() if values else None
+
+
 def run(queue_root, approval_path, allocation):
     queue_root, approval_path = (
         Path(queue_root).resolve(),
@@ -1246,6 +1575,12 @@ def run(queue_root, approval_path, allocation):
         gpu_snapshot(token)
     _source_preflight(queue, approval, queue_root, job_id)
     ledger = Ledger(queue_root)
+    # Optional: keep polling for releases while nothing is eligible (owner-approved
+    # GPU idling traded for not re-queueing); 0 = exit when no work is eligible.
+    idle_wait = admission.get("idle_wait_minutes", 0)
+    if type(idle_wait) is not int or idle_wait < 0:
+        raise ValueError("idle_wait_minutes must be a non-negative integer")
+    idle_since = None
     active = []
     validating = {}
     discovered_arms = []
@@ -1288,7 +1623,10 @@ def run(queue_root, approval_path, allocation):
                 time.sleep(POLL_SECONDS)
                 continue
             update_rates(active)
-            if approval.get("exp2", {}).get("approved") is True:
+            state = release_state(queue_root, queue)
+            parents = effective_parents(queue, state)
+            injection_m = _exp2_m(approval, state)
+            if injection_m is not None:
                 if discovery_future is not None and discovery_future.done():
                     discovered_arms = discovery_future.result()
                     discovered_once = True
@@ -1296,7 +1634,7 @@ def run(queue_root, approval_path, allocation):
                     if final_discovery_requested:
                         final_discovery_done = True
                 parent_work_remaining = any(
-                    ledger.state(parent) == "pending" for parent in queue["parents"]
+                    ledger.state(parent) == "pending" for parent in parents
                 )
                 if parent_work_remaining:
                     final_discovery_requested = False
@@ -1307,21 +1645,22 @@ def run(queue_root, approval_path, allocation):
                     or (not parent_work_remaining and not final_discovery_done)
                 ):
                     discovery_future = discoverer.submit(
-                        discover_arms,
-                        queue_root,
-                        queue,
-                        approval["exp2"]["injection_m"],
+                        discover_arms, queue_root, queue, injection_m, parents
                     )
                     next_discovery = time.time() + POLL_SECONDS
                     if not parent_work_remaining:
                         final_discovery_requested = True
-            items = discovered_arms + queue["parents"]
-            pending = [
-                item
-                for item in items
-                if item["id"] not in seen_this_allocation
-                and ledger.state(item) == "pending"
-            ]
+            items = discovered_arms + parents
+            pending = sorted(
+                (
+                    item
+                    for item in items
+                    if item["id"] not in seen_this_allocation
+                    and not run_blockers(item, state, injection_m is not None)
+                    and ledger.state(item) == "pending"
+                ),
+                key=lambda item: priority(item, admission),
+            )
             started = False
             for token in visible:
                 snapshot = gpu_snapshot(token)
@@ -1349,9 +1688,61 @@ def run(queue_root, approval_path, allocation):
                 if discovery_future is not None:
                     time.sleep(1)
                     continue
-                break
+                idle_since = idle_since or time.time()
+                if time.time() - idle_since >= 60 * idle_wait:
+                    break
+            else:
+                idle_since = None
             time.sleep(1 if started else POLL_SECONDS)
     return 0
+
+
+def queue_status(queue_root):
+    """Read-only census: eligibility, ledger state and blockers of every run."""
+    queue_root = Path(queue_root).resolve()
+    queue = load_queue(queue_root)
+    state = release_state(queue_root, queue)
+    parents = effective_parents(queue, state)
+    approval = _plan_approval(queue)
+    exp2_m = state["exp2"]["injection_m"] if state["exp2"] else None
+    ledger = Ledger(queue_root)
+    arms = [_read(p) for p in sorted((queue_root / "arms").glob("*.json"))] if (
+        queue_root / "arms"
+    ).is_dir() else []
+    rows, counts = [], {}
+    for item in parents + arms:
+        blockers = run_blockers(item, state, exp2_m is not None)
+        status = ledger.state(item)
+        if status == "pending" and (ledger._row_dir(item) / "claim").exists():
+            status = "claimed"
+        if status == "pending":
+            status = "blocked_by_prerequisite" if blockers else "eligible"
+        counts[(item["kind"], status)] = counts.get((item["kind"], status), 0) + 1
+        rows.append(
+            {
+                "id": item["id"],
+                "kind": item["kind"],
+                "run_key": item["row"]["run_key"],
+                "architecture": item["row"]["architecture"],
+                "environment": item["row"]["environment"],
+                "status": status,
+                "blockers": blockers,
+            }
+        )
+    forks_ready = sum(
+        (Path(p["row"]["checkpoint_dir"]) / "fork" / "FORK_READY").exists() for p in parents
+    )
+    return {
+        "commit": queue["commit"],
+        "release_mode": approval.get("release_mode", "all_gates"),
+        "releases": state["releases"],
+        "a2_staged_identity": state["a2"],
+        "identity_cases_satisfied": sorted(f"{a}/{s}" for a, s in state["identity"]),
+        "exp2_injection_m": exp2_m,
+        "forks_ready": forks_ready,
+        "counts": {f"{k}:{v}": n for (k, v), n in sorted(counts.items())},
+        "rows": rows,
+    }
 
 
 def main(argv=None):
@@ -1372,14 +1763,27 @@ def main(argv=None):
     retry.add_argument("--queue", required=True)
     retry.add_argument("--id", required=True)
     retry.add_argument("--decision", required=True)
+    release = sub.add_parser("release")
+    release.add_argument("--queue", required=True)
+    release.add_argument("--decision", required=True)
+    status = sub.add_parser("status")
+    status.add_argument("--queue", required=True)
+    status.add_argument("--rows", action="store_true")
     args = parser.parse_args(argv)
     if args.action == "prepare":
         prepare(args.plan, args.queue)
     elif args.action == "allocation-command":
         print(allocation_command(args.queue, args.approval, args.allocation))
+    elif args.action == "release":
+        print(publish_release(args.queue, args.decision))
+    elif args.action == "status":
+        report = queue_status(args.queue)
+        if not args.rows:
+            report.pop("rows")
+        print(json.dumps(report, indent=2))
     elif args.action == "review-retry":
         queue = load_queue(args.queue)
-        items = queue["parents"] + [
+        items = effective_parents(queue, release_state(args.queue, queue)) + [
             _read(path) for path in (Path(args.queue) / "arms").glob("*.json")
         ]
         matches = [item for item in items if item["id"] == args.id]

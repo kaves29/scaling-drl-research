@@ -21,10 +21,14 @@ export PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1
 export OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1
 unset JAX_PLATFORM_NAME JAX_DEFAULT_MATMUL_PRECISION NVIDIA_TF32_OVERRIDE
 unset XLA_PYTHON_CLIENT_MEM_FRACTION XLA_FLAGS
+[[ "$EXP12_ALLOCATION" =~ ^[A-Za-z0-9_-]{1,32}$ ]] || {
+  echo "invalid allocation name: $EXP12_ALLOCATION" >&2; exit 2; }
+# Node count comes from the actual allocation; the worker re-checks it against the
+# approval (legacy A=1, B=2; generic approvals 1-4 nodes).
+nodes="${SLURM_JOB_NUM_NODES:?}"
 case "$EXP12_ALLOCATION" in
-  A) nodes=1;;
-  B) nodes=2;;
-  *) echo "invalid allocation name: $EXP12_ALLOCATION" >&2; exit 2;;
+  A) test "$nodes" = 1;;
+  B) test "$nodes" = 2;;
 esac
 test "$(sha256sum "$EXP12_ALLOCATION_APPROVAL" | cut -d' ' -f1)" = "$EXP12_APPROVAL_SHA256"
 # One persistent worker on each allocated four-A100 node. The shared durable
