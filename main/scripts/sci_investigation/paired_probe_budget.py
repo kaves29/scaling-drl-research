@@ -116,20 +116,22 @@ def _one_check(args, trainer, tx, critic_params, check_index, cfg):
     current_scores = {1000: [], 2000: []}
     baseline, curves = [], []
     snapshots = []
+    target_keys = []
     params = {"fresh": critic_params}
-    for rnd in range(cfg.rounds):
+    for rnd in range(args.round_start, args.round_start + args.rounds):
         round_wall = time.monotonic()
         round_cpu = time.process_time()
         obs, act, base = _round_data(args, trainer, rnd, check_index, cfg)
         key = probe_key(args.seed, check_index, rnd)
-        _, idx_key = jax.random.split(key)
+        target_key, idx_key = jax.random.split(key)
+        target_keys.append(np.asarray(jax.device_get(target_key), dtype=np.uint32).tolist())
         first_idx = jax.random.randint(idx_key, (1000, cfg.batch_size), 0, cfg.pool_size)
         # Separate follow-up key preserves the exact original first-1000 stream.
         second_idx = jax.random.randint(jax.random.fold_in(idx_key, 1),
                                         (1000, cfg.batch_size), 0, cfg.pool_size)
         b = np.float32(jax.device_get(jnp.var(base)))
         baseline.append(float(b))
-        if args.mode == "null" and rnd == 0:
+        if args.mode == "null" and rnd == args.round_start:
             obs0 = jnp.zeros((1, obs.shape[1]))
             act0 = jnp.zeros((1, act.shape[1]))
             keys = jax.random.split(jax.random.PRNGKey(NULL_PAIR_KEY_OFFSET + args.pair), 2)
@@ -175,7 +177,9 @@ def _one_check(args, trainer, tx, critic_params, check_index, cfg):
                 "performance": round_curves["performance"],
             })
     result = {"pair": args.pair if args.mode == "null" else None, "check_index": check_index,
-              "seed": args.seed, "b_rounds": baseline, "rounds": [], "optimizer_snapshots": snapshots}
+              "seed": args.seed, "round_indices": list(range(args.round_start, args.round_start + args.rounds)),
+              "target_keys": target_keys, "b_rounds": baseline, "rounds": [],
+              "optimizer_snapshots": snapshots}
     for rnd, rd in enumerate(curves):
         result["rounds"].append({n: {k: (v.tolist() if isinstance(v, np.ndarray) else v)
                                      for k, v in fields.items()} if isinstance(fields, dict) else fields
@@ -196,9 +200,10 @@ def _one_check(args, trainer, tx, critic_params, check_index, cfg):
                                         "ci_low": low, "ci_high": high,
                                         "fired_zero": bool(np.isfinite(low) and low > 0)}
     if args.mode == "null":
-        result["null_1000"]["fired_pooled_p95"] = bool(
-            np.isfinite(result["null_1000"]["ci_low"])
-            and result["null_1000"]["ci_low"] > args.pooled_threshold)
+        if args.pooled_threshold is not None:
+            result["null_1000"]["fired_pooled_p95"] = bool(
+                np.isfinite(result["null_1000"]["ci_low"])
+                and result["null_1000"]["ci_low"] > args.pooled_threshold)
     return result
 
 
@@ -216,7 +221,7 @@ def _summary(out_dir, mode, requested, threshold, started):
     rows = [json.loads(path.read_text()) for path in files]
     summary = {"mode": mode, "completed": len(rows), "requested": requested,
                "complete": len(rows) == requested, "elapsed_wall_s": time.monotonic() - started}
-    if mode == "null" and rows:
+    if mode == "null" and rows and threshold is not None:
         summary["pooled_threshold"] = threshold
         summary["methods"] = {}
         for label, field in (("A_zero_1000", "null_1000"), ("B_pooled_p95_1000", "null_1000"),
@@ -237,6 +242,8 @@ def main():
     parser.add_argument("--capture-archive", type=Path)
     parser.add_argument("--seed", type=int, default=990)
     parser.add_argument("--pairs", type=int, default=100)
+    parser.add_argument("--round-start", type=int, default=0)
+    parser.add_argument("--rounds", type=int, default=5)
     parser.add_argument("--pooled-threshold", type=float,
                         help="exploratory p95 IQM from two verified historical null datasets")
     parser.add_argument("--reference-null-jsonl", type=Path,
@@ -257,8 +264,13 @@ def main():
     if args.mode == "hopper" and (args.capture_archive is None or not args.capture_archive.is_file()):
         if args.seed == 990:
             parser.error("historical hopper mode needs the original capture archive")
-    if args.mode == "null" and (args.pooled_threshold is None or not np.isfinite(args.pooled_threshold)):
-        parser.error("null comparison needs a finite historical pooled threshold")
+    if args.mode == "null" and args.round_start == 0:
+        if args.pooled_threshold is None or not np.isfinite(args.pooled_threshold):
+            parser.error("original null comparison needs a finite historical pooled threshold")
+    if args.rounds != 5 or args.round_start not in (0, 5):
+        parser.error("only the original rounds 0..4 or D-only rounds 5..9 are supported")
+    if args.round_start == 5 and (args.mode != "null" or args.seed != 991 or args.pooled_threshold is not None):
+        parser.error("extra target rounds are a separate seed-991 descriptive null stage")
     reference_null = {}
     if args.reference_null_jsonl:
         if args.mode != "null" or args.seed != 991:
@@ -288,6 +300,7 @@ def main():
                       "reference_null_sha256": hashlib.sha256(args.reference_null_jsonl.read_bytes()).hexdigest()
                       if args.reference_null_jsonl else None,
                       "pooled_threshold": args.pooled_threshold,
+                      "round_start": args.round_start, "rounds": args.rounds,
                       "note": "exploratory paired fitting; production settings unchanged"}
         _atomic_json(args.out_dir / "provenance.json", provenance)
         tx = critic_optimizer(trainer.cfg.agent)
