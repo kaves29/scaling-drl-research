@@ -21,7 +21,7 @@ from analysis.metrics_store import RunIdentity
 from experiments.angle_1 import DONE_MARKER
 from experiments.exp12 import exp2_ledger, fork, ledger
 from experiments.exp12.precision import configure_compilation_cache, runtime_info, set_matmul_precision
-from experiments.exp12.run_probes import RunProbes
+from experiments.exp12.run_probes import FRESH_CRITIC_DIR, RunProbes
 from experiments.exp12.state import latest_state_dir, load_meta
 from experiments.exp12.trainer import Exp12Trainer
 from experiments.registry import register_experiment
@@ -106,6 +106,12 @@ def run(args: dict) -> None:
         latest = latest_state_dir(fork.fork_dir(run_dir) / "state")  # control restarts from the fork state
         enter_control_on_restore = True
     run_dir.mkdir(parents=True, exist_ok=True)
+    stale_fresh = run_dir / FRESH_CRITIC_DIR
+    if latest is None and stale_fresh.exists():
+        # A start from scratch re-captures the (deterministic) fresh critic. Overwriting the
+        # aborted attempt's copy in place would leave tensorstore's per-process cache stale when
+        # it is read back at the fork, so it is moved aside and kept as evidence instead.
+        stale_fresh.rename(run_dir / f"{FRESH_CRITIC_DIR}.aborted_{datetime.now(timezone.utc):%Y%m%dT%H%M%S%fZ}")
     record_metadata(cfg, run_dir, resumed=latest is not None)
 
     num_steps = int(cfg.num_interaction_steps)
@@ -134,6 +140,10 @@ def run(args: dict) -> None:
             trainer.start()
         live["trainer"] = trainer
         live["probes"] = RunProbes(trainer, str(run_dir)) if cfg.probe.enabled else None
+        plan = trainer.extra_state.get("fork")
+        if plan is not None and live["probes"] is not None:
+            # A control restored from its own post-fork save keeps the checks past 100% of B.
+            live["probes"].extend_to(plan["control_end_step"])
 
     def enter_control(plan):
         """The restored process continues as the CONTROL arm of Experiment 2."""

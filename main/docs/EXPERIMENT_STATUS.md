@@ -5,9 +5,9 @@
 The owner authorized Method C implementation: 2,000 continuous fit steps
 with the same five target functions, original first-1,000 minibatches and
 continued AdamW state. Zero trigger threshold, 95% bootstrap and two
-consecutive scheduled checks remain. The earlier table's 1,000-step probe
-describes its historical source; it is superseded by amendment (aa) for the
-new `codex/exp12-method-c-production` candidate. A/B/C job 22852240 on
+consecutive scheduled checks remain. The approved-settings table below now
+records Method C (amendment (aa)); the earlier 1,000-step probe describes
+historical sources only. A/B/C job 22852240 on
 exploratory source `18c76da70c7e7c53bb01cae0afec8b8ae4dfb3af` observed
 D4W1536 Hopper-Hop P/b 0.9467/0.9567/0.9552 and D4W1024 5/100 single-check
 fresh-null firings. Neither establishes trained-critic sensitivity or a
@@ -102,7 +102,7 @@ production entry points or authorization to adopt exploratory criteria.
 | HumanoidBench tasks/budgets | h1-reach-v0, h1-run-v0: 2M raw steps each. |
 | Training | UTD=2, action repeat=2, one training env, batch256, replay1M, warmup5000; AdamW lr1e-4, actor/critic decay .01, temperature decay0; initial alpha .01; target tau .005; gamma .99 DMC/HB and .95 Myo. |
 | Critic/entropy | Single Q for DMC/Myo; independent clipped twins for HB. Retain approved G1 target H*=−0.5|A|; unsigned original wording remains a documented interpretation question, not permission to change the sign. |
-| Probe | Five paired rounds, fresh optimizer, 1000 fitting steps, batch256, pool25600, sin(1e5 teacher) targets, fixed per-fit offset, fresh-critic comparison; 20 scheduled checks. Preserve literal per-network FP32 loss subtraction then twin mean. |
+| Probe | Method C (amendment (aa)): five paired rounds, each with a fresh optimizer and its own teacher, fitted for 2000 continuous steps (original first-1000 minibatch stream, then its separate follow-up stream; parameters and AdamW state carried through), batch256, pool25600, sin(1e5 teacher) targets, fixed per-fit offset, fresh-critic comparison; 20 scheduled checks. Preserve literal per-network FP32 loss subtraction then twin mean. |
 | Trigger | IQM, 10000 percentile-bootstrap resamples, 95% CI, strict lower bound >0; first two consecutive eligible checks, completed by check19 (95% budget). |
 | Exp2 | Scaled-only natural eligible forks; complete-state restoration; matched control/injected arms; 25%-budget continuation capped at total1.2B. Post-fork evaluation every1% B, 10 episodes. |
 | Injection | Approved Nikishin implementation and identity preservation; m is not frozen and cannot be chosen by an agent. |

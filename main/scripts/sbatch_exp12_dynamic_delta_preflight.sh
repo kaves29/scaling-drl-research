@@ -23,6 +23,6 @@ export XLA_PYTHON_CLIENT_PREALLOCATE=false WANDB_MODE=disabled
 export OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1
 unset JAX_PLATFORM_NAME JAX_DEFAULT_MATMUL_PRECISION NVIDIA_TF32_OVERRIDE
 test "${SLURM_JOB_NUM_NODES:?}" = 2
-srun --nodes=2 --ntasks=2 --ntasks-per-node=1 --gpus-per-task=4 \
+srun --cpus-per-task="${SLURM_CPUS_PER_TASK:?}" --nodes=2 --ntasks=2 --ntasks-per-node=1 --gpus-per-task=4 \
   python scripts/exp12_dynamic_delta_preflight.py worker --root "$EXP12_PREFLIGHT_ROOT"
 python scripts/exp12_dynamic_delta_preflight.py verify --root "$EXP12_PREFLIGHT_ROOT"

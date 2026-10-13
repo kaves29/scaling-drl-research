@@ -10,6 +10,7 @@ Layout under the Exp 1 run directory:
 """
 
 import json
+import os
 import time
 from pathlib import Path
 from typing import Dict, Optional
@@ -166,8 +167,19 @@ def check1(pre: Dict, after: Dict, control: Dict, tolerance_eps: float, injected
 
 
 def save_npz(path: Path, arrays: Dict) -> None:
+    """Publish atomically: a concurrent reader (e.g. an arm validating the control's Check 1)
+    sees the old complete file or the new one, never a partial zip."""
+    path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    np.savez(path, **arrays)
+    temporary = path.with_name(f".{path.name}.{os.getpid()}.tmp")
+    try:
+        with open(temporary, "wb") as f:
+            np.savez(f, **arrays)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(temporary, path)
+    finally:
+        temporary.unlink(missing_ok=True)
 
 
 def load_npz(path: Path) -> Dict[str, np.ndarray]:

@@ -37,6 +37,12 @@ from scripts.exp12_launch_plan import (  # noqa: E402
 WEIGHTS = {"D2W512": 1 / 7, "D4W1024": 1 / 4, "D4W1536": 1 / 2}
 CEILINGS = {"D2W512": 7, "D4W1024": 4, "D4W1536": 2}
 ALLOCATIONS = {"A": (1, 30 * 60), "B": (2, 48 * 60)}
+# Every environment group of the grid (generate_manifest.EXP12_BUDGETS), dmc_medium included.
+GROUPS = ("dmc_hard", "dmc_medium", "myosuite_simba", "humanoid_bench")
+# squeue/sacct states whose processes may still run; anything else listed has ended.
+SLURM_LIVE_STATES = {"PENDING", "RUNNING", "CONFIGURING", "COMPLETING", "SUSPENDED", "REQUEUED",
+                     "REQUEUE_HOLD", "REQUEUE_FED", "RESIZING", "SIGNALING", "STAGE_OUT", "STOPPED"}
+STALE_GUARD_SECONDS = 600
 GPU_KIND = "NVIDIA A100-SXM4-40GB"
 POLL_SECONDS = 15
 _VERIFIED_ARM_FILES = {}
@@ -150,6 +156,10 @@ def prepare(plan_path, queue_root):
     )
     queue_root.parent.mkdir(parents=True, exist_ok=True)
     queue_root.mkdir()
+    # allocation_command redirects into these; sbatch never sees a missing directory.
+    (queue_root / "slurm").mkdir()
+    for name in ALLOCATIONS:
+        (queue_root / "submissions" / name).mkdir(parents=True)
     queue = {
         "schema_version": 1,
         "plan": str(plan_path),
@@ -228,7 +238,7 @@ def validate_approval(approval, queue_root, allocation):
         _positive_int(profile.get("host_ram_gb"), f"{arch} host RAM")
         _positive_int(profile.get("gpu_memory_gb"), f"{arch} GPU memory")
         estimates = profile.get("estimated_minutes_by_group", {})
-        if set(estimates) != {"dmc_hard", "myosuite_simba", "humanoid_bench"}:
+        if set(estimates) != set(GROUPS):
             raise ValueError(
                 f"{arch} needs runtime estimates for every environment group"
             )
@@ -236,7 +246,7 @@ def validate_approval(approval, queue_root, allocation):
             _positive_int(estimate, f"{arch}/{group} runtime")
         if approval.get("exp2", {}).get("approved") is True and arch != "D2W512":
             arms = profile.get("estimated_arm_minutes_by_group", {})
-            if set(arms) != {"dmc_hard", "myosuite_simba", "humanoid_bench"}:
+            if set(arms) != set(GROUPS):
                 raise ValueError(f"{arch} needs injected-arm runtime estimates")
             for group, estimate in arms.items():
                 _positive_int(estimate, f"{arch}/{group} injected-arm runtime")
@@ -317,7 +327,17 @@ def _owner_alive(owner, query):
     return query(str(job))
 
 
+def _job_states(text):
+    return {line.strip().split()[0].rstrip("+") for line in text.splitlines() if line.strip()}
+
+
 def slurm_alive(job):
+    """True while the owning allocation may still run processes.
+
+    squeue lists ended jobs for MinJobAge with terminal states and afterwards
+    rejects the id ("Invalid job id"); both mean ended. Any other squeue failure
+    falls back to sacct; if neither answers, liveness is unknown and recovery is
+    refused (RuntimeError), never assumed."""
     result = subprocess.run(
         ["squeue", "-h", "-j", job, "-o", "%T"],
         capture_output=True,
@@ -325,9 +345,47 @@ def slurm_alive(job):
         timeout=30,
         check=False,
     )
-    if result.returncode:
-        raise RuntimeError("squeue failed; claim recovery refused")
-    return bool(result.stdout.strip())
+    if result.returncode == 0:
+        states = _job_states(result.stdout)
+        if not states:
+            return False
+        return bool(states & SLURM_LIVE_STATES) or not states <= _TERMINAL_STATES
+    if "invalid job id" in (result.stderr + result.stdout).lower():
+        return False
+    accounting = subprocess.run(
+        ["sacct", "-X", "-n", "-P", "-j", job, "-o", "State"],
+        capture_output=True,
+        text=True,
+        timeout=60,
+        check=False,
+    )
+    if accounting.returncode or not accounting.stdout.strip():
+        raise RuntimeError("squeue and sacct failed; claim recovery refused")
+    states = _job_states(accounting.stdout)
+    return bool(states & SLURM_LIVE_STATES) or not states <= _TERMINAL_STATES
+
+
+_TERMINAL_STATES = {"BOOT_FAIL", "CANCELLED", "COMPLETED", "DEADLINE", "FAILED", "NODE_FAIL",
+                    "OUT_OF_MEMORY", "PREEMPTED", "REVOKED", "SPECIAL_EXIT", "TIMEOUT"}
+
+
+_WARNED_GUARDS = set()
+_CLAIM_BACKOFF = {}
+CLAIM_BACKOFF_SECONDS = 300
+
+
+def _warn_if_stale_guard(guard, item):
+    """Transitions last well under a second; an old guard is an orphan from a killed worker.
+    It is never removed automatically (its owner may be alive); it is reported for review."""
+    try:
+        age = time.time() - guard.stat().st_mtime
+    except FileNotFoundError:
+        return
+    if age > STALE_GUARD_SECONDS and item["id"] not in _WARNED_GUARDS:
+        _WARNED_GUARDS.add(item["id"])
+        print(f"[scheduler] WARNING: transition guard {guard} is {age:.0f} s old; row "
+              f"{item['row'].get('run_key', item['id'])} stays pending until it is reviewed",
+              file=sys.stderr, flush=True)
 
 
 class Ledger:
@@ -355,6 +413,7 @@ class Ledger:
         directory.mkdir(parents=True, exist_ok=True)
         guard = self._guard(directory)
         if guard is None:
+            _warn_if_stale_guard(directory / "transition_guard", item)
             return False
         try:
             completed = directory / "completed.json"
@@ -487,7 +546,9 @@ class Ledger:
                 or not decision.get("decision_reference")
             ):
                 raise ValueError("explicit matching recovery decision required")
-            if not validate_resume(item, commit):
+            # Raises unless the run is resumable from a valid checkpoint or, for an Exp1
+            # parent interrupted before its first checkpoint, restartable from scratch.
+            if not validate_resume(item, commit) and item["kind"] != "exp1":
                 raise ValueError("recovery requires an existing valid checkpoint")
             retries = directory / "retry_decisions"
             retries.mkdir(exist_ok=True)
@@ -561,6 +622,16 @@ def validate_resume(item, commit):
     if (run / "DONE").exists():
         raise ValueError("DONE must be reconciled, never restarted")
     _metadata_matches(run, item, commit)
+    from experiments.exp12.state import latest_state_dir as _latest
+
+    if (
+        item["kind"] == "exp1"
+        and _latest(run / "state") is None
+        and not (run / "fork" / "FORK_READY").exists()
+    ):
+        # Interrupted before its first committed checkpoint: exp1 restarts from scratch
+        # deterministically (tests KillMatrixTest.test_killed_before_the_first_checkpoint_*).
+        return False
     state = _checkpoint_valid(run, item, commit)
     from experiments.exp12.state import load_agent_tree
     from scripts.exp12_launch_plan import validate_replay_normalization
@@ -1132,11 +1203,17 @@ def _owner(job_id):
 def _start(item, token, approval, queue_root, ledger, job_id):
     owner = _owner(job_id)
     commit = approval["expected_commit"]
-    if not ledger.claim(
-        item,
-        owner,
-        lambda row: validate_done(row, commit, queue_root),
-    ):
+    if _CLAIM_BACKOFF.get(item["id"], 0) > time.time():
+        return None
+    try:
+        claimed = ledger.claim(item, owner, lambda row: validate_done(row, commit, queue_root))
+    except Exception as exc:  # one unrecoverable row must not stop the allocation's worker
+        _CLAIM_BACKOFF[item["id"]] = time.time() + CLAIM_BACKOFF_SECONDS
+        print(f"[scheduler] WARNING: claim of {item['row'].get('run_key', item['id'])} refused: "
+              f"{type(exc).__name__}: {exc}; retrying in {CLAIM_BACKOFF_SECONDS} s",
+              file=sys.stderr, flush=True)
+        return None
+    if not claimed:
         return None
     try:
         resumed = validate_resume(item, commit)

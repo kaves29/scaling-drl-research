@@ -205,9 +205,17 @@ class DurableLedgerTest(unittest.TestCase):
                 "decision_reference": "owner-reviewed-checkpoint",
             }
             decision.write_text(json.dumps(payload))
+            arm_row = dict(row, kind="exp2_injected")
+            arm_owner = owner(2, "arm")
+            self.assertTrue(ledger.claim(arm_row, arm_owner, lambda _: None))
+            ledger.finish(arm_row, arm_owner, error="interrupted before checkpoint")
+            arm_decision = root / "arm_retry.json"
+            arm_decision.write_text(json.dumps(dict(
+                payload, blocked_sha256=scheduler.sha(ledger._row_dir(arm_row) / "blocked.json"))))
             with mock.patch.object(scheduler, "validate_resume", return_value=False):
                 with self.assertRaisesRegex(ValueError, "valid checkpoint"):
-                    ledger.review_retry(row, "a" * 40, decision)
+                    ledger.review_retry(arm_row, "a" * 40, arm_decision)
+            self.assertEqual(ledger.state(arm_row), "blocked")
             self.assertEqual(ledger.state(row), "blocked")
             payload["blocked_sha256"] = "wrong"
             decision.write_text(json.dumps(payload))
@@ -263,8 +271,12 @@ class DurableLedgerTest(unittest.TestCase):
             metadata["code"]["commit"] = "new"
             metadata["launches"] = [pinned_launch("new")]
             (run / "run_metadata.json").write_text(json.dumps(metadata))
+            # No committed state and no fork: an Exp1 parent restarts from scratch (False),
+            # an injected arm still refuses.
+            self.assertFalse(scheduler.validate_resume(row, "new"))
+            arm = dict(row, kind="exp2_injected")
             with self.assertRaisesRegex(ValueError, "checkpoint"):
-                scheduler.validate_resume(row, "new")
+                scheduler.validate_resume(arm, "new")
             state = run / "state" / "step_000025000_abcd1234"
             state.mkdir(parents=True)
             (run / "state" / "LATEST").write_text(state.name)
@@ -694,11 +706,13 @@ class ResourceAdmissionTest(unittest.TestCase):
             for profile in approval["admission"]["architectures"].values():
                 profile["estimated_minutes_by_group"] = {
                     "dmc_hard": 60,
+                    "dmc_medium": 40,
                     "myosuite_simba": 90,
                     "humanoid_bench": 120,
                 }
                 profile["estimated_arm_minutes_by_group"] = {
                     "dmc_hard": 30,
+                    "dmc_medium": 20,
                     "myosuite_simba": 45,
                     "humanoid_bench": 60,
                 }

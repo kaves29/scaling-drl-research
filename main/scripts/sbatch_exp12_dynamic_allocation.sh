@@ -29,7 +29,7 @@ esac
 test "$(sha256sum "$EXP12_ALLOCATION_APPROVAL" | cut -d' ' -f1)" = "$EXP12_APPROVAL_SHA256"
 # One persistent worker on each allocated four-A100 node. The shared durable
 # queue/claims coordinate workers within B and between overlapping A and B.
-srun --ntasks="$nodes" --ntasks-per-node=1 --gpus-per-task=4 \
+srun --cpus-per-task="${SLURM_CPUS_PER_TASK:?}" --ntasks="$nodes" --ntasks-per-node=1 --gpus-per-task=4 \
   python -u scripts/exp12_dynamic_scheduler.py worker \
   --queue "$EXP12_QUEUE" --approval "$EXP12_ALLOCATION_APPROVAL" \
   --allocation "$EXP12_ALLOCATION"
