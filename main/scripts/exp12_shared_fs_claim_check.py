@@ -27,7 +27,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from scripts.exp12_dynamic_scheduler import Ledger, LedgerContention, _read, _write_new  # noqa: E402
+from scripts.exp12_dynamic_scheduler import (  # noqa: E402
+    Ledger, LedgerContention, _read, _write_new, bound_receipt)
 
 DEFAULT_ITEMS = 500
 READY_TIMEOUT_SECONDS = 600
@@ -54,6 +55,12 @@ def _handoff_item(root, index):
         "kind": "exp1",
         "row": {"config_hash": "diagnostic_only", "checkpoint_dir": str(run)},
     }
+
+
+def _recovery_item(root):
+    """One row rank 1 claims and rank 0 then recovers, as if rank 1's allocation had ended."""
+    return {"id": "recovery_0000", "kind": "exp1",
+            "row": {"config_hash": "diagnostic_only", "checkpoint_dir": str(root / "no_run")}}
 
 
 def _prepare_handoff(root, index, token):
@@ -135,6 +142,8 @@ def worker(root, rank, items=DEFAULT_ITEMS, host=None, ready_timeout=READY_TIMEO
         receipts[index] = _prepare_handoff(root, index, owner_token)
         if not ledger.claim(_handoff_item(root, index), owner, lambda _: None):
             raise RuntimeError(f"could not pre-claim handoff row {index}")
+    if rank == 1 and not ledger.claim(_recovery_item(root), owner, lambda _: None):
+        raise RuntimeError("could not pre-claim the recovery row")
     _write_new(root / f"handoff_ready_{rank}.json", {"rows": sorted(receipts)})
     # Rank 0 publishes one common start time; both spin to it so the races overlap.
     if rank == 0:
@@ -162,9 +171,17 @@ def worker(root, rank, items=DEFAULT_ITEMS, host=None, ready_timeout=READY_TIMEO
         rows.append({"index": index, "linked": linked, "claimed": claimed})
     finished_at = time.time()
     handoff = _handoff(root, rank, handoffs, ledger, owner, receipts, until)
+    recovery = None
+    if rank == 0:
+        # Rank 1's claim (made on the other host) is treated as belonging to an ended allocation.
+        _wait_for(root / "handoff_ready_1.json", until, "rank 1 never pre-claimed the recovery row")
+        recoverer = {"job_id": DUMMY_JOB, "token": uuid.uuid4().hex, "host": host, "pid": os.getpid()}
+        recovered = Ledger(root, query=lambda _: False).claim(_recovery_item(root), recoverer, lambda _: None)
+        recovery = {"recovered": recovered, "token": recoverer["token"]}
     _write_new(root / f"result_{rank}.json", {
         "rank": rank, "host": host, "token": owner_token, "rows": rows,
         "started_at": started_at, "finished_at": finished_at, "handoff": handoff,
+        "recovery": recovery,
     })
 
 
@@ -185,7 +202,8 @@ def _handoff(root, rank, handoffs, ledger, owner, receipts, until):
             try:
                 # finish_timeout=0 makes each attempt single-shot, so contention is counted
                 # here; the production Ledger waits up to FINISH_GUARD_TIMEOUT_SECONDS instead.
-                finisher.finish(_handoff_item(root, mine[0]), owner, receipt=receipts[mine[0]])
+                handoff_item = _handoff_item(root, mine[0])
+                finisher.finish(handoff_item, owner, **bound_receipt(handoff_item, receipts[mine[0]]))
                 mine.pop(0)
             except LedgerContention:
                 finish_conflicts += 1
@@ -208,6 +226,7 @@ def _handoff(root, rank, handoffs, ledger, owner, receipts, until):
 
 
 def verify(root, require_distinct_hosts=True):
+    """Read-only: it never writes, renames or claims anything under root, so it is repeatable."""
     root = Path(root)
     ready = [_read(root / f"ready_{rank}.json") for rank in (0, 1)]
     results = [_read(root / f"result_{rank}.json") for rank in (0, 1)]
@@ -264,19 +283,22 @@ def verify(root, require_distinct_hosts=True):
     leftovers = [str(p) for p in root.rglob("*.tmp")]
     if leftovers:
         failures.append(f"temporary files left behind: {leftovers[:5]}")
-    # Recovery of an ended owner, on the shared mount, for one disposable row.
-    recovery = {"job_id": DUMMY_JOB, "token": uuid.uuid4().hex, "host": socket.gethostname(),
-                "pid": os.getpid()}
-    first = _item(root, 0)
-    if not Ledger(root, query=lambda _: False).claim(first, recovery, lambda _: None):
+    # Recovery of an ended owner's claim, done by rank 0 on rank 1's claim; checked read-only.
+    recovery = results[0].get("recovery") or {}
+    row = ledger._row_dir(_recovery_item(root))
+    retired_dir = row / "retired_claims"
+    retired = sorted(retired_dir.iterdir()) if retired_dir.is_dir() else []
+    preserved = (
+        len(retired) == 1
+        and (retired[0] / "owner.json").is_file()
+        and _read(retired[0] / "owner.json")["token"] == tokens[1]
+    )
+    recovered = bool(recovery.get("recovered")) and (row / "claim" / "owner.json").is_file() and (
+        _read(row / "claim" / "owner.json")["token"] == recovery.get("token"))
+    if not recovered:
         failures.append("recovery of an ended owner's claim failed on the shared mount")
-    else:
-        row = ledger._row_dir(first)
-        retired = list((row / "retired_claims").iterdir())
-        if len(retired) != 1 or not (retired[0] / "owner.json").is_file():
-            failures.append("the ended owner's claim was not preserved under retired_claims")
-        if _read(row / "claim" / "owner.json")["token"] != recovery["token"]:
-            failures.append("the recovered claim does not belong to the recovering owner")
+    if not preserved:
+        failures.append("the ended owner's claim was not preserved under retired_claims")
     # The races only test contention if the two workers' loops actually overlapped in time.
     overlap = min(r["finished_at"] for r in results) - max(r["started_at"] for r in results)
     if overlap <= 0:
@@ -298,6 +320,7 @@ def verify(root, require_distinct_hosts=True):
         "items": items,
         "race_overlap_seconds": overlap,
         "handoff_rows": handoffs,
+        "recovery": {"recovered": recovered, "preserved": preserved},
         "handoff_attempts": [r["handoff"]["attempts"] for r in results],
         "finish_guard_conflicts": [r["handoff"]["finish_guard_conflicts"] for r in results],
         "mounts": mounts,
@@ -310,8 +333,20 @@ def verify(root, require_distinct_hosts=True):
             "compute-node mount options, unless both workers ran on compute nodes",
         ],
     }
-    _write_new(root / "verdict.json", report)
     return report
+
+
+def main_verify(root, out=None, require_distinct_hosts=True):
+    """Verify and optionally publish the verdict to a new file outside the evidence."""
+    root = Path(root).resolve()
+    report = verify(root, require_distinct_hosts)
+    if out is not None:
+        out = Path(out).resolve()
+        if out == root or root in out.parents:
+            raise ValueError("the verdict must be written outside the verified directory")
+        _write_new(out, report)
+    print(json.dumps(report, indent=2))
+    return 0 if report["verdict"] == "PASS" else 1
 
 
 def main():
@@ -322,6 +357,8 @@ def main():
     parser.add_argument("--rank", type=int, default=None,
                         help="0 or 1 (default: SLURM_PROCID)")
     parser.add_argument("--items", type=int, default=DEFAULT_ITEMS)
+    parser.add_argument("--out", type=Path, default=None,
+                        help="verify: also write the verdict to this new file outside --root")
     args = parser.parse_args()
     if not args.root.is_absolute() or not args.root.is_dir():
         parser.error("root must be an existing absolute directory created for this check")
@@ -331,9 +368,7 @@ def main():
         rank = args.rank if args.rank is not None else int(os.environ["SLURM_PROCID"])
         worker(args.root, rank, args.items)
     else:
-        report = verify(args.root)
-        print(json.dumps(report, indent=2))
-        sys.exit(0 if report["verdict"] == "PASS" else 1)
+        sys.exit(main_verify(args.root, args.out))
 
 
 if __name__ == "__main__":

@@ -138,7 +138,7 @@ class DurableLedgerTest(unittest.TestCase):
             evidence(Path(row["row"]["checkpoint_dir"]))
             receipt = root / "receipt.json"
             receipt.write_text('{"engineering_verdict":"COMPLETE"}')
-            ledger.finish(row, first, receipt=receipt)
+            ledger.finish(row, first, **scheduler.bound_receipt(row, receipt))
             self.assertEqual(ledger.state(row), "complete")
             self.assertFalse(ledger.claim(row, owner(102, "second"), lambda _: receipt))
             (Path(row["row"]["checkpoint_dir"]) / "DONE").write_text("corrupt")

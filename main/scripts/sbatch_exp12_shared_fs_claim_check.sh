@@ -15,13 +15,16 @@ repo=$(git rev-parse --show-toplevel)
 case "$(realpath -m "$EXP12_CLAIM_CHECK_ROOT")/" in "$repo/"*)
   echo 'claim-check output must be outside the checkout' >&2; exit 2;; esac
 mkdir "$EXP12_CLAIM_CHECK_ROOT"
-trap 'code=$?; printf "%s\n" "$code" > "$EXP12_CLAIM_CHECK_ROOT/exit_status.txt"' EXIT
+# Job records and the verdict sit next to, never inside, the verified evidence directory.
+test ! -e "$EXP12_CLAIM_CHECK_ROOT.verdict.json"
+trap 'code=$?; printf "%s\n" "$code" > "$EXP12_CLAIM_CHECK_ROOT.exit_status.txt"' EXIT
 printf '{"commit":"%s","job_id":"%s"}\n' "$EXPECTED_COMMIT" "$SLURM_JOB_ID" \
-  > "$EXP12_CLAIM_CHECK_ROOT/submission.json"
+  > "$EXP12_CLAIM_CHECK_ROOT.submission.json"
 module reset
 source /sw/rh9.4/python/miniforge3/etc/profile.d/conda.sh
 conda activate scaling-drl-py31213
 export PYTHONDONTWRITEBYTECODE=1
 srun --nodes=2 --ntasks=2 --ntasks-per-node=1 \
   python -I scripts/exp12_shared_fs_claim_check.py worker --root "$EXP12_CLAIM_CHECK_ROOT"
-python -I scripts/exp12_shared_fs_claim_check.py verify --root "$EXP12_CLAIM_CHECK_ROOT"
+python -I scripts/exp12_shared_fs_claim_check.py verify --root "$EXP12_CLAIM_CHECK_ROOT" \
+  --out "$EXP12_CLAIM_CHECK_ROOT.verdict.json"

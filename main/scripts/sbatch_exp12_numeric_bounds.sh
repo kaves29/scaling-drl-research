@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Measure the four diagnostics-isolation deviations on the final source (one A100).
-# Diagnostic only: tests skip while GPU_TOLERANCES are None and record NUMERICS lines.
+# Diagnostic only: tests skip while GPU_TOLERANCES are None and record NUMERICS lines, each
+# naming this source commit, the backend, device and mode; the proposal refuses anything else.
 # Resources are supplied by a separately reviewed sbatch command; this file never submits.
 #SBATCH --account=biqc-delta-gpu
 #SBATCH --partition=gpuA100x4
@@ -23,6 +24,7 @@ export XLA_PYTHON_CLIENT_PREALLOCATE=false WANDB_MODE=disabled
 export PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1
 export OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1
 unset JAX_PLATFORM_NAME JAX_DEFAULT_MATMUL_PRECISION NVIDIA_TF32_OVERRIDE XLA_FLAGS
+export EXP12_NUMERICS_COMMIT="$EXPECTED_COMMIT"  # every record names its source
 mkdir "$NUMERICS_ROOT"
 finish() { code=$?; trap - EXIT; printf '%s\n' "$code" > "$NUMERICS_ROOT/exit_status.txt"; exit "$code"; }
 trap finish EXIT
@@ -35,5 +37,5 @@ EXP12_NUMERICS_OUT="$NUMERICS_ROOT/numerics_tf32.jsonl" \
   python -m unittest -v "${tests[@]}" > "$NUMERICS_ROOT/tests_tf32.log" 2>&1
 EXP12_NUMERICS_OUT="$NUMERICS_ROOT/numerics_deterministic.jsonl" XLA_FLAGS=--xla_gpu_deterministic_ops=true \
   python -m unittest -v "${tests[@]}" > "$NUMERICS_ROOT/tests_deterministic.log" 2>&1
-python scripts/exp12_numeric_bounds.py --numerics "$NUMERICS_ROOT"/numerics_*.jsonl \
-  --out "$NUMERICS_ROOT/proposed_bounds.json"
+python scripts/exp12_numeric_bounds.py --root "$NUMERICS_ROOT" \
+  --expected-commit "$EXPECTED_COMMIT" --out "$NUMERICS_ROOT/proposed_bounds.json"

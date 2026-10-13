@@ -52,7 +52,7 @@ class FinishGuardContentionTest(unittest.TestCase):
         self.assertTrue(ledger.claim(row, first, lambda _: None))
         holder = _hold_guard(ledger, row, 0.4)
         started = time.monotonic()
-        ledger.finish(row, first, receipt=receipt)
+        ledger.finish(row, first, **scheduler.bound_receipt(row, receipt))
         waited = time.monotonic() - started
         holder.join()
         self.assertGreaterEqual(waited, 0.35)
@@ -63,7 +63,7 @@ class FinishGuardContentionTest(unittest.TestCase):
         self.assertEqual(len(list((directory / "retired_claims").iterdir())), 1)
         self.assertEqual(scheduler._read(directory / "completed.json")["attempt_token"], "first")
         with self.assertRaisesRegex(ValueError, "claim owner changed"):  # a repeat cannot record twice
-            ledger.finish(row, first, receipt=receipt)
+            ledger.finish(row, first, **scheduler.bound_receipt(row, receipt))
 
     def test_retry_exhaustion_fails_closed_without_writing_anything(self):
         ledger = scheduler.Ledger(self.root, query=lambda _: True, finish_timeout=0.3)
@@ -75,7 +75,7 @@ class FinishGuardContentionTest(unittest.TestCase):
         before = self._files(ledger, row)
         started = time.monotonic()
         with self.assertRaises(scheduler.LedgerContention) as raised:
-            ledger.finish(row, first, receipt=receipt)
+            ledger.finish(row, first, **scheduler.bound_receipt(row, receipt))
         self.assertLess(time.monotonic() - started, 5)
         self.assertIsInstance(raised.exception, ValueError)  # existing ValueError handlers still apply
         self.assertIn("nothing recorded, claim kept", str(raised.exception))
@@ -92,9 +92,9 @@ class FinishGuardContentionTest(unittest.TestCase):
         orphan = ledger._row_dir(row) / "transition_guard"
         orphan.mkdir()
         with self.assertRaises(scheduler.LedgerContention):
-            ledger.finish(row, first, receipt=receipt)
+            ledger.finish(row, first, **scheduler.bound_receipt(row, receipt))
         orphan.rmdir()  # reviewed and cleared
-        ledger.finish(row, first, receipt=receipt)  # the worker's later retry
+        ledger.finish(row, first, **scheduler.bound_receipt(row, receipt))  # the worker's later retry
         self.assertEqual(ledger.state(row), "complete")
         self.assertEqual(len(list((ledger._row_dir(row) / "retired_claims").iterdir())), 1)
 
@@ -106,7 +106,7 @@ class FinishGuardContentionTest(unittest.TestCase):
         orphan = live._row_dir(row) / "transition_guard"
         orphan.mkdir()
         with self.assertRaises(scheduler.LedgerContention):
-            live.finish(row, first, receipt=receipt)
+            live.finish(row, first, **scheduler.bound_receipt(row, receipt))
         orphan.rmdir()
         # The allocation ended without recording; a later allocation reconciles the row.
         later = scheduler.Ledger(self.root, query=lambda _: False)
@@ -114,7 +114,7 @@ class FinishGuardContentionTest(unittest.TestCase):
         completed = scheduler._read(later._row_dir(row) / "completed.json")
         self.assertTrue(completed["reconciled"])
         with self.assertRaisesRegex(ValueError, "claim owner changed"):
-            live.finish(row, first, receipt=receipt)
+            live.finish(row, first, **scheduler.bound_receipt(row, receipt))
         self.assertEqual(scheduler._read(later._row_dir(row) / "completed.json"), completed)
 
     def test_concurrent_completion_while_other_workers_keep_claiming(self):
@@ -139,7 +139,7 @@ class FinishGuardContentionTest(unittest.TestCase):
         def finisher(index):
             row, receipt = rows[index]
             try:
-                ledger.finish(row, owners[index], receipt=receipt)
+                ledger.finish(row, owners[index], **scheduler.bound_receipt(row, receipt))
             except Exception as exc:
                 errors.append(repr(exc))
 
@@ -192,7 +192,7 @@ class WorkerFinishRetryTest(unittest.TestCase):
         with mock.patch.object(scheduler, "validate_done", validate):
             with self.assertRaises(scheduler.LedgerContention):
                 scheduler._finish(self.job, ledger, "c" * 40, self.root)
-            self.assertEqual(self.job["outcome"], {"receipt": self.receipt})
+            self.assertEqual(self.job["outcome"], scheduler.bound_receipt(self.row, self.receipt))
             orphan.rmdir()
             self.job["process"].poll.return_value = 9  # must not be re-read
             self.assertTrue(scheduler._finish(self.job, ledger, "c" * 40, self.root))

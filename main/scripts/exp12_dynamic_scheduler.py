@@ -101,6 +101,23 @@ def _evidence_digests(item):
     return {str(path): sha(path) for path in paths}
 
 
+def _evidence_or_none(item):
+    """The evidence digests, or None while any evidence file is missing or unreadable."""
+    try:
+        return _evidence_digests(item)
+    except (OSError, ValueError, KeyError):
+        return None
+
+
+def bound_receipt(item, receipt, evidence_before=None):
+    """A validated receipt bound to the evidence it validated. With evidence_before (digests
+    taken before validation) it fails unless the evidence was stable during validation."""
+    evidence_after = _evidence_digests(item)
+    if evidence_before is not None and evidence_before != evidence_after:
+        raise EvidenceChanged("evidence changed during validation")
+    return {"receipt": receipt, "evidence": evidence_after, "receipt_sha256": sha(receipt)}
+
+
 def identity(kind, row, commit, *, source_id=None, injection_m=None):
     fields = {
         "kind": kind,
@@ -379,8 +396,15 @@ FINISH_GUARD_POLL_SECONDS = (0.05, 2.0)  # first wait, maximum wait (doubling)
 FINISH_RETRY_SECONDS = 60  # worker loop: wait before re-attempting an unrecorded finish
 
 
+FINISH_MAX_ATTEMPTS = 5  # contended finish attempts per job before its outcome is abandoned
+
+
 class LedgerContention(ValueError):
     """finish could not take the row's guard in time; nothing was recorded and the claim is kept."""
+
+
+class EvidenceChanged(ValueError):
+    """Run evidence or its receipt differs from what validation saw."""
 
 
 def _warn_if_stale_guard(guard, item):
@@ -463,7 +487,13 @@ class Ledger:
                 retired.mkdir(exist_ok=True)
                 claim.rename(retired / (prior["token"] + "_" + uuid.uuid4().hex))
             try:
+                before = _evidence_or_none(item)
                 receipt = reconcile(item)
+                bound = None
+                if receipt is not None:
+                    if before is None:
+                        raise EvidenceChanged("evidence changed during validation (it appeared)")
+                    bound = bound_receipt(item, receipt, before)
             except Exception as exc:
                 _write_new(
                     directory / "blocked.json",
@@ -474,7 +504,7 @@ class Ledger:
                     },
                 )
                 return False
-            if receipt is not None:
+            if bound is not None:
                 _write_new(
                     completed,
                     {
@@ -482,9 +512,9 @@ class Ledger:
                         "kind": item["kind"],
                         "source": item["row"]["config_hash"],
                         "reconciled_by_allocation": owner["job_id"],
-                        "receipt": str(receipt),
-                        "receipt_sha256": sha(receipt),
-                        "evidence_sha256": _evidence_digests(item),
+                        "receipt": str(bound["receipt"]),
+                        "receipt_sha256": bound["receipt_sha256"],
+                        "evidence_sha256": bound["evidence"],
                         "reconciled": True,
                         "recorded_at": time.time(),
                     },
@@ -497,13 +527,27 @@ class Ledger:
         finally:
             self._unguard(guard)
 
-    def finish(self, item, owner, receipt=None, error=None):
+    def finish(self, item, owner, receipt=None, error=None, evidence=None, receipt_sha256=None):
+        """Record the owner's outcome once. A receipt is certified only together with the
+        evidence and receipt digests taken when it was validated; if either differs at
+        publication the row is blocked for review instead (never completed)."""
+        if receipt is not None and (evidence is None or receipt_sha256 is None):
+            raise ValueError("a receipt is recorded only with its validated evidence digests")
         directory = self._row_dir(item)
         guard = self._wait_for_guard(directory, item)
         try:
             claim = directory / "claim"
             if not claim.exists() or _read(claim / "owner.json") != owner:
                 raise ValueError("claim owner changed before finish")
+            if receipt is not None:
+                current = _evidence_or_none(item)
+                current_receipt = sha(receipt) if Path(receipt).is_file() else None
+                if current != evidence or current_receipt != receipt_sha256:
+                    receipt, error = None, (
+                        "evidence changed after validation; validated "
+                        f"{json.dumps({'evidence': evidence, 'receipt_sha256': receipt_sha256})}, now "
+                        f"{json.dumps({'evidence': current, 'receipt_sha256': current_receipt})}"
+                    )
             if receipt is not None:
                 _write_new(
                     directory / "completed.json",
@@ -514,8 +558,8 @@ class Ledger:
                         "producing_allocation": owner["job_id"],
                         "attempt_token": owner["token"],
                         "receipt": str(receipt),
-                        "receipt_sha256": sha(receipt),
-                        "evidence_sha256": _evidence_digests(item),
+                        "receipt_sha256": receipt_sha256,
+                        "evidence_sha256": evidence,
                         "recorded_at": time.time(),
                     },
                 )
@@ -1323,10 +1367,13 @@ def _finish(job, ledger, commit, queue_root):
             job["outcome"] = {"error": f"exit {code}; inspect {attempt}"}
         else:
             try:
+                before = _evidence_or_none(item)
                 receipt = validate_done(item, commit, queue_root)
                 if receipt is None:
                     raise ValueError("exit zero without validated terminal DONE")
-                job["outcome"] = {"receipt": receipt}
+                if before is None:
+                    raise EvidenceChanged("evidence changed during validation (it appeared)")
+                job["outcome"] = bound_receipt(item, receipt, before)
             except Exception as exc:
                 job["outcome"] = {"error": f"validation: {type(exc).__name__}: {exc}"}
     ledger.finish(item, job["owner"], **job["outcome"])
@@ -1343,17 +1390,27 @@ def _collect_finished(validating, unrecorded, now):
         try:
             future.result()
         except LedgerContention as exc:
+            job["finish_attempts"] = job.get("finish_attempts", 0) + 1
+            if job["finish_attempts"] >= FINISH_MAX_ATTEMPTS:
+                _abandon_unrecorded([job])
+                continue
             job["retry_finish_at"] = now + FINISH_RETRY_SECONDS
             unrecorded.append(job)
             print(f"[scheduler] WARNING: {exc}; retrying in {FINISH_RETRY_SECONDS} s",
                   file=sys.stderr, flush=True)
 
 
+def _idle(active, pending, validating, unrecorded):
+    """Nothing left that needs this allocation's GPUs. Unrecorded outcomes do not count: their
+    claims are reconciled by a later allocation, so they never hold the allocation open."""
+    return not active and not pending and not validating
+
+
 def _abandon_unrecorded(unrecorded):
     """At the allocation's end: leave the claims (their owner, this allocation, then ends and
     a later allocation reconciles them) and keep a reviewable record of each outcome."""
     for job in unrecorded:
-        outcome = {k: str(v) for k, v in job.get("outcome", {}).items()}
+        outcome = {k: str(v) if isinstance(v, Path) else v for k, v in job.get("outcome", {}).items()}
         _write_new(job["attempt"] / "finish_unrecorded.json",
                    {"id": job["item"]["id"], "outcome": outcome, "recorded_at": time.time()})
         print(f"[scheduler] ERROR: outcome of {job['item']['id']} could not be recorded before "
@@ -1423,11 +1480,8 @@ def run(queue_root, approval_path, allocation):
             _collect_finished(validating, unrecorded, time.time())
             if time.time() >= stop_at:
                 if not active and not validating:
-                    if unrecorded and time.time() >= deadline - 60:
-                        _abandon_unrecorded(unrecorded)
-                        break
-                    if not unrecorded:
-                        break
+                    _abandon_unrecorded(unrecorded)  # never wait out the walltime for them
+                    break
                 time.sleep(POLL_SECONDS)
                 continue
             update_rates(active)
@@ -1488,10 +1542,11 @@ def run(queue_root, approval_path, allocation):
                         pending.remove(item)
                         started = True
                         break
-            if not active and not pending and not validating and not unrecorded:
+            if _idle(active, pending, validating, unrecorded):
                 if discovery_future is not None:
                     time.sleep(1)
                     continue
+                _abandon_unrecorded(unrecorded)  # idle GPUs never wait on a contended guard
                 break
             time.sleep(1 if started else POLL_SECONDS)
     return 0

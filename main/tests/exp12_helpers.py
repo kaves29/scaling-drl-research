@@ -100,8 +100,19 @@ def precision(name):
 
 
 def record_numerics(name, **values):
-    """Prints a measured deviation and appends it to $EXP12_NUMERICS_OUT (read by Block B's report)."""
-    line = json.dumps({"name": name, **values}, default=float)
+    """Prints a measured deviation and appends it to $EXP12_NUMERICS_OUT (read by Block B's report).
+    Each record carries its provenance (source commit, backend, device, GPU mode) so a bound
+    proposal can refuse measurements from another source, a CPU fallback or the wrong mode."""
+    import jax
+
+    backend = jax.default_backend()
+    provenance = {
+        "commit": os.environ.get("EXP12_NUMERICS_COMMIT"),
+        "backend": backend,
+        "device_kind": jax.devices()[0].device_kind,
+        "mode": gpu_mode() if backend == "gpu" else "cpu",
+    }
+    line = json.dumps({"name": name, **values, **provenance}, default=float)
     print("NUMERICS " + line, file=sys.stderr, flush=True)
     path = os.environ.get("EXP12_NUMERICS_OUT")
     if path:

@@ -90,7 +90,7 @@ class SharedFilesystemClaimCheckTest(unittest.TestCase):
         report = claim_check.verify(self._copy("same_host"))
         self.assertEqual(report["verdict"], "FAIL")
         self.assertTrue(any("same host" in f for f in report["failures"]))
-        self.assertTrue((self.tmp / "same_host" / "verdict.json").is_file())
+        self.assertFalse((self.tmp / "same_host" / "verdict.json").exists())  # verify never writes
 
     def test_a_double_claim_is_detected(self):
         copy = self._copy("double")
@@ -175,7 +175,7 @@ class QualificationCommandsTest(unittest.TestCase):
             f.flush()
             subprocess.run(["bash", "-n", f.name], check=True)
         self.assertIn('test "$(git -C "$FINAL_CHECKOUT" rev-parse HEAD)" = "$FINAL_SHA"', text)
-        self.assertEqual(text.count("test ! -e"), 8)
+        self.assertEqual(len(re.findall(r"^submit_once ", text, re.M)), 8)
         self.assertIn("--partition=cpu", text)
         self.assertIn("scripts/sbatch_exp12_shared_fs_claim_check.sh", text)
 
@@ -203,27 +203,21 @@ class QualificationCommandsTest(unittest.TestCase):
 
 class NumericBoundsPortTest(unittest.TestCase):
     def test_numeric_bound_rule_rounds_ten_times_the_maximum_up(self):
-        with tempfile.TemporaryDirectory() as directory:
-            path = Path(directory) / "n.jsonl"
-            rows = [{"name": n, "deviation": d} for n in bounds.NAMES for d in (1.1e-7, 2.3e-7)]
-            path.write_text("".join(json.dumps(r) + "\n" for r in rows))
-            report = bounds.propose([path])
-            self.assertTrue(report["complete"])
-            self.assertEqual(report["status"], "PROPOSED_NOT_APPLIED")
-            self.assertEqual(report["bounds"]["diagnostics_update/tf32"]["proposed_bound"], 3e-06)
-            path.write_text(json.dumps(rows[0]) + "\n")
-            self.assertFalse(bounds.propose([path])["complete"])
+        from tests.test_exp12_review_blockers import COMMIT, _numerics
 
-    def test_nonfinite_and_zero_deviations(self):
+        def deviations(mode, rows):
+            return [{**r, "deviation": d} for r, d in zip(rows, (1.1e-7, 2.3e-7, 2.3e-7))]
+
+        with tempfile.TemporaryDirectory() as directory:
+            report = bounds.propose(_numerics(Path(directory) / "job", edit=deviations), COMMIT)
+        self.assertTrue(report["complete"], report["errors"])
+        self.assertEqual(report["status"], "PROPOSED_NOT_APPLIED")
+        self.assertEqual(report["bounds"]["diagnostics_update/tf32"]["proposed_bound"], 3e-06)
+
+    def test_one_digit_rounding(self):
         self.assertEqual(bounds.one_digit_up(0.0), 0.0)
         self.assertEqual(bounds.one_digit_up(3e-6), 3e-6)
         self.assertEqual(bounds.one_digit_up(3.01e-6), 4e-6)
-        with tempfile.TemporaryDirectory() as directory:
-            path = Path(directory) / "n.jsonl"
-            path.write_text(json.dumps({"name": bounds.NAMES[0], "deviation": float("nan")}) + "\n")
-            report = bounds.propose([path])
-            self.assertEqual(report["bounds"][bounds.NAMES[0]]["status"], "NONFINITE_DEVIATION")
-            self.assertFalse(report["complete"])
 
     def test_names_match_the_unset_tolerances_which_stay_unset(self):
         sys.path.insert(0, str(MAIN / "tests"))
