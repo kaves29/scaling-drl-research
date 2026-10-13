@@ -55,12 +55,23 @@ SUBMIT_ONCE = r"""
 # a reservation without a job id: that needs `exp12_qualification_commands.py reconcile`.
 SUBMISSIONS="$QUAL_ROOT/submissions"
 mkdir -p "$SUBMISSIONS"
+RESERVATION_CHECK='
+import json, sys
+try:
+    with open(sys.argv[1], encoding="utf-8") as stream:
+        data = json.load(stream)
+except Exception:
+    sys.exit(1)
+ok = isinstance(data, dict) and data.get("commit") == sys.argv[2] and data.get("name") == sys.argv[3]
+sys.exit(0 if ok else 1)
+'
 submit_once() {
   local name=$1 absent=$2
   shift 2
   local dir="$SUBMISSIONS/$name" out id
-  # A reservation only counts for the commit it was made for; anything else fails closed.
-  if [ -e "$dir" ] && ! grep -qF "\"commit\":\"$FINAL_SHA\"" "$dir/reserved.json" 2>/dev/null; then
+  # A reservation only counts for the commit it was made for: reserved.json must parse as a
+  # JSON object whose own top-level "commit" and "name" match. Anything else fails closed.
+  if [ -e "$dir" ] && ! python3 -I -c "$RESERVATION_CHECK" "$dir/reserved.json" "$FINAL_SHA" "$name"; then
     echo "FOREIGN: $name is reserved for another commit (or has no readable reservation);" \
       "use a qualification root for $FINAL_SHA" >&2
     exit 3
@@ -181,10 +192,15 @@ def _submissions(qual_root):
 
 
 def _reserved_commit(entry):
+    """The top-level commit of a reservation's own metadata, or None if it is missing,
+    malformed, not a JSON object, names another submission or has a non-string commit."""
     try:
-        return json.loads((entry / "reserved.json").read_text()).get("commit")
-    except (OSError, ValueError, AttributeError):
+        data = json.loads((entry / "reserved.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
         return None
+    if not isinstance(data, dict) or data.get("name") != entry.name or not isinstance(data.get("commit"), str):
+        return None
+    return data["commit"]
 
 
 def reconcile_status(qual_root, names=None, commit=None):

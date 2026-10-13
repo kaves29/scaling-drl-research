@@ -224,8 +224,10 @@ bit-exact, as the kill matrix, the 55 DMC/MyoSuite simulator cells and the Human
 tests show. A CUDA process can then differ only through rounding (kernel or
 reduction-order choice).
 
-1. Reduction-order rounding has no preferred sign and does not depend on architecture or
-   environment.
+1. Whether reduction-order rounding differences have a preferred sign, or depend on
+   architecture, environment or kernel choice, is **unverified**. No measurement here
+   addresses it, and the CPU study cannot establish it, because it runs on CPU only and
+   applies a symmetric random perturbation by construction.
 2. Amendment (v) already runs every training matmul in TF32 (a 10-bit mantissa, relative
    rounding of order 1e-3 to 1e-4 per product). Float32 reduction-order differences are
    much smaller per operation.
@@ -235,6 +237,8 @@ reduction-order choice).
    mainly add variance rather than bias.
 
 This is an argument, not a proof, and **it is not established**:
+- the sign and architecture/environment independence of the rounding differences
+  (point 1) are unverified;
 - the smoothness of E[Y | s] is assumed, not shown;
 - the CPU study below cannot show it either. It perturbs once rather than at every step,
   uses tiny networks over a short horizon, compares only a few summary outcomes, and with

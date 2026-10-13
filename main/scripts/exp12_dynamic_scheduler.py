@@ -538,21 +538,33 @@ class Ledger:
             self._unguard(guard)
 
     def _unrecorded_failure(self, item, prior):
-        """The failure an ended owner's attempt left unrecorded, or None. A nonzero exit.json
-        or a finish_unrecorded.json holding an error both count; unreadable records fail closed."""
+        """The failure an ended owner's attempt left unrecorded, or None. A nonzero exit.json or
+        a finish_unrecorded.json without a well-formed receipt counts as a failure. Any record
+        that is unreadable, not a JSON object or of an unexpected type also counts (fail
+        closed), so it is blocked for review and never raises or is retried automatically."""
         attempt = self.root.parent / "attempts" / item["kind"] / item["id"] / prior["token"]
         unrecorded, exited = attempt / "finish_unrecorded.json", attempt / "exit.json"
         try:
-            if unrecorded.exists():
-                outcome = _read(unrecorded)["outcome"]
-                if "receipt" not in outcome:
-                    return outcome.get("error", "unrecorded outcome without a receipt")
             if exited.exists():
-                code = _read(exited)["returncode"]
+                record = _read(exited)
+                code = record.get("returncode") if isinstance(record, dict) else None
+                if type(code) is not int:
+                    return f"malformed exit record {exited}: returncode {code!r}"
                 if code != 0:
                     return f"exit {code}; inspect {attempt}"
-        except (OSError, ValueError, KeyError, TypeError) as exc:
-            return f"unreadable attempt record {attempt}: {type(exc).__name__}: {exc}"
+            if unrecorded.exists():
+                record = _read(unrecorded)
+                outcome = record.get("outcome") if isinstance(record, dict) else None
+                if not isinstance(outcome, dict):
+                    return f"malformed unrecorded outcome {unrecorded}: {outcome!r}"
+                if "receipt" not in outcome:
+                    error = outcome.get("error")
+                    return error if isinstance(error, str) and error else (
+                        f"unrecorded outcome without a receipt: {outcome!r}")
+                if not isinstance(outcome["receipt"], str) or not isinstance(outcome.get("evidence"), dict):
+                    return f"malformed unrecorded receipt in {unrecorded}: {outcome!r}"
+        except Exception as exc:  # unreadable or undecodable records
+            return f"unreadable attempt record in {attempt}: {type(exc).__name__}: {exc}"
         return None
 
     def finish(self, item, owner, receipt=None, error=None, evidence=None, receipt_sha256=None):

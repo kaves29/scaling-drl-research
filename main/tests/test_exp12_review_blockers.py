@@ -475,3 +475,109 @@ class UnrecordedFailureRecoveryTest(unittest.TestCase):
         self._record(0, scheduler.bound_receipt(self.row, receipt))
         self.assertFalse(self.later.claim(self.row, owner(202, "later"), lambda _: receipt))
         self.assertEqual(self.later.state(self.row), "complete")
+
+
+# ------------------------------------------------------------- follow-up review (27561ee)
+class ReservationMetadataTest(SubmissionReservationTest):
+    """Only reserved.json's own top-level commit binds a reservation; anything else fails closed."""
+
+    test_a_repeated_run_never_resubmits = None
+    test_concurrent_runs_submit_each_job_once = None
+    test_a_partial_submission_requires_explicit_reconciliation = None
+    test_reconcile_can_record_a_job_found_in_slurm_and_refuses_bad_ids = None
+
+    def _plant(self, text, job_id="4242"):
+        entry = self.qual / "submissions" / "identity_D4W1536_dog-run"
+        entry.mkdir(parents=True)
+        (entry / "reserved.json").write_text(text)
+        if job_id is not None:
+            (entry / "job_id").write_text(job_id + "\n")
+        return entry
+
+    def _refused(self, text, job_id="4242"):
+        self._plant(text, job_id)
+        result = self._run()
+        self.assertEqual(result.returncode, 3, result.stdout + result.stderr)
+        self.assertNotIn("already submitted", result.stdout)
+        self.assertIn("FOREIGN", result.stderr)
+        self.assertEqual(self._calls(), [])
+        status = commands.reconcile_status(str(self.qual), commit=self.sha)["identity_D4W1536_dog-run"]
+        self.assertEqual(status["state"], "FOREIGN")
+
+    def test_a_nested_occurrence_of_the_commit_does_not_count(self):
+        self._refused(json.dumps({"name": "identity_D4W1536_dog-run", "commit": OTHER,
+                                  "note": {"commit": self.sha}}, separators=(",", ":")))
+
+    def test_a_json_array_does_not_count(self):
+        self._refused(json.dumps([{"name": "identity_D4W1536_dog-run", "commit": self.sha}],
+                                 separators=(",", ":")))
+
+    def test_malformed_or_missing_metadata_fails_closed(self):
+        self._refused('{"commit":"%s"' % self.sha)  # truncated JSON containing the commit
+
+    def test_missing_reservation_metadata_fails_closed(self):
+        entry = self.qual / "submissions" / "identity_D4W1536_dog-run"
+        entry.mkdir(parents=True)
+        (entry / "job_id").write_text("4242\n")
+        result = self._run()
+        self.assertEqual(result.returncode, 3)
+        self.assertEqual(self._calls(), [])
+
+    def test_a_reservation_for_another_name_does_not_count(self):
+        self._refused(json.dumps({"name": "numerics_01", "commit": self.sha}, separators=(",", ":")))
+
+    def test_a_valid_reservation_is_still_skipped(self):
+        self._plant(json.dumps({"name": "identity_D4W1536_dog-run", "commit": self.sha}))
+        result = self._run()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("already submitted: identity_D4W1536_dog-run (job 4242)", result.stdout)
+        self.assertEqual(len(self._calls()), 6)
+
+
+class MalformedUnrecordedFailureTest(UnrecordedFailureRecoveryTest):
+    """Malformed attempt records always block the row for review; never an exception or retry."""
+
+    test_an_unrecorded_failure_is_blocked_for_review_retry = None
+    test_a_nonzero_exit_without_a_finish_record_is_also_blocked = None
+    test_an_unrecorded_success_is_still_reconciled_from_its_evidence = None
+
+    def _blocked(self, files):
+        for name, content in files.items():
+            path = self.attempt / name
+            if content is None:
+                path.mkdir()  # unreadable as a file
+            elif isinstance(content, bytes):
+                path.write_bytes(content)
+            else:
+                path.write_text(content)
+        reconcile = mock.Mock(return_value=None)
+        self.assertFalse(self.later.claim(self.row, owner(202, "later"), reconcile))
+        reconcile.assert_not_called()
+        directory = self.later._row_dir(self.row)
+        self.assertEqual(self.later.state(self.row), "blocked")
+        self.assertFalse((directory / "claim").exists())
+        return scheduler._read(directory / "blocked.json")["error"]
+
+    def test_malformed_records_block_the_row(self):
+        cases = {
+            "unrecorded array": {"finish_unrecorded.json": "[1, 2]"},
+            "outcome array": {"finish_unrecorded.json": '{"outcome": ["error"]}'},
+            "outcome string": {"finish_unrecorded.json": '{"outcome": "exit 1"}'},
+            "outcome missing": {"finish_unrecorded.json": '{"id": "x"}'},
+            "receipt not a path": {"finish_unrecorded.json": '{"outcome": {"receipt": 7}}'},
+            "unrecorded not JSON": {"finish_unrecorded.json": "{oops"},
+            "unrecorded not UTF-8": {"finish_unrecorded.json": b"\xff\xfe\x00"},
+            "unrecorded a directory": {"finish_unrecorded.json": None},
+            "exit array": {"exit.json": "[0]"},
+            "exit code string": {"exit.json": '{"returncode": "0"}'},
+            "exit code bool": {"exit.json": '{"returncode": false}'},
+            "exit code float": {"exit.json": '{"returncode": 0.0}'},
+            "exit code missing": {"exit.json": '{"ended_at": 1}'},
+            "exit a directory": {"exit.json": None},
+        }
+        for label, files in cases.items():
+            with self.subTest(label):
+                self.tearDown()
+                self.setUp()
+                error = self._blocked(files)
+                self.assertIn("unrecorded failure", error)
