@@ -23,6 +23,7 @@ import optax
 from scipy.stats import trim_mean
 
 PROBE_STREAM = 0x50524F42  # "PROB"
+ORIGINAL_FIT_STEPS = 1000
 
 
 @dataclass(frozen=True)
@@ -120,7 +121,15 @@ def probe_round(target_def, critics: Dict[str, tuple], tx, obs, act, key, cfg: P
     target_key, idx_key = jax.random.split(key)
     base = _base_targets(target_def, target_key, obs, act, cfg.eval_chunk, cfg.target_scale)
     b = jnp.var(base)
-    idx = jax.random.randint(idx_key, (cfg.steps, cfg.batch_size), 0, cfg.pool_size)
+    if cfg.steps <= ORIGINAL_FIT_STEPS:
+        idx = jax.random.randint(idx_key, (cfg.steps, cfg.batch_size), 0, cfg.pool_size)
+    else:
+        # Preserve the original first 1000 draws; one _fit scan carries AdamW
+        # parameters and state continuously through the follow-up draws.
+        first = jax.random.randint(idx_key, (ORIGINAL_FIT_STEPS, cfg.batch_size), 0, cfg.pool_size)
+        second = jax.random.randint(jax.random.fold_in(idx_key, 1),
+                                    (cfg.steps - ORIGINAL_FIT_STEPS, cfg.batch_size), 0, cfg.pool_size)
+        idx = jnp.concatenate((first, second), axis=0)
     common = None
     if shared_offset is not None:
         means = {n: _mean_prediction(_unpack(c, tx)[0], c[1], obs, act, cfg.eval_chunk) for n, c in critics.items()}

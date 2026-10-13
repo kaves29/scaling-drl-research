@@ -1,5 +1,21 @@
 # Exp1/Exp2 scientific and validation status
 
+## Method C owner decision (12 October 2026, Eastern)
+
+The owner authorized Method C implementation: 2,000 continuous fit steps
+with the same five target functions, original first-1,000 minibatches and
+continued AdamW state. Zero trigger threshold, 95% bootstrap and two
+consecutive scheduled checks remain. The earlier table's 1,000-step probe
+describes its historical source; it is superseded by amendment (aa) for the
+new `codex/exp12-method-c-production` candidate. A/B/C job 22852240 on
+exploratory source `18c76da70c7e7c53bb01cae0afec8b8ae4dfb3af` observed
+D4W1536 Hopper-Hop P/b 0.9467/0.9567/0.9552 and D4W1024 5/100 single-check
+fresh-null firings. Neither establishes trained-critic sensitivity or a
+two-consecutive-check false-trigger rate. See
+[`method_c_exp12_readiness.md`](method_c_exp12_readiness.md) for the final
+source's qualification and launch blockers. No GPU job or production run is
+authorized by this status update.
+
 ## D4W1536 hopper capture update (2026-10-11)
 
 Attached `hopper_capture_22817406.tar.gz`, SHA-256

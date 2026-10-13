@@ -1,5 +1,17 @@
 # Shared agent handoff
 
+## Method C production implementation (12 October 2026, Eastern)
+
+Owner authorized Method C with 2,000 continuous fitting steps, preserved five
+targets/first-1,000 minibatches and AdamW continuity, zero threshold, 95%
+bootstrap and two consecutive checks. Codex's isolated implementation branch
+is `codex/exp12-method-c-production`, based on the published
+`codex/exp12-production-readiness` tip
+`1ea37e49a9279bc75e8390f2e702b746fff2eed8`. Resolve its final published
+SHA from Git. The current readiness verdict and guarded commands are in
+[`method_c_exp12_readiness.md`](method_c_exp12_readiness.md). This does not
+approve GPU jobs, allocation A/B, the parent grid, or Exp2 injected arms.
+
 ## Production execution preparation (2026-10-11)
 
 Codex's latest CPU-only handoff is

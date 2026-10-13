@@ -53,7 +53,7 @@ defaults:
 probe:
   enabled: true        # false only for the probes-on vs probes-off identity test
   rounds: 5
-  steps: 1000
+  steps: 2000              # Method C (amendment aa); optimizer state continues through step 2000
   checks: 20
   pool_size: 25_600
   batch_size: 256
