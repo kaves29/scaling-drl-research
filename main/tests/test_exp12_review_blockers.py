@@ -393,3 +393,85 @@ class UnrecordedFinishDoesNotIdleTheAllocationTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+# ------------------------------------------------------------- follow-up review (f880f1c)
+class CrossCommitReservationTest(SubmissionReservationTest):
+    """Reservations made for one commit must never count as submissions for another."""
+
+    # Only the cross-commit case runs here; the inherited tests run in the parent class.
+    test_a_repeated_run_never_resubmits = None
+    test_concurrent_runs_submit_each_job_once = None
+    test_a_partial_submission_requires_explicit_reconciliation = None
+    test_reconcile_can_record_a_job_found_in_slurm_and_refuses_bad_ids = None
+
+    def test_reservations_from_another_commit_fail_closed(self):
+        first = self._run()
+        self.assertEqual(first.returncode, 0, first.stderr)
+        self.assertEqual(len(self._calls()), 7)
+        (self.checkout / "main" / "README").write_text("y")
+        git = ["git", "-C", str(self.checkout), "-c", "user.name=t", "-c", "user.email=t@t"]
+        subprocess.run(git + ["commit", "-q", "-am", "y"], check=True)
+        other = subprocess.check_output(git + ["rev-parse", "HEAD"], text=True).strip()
+        self.script.write_text(commands.render(other, str(self.checkout), str(self.qual), str(self.hb)))
+        again = self._run()
+        self.assertEqual(again.returncode, 3, again.stdout + again.stderr)
+        self.assertIn("another commit", again.stderr)
+        self.assertNotIn("already submitted", again.stdout)
+        self.assertEqual(len(self._calls()), 7)  # nothing reused, nothing submitted
+        status = commands.reconcile_status(str(self.qual), commit=other)
+        self.assertEqual({s["state"] for s in status.values()}, {"FOREIGN"})
+        self.assertEqual({s["state"] for s in commands.reconcile_status(str(self.qual), commit=self.sha).values()},
+                         {"SUBMITTED"})
+        with self.assertRaises(ValueError):
+            commands.reconcile(str(self.qual), next(iter(status)), release=True, reason="r", commit=other)
+
+
+class UnrecordedFailureRecoveryTest(unittest.TestCase):
+    """A failed run whose outcome was never recorded must not be reclaimed as pending."""
+
+    def setUp(self):
+        self._directory = tempfile.TemporaryDirectory()
+        self.root = Path(self._directory.name)
+        self.row = item(self.root)
+        self.first = owner(101, "first")
+        live = scheduler.Ledger(self.root, query=lambda _: True)
+        self.assertTrue(live.claim(self.row, self.first, lambda _: None))
+        self.attempt = self.root / "attempts" / self.row["kind"] / self.row["id"] / "first"
+        self.attempt.mkdir(parents=True)
+        self.later = scheduler.Ledger(self.root, query=lambda _: False)  # allocation 101 has ended
+
+    def tearDown(self):
+        self._directory.cleanup()
+
+    def _record(self, returncode, outcome):
+        scheduler._write_new(self.attempt / "exit.json", {"returncode": returncode, "ended_at": 0.0})
+        job = {"item": self.row, "attempt": self.attempt, "outcome": outcome}
+        scheduler._abandon_unrecorded([job])
+
+    def test_an_unrecorded_failure_is_blocked_for_review_retry(self):
+        self._record(1, {"error": f"exit 1; inspect {self.attempt}"})
+        reconcile = mock.Mock(return_value=None)
+        self.assertFalse(self.later.claim(self.row, owner(202, "later"), reconcile))
+        reconcile.assert_not_called()
+        directory = self.later._row_dir(self.row)
+        blocked = scheduler._read(directory / "blocked.json")
+        self.assertIn("unrecorded failure", blocked["error"])
+        self.assertIn("exit 1", blocked["error"])
+        self.assertEqual(self.later.state(self.row), "blocked")
+        self.assertFalse((directory / "claim").exists())
+        self.assertEqual(len(list((directory / "retired_claims").iterdir())), 1)  # old claim kept
+        self.assertFalse(self.later.claim(self.row, owner(303, "again"), reconcile))  # stays blocked
+
+    def test_a_nonzero_exit_without_a_finish_record_is_also_blocked(self):
+        scheduler._write_new(self.attempt / "exit.json", {"returncode": 9, "ended_at": 0.0})
+        self.assertFalse(self.later.claim(self.row, owner(202, "later"), lambda _: None))
+        self.assertIn("exit 9", scheduler._read(self.later._row_dir(self.row) / "blocked.json")["error"])
+
+    def test_an_unrecorded_success_is_still_reconciled_from_its_evidence(self):
+        evidence(Path(self.row["row"]["checkpoint_dir"]))
+        receipt = self.root / "receipt.json"
+        receipt.write_text('{"engineering_verdict":"COMPLETE"}')
+        self._record(0, scheduler.bound_receipt(self.row, receipt))
+        self.assertFalse(self.later.claim(self.row, owner(202, "later"), lambda _: receipt))
+        self.assertEqual(self.later.state(self.row), "complete")

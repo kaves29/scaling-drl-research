@@ -59,6 +59,12 @@ submit_once() {
   local name=$1 absent=$2
   shift 2
   local dir="$SUBMISSIONS/$name" out id
+  # A reservation only counts for the commit it was made for; anything else fails closed.
+  if [ -e "$dir" ] && ! grep -qF "\"commit\":\"$FINAL_SHA\"" "$dir/reserved.json" 2>/dev/null; then
+    echo "FOREIGN: $name is reserved for another commit (or has no readable reservation);" \
+      "use a qualification root for $FINAL_SHA" >&2
+    exit 3
+  fi
   if [ -f "$dir/job_id" ]; then
     echo "already submitted: $name (job $(cat "$dir/job_id"))"
     return 0
@@ -174,16 +180,26 @@ def _submissions(qual_root):
     return Path(qual_root) / "submissions"
 
 
-def reconcile_status(qual_root, names=None):
+def _reserved_commit(entry):
+    try:
+        return json.loads((entry / "reserved.json").read_text()).get("commit")
+    except (OSError, ValueError, AttributeError):
+        return None
+
+
+def reconcile_status(qual_root, names=None, commit=None):
     """SUBMITTED (job id recorded), PARTIAL (reserved, no job id) or NOT_SUBMITTED, for the
-    expected submissions and any other reservation found."""
+    expected submissions and any other reservation found. With commit, a reservation made
+    for any other commit (or without a readable reservation) is FOREIGN, never SUBMITTED."""
     directory = _submissions(qual_root)
     found = sorted(p.name for p in directory.iterdir() if not p.name.startswith(".")) if directory.is_dir() else []
     status = {}
     for name in list(names or submission_names()) + [n for n in found if n not in (names or submission_names())]:
         entry = directory / name
         job = entry / "job_id"
-        if job.is_file() and JOB_ID.fullmatch(job.read_text().strip()):
+        if entry.exists() and commit is not None and _reserved_commit(entry) != commit:
+            status[name] = {"state": "FOREIGN", "reserved_commit": _reserved_commit(entry)}
+        elif job.is_file() and JOB_ID.fullmatch(job.read_text().strip()):
             status[name] = {"state": "SUBMITTED", "job_id": job.read_text().strip()}
         elif entry.exists():
             status[name] = {"state": "PARTIAL"}
@@ -192,7 +208,7 @@ def reconcile_status(qual_root, names=None):
     return status
 
 
-def reconcile(qual_root, name, job_id=None, release=False, reason=None):
+def reconcile(qual_root, name, job_id=None, release=False, reason=None, commit=None):
     """Resolve one PARTIAL reservation explicitly, after checking Slurm (sacct --name):
     record the job id that was found, or release the reservation when no job exists. The
     reservation's files are kept (released ones move under submissions/.released/)."""
@@ -205,7 +221,7 @@ def reconcile(qual_root, name, job_id=None, release=False, reason=None):
     if not reason or not str(reason).strip():
         raise ValueError("a reconciliation needs a reason (what Slurm showed)")
     entry = _submissions(qual_root) / name
-    state = reconcile_status(qual_root, [name])[name]["state"]
+    state = reconcile_status(qual_root, [name], commit)[name]["state"]
     if state != "PARTIAL":
         raise ValueError(f"{name} is {state}; only a PARTIAL reservation can be reconciled")
     record = {"name": name, "reason": str(reason), "reconciled_at": time.time(),
@@ -236,6 +252,7 @@ def main(argv=None):
     sub = parser.add_subparsers(dest="action")
     status = sub.add_parser("status", help="show each submission's reservation state")
     status.add_argument("--qual-root", required=True)
+    status.add_argument("--final-sha", required=True, help="reservations for any other commit are FOREIGN")
     fix = sub.add_parser("reconcile", help="resolve one PARTIAL reservation")
     fix.add_argument("--qual-root", required=True)
     fix.add_argument("--name", required=True)
@@ -243,6 +260,7 @@ def main(argv=None):
     group.add_argument("--job-id")
     group.add_argument("--release", action="store_true")
     fix.add_argument("--reason", required=True)
+    fix.add_argument("--final-sha", required=True, help="only this commit's reservations can be reconciled")
     parser.add_argument("--final-sha")
     parser.add_argument("--checkout", help="clean detached checkout root of FINAL_SHA")
     parser.add_argument("--qual-root")
@@ -252,10 +270,11 @@ def main(argv=None):
     parser.add_argument("--out", type=Path)
     args = parser.parse_args(argv)
     if args.action == "status":
-        print(json.dumps(reconcile_status(args.qual_root), indent=2))
+        print(json.dumps(reconcile_status(args.qual_root, commit=args.final_sha), indent=2))
         return 0
     if args.action == "reconcile":
-        print(json.dumps(reconcile(args.qual_root, args.name, args.job_id, args.release, args.reason), indent=2))
+        print(json.dumps(reconcile(args.qual_root, args.name, args.job_id, args.release, args.reason,
+                                   args.final_sha), indent=2))
         return 0
     missing = [n for n in ("final_sha", "checkout", "qual_root", "hb_env", "out") if getattr(args, n) is None]
     if missing:

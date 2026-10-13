@@ -91,9 +91,11 @@ Consequences that remain:
 - A left claim belongs to this allocation's Slurm job. Another allocation can reconcile it
   only once that job has ended. In allocation B, that means after both nodes' workers stop.
 - A **successful** run is then reconciled from its evidence and receipt.
-- A **failed** run (non-zero exit) has no `DONE`, so reconciliation re-claims and resumes it
-  instead of recording `blocked.json`. Its `finish_unrecorded.json` and `exit.json` keep
-  the original outcome for review.
+- A **failed** run (non-zero `exit.json`, or a `finish_unrecorded.json` holding an error)
+  is **not** reclaimed. When a later allocation recovers the ended owner's claim, it
+  records `blocked.json` ("unrecorded failure of attempt ..."), keeps the old claim under
+  `retired_claims/`, and the row then needs the existing source-bound `review-retry`,
+  exactly like a recorded failure. An unreadable attempt record also blocks the row.
 - While the allocation is busy, a validator thread can spend up to 120 s per attempt
   waiting for a guard. That delays validation, not training.
 
@@ -161,21 +163,25 @@ HB_CHECK_ROOT=/work/hdd/biqc/skaveti1/exp12_qualification/$FINAL_SHA/hb_cpu_01 \
 - skips every recorded submission;
 - **stops (exit 3) at any reservation without a job id**, for example if `sbatch` failed,
   the script was interrupted, or another run is mid-submission;
+- **stops (exit 3) at any reservation made for another commit**, or without a readable
+  `reserved.json`. These are never treated as submitted. Use a new qualification root
+  for each commit;
 - concurrent runs submit each job once.
 
 **Resolving a partial reservation.** After checking Slurm
 (`sacct --name exp12q_<sha12>_<name>`), resolve it explicitly:
 
 ```bash
-python scripts/exp12_qualification_commands.py status --qual-root "$QUAL_ROOT"
-python scripts/exp12_qualification_commands.py reconcile --qual-root "$QUAL_ROOT" \
+python scripts/exp12_qualification_commands.py status --qual-root "$QUAL_ROOT" --final-sha "$FINAL_SHA"
+python scripts/exp12_qualification_commands.py reconcile --qual-root "$QUAL_ROOT" --final-sha "$FINAL_SHA" \
   --name identity_D4W1536_dog-run --job-id 1234567 --reason "found in sacct"   # or:
-python scripts/exp12_qualification_commands.py reconcile --qual-root "$QUAL_ROOT" \
+python scripts/exp12_qualification_commands.py reconcile --qual-root "$QUAL_ROOT" --final-sha "$FINAL_SHA" \
   --name identity_D4W1536_dog-run --release --reason "sacct shows no job"
 ```
 
 - A released reservation is kept under `submissions/.released/`.
-- Only `PARTIAL` entries can be reconciled.
+- Only `PARTIAL` entries for `--final-sha` can be reconciled; `status` shows another
+  commit's reservations as `FOREIGN`.
 
 **Runtime estimates** (unchanged):
 
@@ -223,11 +229,19 @@ reduction-order choice).
 2. Amendment (v) already runs every training matmul in TF32 (a 10-bit mantissa, relative
    rounding of order 1e-3 to 1e-4 per product). Float32 reduction-order differences are
    much smaller per operation.
-3. Exp1's estimands are expectations over seeds. A perturbation of order |δ| changes the
-   *expected* continuation by O(|δ|) if E[Y | s] is smooth in the state, even when single
-   trajectories are chaotic. It adds variance rather than bias.
+3. Exp1's estimands are expectations over seeds. **If** E[Y | s] is smooth in the state,
+   a perturbation of order |δ| changes the *expected* continuation only by O(|δ|), even
+   when single trajectories are chaotic. Under that assumption, rounding differences would
+   mainly add variance rather than bias.
 
-This is an argument, not a proof. The smoothness of E[Y | s] is assumed, not shown.
+This is an argument, not a proof, and **it is not established**:
+- the smoothness of E[Y | s] is assumed, not shown;
+- the CPU study below cannot show it either. It perturbs once rather than at every step,
+  uses tiny networks over a short horizon, compares only a few summary outcomes, and with
+  20 seeds cannot exclude shifts below about half a between-seed SD.
+
+Whether rounding differences bias Exp1 outcomes therefore remains an open question. The
+study only finds no detectable shift in that limited setting.
 
 ### Empirical check (CPU) and its limits
 

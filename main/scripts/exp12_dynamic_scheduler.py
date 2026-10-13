@@ -483,9 +483,19 @@ class Ledger:
                 prior = _read(claim / "owner.json")
                 if _owner_alive(prior, self.query):
                     return False
+                failure = self._unrecorded_failure(item, prior)
                 retired = directory / "retired_claims"
                 retired.mkdir(exist_ok=True)
                 claim.rename(retired / (prior["token"] + "_" + uuid.uuid4().hex))
+                if failure is not None:
+                    # The ended allocation could not record this failure; record it now, so the
+                    # row needs the same source-bound review-retry as any recorded failure.
+                    _write_new(directory / "blocked.json", {
+                        "id": item["id"],
+                        "error": f"unrecorded failure of attempt {prior['token']}: {failure}",
+                        "recorded_at": time.time(),
+                    })
+                    return False
             try:
                 before = _evidence_or_none(item)
                 receipt = reconcile(item)
@@ -526,6 +536,24 @@ class Ledger:
             return True
         finally:
             self._unguard(guard)
+
+    def _unrecorded_failure(self, item, prior):
+        """The failure an ended owner's attempt left unrecorded, or None. A nonzero exit.json
+        or a finish_unrecorded.json holding an error both count; unreadable records fail closed."""
+        attempt = self.root.parent / "attempts" / item["kind"] / item["id"] / prior["token"]
+        unrecorded, exited = attempt / "finish_unrecorded.json", attempt / "exit.json"
+        try:
+            if unrecorded.exists():
+                outcome = _read(unrecorded)["outcome"]
+                if "receipt" not in outcome:
+                    return outcome.get("error", "unrecorded outcome without a receipt")
+            if exited.exists():
+                code = _read(exited)["returncode"]
+                if code != 0:
+                    return f"exit {code}; inspect {attempt}"
+        except (OSError, ValueError, KeyError, TypeError) as exc:
+            return f"unreadable attempt record {attempt}: {type(exc).__name__}: {exc}"
+        return None
 
     def finish(self, item, owner, receipt=None, error=None, evidence=None, receipt_sha256=None):
         """Record the owner's outcome once. A receipt is certified only together with the
