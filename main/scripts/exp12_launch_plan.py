@@ -24,7 +24,6 @@ GATES = {
         "cuda_identity_scaled_suites",
         "fresh_null_disposition",
         "hopper_range_disposition",
-        "positive_control",
         "suite_runtime_storage",
         "grid_allocation",
         "cuda_numeric_bounds",

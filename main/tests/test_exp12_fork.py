@@ -1,5 +1,6 @@
 """Phase 4: fork, control restart, identity fork, injected arm, Checks 1-3, kill-and-resume around the fork."""
 
+import hashlib
 import importlib.util
 import json
 import os
@@ -60,6 +61,12 @@ def _without_arm(rows):
     return [{k: v for k, v in r.items() if k != "arm"} for r in rows]
 
 
+def _checkpoint_files(root):
+    root = Path(root)
+    return {str(p.relative_to(root)): hashlib.sha256(p.read_bytes()).hexdigest()
+            for p in root.rglob("*") if p.is_file()}
+
+
 class ForkEndToEndTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -69,6 +76,8 @@ class ForkEndToEndTest(unittest.TestCase):
         cls.overrides = fork_overrides(cls.results)
         cls.run_dir = os.path.join(cls.tmp, "run")
         run_exp1(cls.run_dir, cls.overrides)
+        cls.fork_files_after_parent = _checkpoint_files(fork.fork_dir(cls.run_dir) / "state")
+        assert (Path(cls.run_dir) / "DONE").exists()
         cls.arm_dirs = {}
         for arm in ("identity", "injected"):
             cls.arm_dirs[arm] = os.path.join(cls.tmp, f"arm_{arm}")
@@ -93,6 +102,20 @@ class ForkEndToEndTest(unittest.TestCase):
             self.assertTrue((d / name).exists(), name)
         self.assertEqual(fork.load_npz(d / "panel.npz")["observation"].shape[0], 256)
         self.assertEqual(_meta(latest_state_dir(d / "state"))["interaction_step"], 100)
+
+    def test_delayed_arms_preserve_complete_trigger_checkpoint(self):
+        # Both arms in setUpClass start only after the Exp1 control has completed.
+        self.assertEqual(_checkpoint_files(fork.fork_dir(self.run_dir) / "state"),
+                         self.fork_files_after_parent)
+        self.assertEqual(self.plan["fork_step"], 100)
+        self.assertLess(_meta(latest_state_dir(fork.fork_dir(self.run_dir) / "state"))["update_step"],
+                        _meta(latest_state_dir(Path(self.run_dir) / "state"))["update_step"])
+        # The existing identity comparison covers optimizer, replay, observation
+        # normalization, RNG, environment state and all training counters.
+        self.assertEqual(state_differences(
+            latest_state_dir(fork.fork_dir(self.run_dir) / "identity_control"),
+            latest_state_dir(Path(self.arm_dirs["identity"]) / "identity_identity"),
+            ignore_meta=("wandb_run_id", "extra_state")), [])
 
     def test_exp1_ledger_records_fork_and_control_completes(self):
         runs, checks = ledger.load(self.results, include_dev=True)

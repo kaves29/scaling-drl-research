@@ -575,3 +575,20 @@ The paired-score definition, fresh comparison, zero trigger threshold,
 scheduled firing checks are unchanged. No trigger is forced. This amendment
 does not constitute GPU qualification or approval to launch the 195-parent
 grid or Exp2 injected arms.
+
+## Amendment on conditional Experiment 1/2 launch (2026-10-13)
+
+(ab) The project lead approved separate launch qualification for the two
+experiments. Experiment 1 parents may launch after all Experiment 1 scientific,
+CUDA identity, source, resource and allocation gates pass, without waiting for
+Experiment 2's natural-trigger positive control. This supersedes only the
+earlier *launch-order requirement* that the positive control qualify before
+the 195 Experiment 1 parents. Experiment 2 injected arms remain blocked until
+a natural eligible fork, a same-source positive control, owner-frozen injection
+magnitude and separate Experiment 2 launch approval satisfy the original
+requirements. The Experiment 1 parent saves its complete trigger state at the
+original f*_run and immediately restores it for the observational/control
+continuation. The injected arm may later restore that retained trigger state;
+its scientific horizon is still measured from f*_run, not its wall-clock launch.
+No probe, trigger, measurement, threshold, training setting, endpoint, Check 1
+or Check 2 rule changes. A parent that never triggers remains a null result.

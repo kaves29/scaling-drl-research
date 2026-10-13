@@ -332,6 +332,30 @@ class LaunchPreparationTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "explicit"):
             approve(approval, "parents", "a" * 40)
 
+    def test_exp1_parent_approval_is_separate_from_exp2_positive_control(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "identity.json"
+            path.write_text(json.dumps({
+                "verdict": "PASS", "expected_commit": "a" * 40,
+                "qualification": "cuda_identity_fork",
+                "coverage": [
+                    {"architecture": arch, "suite": suite, "environment": "fixture"}
+                    for arch in ("D4W1024", "D4W1536")
+                    for suite in ("dmc", "myosuite", "humanoid_bench")
+                ],
+            }))
+            approval = self.approval("parents")
+            approval["gates"]["cuda_identity_scaled_suites"]["evidence"] = [
+                {"path": str(path), "sha256": sha(path)}
+            ]
+            approval["gates"]["positive_control"] = {
+                "status": "UNQUALIFIED", "decision_reference": None
+            }
+            self.assertEqual(approve(approval, "parents", "a" * 40), approval["resources"])
+            approval["gates"]["fresh_null_disposition"]["status"] = "UNRESOLVED"
+            with self.assertRaisesRegex(ValueError, "fresh_null_disposition"):
+                approve(approval, "parents", "a" * 40)
+
     def test_stale_gpu_receipt_rejected(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "receipt.json"

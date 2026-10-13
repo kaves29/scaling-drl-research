@@ -1,5 +1,17 @@
 # Shared agent handoff
 
+## Conditional Exp1/Exp2 launch approval (13 October 2026)
+
+Owner-selected amendment (ab) is implemented on the isolated
+`codex/exp12-deferred-fork-ab` branch based on consolidated
+`957be5c63a48b0b90dd28ee4b361e3c6d373ab05`; resolve the final branch
+tip from Git. Parent approval no longer requires Exp2 positive control.
+Exp2 allocation approval still requires its source-bound natural positive
+control, frozen m and separate decision. The retained fork-state path and
+deferred-arm CPU evidence, distinct GO/NO-GO lists and minimal final-source
+GPU plan are in [exp12_ab_deferred_fork.md](exp12_ab_deferred_fork.md).
+No GPU qualification, allocation approval or production submission is implied.
+
 ## Method C consolidated engineering candidate (13 October 2026, Eastern)
 
 Codex independently reviewed Claude's `claude/exp12-method-c-fixes` through

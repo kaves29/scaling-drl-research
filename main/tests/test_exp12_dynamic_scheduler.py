@@ -411,6 +411,32 @@ class DurableLedgerTest(unittest.TestCase):
                 changed = scheduler._arm_item(parent, "a" * 40, "last")
             self.assertNotEqual(last["id"], changed["id"])
 
+    def test_deferred_arm_discovery_after_parent_completion_is_idempotent(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            parent_dir = root / "checkpoints/exp1/D4W1536/dog-run/seed_1"
+            (parent_dir / "fork").mkdir(parents=True)
+            (parent_dir / "fork/fork.json").write_text('{"fork_step": 50000}')
+            (parent_dir / "fork/FORK_READY").write_text("source")
+            (parent_dir / "DONE").write_text('{"interaction_step": 500000}')
+            parent = {"id": "source", "kind": "exp1", "row": {
+                "architecture": "D4W1536", "environment": "dog-run", "seed": 1,
+                "group": "dmc_hard", "budget": 1_000_000, "run_key": "source",
+                "checkpoint_dir": str(parent_dir), "overrides": ["seed=1"],
+                "command": ["python", "-u", "run.py", "--experiment", "exp1",
+                            "--checkpoint_dir", str(parent_dir)],
+            }}
+            queue = {"parents": [parent], "commit": "a" * 40}
+            (root / "queue").mkdir()
+            with (mock.patch.object(scheduler, "_natural_fork", return_value={"fork_step": 50000}),
+                  mock.patch.object(scheduler, "config_hash", return_value="arm-config")):
+                first = scheduler.discover_arms(root / "queue", queue, "half")
+                second = scheduler.discover_arms(root / "queue", queue, "half")
+            self.assertEqual(first, second)
+            self.assertEqual(len(first), 1)
+            self.assertEqual(first[0]["row"]["source_dir"], str(parent_dir))
+            self.assertEqual(len(list((root / "queue/arms").glob("*.json"))), 1)
+
     def test_injected_arm_completion_requires_full_eval_schedule(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

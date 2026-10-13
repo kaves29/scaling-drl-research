@@ -1,5 +1,17 @@
 # Exp1/Exp2 scientific and validation status
 
+## Amendment (ab): independent launch gates (13 October 2026)
+
+The owner approved conditional separation: Exp1 may launch after its own
+scientific, final-source GPU, allocation and approval gates; Exp2 positive
+control is no longer a prerequisite for Exp1 parents. Exp2 still requires a
+natural eligible fork, source-matched positive control, frozen injection m and
+its separate approval. The trigger checkpoint is retained for deferred arms;
+the control continuation starts immediately from that same state. This is a
+launch-order amendment only. Current status for **both** experiments is NO-GO
+until the remaining individual gates pass. See
+[`exp12_ab_deferred_fork.md`](exp12_ab_deferred_fork.md).
+
 ## Consolidated Method C engineering review (13 October 2026, Eastern)
 
 The owner-authorized Method C settings remain unchanged. Claude's engineering
