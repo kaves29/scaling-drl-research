@@ -21,4 +21,4 @@ Research in progress, developed toward ISEF and eventual publication.
 
 ---
 
-**All research design, methodology, and experimental analysis in this project was conducted by Shourya Kaveti. Claude Code was used as a coding assistant during implementation.**
+**All research design, methodology, and experimental analysis in this project was conducted by Shourya Kaveti. Claude Code and Codex were used as coding assistants during implementation.**
