@@ -27,7 +27,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from scripts.exp12_dynamic_scheduler import Ledger, _read, _write_new  # noqa: E402
+from scripts.exp12_dynamic_scheduler import Ledger, LedgerContention, _read, _write_new  # noqa: E402
 
 DEFAULT_ITEMS = 500
 READY_TIMEOUT_SECONDS = 600
@@ -179,16 +179,15 @@ def _handoff(root, rank, handoffs, ledger, owner, receipts, until):
     theirs = [i for i in range(1 - rank, handoffs, 2)]
     pending = set(theirs)
     wrong, errors, attempts, finish_conflicts = [], [], 0, 0
+    finisher = Ledger(root, query=lambda _: True, finish_timeout=0)
     while mine or pending:
         if mine:
             try:
-                ledger.finish(_handoff_item(root, mine[0]), owner, receipt=receipts[mine[0]])
+                # finish_timeout=0 makes each attempt single-shot, so contention is counted
+                # here; the production Ledger waits up to FINISH_GUARD_TIMEOUT_SECONDS instead.
+                finisher.finish(_handoff_item(root, mine[0]), owner, receipt=receipts[mine[0]])
                 mine.pop(0)
-            except ValueError as exc:
-                # The other host holds this row's guard for an instant. The production scheduler
-                # does not retry here (its worker loop re-raises); the check counts and retries.
-                if "transition guard is occupied" not in str(exc):
-                    raise
+            except LedgerContention:
                 finish_conflicts += 1
         for index in sorted(pending):
             item = _handoff_item(root, index)

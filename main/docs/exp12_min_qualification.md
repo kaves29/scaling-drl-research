@@ -227,13 +227,25 @@ Results: 20 seeds per strength (1001–1020). Raw rows and summaries are in
 | Clock skew between GPU nodes | Only CPU hosts measured | Affects only the stale-guard *warning* (600 s), never an automatic action | Reported offsets |
 | Contention level | 2 racers at high rate rather than up to 3 workers at 15 s polling | Atomicity does not depend on the number of racers | — |
 
-**Defect found by the handoff phase (not fixed here).** `Ledger.finish` raises "transition
-guard is occupied" if another worker holds the row's guard at that moment
-(`exp12_dynamic_scheduler.py:473-475`).
-- The scheduler calls it from `_finish` in the validator thread, and the worker loop
-  re-raises it through `future.result()` (`:1358-1360`). That ends the allocation's worker
-  while its training children are running.
-- Locally, 0–2 such conflicts occurred in each of three runs with 200 handoff rows, under deliberate contention.
-  Production contention is far lower, but nonzero.
-- The fix (retrying the guard briefly in `finish`) is engineering only. It is left for
-  review because this branch changes no production code.
+**Defect found by the handoff phase, now fixed.** `Ledger.finish` used to raise "transition
+guard is occupied" if another worker held the row's guard at that moment. The worker loop
+re-raised it through `future.result()`, which ended the allocation's worker while its training
+children ran. Locally this happened 0–2 times per 200-row handoff under deliberate contention.
+
+How it is fixed (scheduler only; no scientific setting or gate changed):
+- **Bounded wait.** `finish` now waits for the guard with doubling sleeps from 0.05 s up to
+  2 s, for at most `FINISH_GUARD_TIMEOUT_SECONDS` (120 s). A guard is never removed or
+  overridden.
+- **Fail closed on timeout.** If the wait runs out, `finish` raises `LedgerContention` (a
+  `ValueError`) having written nothing. The claim stays, so no other worker can start the row.
+- **Same outcome on retry.** `_finish` decides the outcome once: exit code, `exit.json` and
+  `validate_done`. Later attempts record that same outcome. Completion stays exactly-once,
+  because a second `finish` is refused ("claim owner changed") and `completed.json` is
+  published with an exclusive link.
+- **Worker loop.** It keeps a contended job and retries every `FINISH_RETRY_SECONDS` (60 s).
+  If the outcome is still unrecorded near the allocation's end, it writes
+  `finish_unrecorded.json` in the attempt directory and leaves the claim. Once the allocation
+  ends, a later allocation reconciles the row from its evidence.
+- **Startup failures.** A failure that cannot be recorded no longer stops the worker.
+- **Other errors still stop the worker**, as before.
+- **The claim check** uses a single-attempt `finish` so it can still count contention.

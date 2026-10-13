@@ -372,6 +372,15 @@ _TERMINAL_STATES = {"BOOT_FAIL", "CANCELLED", "COMPLETED", "DEADLINE", "FAILED",
 _WARNED_GUARDS = set()
 _CLAIM_BACKOFF = {}
 CLAIM_BACKOFF_SECONDS = 300
+# A transition (claim/finish) holds a row's guard for well under a second; claim's
+# reconciliation can hash evidence under it for a few seconds. finish waits this long.
+FINISH_GUARD_TIMEOUT_SECONDS = 120
+FINISH_GUARD_POLL_SECONDS = (0.05, 2.0)  # first wait, maximum wait (doubling)
+FINISH_RETRY_SECONDS = 60  # worker loop: wait before re-attempting an unrecorded finish
+
+
+class LedgerContention(ValueError):
+    """finish could not take the row's guard in time; nothing was recorded and the claim is kept."""
 
 
 def _warn_if_stale_guard(guard, item):
@@ -389,9 +398,10 @@ def _warn_if_stale_guard(guard, item):
 
 
 class Ledger:
-    def __init__(self, root, query=slurm_alive):
+    def __init__(self, root, query=slurm_alive, finish_timeout=FINISH_GUARD_TIMEOUT_SECONDS):
         self.root = Path(root).resolve() / "ledger"
         self.query = query
+        self.finish_timeout = finish_timeout
 
     def _row_dir(self, item):
         return self.root / item["kind"] / item["id"]
@@ -406,6 +416,25 @@ class Ledger:
 
     def _unguard(self, guard):
         guard.rmdir()
+
+    def _wait_for_guard(self, directory, item):
+        """Bounded retry: another worker's claim attempt may hold the guard briefly. Never
+        removes or overrides a guard; on timeout raises LedgerContention having written nothing."""
+        deadline = time.monotonic() + self.finish_timeout
+        wait, ceiling = FINISH_GUARD_POLL_SECONDS
+        while True:
+            guard = self._guard(directory)
+            if guard is not None:
+                return guard
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                _warn_if_stale_guard(directory / "transition_guard", item)
+                raise LedgerContention(
+                    f"transition guard of {item['id']} stayed occupied for "
+                    f"{self.finish_timeout} s; nothing recorded, claim kept"
+                )
+            time.sleep(min(wait, remaining))
+            wait = min(2 * wait, ceiling)
 
     def claim(self, item, owner, reconcile):
         """Atomic cross-allocation claim. Never infer completion from DONE alone."""
@@ -470,9 +499,7 @@ class Ledger:
 
     def finish(self, item, owner, receipt=None, error=None):
         directory = self._row_dir(item)
-        guard = self._guard(directory)
-        if guard is None:
-            raise ValueError("transition guard is occupied")
+        guard = self._wait_for_guard(directory, item)
         try:
             claim = directory / "claim"
             if not claim.exists() or _read(claim / "owner.json") != owner:
@@ -1273,30 +1300,64 @@ def _start(item, token, approval, queue_root, ledger, job_id):
             "rate": None,
         }
     except Exception as exc:
-        ledger.finish(item, owner, error=f"startup: {type(exc).__name__}: {exc}")
+        try:
+            ledger.finish(item, owner, error=f"startup: {type(exc).__name__}: {exc}")
+        except LedgerContention as contention:
+            # Fail closed: the claim stays with this live allocation, so no other worker
+            # starts the row; once this allocation ends it is recovered by reconciliation.
+            print(f"[scheduler] WARNING: startup failure of {item['id']} not recorded: "
+                  f"{contention}", file=sys.stderr, flush=True)
         return None
 
 
 def _finish(job, ledger, commit, queue_root):
+    """Record a finished process once. The outcome is decided (and exit.json written) only on
+    the first call; a call repeated after LedgerContention records that same outcome."""
     process, item, attempt = job["process"], job["item"], job["attempt"]
-    code = process.poll()
-    if code is None:
-        return False
-    _write_new(attempt / "exit.json", {"returncode": code, "ended_at": time.time()})
-    if code:
-        ledger.finish(item, job["owner"], error=f"exit {code}; inspect {attempt}")
-        return True
-    try:
-        receipt = validate_done(item, commit, queue_root)
-        if receipt is None:
-            raise ValueError("exit zero without validated terminal DONE")
-    except Exception as exc:
-        ledger.finish(
-            item, job["owner"], error=f"validation: {type(exc).__name__}: {exc}"
-        )
-        return True
-    ledger.finish(item, job["owner"], receipt=receipt)
+    if "outcome" not in job:
+        code = process.poll()
+        if code is None:
+            return False
+        _write_new(attempt / "exit.json", {"returncode": code, "ended_at": time.time()})
+        if code:
+            job["outcome"] = {"error": f"exit {code}; inspect {attempt}"}
+        else:
+            try:
+                receipt = validate_done(item, commit, queue_root)
+                if receipt is None:
+                    raise ValueError("exit zero without validated terminal DONE")
+                job["outcome"] = {"receipt": receipt}
+            except Exception as exc:
+                job["outcome"] = {"error": f"validation: {type(exc).__name__}: {exc}"}
+    ledger.finish(item, job["owner"], **job["outcome"])
     return True
+
+
+def _collect_finished(validating, unrecorded, now):
+    """Collect completed _finish futures. LedgerContention keeps the job for a later attempt
+    (nothing was recorded); any other error still stops the worker (fail closed)."""
+    for future in list(validating):
+        if not future.done():
+            continue
+        job = validating.pop(future)
+        try:
+            future.result()
+        except LedgerContention as exc:
+            job["retry_finish_at"] = now + FINISH_RETRY_SECONDS
+            unrecorded.append(job)
+            print(f"[scheduler] WARNING: {exc}; retrying in {FINISH_RETRY_SECONDS} s",
+                  file=sys.stderr, flush=True)
+
+
+def _abandon_unrecorded(unrecorded):
+    """At the allocation's end: leave the claims (their owner, this allocation, then ends and
+    a later allocation reconciles them) and keep a reviewable record of each outcome."""
+    for job in unrecorded:
+        outcome = {k: str(v) for k, v in job.get("outcome", {}).items()}
+        _write_new(job["attempt"] / "finish_unrecorded.json",
+                   {"id": job["item"]["id"], "outcome": outcome, "recorded_at": time.time()})
+        print(f"[scheduler] ERROR: outcome of {job['item']['id']} could not be recorded before "
+              f"the allocation ended; claim left for reconciliation", file=sys.stderr, flush=True)
 
 
 def run(queue_root, approval_path, allocation):
@@ -1325,6 +1386,7 @@ def run(queue_root, approval_path, allocation):
     ledger = Ledger(queue_root)
     active = []
     validating = {}
+    unrecorded = []  # finished processes whose ledger update met guard contention
     discovered_arms = []
     discovered_once = False
     discovery_future = None
@@ -1337,7 +1399,7 @@ def run(queue_root, approval_path, allocation):
         ThreadPoolExecutor(max_workers=4) as validator,
         ThreadPoolExecutor(max_workers=1) as discoverer,
     ):
-        while time.time() < stop_at or active or validating:
+        while time.time() < stop_at or active or validating or unrecorded:
             parent_plan = _read(queue["plan"])
             if (
                 sha(approval_path) != os.environ["EXP12_APPROVAL_SHA256"]
@@ -1355,13 +1417,17 @@ def run(queue_root, approval_path, allocation):
                         _finish, job, ledger, queue["commit"], queue_root
                     )
                     validating[future] = job
-            for future in list(validating):
-                if future.done():
-                    future.result()
-                    del validating[future]
+            for job in [j for j in unrecorded if j["retry_finish_at"] <= time.time()]:
+                unrecorded.remove(job)
+                validating[validator.submit(_finish, job, ledger, queue["commit"], queue_root)] = job
+            _collect_finished(validating, unrecorded, time.time())
             if time.time() >= stop_at:
                 if not active and not validating:
-                    break
+                    if unrecorded and time.time() >= deadline - 60:
+                        _abandon_unrecorded(unrecorded)
+                        break
+                    if not unrecorded:
+                        break
                 time.sleep(POLL_SECONDS)
                 continue
             update_rates(active)
@@ -1422,7 +1488,7 @@ def run(queue_root, approval_path, allocation):
                         pending.remove(item)
                         started = True
                         break
-            if not active and not pending and not validating:
+            if not active and not pending and not validating and not unrecorded:
                 if discovery_future is not None:
                     time.sleep(1)
                     continue
