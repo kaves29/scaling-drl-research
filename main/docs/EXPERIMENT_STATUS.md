@@ -1,5 +1,15 @@
 # Exp1/Exp2 scientific and validation status
 
+## Consolidated Method C engineering review (13 October 2026, Eastern)
+
+The owner-authorized Method C settings remain unchanged. Claude's engineering
+fixes at `b225577c2ba5a18b2ad6d14c47b34a00b5443e05` were incorporated
+on `codex/exp12-method-c-consolidated`; resolve its final SHA from Git.
+Review findings and qualification limits are in
+[`method_c_consolidated_review.md`](method_c_consolidated_review.md). Exp1 and
+Exp2 remain NO-GO pending the recorded scientific disposition, final-source
+CUDA qualifications, Delta allocation preflight and explicit launch approvals.
+
 ## Method C owner decision (12 October 2026, Eastern)
 
 The owner authorized Method C implementation: 2,000 continuous fit steps

@@ -1,5 +1,15 @@
 # Shared agent handoff
 
+## Method C consolidated engineering candidate (13 October 2026, Eastern)
+
+Codex independently reviewed Claude's `claude/exp12-method-c-fixes` through
+`b225577c2ba5a18b2ad6d14c47b34a00b5443e05` against Method C base
+`c7fc4ea37a1b8ad5427f79bbc804f3a1238b006b`. The candidate branch is
+`codex/exp12-method-c-consolidated`; resolve its final SHA from Git. The
+finding-by-finding review, remaining owner/GPU gates and source links are in
+[`method_c_consolidated_review.md`](method_c_consolidated_review.md). No
+production or Delta job is approved by this handoff.
+
 ## Method C production implementation (12 October 2026, Eastern)
 
 Owner authorized Method C with 2,000 continuous fitting steps, preserved five
