@@ -792,7 +792,7 @@ class ResourceAdmissionTest(unittest.TestCase):
         }
         description = "JobId=11 TimeLimit=2-00:00:00 EndTime=2026-10-15T12:00:00"
         with mock.patch.dict("os.environ", environment), mock.patch(
-            "os.sched_getaffinity", return_value=set(range(16))
+            "os.sched_getaffinity", return_value=set(range(16)), create=True
         ):
             self.assertGreater(
                 scheduler._actual_allocation(

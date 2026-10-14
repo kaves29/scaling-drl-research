@@ -10,6 +10,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 
 import jax
 import jax.numpy as jnp
@@ -295,16 +296,51 @@ class TwinCheck1Test(unittest.TestCase):
     def test_panel_values(self):
         g = _twin_agent()
         rng = np.random.default_rng(0)
-        panel = {"observation": rng.normal(size=(256, OBS)).astype(np.float32),
-                 "action": rng.uniform(-1, 1, (256, 3)).astype(np.float32)}
-        out = fork.panel_q_and_grad(g.critic, panel)
+        panel = {
+            "observation": rng.normal(size=(256, OBS)).astype(np.float32),
+            "action": rng.uniform(-1, 1, (256, 3)).astype(np.float32),
+        }
         obs, act = jnp.asarray(panel["observation"]), jnp.asarray(panel["action"])
-        with precision("highest"):
+        # Compare the independent eager oracle in the same execution mode;
+        # compiled and eager neural-network arithmetic can differ by ULPs.
+        with jax.disable_jit(), precision("highest"):
+            out = fork.panel_q_and_grad(g.critic, panel)
             q = g.critic(observations=obs, actions=act)
-            dq = jax.grad(lambda a: jnp.minimum(*g.critic(observations=obs, actions=a)).sum())(act)
+            dq = jax.grad(
+                lambda a: jnp.minimum(*g.critic(observations=obs, actions=a)).sum()
+            )(act)
         np.testing.assert_array_equal(out["q"], np.asarray(q).reshape(-1))
         self.assertEqual(out["q"].shape, (512,))
-        np.testing.assert_allclose(out["dq_da"], np.asarray(dq), rtol=1e-5, atol=1e-7)  # jit vs eager: ULPs
+        np.testing.assert_allclose(
+            out["dq_da"], np.asarray(dq), rtol=1e-5, atol=1e-7
+        )  # jit vs eager: ULPs
+
+    def test_compiled_panel_has_exact_linear_twin_known_answers(self):
+        class LinearTwin:
+            @staticmethod
+            def apply(variables, observations, actions):
+                return jnp.stack(
+                    (
+                        actions[:, 0] + 2 * actions[:, 1],
+                        3 * actions[:, 0] - actions[:, 1],
+                    )
+                )[:, :, None]
+
+        critic = SimpleNamespace(network_def=LinearTwin(), params={twin.TWIN: {}})
+        panel = {
+            "observation": np.zeros((256, OBS), np.float32),
+            "action": np.tile(np.array([[-2, 1, 0], [2, 1, 0]], np.float32), (128, 1)),
+        }
+        out = fork.panel_q_and_grad(critic, panel)
+        expected_q = np.stack(
+            (
+                np.tile(np.array([0, 4], np.float32), 128),
+                np.tile(np.array([-7, 5], np.float32), 128),
+            )
+        ).reshape(-1)
+        expected_grad = np.tile(np.array([[3, -1, 0], [1, 2, 0]], np.float32), (128, 1))
+        np.testing.assert_array_equal(out["q"], expected_q)
+        np.testing.assert_array_equal(out["dq_da"], expected_grad)
 
 
 class TwinForkEndToEndTest(unittest.TestCase):

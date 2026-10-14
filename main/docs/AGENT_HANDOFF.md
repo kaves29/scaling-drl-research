@@ -6,10 +6,18 @@
 `12839f656e53b00a3327384f2cb4fc1be47e73fe`. Resolve the branch tip from
 Git. Its harness now checks the selected precision in each triple and compares
 saved meters after excluding only the three declared recording-only metrics.
-The 12-interaction CPU triples pass at both precision settings. Job 22900932's
-Delta artifacts were unavailable in this workspace, so its exact failure and
-A100 qualification verdict remain unverified. No production source or scientific
-setting changed; no GPU submission is authorized by this handoff.
+The continuation recovered `723da0d1c0c6f95910468a4aae9c94f1c40f60ed`, inspected
+job 22900932's original Delta artifacts and verified their checksum manifest.
+The TF32 exception is confirmed as the harness expecting `highest`; its triple
+stopped before writing a fingerprint. The historical highest triple passed.
+Both 400-interaction CPU triples now pass with probes, alongside regression and
+mutation/restoration coverage. The final stable CPU suite passes 760 tests with
+five HumanoidBench skips across 79 modules. Final-checkpoint step checks, failed-arm receipts
+and accurate backend scope are added. See
+[the debugging report](exp12_qualification_job22900932_debug.md) for evidence,
+validation scope and the Delta CPU-account limitation. The updated source still
+requires GPU qualification. No production source or scientific setting changed;
+no GPU job was submitted.
 
 ## Actor-diagnostic recording isolation candidate (14 October 2026)
 

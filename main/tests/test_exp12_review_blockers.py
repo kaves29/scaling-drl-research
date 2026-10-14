@@ -136,16 +136,23 @@ class EvidenceBindingTest(unittest.TestCase):
 
 
 # --------------------------------------------------------------------------------------- 2
-SBATCH_STUB = """#!/usr/bin/env bash
-set -euo pipefail
-log="$FAKE_SBATCH_LOG"
-if [ -n "${FAKE_SBATCH_FAIL_AT:-}" ] && [ "$(wc -l < "$log" 2>/dev/null || echo 0)" -ge "$FAKE_SBATCH_FAIL_AT" ]; then
-  echo "sbatch: error: simulated failure" >&2; exit 1
-fi
-exec 9>>"$log.lock"; flock 9
-n=$(( $(wc -l < "$log" 2>/dev/null || echo 0) + 1 ))
-printf '%s %s\\n' "$n" "$*" >> "$log"
-echo "$((5000 + n))"
+SBATCH_STUB = """import fcntl
+import os
+import sys
+from pathlib import Path
+
+log = Path(os.environ["FAKE_SBATCH_LOG"])
+with Path(str(log) + ".lock").open("a") as lock:
+    fcntl.flock(lock, fcntl.LOCK_EX)
+    count = len(log.read_text().splitlines()) if log.exists() else 0
+    fail_at = os.environ.get("FAKE_SBATCH_FAIL_AT")
+    if fail_at and count >= int(fail_at):
+        print("sbatch: error: simulated failure", file=sys.stderr)
+        sys.exit(1)
+    number = count + 1
+    with log.open("a") as stream:
+        stream.write(f"{number} {' '.join(sys.argv[1:])}\\n")
+    print(5000 + number)
 """
 
 
@@ -170,7 +177,7 @@ class SubmissionReservationTest(unittest.TestCase):
         self.bin = base / "bin"
         self.bin.mkdir()
         stub = self.bin / "sbatch"
-        stub.write_text(SBATCH_STUB)
+        stub.write_text(f"#!{sys.executable}\n" + SBATCH_STUB)
         stub.chmod(stub.stat().st_mode | stat.S_IEXEC)
         self.log = base / "sbatch.log"
         self.script = base / "submit.sh"

@@ -6,8 +6,15 @@ The qualification harness based on candidate `12839f656e53b00a3327384f2cb4fc1be4
 had a precision assertion that rejected its own production-TF32 triple and a
 checkpoint comparator that counted recording-only meters as a training-state
 change. Both harness defects have isolated fixes and focused CPU regression
-coverage on `codex/exp12-qualification-debug`. Job 22900932's artifacts have
-not been inspected here. A source-bound A100 rerun is still required before
+coverage on `codex/exp12-qualification-debug`. The continuation inspected and
+checksum-verified job 22900932's artifacts: its highest triple passed, while
+the TF32 triple stopped on the incorrect assertion at the first interaction.
+The repaired harness passes both 400-interaction CPU triples with probes and
+now rejects stale checkpoints and records failed arms explicitly. See
+[the CPU debugging report](exp12_qualification_job22900932_debug.md).
+The stable CPU suite passes 760 tests, with five HumanoidBench skips and no
+failed modules; unavailable dependency/Delta CPU-account coverage is explicit.
+A source-bound A100 rerun is still required before
 recording isolation can be qualified; the original computational
 non-invasiveness result remains blocked. Neither Exp1 nor Exp2 gains launch
 approval from this CPU work.

@@ -155,9 +155,16 @@ class DurableStateAndAtomicNpzTest(unittest.TestCase):
             (new / "agent_ckpt" / "d").write_bytes(b"y")
             events = []
             real_fsync = os.fsync
+            real_open = os.open
+            opened_paths = {}
+
+            def open_fd(path, flags, *args, **kwargs):
+                fd = real_open(path, flags, *args, **kwargs)
+                opened_paths[fd] = str(path)
+                return fd
 
             def fsync(fd):
-                events.append(("fsync", os.readlink(f"/proc/self/fd/{fd}")))
+                events.append(("fsync", opened_paths[fd]))
                 real_fsync(fd)
 
             real_write = state.atomic_write_text
@@ -166,12 +173,23 @@ class DurableStateAndAtomicNpzTest(unittest.TestCase):
                 events.append(("latest", str(path)))
                 real_write(path, text)
 
-            with mock.patch.object(state.os, "fsync", side_effect=fsync), \
-                    mock.patch.object(state, "atomic_write_text", side_effect=write):
+            with mock.patch.object(
+                state.os, "open", side_effect=open_fd
+            ), mock.patch.object(
+                state.os, "fsync", side_effect=fsync
+            ), mock.patch.object(
+                state, "atomic_write_text", side_effect=write
+            ):
                 state.commit_state_dir(root, new)
             latest_at = next(i for i, e in enumerate(events) if e[0] == "latest")
             flushed_before = {e[1] for e in events[:latest_at]}
-            for path in (new / "buffer.npz", new / "agent_ckpt" / "d", new, new / "agent_ckpt", root):
+            for path in (
+                new / "buffer.npz",
+                new / "agent_ckpt" / "d",
+                new,
+                new / "agent_ckpt",
+                root,
+            ):
                 self.assertIn(str(path), flushed_before)
             self.assertIn(("fsync", str(root)), events[latest_at:])
             self.assertEqual((root / "LATEST").read_text(), new.name)

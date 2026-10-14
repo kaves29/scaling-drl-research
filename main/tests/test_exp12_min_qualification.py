@@ -49,7 +49,19 @@ class SharedFilesystemClaimCheckTest(unittest.TestCase):
 
     def _copy(self, name):
         copy = self.tmp / name
-        subprocess.run(["cp", "-a", str(self.root), str(copy)], check=True)  # keeps the hard links
+        inodes = {}
+
+        def copy_file(source, destination):
+            stat = os.stat(source)
+            key = (stat.st_dev, stat.st_ino)
+            if key in inodes:
+                os.link(inodes[key], destination)
+                return destination
+            result = shutil.copy2(source, destination)
+            inodes[key] = destination
+            return result
+
+        shutil.copytree(self.root, copy, copy_function=copy_file)
         return copy
 
     def test_workers_run_without_jax(self):
@@ -119,13 +131,30 @@ class SharedFilesystemClaimCheckTest(unittest.TestCase):
 
     def test_different_filesystems_fail(self):
         copy = self._copy("mounts")
+        first_path = copy / "ready_0.json"
+        first = json.loads(first_path.read_text())
+        first["mount"] = first["mount"] or {
+            "fstype": "lustre",
+            "device": "shared",
+            "mount_point": "/",
+            "options": "",
+        }
+        first_path.write_text(json.dumps(first))
         path = copy / "ready_1.json"
         ready = json.loads(path.read_text())
-        ready["mount"] = {**(ready["mount"] or {}), "fstype": "tmpfs", "device": "other",
-                          "mount_point": "/", "options": ""}
+        ready["mount"] = {
+            **(ready["mount"] or {}),
+            "fstype": "tmpfs",
+            "device": "other",
+            "mount_point": "/",
+            "options": "",
+        }
         path.write_text(json.dumps(ready))
         report = claim_check.verify(copy, require_distinct_hosts=False)
-        self.assertIn("the two hosts mount the root from different filesystems", report["failures"])
+        self.assertIn(
+            "the two hosts mount the root from different filesystems",
+            report["failures"],
+        )
 
     def test_mismatched_item_counts_are_refused(self):
         root = self.tmp / "mismatch"
