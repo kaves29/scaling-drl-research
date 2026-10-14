@@ -32,7 +32,16 @@ printf 'frozen=%s harness=%s job=%s\n' "$FROZEN_COMMIT" "$HARNESS_COMMIT" "$SLUR
 sha256sum "$HARNESS_DIR/main/scripts/exp12_diagnostic_isolation.py" \
   "$HARNESS_DIR/main/scripts/sbatch_exp12_diagnostic_isolation.sh" > "$OUT_ROOT/harness.sha256"
 nvidia-smi --query-gpu=name,uuid,driver_version --format=csv > "$OUT_ROOT/gpu.csv"
-finish() { code=$?; trap - EXIT; printf '%s\n' "$code" > "$OUT_ROOT/exit_status.txt"; exit "$code"; }
+finish() {
+  code=$?
+  trap - EXIT
+  if [[ -d "$OUT_ROOT/evidence" ]]; then
+    (cd "$OUT_ROOT" && find evidence -type f -print0 | sort -z | xargs -0 -r sha256sum) \
+      > "$OUT_ROOT/evidence.sha256" || code=2
+  fi
+  printf '%s\n' "$code" > "$OUT_ROOT/exit_status.txt"
+  exit "$code"
+}
 trap finish EXIT
 python "$HARNESS_DIR/main/scripts/exp12_diagnostic_isolation.py" \
   --out "$OUT_ROOT/evidence" --frozen-commit "$FROZEN_COMMIT" \
