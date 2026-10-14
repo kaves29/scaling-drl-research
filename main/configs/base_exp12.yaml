@@ -2,7 +2,7 @@
 # Experiments 1 and 2 (.claude/methodology-exp1-exp2.md)
 ##################################################################################
 
-project_name: 'EchoCritic-exp12'
+project_name: 'echocritic_official_exp1'
 exp_name: 'exp12'
 seed: 1
 server: 'local'
