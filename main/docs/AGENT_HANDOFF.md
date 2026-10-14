@@ -1,5 +1,16 @@
 # Shared agent handoff
 
+## Recording-isolation qualification harness correction (14 October 2026)
+
+`codex/exp12-qualification-debug` builds on recording-isolation candidate
+`12839f656e53b00a3327384f2cb4fc1be47e73fe`. Resolve the branch tip from
+Git. Its harness now checks the selected precision in each triple and compares
+saved meters after excluding only the three declared recording-only metrics.
+The 12-interaction CPU triples pass at both precision settings. Job 22900932's
+Delta artifacts were unavailable in this workspace, so its exact failure and
+A100 qualification verdict remain unverified. No production source or scientific
+setting changed; no GPU submission is authorized by this handoff.
+
 ## Actor-diagnostic recording isolation candidate (14 October 2026)
 
 Codex's isolated `codex/exp12-recording-isolation` branch starts at frozen

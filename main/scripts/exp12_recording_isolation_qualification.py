@@ -27,6 +27,8 @@ import numpy as np
 STEPS = 400
 ARMS = (("off_a", False), ("on", True), ("off_b", False))
 EXCLUDED_META = ("wandb_run_id", "metrics_rows", "actor_diagnostics")
+RECORDING_METER_KEYS = frozenset(("train/policy_kl", "train/actor_saturation",
+                                  "train/actor_gnorm_std"))
 
 
 def sha(path):
@@ -35,6 +37,11 @@ def sha(path):
 
 def git_head(path):
     return subprocess.check_output(["git", "-C", str(path), "rev-parse", "HEAD"], text=True).strip()
+
+
+def require_a100_backend():
+    if jax.default_backend() != "gpu" or "A100" not in jax.devices()[0].device_kind:
+        raise ValueError("A100 GPU backend required")
 
 
 def _digest(value):
@@ -133,6 +140,21 @@ def agent_deviations(left, right):
             "differing_leaf_count": len(values), "largest_leaves": values[:10]}
 
 
+def checkpoint_differences(left, right):
+    """Compare complete state while excluding only declared recording-only meters."""
+    from experiments.exp12.state import _deep_equal, load_meta, state_differences
+
+    names = state_differences(left, right, ignore_meta=(*EXCLUDED_META, "meters"))
+    left_meters, right_meters = load_meta(left)["meters"], load_meta(right)["meters"]
+    for key in sorted(left_meters.keys() | right_meters.keys()):
+        if key not in RECORDING_METER_KEYS and (
+            key not in left_meters or key not in right_meters
+            or not _deep_equal(left_meters[key], right_meters[key])
+        ):
+            names.append(f"meta:meters/{key}")
+    return names
+
+
 def compare(root, precision="highest"):
     rows = {}
     for name, _ in ARMS:
@@ -150,14 +172,14 @@ def compare(root, precision="highest"):
                 break
         pairs[label] = {"first_divergence": first,
                         "final_components": differences(rows[a][-1], rows[b][-1])}
-    from experiments.exp12.state import latest_state_dir, state_differences
+    from experiments.exp12.state import latest_state_dir
 
     for label, a, b in (("off_off", "off_a", "off_b"), ("on_off", "on", "off_a")):
         a_state = latest_state_dir(root / a / "state")
         b_state = latest_state_dir(root / b / "state")
         if a_state is None or b_state is None:
             raise ValueError(f"{label}: missing complete final state")
-        names = state_differences(a_state, b_state, ignore_meta=EXCLUDED_META)
+        names = checkpoint_differences(a_state, b_state)
         pairs[label]["complete_checkpoint_differences"] = {
             "training": [n for n in names if n.startswith("agent:")],
             "ancillary": [n for n in names if not n.startswith("agent:")],
@@ -194,8 +216,7 @@ def main():
     harness_dir = Path(__file__).resolve().parents[2]
     if git_head(source_dir) != args.source_commit or git_head(harness_dir) != args.harness_commit:
         raise ValueError("source revision mismatch")
-    if jax.default_backend() != "gpu" or "A100" not in jax.devices()[0].device_kind:
-        raise ValueError("A100 GPU backend required")
+    require_a100_backend()
     args.out.mkdir(parents=True, exist_ok=False)
     receipt = {"source_commit": args.source_commit, "harness_commit": args.harness_commit,
                "harness_sha256": sha(__file__), "gpu": jax.devices()[0].device_kind,
@@ -212,6 +233,7 @@ def main():
     from tests.exp12_helpers import CONFIG_PATH, patch_wandb, tiny_overrides
 
     original_train = Exp12Trainer.train
+    expected_precision = "highest" if precision == "highest" else "tensorfloat32"
     for name, enabled in arms:
         arm_dir = args.out / name
         arm_dir.mkdir()
@@ -222,7 +244,7 @@ def main():
                 def observed_step(trainer):
                     if after_step is not None:
                         after_step(trainer)
-                    if jax.config.jax_default_matmul_precision != "highest":
+                    if jax.config.jax_default_matmul_precision != expected_precision:
                         raise ValueError("precision changed during the training run")
                     stream.write(json.dumps(fingerprint(trainer), sort_keys=True) + "\n")
                     stream.flush()

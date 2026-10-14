@@ -1,5 +1,17 @@
 # Exp1/Exp2 scientific and validation status
 
+## Recording-isolation qualification (14 October 2026)
+
+The qualification harness based on candidate `12839f656e53b00a3327384f2cb4fc1be47e73fe`
+had a precision assertion that rejected its own production-TF32 triple and a
+checkpoint comparator that counted recording-only meters as a training-state
+change. Both harness defects have isolated fixes and focused CPU regression
+coverage on `codex/exp12-qualification-debug`. Job 22900932's artifacts have
+not been inspected here. A source-bound A100 rerun is still required before
+recording isolation can be qualified; the original computational
+non-invasiveness result remains blocked. Neither Exp1 nor Exp2 gains launch
+approval from this CPU work.
+
 ## Actor diagnostics and numerical isolation (14 October 2026)
 
 Job 22897269 on frozen `087feab341b9be1f377697668f2d1c750ec0467f`
