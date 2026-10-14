@@ -1,11 +1,14 @@
 """Phase 5: Exp 1/2 actor diagnostics I1-I4: known answers, isolation from training, persistence."""
 
 import os
+import random
 import shutil
 import sys
 import tempfile
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
+from unittest import mock
 
 import gymnasium as gym
 import jax
@@ -17,7 +20,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from exp12_helpers import (CONFIG_PATH, check_gpu_tolerance, compose, gpu_mode, load_agent_tree,  # noqa: E402
                            max_relative_deviation, on_gpu, patch_wandb, precision, record_numerics,
                            state_differences, tiny_overrides)
-from experiments.exp12.diagnostics import KL_STREAM, ActorDiagnostics  # noqa: E402
+from experiments.exp12.diagnostics import (  # noqa: E402
+    KL_STREAM, ActorDiagnostics, DiagnosticPendingUpdateMetrics,
+)
 from experiments.exp12.state import latest_state_dir, load_meta  # noqa: E402
 
 OBS, ACT, N = 6, 3, 32
@@ -224,6 +229,152 @@ class ReferenceBatchTest(unittest.TestCase):
         np.testing.assert_array_equal(second, np.asarray(t.agent._normalize(t.buffer._observations[idx]), np.float32))
         self.assertTrue(all(np.array_equal(a, b) for a, b in zip(np_state, np.random.get_state())))
         t.close()
+
+
+class RecordingIsolationTest(unittest.TestCase):
+    """The Exp1/2 switch controls host recording after one shared device program."""
+
+    @staticmethod
+    def _kwargs(enabled, extra=()):
+        cfg = compose(tiny_overrides(extra=[f"diagnostics.enabled={str(enabled).lower()}",
+                                             *extra]))
+        obs = np.arange(30 * OBS, dtype=np.float32).reshape(30, OBS)
+        trainer = SimpleNamespace(
+            interaction_step=10,
+            buffer=SimpleNamespace(_num_in_buffer=len(obs), _observations=obs),
+            agent=SimpleNamespace(),
+        )
+        diagnostics = ActorDiagnostics(cfg)
+        return diagnostics.update_kwargs(trainer), diagnostics
+
+    def test_recording_modes_supply_identical_compiled_arguments_and_updates(self):
+        from scale_rl.agents.sac.sac_agent import _update_sac_networks_scan
+
+        on_kwargs, _ = self._kwargs(True)
+        off_kwargs, _ = self._kwargs(False)
+        self.assertEqual(on_kwargs["saturation_threshold"], off_kwargs["saturation_threshold"])
+        np.testing.assert_array_equal(on_kwargs["kl_ref_observations"],
+                                      off_kwargs["kl_ref_observations"])
+
+        on, off = (getattr(a, "agent", a) for a in (_agent(), _agent()))
+        batches = {key: jnp.asarray(value) for key, value in _batches(4).items()}
+        churn_ref = {key: value[0] for key, value in batches.items()}
+
+        def lowered(agent, kwargs):
+            c = agent._cfg
+            return _update_sac_networks_scan.lower(
+                agent._rng, agent._actor, agent._critic, agent._target_critic,
+                agent._temperature, batches, first_update_step=0, gamma=c.gamma,
+                n_step=c.n_step, critic_use_cdq=c.critic_use_cdq,
+                target_tau=c.target_tau, temp_target_entropy=c.temp_target_entropy,
+                churn_ref_batch=churn_ref, actor_grad_cosine_every=2,
+                **kwargs).as_text()
+
+        with jax.default_matmul_precision("highest"):
+            self.assertEqual(lowered(on, on_kwargs), lowered(off, off_kwargs))
+            on_info = on.update_many(0, _batches(4), 2, **on_kwargs)
+            off_info = off.update_many(0, _batches(4), 2, **off_kwargs)
+        self.assertEqual(set(on_info), set(off_info))
+        for key in on_info:
+            np.testing.assert_array_equal(np.asarray(on_info[key]), np.asarray(off_info[key]),
+                                          err_msg=key)
+        for left, right in zip(jax.tree_util.tree_leaves((on._actor, on._critic,
+                             on._target_critic, on._temperature, on._rng)),
+                               jax.tree_util.tree_leaves((off._actor, off._critic,
+                             off._target_critic, off._temperature, off._rng))):
+            np.testing.assert_array_equal(np.asarray(left), np.asarray(right))
+
+    def test_recording_off_transfers_diagnostics_then_filters_host_logging(self):
+        from scale_rl.common.logger import WandbTrainerLogger
+
+        outputs = {}
+        for enabled in (True, False):
+            cfg = compose(tiny_overrides(extra=[f"diagnostics.enabled={str(enabled).lower()}"]))
+            logger = WandbTrainerLogger.__new__(WandbTrainerLogger)
+            logger.reset()
+            diagnostics = ActorDiagnostics(cfg)
+            pending = DiagnosticPendingUpdateMetrics(logger, 2, diagnostics)
+            info = {"train/actor_grad_cosine": jnp.array([0.1, 0.2]),
+                    "train/actor_gnorm": jnp.array([1.0, 2.0]),
+                    "train/policy_kl": jnp.array([0.3, 0.5]),
+                    "train/actor_saturation": jnp.array([0.25, 0.75])}
+            pending.add(0, info)
+            with mock.patch("jax.device_get", wraps=jax.device_get) as transfer:
+                pending.flush()
+            self.assertEqual(transfer.call_count, 1)
+            self.assertEqual(set(transfer.call_args.args[0]), set(info))
+            self.assertIn("train/policy_kl", info)
+            self.assertIn("train/actor_saturation", info)
+            outputs[enabled] = logger.average_meter_dict.averages()
+            self.assertEqual(pending._pending, [])
+        self.assertEqual(outputs[False]["train/actor_gnorm"], outputs[True]["train/actor_gnorm"])
+        for key in ("train/policy_kl", "train/actor_saturation"):
+            self.assertIn(key, outputs[True])
+            self.assertNotIn(key, outputs[False])
+        self.assertAlmostEqual(outputs[True]["train/policy_kl"], 0.4)
+        self.assertAlmostEqual(outputs[True]["train/actor_saturation"], 0.5)
+
+    def test_reference_sampling_and_global_rng_match_for_recording_modes(self):
+        saved = np.random.get_state()
+        on, _ = self._kwargs(True)
+        off, _ = self._kwargs(False)
+        np.testing.assert_array_equal(on["kl_ref_observations"], off["kl_ref_observations"])
+        self.assertTrue(all(np.array_equal(a, b) for a, b in zip(saved, np.random.get_state())))
+
+    def test_reference_inputs_match_for_each_approved_critic_architecture(self):
+        for depth, width in ((2, 512), (4, 1024), (4, 1536)):
+            with self.subTest(depth=depth, width=width):
+                extra = (f"critic_num_blocks={depth}", f"critic_hidden_dim={width}")
+                on, _ = self._kwargs(True, extra)
+                off, _ = self._kwargs(False, extra)
+                self.assertEqual(on["saturation_threshold"], off["saturation_threshold"])
+                np.testing.assert_array_equal(on["kl_ref_observations"],
+                                              off["kl_ref_observations"])
+                self.assertEqual(on["kl_ref_observations"].dtype, np.float32)
+
+    def test_recording_modes_resume_and_preserve_complete_training_state(self):
+        from experiments.exp12.state import state_differences
+        from experiments.exp12.trainer import Exp12Trainer
+
+        patchers = patch_wandb()
+        try:
+            with tempfile.TemporaryDirectory() as directory:
+                finals = {}
+                for enabled in (True, False):
+                    cfg = compose(tiny_overrides(steps=400, extra=[
+                        f"diagnostics.enabled={str(enabled).lower()}"]))
+
+                    def new_trainer(name):
+                        np.random.seed(cfg.seed)
+                        random.seed(cfg.seed)
+                        return Exp12Trainer(cfg, os.path.join(directory, name))
+
+                    tag = "on" if enabled else "off"
+                    straight = new_trainer(tag + "_straight")
+                    straight.start()
+                    straight.train(60)
+                    expected = straight.save(Path(directory) / (tag + "_expected"))
+                    straight.close()
+
+                    interrupted = new_trainer(tag + "_interrupted")
+                    interrupted.start()
+                    interrupted.train(33)
+                    middle = interrupted.save(Path(directory) / (tag + "_middle"))
+                    interrupted.close()
+                    resumed = new_trainer(tag + "_resumed")
+                    resumed.restore(middle)
+                    resumed.train(60)
+                    actual = resumed.save(Path(directory) / (tag + "_actual"))
+                    resumed.close()
+                    self.assertEqual(state_differences(expected, actual), [])
+                    finals[enabled] = expected
+
+                self.assertEqual(state_differences(
+                    finals[True], finals[False],
+                    ignore_meta=("wandb_run_id", "metrics_rows", "actor_diagnostics")), [])
+        finally:
+            for patcher in patchers:
+                patcher.stop()
 
 
 class TrainingRunTest(unittest.TestCase):

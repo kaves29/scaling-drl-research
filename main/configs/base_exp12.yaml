@@ -92,7 +92,7 @@ checks:
   check1_tolerance_eps: 64   # PROPOSED (pending lead approval): |dQ|, |d dQ/da| <= 64 * eps_f32 * scale
 
 diagnostics:                 # Exp 1/2 actor diagnostics I1-I4 (experiments/exp12/diagnostics.py)
-  enabled: true
+  enabled: true              # record metrics; Exp1/2 compute them in either recording mode
   kl_reference_size: 256     # I1: states in the per-window KL reference batch
   saturation_threshold: 0.99 # I3: |a| above this counts as saturated
 

@@ -20,9 +20,11 @@ import numpy as np
 from experiments.angle_1 import PendingUpdateMetrics
 
 KL_STREAM = 0x4B4C5246  # "KLRF"
+RECORDING_ONLY_KEYS = frozenset(("train/policy_kl", "train/actor_saturation"))
 
 
 class ActorDiagnostics:
+    """Exp1/2 diagnostics; enabled selects recording, not compiled computation."""
     def __init__(self, cfg):
         d = cfg.diagnostics
         self.enabled = bool(d.enabled)
@@ -35,9 +37,7 @@ class ActorDiagnostics:
         self.gnorm: List[float] = []
 
     def update_kwargs(self, trainer) -> Dict:
-        """Extra arguments for agent.update_many at this interaction step."""
-        if not self.enabled:
-            return {}
+        """The same compiled diagnostic inputs for recording-on and recording-off runs."""
         window = (trainer.interaction_step - 1) // self.window_steps
         if window != self.window:
             rng = np.random.default_rng([self.seed, KL_STREAM, window])
@@ -67,7 +67,7 @@ class ActorDiagnostics:
 
 
 class DiagnosticPendingUpdateMetrics(PendingUpdateMetrics):
-    """PendingUpdateMetrics that also hands the host copy of each flushed update to the diagnostics."""
+    """Materialize every update metric, then apply the recording switch on host."""
 
     def __init__(self, logger, actor_grad_cosine_every: int, diagnostics: ActorDiagnostics):
         super().__init__(logger, actor_grad_cosine_every)
@@ -77,4 +77,11 @@ class DiagnosticPendingUpdateMetrics(PendingUpdateMetrics):
         host_infos = self._materialize()
         for info in host_infos:
             self._diagnostics.collect(info)
+        if not self._diagnostics.enabled:
+            # Retain the full transferred payload; only the logger input changes.
+            for info in host_infos:
+                if not RECORDING_ONLY_KEYS <= info.keys():
+                    raise ValueError("recording-off update lacks actor diagnostic outputs")
+            host_infos = [{key: value for key, value in info.items()
+                           if key not in RECORDING_ONLY_KEYS} for info in host_infos]
         self._replay(host_infos)

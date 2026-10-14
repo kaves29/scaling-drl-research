@@ -1,5 +1,16 @@
 # Exp1/Exp2 scientific and validation status
 
+## Actor diagnostics and numerical isolation (14 October 2026)
+
+Job 22897269 on frozen `087feab341b9be1f377697668f2d1c750ec0467f`
+showed identical genuine OFF/OFF runs and ON/OFF training divergence starting
+at interaction 10. A separate recording-isolation candidate computes the same
+actor diagnostics in both Exp1/Exp2 modes and filters OFF outputs only after
+materialization. This preserves production ON calculations but changes OFF to
+mean *recording disabled*. The historical computational non-invasiveness gate
+remains unresolved; no numerical tolerance, GPU pass, or pilot approval is
+implied.
+
 ## Amendment (ab): independent launch gates (13 October 2026)
 
 The owner approved conditional separation: Exp1 may launch after its own

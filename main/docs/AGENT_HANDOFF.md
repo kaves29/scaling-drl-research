@@ -1,5 +1,15 @@
 # Shared agent handoff
 
+## Actor-diagnostic recording isolation candidate (14 October 2026)
+
+Codex's isolated `codex/exp12-recording-isolation` branch starts at frozen
+`087feab341b9be1f377697668f2d1c750ec0467f`. The Exp1/Exp2 recording
+switch now leaves compiled KL/saturation computation in both modes and filters
+OFF metrics only after host transfer. Resolve the branch tip from Git. The
+historical true-no-diagnostics A100 result from job 22897269 remains BLOCKED;
+recording isolation does not establish computational non-invasiveness. No GPU
+qualification or production submission is authorized by this candidate.
+
 ## Conditional Exp1/Exp2 launch approval (13 October 2026)
 
 Owner-selected amendment (ab) is implemented on the isolated
