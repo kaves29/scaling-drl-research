@@ -36,6 +36,8 @@ from scripts.exp12_launch_plan import (  # noqa: E402
 
 WEIGHTS = {"D2W512": 1 / 7, "D4W1024": 1 / 4, "D4W1536": 1 / 2}
 CEILINGS = {"D2W512": 7, "D4W1024": 4, "D4W1536": 2}
+TEN_TARGET_WEIGHTS = {"D2W512": 1 / 6, "D4W1024": 1 / 4, "D4W1536": 1 / 2}
+TEN_TARGET_CEILINGS = {"D2W512": 6, "D4W1024": 4, "D4W1536": 2}
 ALLOCATIONS = {"A": (1, 30 * 60), "B": (2, 48 * 60)}
 # Every environment group of the grid (generate_manifest.EXP12_BUDGETS), dmc_medium included.
 GROUPS = ("dmc_hard", "dmc_medium", "myosuite_simba", "humanoid_bench")
@@ -239,9 +241,12 @@ def validate_approval(approval, queue_root, allocation):
         resources.get("memory_gb_per_node"), "allocated host RAM per node"
     )
     admission = approval.get("admission", {})
+    if admission.get("packing", "legacy") not in ("legacy", "ten_target"):
+        raise ValueError("unknown packing version")
     pack_limit = admission.get("max_processes_per_gpu", 1)
-    if type(pack_limit) is not int or not 1 <= pack_limit <= max(CEILINGS.values()):
-        raise ValueError("approved GPU process cap must be an integer from 1 to 7")
+    max_pack = 6 if admission.get("packing") == "ten_target" else 7
+    if type(pack_limit) is not int or not 1 <= pack_limit <= max_pack:
+        raise ValueError(f"approved GPU process cap must be an integer from 1 to {max_pack}")
     margin_gpu = _positive_int(admission.get("gpu_headroom_gb"), "GPU headroom")
     margin_host = _positive_int(admission.get("host_headroom_gb"), "host headroom")
     stop = _positive_int(admission.get("stop_margin_minutes"), "stop margin")
@@ -1152,6 +1157,13 @@ def can_admit(
     validating=(),
 ):
     """Check nominal packing AND live CPU/RAM/VRAM/throughput before each start."""
+    packing = admission.get("packing", "legacy")
+    if packing == "legacy":
+        weights, ceilings = WEIGHTS, CEILINGS
+    elif packing == "ten_target":
+        weights, ceilings = TEN_TARGET_WEIGHTS, TEN_TARGET_CEILINGS
+    else:
+        raise ValueError(f"unknown packing version {packing}")
     row = item["row"]
     arch = row["architecture"]
     profile = admission["architectures"][arch]
@@ -1186,14 +1198,14 @@ def can_admit(
     if len(same_gpu) >= admission.get("max_processes_per_gpu", 1):
         return False
     if (
-        sum(WEIGHTS[job["item"]["row"]["architecture"]] for job in same_gpu)
-        + WEIGHTS[arch]
+        sum(weights[job["item"]["row"]["architecture"]] for job in same_gpu)
+        + weights[arch]
         > 1 + 1e-12
     ):
         return False
     if (
         sum(job["item"]["row"]["architecture"] == arch for job in same_gpu)
-        >= CEILINGS[arch]
+        >= ceilings[arch]
     ):
         return False
     # Checkpoint-based rates are slow to become available, by design. Starting

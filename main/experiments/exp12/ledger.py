@@ -44,6 +44,38 @@ TWIN_CHECK_COLUMNS = [
 CHECK_COLUMNS = LEGACY_CHECK_COLUMNS + TWIN_CHECK_COLUMNS
 
 
+def check_columns(rounds: int, twin: bool = True) -> List[str]:
+    """Keep the historical five-round schema; retain all ten v2 rounds."""
+    if rounds not in (5, 10):
+        raise LedgerSchemaError(f"unsupported probe round count {rounds}")
+    if rounds == 5:
+        return CHECK_COLUMNS if twin else LEGACY_CHECK_COLUMNS
+    base = ["run_key", "experiment", "run_role", "architecture", "environment", "seed", "check_index",
+            "interaction_step", "budget_fraction",
+            *[f"score_current_r{r}" for r in range(rounds)],
+            *[f"score_fresh_r{r}" for r in range(rounds)],
+            *[f"loss_r{r}" for r in range(rounds)],
+            "score_current_iqm", "score_fresh_iqm", "loss_iqm", "ci_low", "ci_high", "triggered", "valid"]
+    if twin:
+        base += [*[f"score_{name}_q{q}_r{r}" for q in (1, 2)
+                    for name in ("current", "fresh") for r in range(rounds)],
+                 *[f"loss_q{q}_r{r}" for q in (1, 2) for r in range(rounds)],
+                 "loss_q1_iqm", "loss_q2_iqm"]
+    return base
+
+
+def recorded_rounds(records: List[Dict]) -> int:
+    rounds = {int(k.removeprefix("score_fresh_r")) + 1
+              for row in records for k in row if k.startswith("score_fresh_r")
+              and k.removeprefix("score_fresh_r").isdigit()}
+    if not rounds:
+        return 5  # Historical synthetic/partial five-round records had no per-round fields.
+    count = max(rounds)
+    if rounds != set(range(1, count + 1)):
+        raise LedgerSchemaError("probe round columns are incomplete")
+    return count
+
+
 class LedgerSchemaError(ValueError):
     pass
 
@@ -58,12 +90,23 @@ def write_run(identity: Dict, records: List[Dict], f_star: Optional[Dict], statu
     """identity: run_key, run_role, architecture, environment, seed, budget_env_steps,
     num_interaction_steps, num_checks, code_commit."""
     out = ledger_root(results_root) / identity["run_key"]
-    atomic_write_text(out / "source.json", json.dumps({"run_dir": str(Path(probe_dir).resolve().parent)}))
     n, checks = identity["num_interaction_steps"], identity["num_checks"]
     base = {k: identity[k] for k in ("run_key", "run_role", "architecture", "environment", "seed")}
     base["experiment"] = EXPERIMENT
     rows = [{**base, **r, "budget_fraction": r["interaction_step"] / n} for r in records]
-    checks_df = pd.DataFrame(rows).reindex(columns=CHECK_COLUMNS)
+    rounds = recorded_rounds(records)
+    if identity.get("probe_rounds") == 10 and rounds != 10:
+        raise LedgerSchemaError("ten-round run has missing function-level evidence")
+    if identity.get("probe_rounds") == 10:
+        for row in records:
+            fields = [f"score_fresh_r{r}" for r in range(10)]
+            if row["check_index"]:
+                fields += [f"score_current_r{r}" for r in range(10)]
+                fields += [f"loss_r{r}" for r in range(10)]
+            if any(field not in row for field in fields):
+                raise LedgerSchemaError("ten-round check has missing function-level evidence")
+    atomic_write_text(out / "source.json", json.dumps({"run_dir": str(Path(probe_dir).resolve().parent)}))
+    checks_df = pd.DataFrame(rows).reindex(columns=check_columns(rounds))
     by_check = {r["check_index"]: r for r in records}
     run = {
         **base,
@@ -111,13 +154,18 @@ def load(results_root: Optional[str] = None, include_dev: bool = False,
     for run_dir in sorted(p for p in root.glob("*") if p.is_dir()):
         run = pd.read_csv(run_dir / "run.csv")
         chk = pd.read_csv(run_dir / "checks.csv")
-        for df, cols, name in ((run, RUN_COLUMNS, "run.csv"), (chk, CHECK_COLUMNS, "checks.csv")):
-            if list(df.columns) != cols and not (name == "checks.csv" and list(df.columns) == LEGACY_CHECK_COLUMNS):
-                raise LedgerSchemaError(f"{run_dir / name}: columns {list(df.columns)} != {cols}")
+        if list(run.columns) != RUN_COLUMNS:
+            raise LedgerSchemaError(f"{run_dir / 'run.csv'}: unexpected columns")
+        schemas = (check_columns(5), check_columns(5, twin=False),
+                   check_columns(10), check_columns(10, twin=False))
+        if list(chk.columns) not in schemas:
+            raise LedgerSchemaError(f"{run_dir / 'checks.csv'}: unexpected columns")
         if (run.experiment != EXPERIMENT).any():
             raise LedgerSchemaError(f"{run_dir}: not an {EXPERIMENT} run")
         runs.append(run)
-        checks.append(chk.reindex(columns=CHECK_COLUMNS))
+        target_columns = check_columns(10) if list(chk.columns) in (
+            check_columns(10), check_columns(10, twin=False)) else CHECK_COLUMNS
+        checks.append(chk.reindex(columns=target_columns))
     if not runs:
         return pd.DataFrame(columns=RUN_COLUMNS), pd.DataFrame(columns=CHECK_COLUMNS)
     runs, checks = pd.concat(runs, ignore_index=True), pd.concat(checks, ignore_index=True)

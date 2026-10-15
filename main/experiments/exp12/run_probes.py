@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Dict, List
 
 import numpy as np
+import wandb
 import orbax.checkpoint
 import pandas as pd
 
@@ -51,6 +52,8 @@ class RunProbes:
         self.check_every = checks[0]
         self.check_index = {step: k for k, step in enumerate(checks, 1)}
         self.fresh = None
+        if self.cfg.rounds == 10:
+            wandb.define_metric("probe/*", step_metric="probe/interaction_step")
         if self.fresh_path.exists():
             self.fresh = orbax.checkpoint.PyTreeCheckpointer().restore(str(self.fresh_path))["params"]
 
@@ -86,6 +89,12 @@ class RunProbes:
             "score_fresh_iqm": iqm(score) if np.all(np.isfinite(score)) else float("nan"),
             **per_network_fields(result, fresh_only=True),
         })
+        if self.cfg.rounds == 10:
+            wandb.log({"probe/interaction_step": int(trainer.interaction_step),
+                       "probe/env_step": int(trainer.interaction_step * trainer.cfg.action_repeat),
+                       "probe/check_index": 0,
+                       "probe/score_fresh_iqm": float(self.records[-1]["score_fresh_iqm"]),
+                       **{f"probe/score_fresh_r{r}": float(v) for r, v in enumerate(score)}})
 
     def maybe_check(self, trainer) -> None:
         k = self.check_index.get(trainer.interaction_step)
@@ -122,6 +131,14 @@ class RunProbes:
             row["triggered"] = True  # TEST-ONLY hook (testing.force_trigger_check, run_role=dev only)
             row["forced"] = True
         self.records.append(row)
+        if self.cfg.rounds == 10:
+            wandb.log({"probe/interaction_step": int(row["interaction_step"]),
+                       "probe/env_step": int(row["interaction_step"] * self.trainer.cfg.action_repeat),
+                       "probe/check_index": int(k), "probe/loss_iqm": float(row["loss_iqm"]),
+                       "probe/ci_low": float(low), "probe/ci_high": float(high),
+                       "probe/triggered": int(row["triggered"]),
+                       **{f"probe/{name}_r{r}": float(row[f"{name}_r{r}"])
+                          for name in ("score_current", "score_fresh", "loss") for r in range(10)}})
         if self.f_star is None:
             self.trainer.extra_state["f_star"] = f_star(
                 self.records, self.cfg.checks, tc.consecutive_checks, tc.eligible_fraction

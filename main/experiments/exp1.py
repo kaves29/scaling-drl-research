@@ -121,6 +121,7 @@ def run(args: dict) -> None:
         "run_key": identity.run_key, "run_role": cfg.run_role, "architecture": identity.architecture,
         "environment": identity.environment, "seed": identity.seed, "budget_env_steps": int(cfg.num_env_steps),
         "num_interaction_steps": num_steps, "num_checks": int(cfg.probe.checks),
+        "probe_rounds": int(cfg.probe.rounds),
         "code_commit": code_version()["commit"],
     }
     forks_here = bool(cfg.fork.enabled) and identity.architecture in list(cfg.fork.architectures)

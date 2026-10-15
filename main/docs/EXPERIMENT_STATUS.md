@@ -1,5 +1,16 @@
 # Exp1/Exp2 scientific and validation status
 
+## Ten-target CPU candidate (15 October 2026)
+
+The versioned ten-function Method C candidate has CPU probe/trigger,
+checkpoint/recovery, artifact, W&B-mock and scheduler-admission tests on an
+isolated branch. The original five-function pilot remains unchanged and its
+archived Myo curve hashes match. CPU tests establish implementation wiring,
+not interval coverage, fresh/fresh calibration, trained-critic sensitivity,
+full-width performance or official-study qualification. The 96-parent
+source-bound plan/validator and GPU packing evidence are still required.
+See [the focused report](method_c_ten_cpu_qualification.md).
+
 ## Proposed Method C v2 (15 October 2026)
 
 Ten randomized targets and a 96-parent study are a **draft**, separate from

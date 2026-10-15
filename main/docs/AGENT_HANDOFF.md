@@ -1,5 +1,17 @@
 # Shared agent handoff
 
+## Ten-target Method C CPU qualification (15 October 2026)
+
+`codex/method-c-ten-cpu-qualification` extends the isolated design branch;
+resolve the final exact SHA from Git. It adds a versioned ten-target config,
+ten-point IQM/bootstrap dispatch, ten-round artifact preservation, focused
+W&B probe logging, and an opt-in 6/4/2 admission mode. The five-target pilot
+source/configuration remains unchanged. See
+[the CPU qualification report](method_c_ten_cpu_qualification.md). Full-width
+pilot-state controls remain blocked by missing uploaded checkpoints/replay;
+the 96-parent launcher/validator and A100 resource qualification are not yet
+complete. No GPU job was submitted.
+
 ## Ten-target Method C exploratory design (15 October 2026)
 
 `codex/method-c-ten-function-design` is based on five-function controls commit
