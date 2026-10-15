@@ -1,5 +1,17 @@
 # Shared agent handoff
 
+## Ten-target Method C exploratory design (15 October 2026)
+
+`codex/method-c-ten-function-design` is based on five-function controls commit
+`539ad4d1362e16fef48d739075dc5ffb88668793`; resolve its current head
+from Git. `method_c_v2_ten_target_design.md` records the unactivated IQM,
+bootstrap, matched-control plan, 96-run matrix, and cost limits. The uploaded
+pilot archive supports read-only curve analysis but lacks full state/replay
+artifacts; no checkpoint-backed control or GPU validation was claimed. The
+original pilot commit `f8619dd5f494399d9febc79fc9092010234c714d`
+remains unchanged. The owner must review the ten-point IQM and calibration
+before official use. No GPU job was submitted.
+
 ## Recording-isolation qualification harness correction (14 October 2026)
 
 `codex/exp12-qualification-debug` builds on recording-isolation candidate

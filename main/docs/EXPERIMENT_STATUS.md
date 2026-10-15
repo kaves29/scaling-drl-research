@@ -1,5 +1,19 @@
 # Exp1/Exp2 scientific and validation status
 
+## Proposed Method C v2 (15 October 2026)
+
+Ten randomized targets and a 96-parent study are a **draft**, separate from
+the archived five-target pilot. The isolated ten-point empirical IQM and
+paired bootstrap have focused CPU reference tests. Archived Myo Key Turn
+curves were read without altering results; complete 50k/500k checkpoint,
+replay and normalization artifacts were not in the upload, so fresh/fresh,
+checkpoint crossover, shared-target, and extended-fitting outcomes remain
+unverified. No 95% bootstrap coverage, longitudinal false-trigger rate, or
+trained-state sensitivity is established. See
+[the versioned design](method_c_v2_ten_target_design.md). The official
+production methodology/configuration was not changed; GPU work and protocol
+freeze require owner approval.
+
 ## Recording-isolation qualification (14 October 2026)
 
 The qualification harness based on candidate `12839f656e53b00a3327384f2cb4fc1be47e73fe`

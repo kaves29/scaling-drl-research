@@ -37,8 +37,10 @@ from experiments.exp12.probe import (
     probe_key,
     probe_rng,
     probe_round,
+    paired_loss,
     summarize,
 )
+from scripts.method_c_ten_reference import VERSION as TEN_VERSION, bootstrap_iqm10, target_round_key
 from experiments.exp12.run_probes import original_critic_def
 from experiments.exp12.state import latest_state_dir, load_meta
 from experiments.exp12.trigger import bootstrap_interval, triggered
@@ -290,6 +292,118 @@ def run_crossover(run_dir: Path, out: Path, cfg, states: dict, fresh):
         }, arrays)
 
 
+def run_shared_targets(run_dir: Path, out: Path, cfg, states: dict, fresh):
+    """Compare the official own-offset pair with an identical-target pair.
+
+    The shared target uses the trained critic's original offset; therefore the
+    trained fit itself should reproduce its original saved curve bitwise.
+    This remains exploratory and cannot replace a production check.
+    """
+    network_def, tx = original_critic_def(cfg), critic_optimizer(cfg.agent)
+    for point, (state, current, raw_obs, actions, normalizer) in states.items():
+        check_index = 2 if point == "early" else 20
+        original_path = run_dir / "probes" / f"check_{check_index:02d}.npz"
+        if not original_path.exists():
+            raise FileNotFoundError(f"original probe evidence missing: {original_path}")
+        with np.load(original_path, allow_pickle=False) as original:
+            own_result = {arm: {field: original[f"{arm}_{field}"]
+                                for field in ("score", "offset")}
+                          for arm in ("current", "fresh")}
+        for anchor in ("current", "fresh", "mean"):
+            rounds, arrays = [], {}
+            for r in range(int(cfg.probe.rounds)):
+                obs, act = pool(raw_obs, actions, normalizer, int(cfg.seed), check_index, r,
+                                int(cfg.probe.pool_size))
+                result = jax.device_get(probe_round(network_def, {
+                    "current": (network_def, current), "fresh": (network_def, fresh),
+                }, tx, obs, act, probe_key(int(cfg.seed), check_index, r), probe_config(cfg),
+                    shared_offset=anchor))
+                rounds.append(result)
+                for arm, fields in result.items():
+                    for field, value in fields.items():
+                        arrays[f"round_{r}/{arm}_{field}"] = np.asarray(value)
+            combined = {arm: {field: np.stack([one[arm][field] for one in rounds])
+                              for field in rounds[0][arm]} for arm in rounds[0]}
+            reproduced = None
+            if anchor != "mean":
+                with np.load(original_path, allow_pickle=False) as original:
+                    reproduced = {field: (
+                        combined[anchor][field].dtype == original[f"{anchor}_{field}"].dtype
+                        and combined[anchor][field].tobytes() == original[f"{anchor}_{field}"].tobytes()
+                    ) for field in ("score", "losses", "final_loss", "offset", "b")}
+            same_offsets = bool(np.array_equal(combined["current"]["offset"],
+                                               combined["fresh"]["offset"]))
+            publish(out, f"shared_{point}_{anchor}", {
+                "pool_state": str(state), "check_index": check_index, "anchor": anchor,
+                "original_probe_file": str(original_path),
+                "original_probe_sha256": file_sha256(original_path),
+                "anchored_curve_bitwise_reproduced": reproduced,
+                "identical_numerical_targets": same_offsets,
+                "own_offset_fresh_minus_trained": (
+                    own_result["fresh"]["offset"] - own_result["current"]["offset"]
+                ).tolist(),
+                "own_target_decision": paired_decision(own_result, "current", "fresh",
+                                                        int(cfg.seed), check_index, cfg),
+                "shared_target_decision": paired_decision(combined, "current", "fresh",
+                                                           int(cfg.seed), check_index, cfg),
+                "exploratory_only": True,
+            }, arrays)
+
+
+def run_five_ten(run_dir: Path, out: Path, cfg, states: dict, fresh, independent_sets: int):
+    """Fit ten rounds once per set; reuse its first five for the old rule.
+
+    Set zero preserves the official five keys and replay streams. Each further
+    set has a disjoint round-index block and a separate bootstrap seed.
+    """
+    network_def, tx = original_critic_def(cfg), critic_optimizer(cfg.agent)
+    for point, (state, current, raw_obs, actions, normalizer) in states.items():
+        check_index = 2 if point == "early" else 20
+        original_path = run_dir / "probes" / f"check_{check_index:02d}.npz"
+        if not original_path.exists():
+            raise FileNotFoundError(f"original probe evidence missing: {original_path}")
+        for set_index in range(independent_sets):
+            rounds, arrays = [], {}
+            for r in range(10):
+                round_index = 10 * set_index + r
+                obs, act = pool(raw_obs, actions, normalizer, int(cfg.seed), check_index,
+                                round_index, int(cfg.probe.pool_size))
+                result = jax.device_get(probe_round(network_def, {
+                    "current": (network_def, current), "fresh": (network_def, fresh),
+                }, tx, obs, act, target_round_key(int(cfg.seed), check_index, set_index, r),
+                    probe_config(cfg)))
+                rounds.append(result)
+                for arm, fields in result.items():
+                    for field, value in fields.items():
+                        arrays[f"round_{r}/{arm}_{field}"] = np.asarray(value)
+            combined = {arm: {field: np.stack([one[arm][field] for one in rounds])
+                              for field in rounds[0][arm]} for arm in rounds[0]}
+            first_five = {arm: {field: values[:5] for field, values in fields.items()}
+                          for arm, fields in combined.items()}
+            bootstrap_seed = int(cfg.seed) + set_index * 10_000
+            old = paired_decision(first_five, "current", "fresh", bootstrap_seed, check_index, cfg)
+            new = bootstrap_iqm10(paired_loss(combined), bootstrap_seed, check_index)
+            original_replay = None
+            if set_index == 0:
+                with np.load(original_path, allow_pickle=False) as original:
+                    original_replay = {arm: {field: (
+                        first_five[arm][field].dtype == original[f"{arm}_{field}"].dtype
+                        and first_five[arm][field].tobytes() == original[f"{arm}_{field}"].tobytes()
+                    ) for field in ("score", "losses", "final_loss", "offset", "b")}
+                        for arm in ("current", "fresh")}
+            publish(out, f"five_ten_{point}_set{set_index}", {
+                "pool_state": str(state), "check_index": check_index, "set_index": set_index,
+                "target_round_indices": list(range(10 * set_index, 10 * (set_index + 1))),
+                "original_probe_file": str(original_path),
+                "original_probe_sha256": file_sha256(original_path),
+                "original_first_five_bitwise_replay": original_replay,
+                "five": old,
+                "ten": {**vars(new), "version": TEN_VERSION},
+                "five_and_ten_share_first_five_fits": True,
+                "exploratory_only": True,
+            }, arrays)
+
+
 def run_null(out: Path, cfg, states: dict, pairs: int, seed_base: int):
     network_def, tx = original_critic_def(cfg), critic_optimizer(cfg.agent)
     counts = {}
@@ -333,6 +447,55 @@ def run_null(out: Path, cfg, states: dict, pairs: int, seed_base: int):
             "exact_binomial_95_ci": exact_binomial_interval(count, pairs),
         } for direction, count in fires.items()}
     atomic_write_text(out / "null_summary.json", json.dumps(counts, indent=2, sort_keys=True))
+
+
+def run_null_five_ten(out: Path, cfg, states: dict, pairs: int, seed_base: int):
+    """Independent fresh pairs; each pair's first five fits feed both rules."""
+    network_def, tx = original_critic_def(cfg), critic_optimizer(cfg.agent)
+    counts = {}
+    for point, (state, _, raw_obs, actions, normalizer) in states.items():
+        check_index = 2 if point == "early" else 20
+        fires = {method: {direction: 0 for direction in ("a_as_current", "b_as_current")}
+                 for method in ("five", "ten")}
+        for pair_id in range(pairs):
+            seed = seed_base + pair_id
+            key = jax.random.fold_in(jax.random.PRNGKey(seed), STREAM)
+            a_key, b_key = jax.random.split(key)
+            rounds, arrays = [], {}
+            for r in range(10):
+                obs, act = pool(raw_obs, actions, normalizer, seed, check_index, r,
+                                int(cfg.probe.pool_size))
+                a = init_fresh(network_def, a_key, obs, act)
+                b = init_fresh(network_def, b_key, obs, act)
+                result = jax.device_get(probe_round(network_def, {
+                    "fresh_a": (network_def, a), "fresh_b": (network_def, b),
+                }, tx, obs, act, target_round_key(seed, check_index, 0, r), probe_config(cfg)))
+                rounds.append(result)
+                for arm, fields in result.items():
+                    for field, value in fields.items():
+                        arrays[f"round_{r}/{arm}_{field}"] = np.asarray(value)
+            combined = {arm: {field: np.stack([one[arm][field] for one in rounds])
+                              for field in rounds[0][arm]} for arm in rounds[0]}
+            first_five = {arm: {field: values[:5] for field, values in fields.items()}
+                          for arm, fields in combined.items()}
+            decisions = {}
+            for direction, current, fresh in (("a_as_current", "fresh_a", "fresh_b"),
+                                               ("b_as_current", "fresh_b", "fresh_a")):
+                old = paired_decision(first_five, current, fresh, seed, check_index, cfg)
+                new = bootstrap_iqm10(paired_loss(combined, current, fresh), seed, check_index)
+                fires["five"][direction] += int(old["fires"])
+                fires["ten"][direction] += int(new.fires)
+                decisions[direction] = {"five": old, "ten": vars(new)}
+            publish(out, f"null_five_ten_{point}_{pair_id:03d}", {
+                "pool_state": str(state), "pair_id": pair_id, "seed": seed,
+                "decisions": decisions, "reversed_directions_are_dependent": True,
+                "ten_version": TEN_VERSION, "exploratory_only": True,
+            }, arrays)
+        counts[point] = {method: {direction: {
+            "fires": count, "independent_pairs": pairs, "frequency": count / pairs,
+            "exact_binomial_95_ci": exact_binomial_interval(count, pairs),
+        } for direction, count in by_direction.items()} for method, by_direction in fires.items()}
+    atomic_write_text(out / "null_five_ten_summary.json", json.dumps(counts, indent=2, sort_keys=True))
 
 
 def run_conditioning(out: Path, cfg, states: dict, fresh):
@@ -449,13 +612,14 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--run-dir", type=Path, required=True)
     parser.add_argument("--output", type=Path)
-    parser.add_argument("--mode", choices=("inventory", "crossover", "null", "conditioning",
-                                           "scales", "extension"), required=True)
+    parser.add_argument("--mode", choices=("inventory", "crossover", "shared", "five_ten", "null", "null_five_ten",
+                                           "conditioning", "scales", "extension"), required=True)
     parser.add_argument("--points", nargs="+", choices=("early", "late"), default=["early", "late"])
     parser.add_argument("--null-pairs", type=int, default=4)
     parser.add_argument("--seed-base", type=int, default=92000)
     parser.add_argument("--scales", nargs="+", type=float, default=[10000.0, 100000.0, 1000000.0])
     parser.add_argument("--extension-steps", type=int, choices=(4000, 8000), default=4000)
+    parser.add_argument("--independent-sets", type=int, default=2)
     parser.add_argument("--expected-harness-sha")
     args = parser.parse_args()
     run_dir = args.run_dir.resolve(strict=True)
@@ -475,7 +639,9 @@ def main():
         raise ValueError("expected exact clean diagnostic-harness checkout")
     if args.null_pairs < 2 or args.null_pairs > 20:
         raise ValueError("--null-pairs must be in [2, 20]")
-    if args.mode != "null" and not inventory["fresh_critic"]:
+    if not 2 <= args.independent_sets <= 5:
+        raise ValueError("--independent-sets must be in [2, 5]")
+    if args.mode not in ("null", "null_five_ten") and not inventory["fresh_critic"]:
         raise FileNotFoundError("parent's fresh_critic checkpoint is missing")
     metadata = source_metadata(run_dir)
     cfg = OmegaConf.create(metadata["resolved_config"])
@@ -488,11 +654,11 @@ def main():
     if probe_spec != (5, 2000, 20, 25600, 256, 100000.0, 2560) or trigger_spec != (
             10000, 0.95, 2, 0.0, 0.95):
         raise ValueError("source configuration differs from approved Method C")
-    points = (tuple(dict.fromkeys(args.points)) if args.mode == "null" else
+    points = (tuple(dict.fromkeys(args.points)) if args.mode in ("null", "null_five_ten") else
               ("late",) if args.mode in ("scales", "extension") else ("early", "late"))
     states = {point: load_state(run_dir, point, cfg) for point in points}
     fresh = (orbax.checkpoint.PyTreeCheckpointer().restore(inventory["fresh_critic"])["params"]
-             if args.mode != "null" else None)
+             if args.mode not in ("null", "null_five_ten") else None)
     out = args.output
     out.mkdir(parents=True)
     evidence = {
@@ -511,8 +677,14 @@ def main():
     atomic_write_text(out / "provenance.json", json.dumps(evidence, indent=2, sort_keys=True))
     if args.mode == "crossover":
         run_crossover(run_dir, out, cfg, states, fresh)
+    elif args.mode == "shared":
+        run_shared_targets(run_dir, out, cfg, states, fresh)
+    elif args.mode == "five_ten":
+        run_five_ten(run_dir, out, cfg, states, fresh, args.independent_sets)
     elif args.mode == "null":
         run_null(out, cfg, states, args.null_pairs, args.seed_base)
+    elif args.mode == "null_five_ten":
+        run_null_five_ten(out, cfg, states, args.null_pairs, args.seed_base)
     elif args.mode == "conditioning":
         run_conditioning(out, cfg, states, fresh)
     elif args.mode == "scales":
