@@ -111,7 +111,17 @@ def _validate_natural_fork(cfg, plan, meta):
         n = int(cfg.probe.rounds)
         current = np.asarray([row[f"score_current_r{r}"] for r in range(n)], np.float32)
         fresh = np.asarray([row[f"score_fresh_r{r}"] for r in range(n)], np.float32)
-        loss = fresh - current
+        # Twin probe loss is the mean of *paired per-network differences*
+        # (amendment z); subtracting the displayed mean scores can round
+        # differently and falsely reject an otherwise valid natural fork.
+        if all(f"score_{arm}_q{q}_r{r}" in row
+               for arm in ("current", "fresh") for q in (1, 2) for r in range(n)):
+            loss = np.mean([
+                np.asarray([row[f"score_fresh_q{q}_r{r}"] for r in range(n)], np.float32)
+                - np.asarray([row[f"score_current_q{q}_r{r}"] for r in range(n)], np.float32)
+                for q in (1, 2)], axis=0)
+        else:
+            loss = fresh - current
         recorded = np.asarray([row[f"loss_r{r}"] for r in range(n)], np.float32)
         if not np.array_equal(loss, recorded, equal_nan=True):
             raise ValueError("positive control: saved paired losses differ")

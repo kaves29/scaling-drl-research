@@ -808,7 +808,9 @@ def _natural_fork(parent_item, commit):
         raise ValueError(
             "fork marker/parent role is incompatible with natural production eligibility"
         )
-    cfg = compose_config(str(MAIN / "configs"), "base_exp12", row["overrides"])
+    cfg = compose_config(str(MAIN / "configs"),
+                         "base_exp12_ten" if row.get("study") == "method-c-ten-96-v1" else "base_exp12",
+                         row["overrides"])
     state = latest_state_dir(parent / "fork" / "state")
     meta = load_meta(state)
     plan = fork.read_fork(parent)
@@ -1086,6 +1088,9 @@ def validate_arm(item, commit, queue_root):
 
 
 def validate_done(item, commit, queue_root):
+    if item["row"].get("study") == "method-c-ten-96-v1":
+        from scripts.exp96_campaign import validate_parent as validate_96_parent
+        return validate_96_parent(item, commit, queue_root)
     if item["kind"] == "exp1":
         return validate_parent(item, commit, queue_root)
     return validate_arm(item, commit, queue_root)
@@ -1211,8 +1216,11 @@ def can_admit(
     # Checkpoint-based rates are slow to become available, by design. Starting
     # extra processes before actual progress is measurable would assume scaling.
     if any(
-        job.get("rate") is None
-        or job["rate"] < job["profile"]["min_interactions_per_second"]
+        (job.get("rate") is None and not (
+            row.get("study") == "method-c-ten-96-v1"
+            and admission.get("validated_concurrency", False)))
+        or (job.get("rate") is not None
+            and job["rate"] < job["profile"]["min_interactions_per_second"])
         for job in same_gpu
     ):
         return False

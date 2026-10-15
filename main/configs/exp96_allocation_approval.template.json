@@ -1,0 +1,32 @@
+{
+  "approved": false,
+  "expected_commit": null,
+  "queue_sha256": null,
+  "decision_reference": null,
+  "resources": {"gpus": 1, "cpus": null, "memory_gb": null, "wall_minutes": null},
+  "admission": {
+    "packing": "ten_target",
+    "validated_concurrency": false,
+    "max_processes_per_gpu": 6,
+    "gpu_headroom_gb": null,
+    "host_headroom_gb": null,
+    "stop_margin_minutes": null,
+    "architectures": {
+      "D2W512": {
+        "cpus": null, "host_ram_gb": null, "gpu_memory_gb": null,
+        "min_interactions_per_second": null,
+        "estimated_minutes_by_group": {"dmc_hard": null, "myosuite_simba": null}
+      },
+      "D4W1024": {
+        "cpus": null, "host_ram_gb": null, "gpu_memory_gb": null,
+        "min_interactions_per_second": null,
+        "estimated_minutes_by_group": {"dmc_hard": null, "myosuite_simba": null}
+      },
+      "D4W1536": {
+        "cpus": null, "host_ram_gb": null, "gpu_memory_gb": null,
+        "min_interactions_per_second": null,
+        "estimated_minutes_by_group": {"dmc_hard": null, "myosuite_simba": null}
+      }
+    }
+  }
+}
