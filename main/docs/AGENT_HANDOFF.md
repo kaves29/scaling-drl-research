@@ -1,5 +1,14 @@
 # Shared agent handoff
 
+## Exp96 approval-pending queue (16 October 2026)
+
+`codex/exp96-pending-gate` adds staged creation of the immutable 96-parent queue
+and a one-time Slurm startup gate. Resolve the branch tip from Git. The normal
+pending allocation exits before `srun` and any parent claim if study, A100
+smoke, source, or allocation approval is missing. Commands and cancellation
+checks are in [exp96_pending_queue.md](exp96_pending_queue.md). No GPU job was
+submitted by this work.
+
 ## Ten-target Method C CPU qualification (15 October 2026)
 
 `codex/method-c-ten-cpu-qualification` extends the isolated design branch;

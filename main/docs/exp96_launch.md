@@ -4,6 +4,9 @@ This study is isolated from the archived five-target pilot and 195-parent Exp1/2
 campaign. It is **not authorized to launch** by this document. The source commit,
 smoke evidence, scientific calibration, resource profiles, analysis plan, and
 storage approval must be frozen by the owner before campaign preparation.
+For a normal pending Slurm reservation before those approvals exist, use the
+separate [fail-closed staged-queue procedure](exp96_pending_queue.md). It
+creates immutable run identities but cannot start training without every gate.
 
 ## Exact parent population and settings
 

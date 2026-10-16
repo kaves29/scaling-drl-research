@@ -72,7 +72,7 @@ def test_packing_six_four_two_and_mixed_replacement(population, monkeypatch):
 def test_approval_fail_closed_on_source_and_smoke(tmp_path):
     evidence = tmp_path / "smoke.json"
     evidence.write_text(json.dumps({"verdict": "PASS", "expected_commit": "a" * 40,
-                                    "study_version": campaign.VERSION}))
+                                    "study_version": campaign.VERSION, "gpu": campaign.GPU}))
     approval = {"approved": True, "expected_commit": "a" * 40, "study_version": campaign.VERSION,
                 "decision_reference": "owner-review", "parent_count": 96,
                 "gates": {name: {"status": "APPROVED", "decision_reference": "owner-review"}
@@ -87,7 +87,7 @@ def test_approval_fail_closed_on_source_and_smoke(tmp_path):
     with pytest.raises(ValueError, match="smoke evidence"):
         campaign._approval(plan)
     evidence.write_text(json.dumps({"verdict": "PASS", "expected_commit": "b" * 40,
-                                    "study_version": campaign.VERSION}))
+                                    "study_version": campaign.VERSION, "gpu": campaign.GPU}))
     approval["gates"]["gpu_smoke"]["evidence"]["sha256"] = campaign.sha(evidence)
     path.write_text(json.dumps(approval))
     plan["approval_sha256"] = campaign.sha(path)
@@ -99,7 +99,7 @@ def test_shared_96_queue_freeze_and_tamper_detection(tmp_path, monkeypatch):
     commit = "a" * 40
     evidence = tmp_path / "smoke.json"
     evidence.write_text(json.dumps({"verdict": "PASS", "expected_commit": commit,
-                                    "study_version": campaign.VERSION}))
+                                    "study_version": campaign.VERSION, "gpu": campaign.GPU}))
     gates = {name: {"status": "APPROVED", "decision_reference": "test-only"}
              for name in ("ten_function_method", "scientific_calibration", "gpu_smoke",
                           "allocation_and_storage", "cross_seed_analysis")}

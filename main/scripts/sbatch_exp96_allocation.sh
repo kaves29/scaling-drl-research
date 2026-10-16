@@ -4,8 +4,14 @@
 #SBATCH --partition=gpuA100x4
 set -euo pipefail
 : "${EXPECTED_COMMIT:?}" "${EXP96_QUEUE:?}" "${EXP96_ALLOCATION_APPROVAL:?}"
-: "${EXP96_APPROVAL_SHA256:?}" "${SLURM_JOB_ID:?}"
+: "${SLURM_JOB_ID:?}"
 cd "${SLURM_SUBMIT_DIR:?}"
+if [ -f main/run.py ]; then
+  cd main
+elif [ ! -f run.py ]; then
+  printf 'exp96: submission directory has neither main/run.py nor run.py: %s\n' "$PWD" >&2
+  exit 2
+fi
 source scripts/check_exp12_validation_checkout.sh
 exp12_check_checkout scripts/exp96_campaign.py scripts/exp12_dynamic_scheduler.py \
   scripts/sbatch_exp96_allocation.sh run.py configs/base_exp12_ten.yaml
@@ -19,6 +25,15 @@ export PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1
 export OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1
 unset JAX_PLATFORM_NAME JAX_DEFAULT_MATMUL_PRECISION NVIDIA_TF32_OVERRIDE
 unset XLA_PYTHON_CLIENT_MEM_FRACTION XLA_FLAGS
+# A pending reservation has no approval hash yet. Validate it once after
+# allocation and leave immediately if any gate is missing. No worker or claim
+# can start before this succeeds.
+if ! EXP96_APPROVAL_SHA256=$(python -u scripts/exp96_campaign.py startup-gate \
+    --queue "$EXP96_QUEUE" --approval "$EXP96_ALLOCATION_APPROVAL"); then
+  printf 'exp96: startup gate BLOCKED; no parent worker started\n' >&2
+  exit 3
+fi
+export EXP96_APPROVAL_SHA256
 srun --cpus-per-task="${SLURM_CPUS_PER_TASK:?}" --ntasks=1 --gpus-per-task=1 \
   python -u scripts/exp96_campaign.py worker \
   --queue "$EXP96_QUEUE" --approval "$EXP96_ALLOCATION_APPROVAL"

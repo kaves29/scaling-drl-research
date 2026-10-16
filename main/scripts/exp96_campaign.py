@@ -88,20 +88,21 @@ def rows(root):
     return result
 
 
-def _plan(root, commit, approval):
+def _plan(root, commit, approval, *, staged=False):
     if not Path(root).is_absolute():
         raise ValueError("campaign root must be absolute")
     root = Path(root).resolve()
     if root.is_relative_to(MAIN.parent):
         raise ValueError("campaign root must be outside checkout")
     return {"schema_version": VERSION, "commit": commit, "root": str(root),
-            "approval": str(Path(approval).resolve()), "approval_sha256": sha(approval),
+            "approval": str(Path(approval).resolve()),
+            "approval_sha256": None if staged else sha(approval),
             "entries": rows(root)}
 
 
 def _approval(plan):
     approval = durable._read(plan["approval"])
-    if sha(plan["approval"]) != plan["approval_sha256"]:
+    if plan["approval_sha256"] is not None and sha(plan["approval"]) != plan["approval_sha256"]:
         raise ValueError("campaign approval changed")
     if (approval.get("approved") is not True or approval.get("expected_commit") != plan["commit"]
         or approval.get("study_version") != VERSION or not approval.get("decision_reference")
@@ -118,13 +119,14 @@ def _approval(plan):
         or sha(evidence["path"]) != evidence["sha256"]):
         raise ValueError("intact GPU smoke evidence required for campaign approval")
     report = durable._read(evidence["path"])
-    if (report.get("verdict") != "PASS" or report.get("expected_commit") != plan["commit"]
+    if (report.get("verdict") != "PASS" or report.get("gpu") != GPU
+        or report.get("expected_commit") != plan["commit"]
         or report.get("study_version") != VERSION):
-        raise ValueError("GPU smoke does not qualify this exact study source")
+        raise ValueError("A100 GPU smoke does not qualify this exact study source")
     return approval
 
 
-def load(queue_root):
+def load(queue_root, *, require_approval=True):
     root = Path(queue_root).resolve()
     queue = durable._read(root / "queue.json")
     plan_path = Path(queue["plan"])
@@ -133,7 +135,8 @@ def load(queue_root):
         or sha(plan_path) != queue.get("plan_sha256") or plan["commit"] != queue["commit"]
         or plan["entries"] != rows(Path(plan["root"]))):
         raise ValueError("96-parent queue/plan/configuration mismatch")
-    _approval(plan)
+    if require_approval:
+        _approval(plan)
     expected = [{"id": durable.identity("exp1", row, plan["commit"]), "kind": "exp1", "row": row}
                 for row in plan["entries"]]
     if queue["parents"] != expected or len({x["id"] for x in expected}) != 96:
@@ -151,12 +154,13 @@ def load(queue_root):
     return queue, plan
 
 
-def prepare(root, commit, approval, queue_root):
+def prepare(root, commit, approval, queue_root, *, staged=False):
     _source(commit)
     if not Path(queue_root).is_absolute():
         raise ValueError("queue root must be absolute")
-    plan = _plan(root, commit, approval)
-    _approval(plan)
+    plan = _plan(root, commit, approval, staged=staged)
+    if not staged:
+        _approval(plan)
     root, queue_root = Path(root).resolve(), Path(queue_root).resolve()
     if root.exists() or queue_root.exists() or queue_root.is_relative_to(MAIN.parent):
         raise ValueError("fresh campaign and queue paths outside checkout required")
@@ -278,6 +282,7 @@ def validate_probe_artifacts(run, cfg, end):
 def allocation_command(queue_root, approval_path):
     queue, plan = load(queue_root)
     approval = durable._read(approval_path)
+    _study_bound(plan, approval)
     r, _ = _allocation(approval, queue_root, queue["commit"])
     logs = Path(queue_root) / "slurm"
     cmd = ["env", f"EXPECTED_COMMIT={queue['commit']}", f"EXP96_QUEUE={Path(queue_root).resolve()}",
@@ -288,6 +293,74 @@ def allocation_command(queue_root, approval_path):
            "--gres=gpu:1", f"--output={logs}/%x_%j.out", f"--error={logs}/%x_%j.err",
            "scripts/sbatch_exp96_allocation.sh"]
     return shlex.join(cmd)
+
+
+def pending_command(queue_root, approval_path, *, cpus, memory_gb, wall_minutes):
+    """Print a normal queued allocation; approval is enforced at job startup."""
+    queue, _ = load(queue_root, require_approval=False)
+    _source(queue["commit"])
+    if (type(cpus) is not int or type(memory_gb) is not int
+        or type(wall_minutes) is not int or cpus <= 0 or memory_gb <= 0
+        or not 1 <= wall_minutes <= 2880):
+        raise ValueError("invalid pending one-A100 resource request")
+    logs = Path(queue_root).resolve() / "slurm"
+    cmd = ["env", "-u", "SBATCH_HOLD", "-u", "SBATCH_BEGIN", "-u", "SBATCH_DEPENDENCY",
+           f"EXPECTED_COMMIT={queue['commit']}", f"EXP96_QUEUE={Path(queue_root).resolve()}",
+           f"EXP96_ALLOCATION_APPROVAL={Path(approval_path).resolve()}",
+           "sbatch", "--parsable", "--export=ALL", "--job-name=exp96-pending-v1",
+           "--nodes=1", "--ntasks=1", f"--cpus-per-task={cpus}", f"--mem={memory_gb}G",
+           f"--time={wall_minutes}", "--gres=gpu:1",
+           f"--output={logs}/%x_%j.out", f"--error={logs}/%x_%j.err",
+           "scripts/sbatch_exp96_allocation.sh"]
+    return shlex.join(cmd)
+
+
+def startup_gate(queue_root, approval_path):
+    """Return the approval digest only after every training prerequisite passes."""
+    queue, plan = load(queue_root)
+    _source(queue["commit"])
+    require_pinned_stack()
+    digest = sha(approval_path)
+    approval = durable._read(approval_path)
+    _study_bound(plan, approval)
+    resources, _ = _allocation(approval, queue_root, queue["commit"])
+    job_id = os.environ.get("SLURM_JOB_ID", "")
+    if not job_id.isdigit():
+        raise ValueError("real Slurm allocation required")
+    description = subprocess.check_output(
+        ["scontrol", "show", "job", "--oneliner", job_id], text=True)
+    from scripts.exp12_launch_plan import allocation_matches
+    allocation_matches({"cpus": resources["cpus"], "memory_gb": resources["memory_gb"],
+                        "wall_minutes": resources["wall_minutes"]}, os.environ, description)
+    if int(os.environ.get("SLURM_GPUS_ON_NODE", "0")) != 1:
+        raise ValueError("one allocated GPU required")
+    return digest
+
+
+def _study_bound(plan, allocation):
+    if (plan["approval_sha256"] is None
+        and allocation.get("study_approval_sha256") != sha(plan["approval"])):
+        raise ValueError("staged study approval is not hash-bound to allocation approval")
+
+
+def startup_gate_receipt(queue_root, approval_path):
+    """Record the startup decision without touching claims or parent artifacts."""
+    job_id = os.environ.get("SLURM_JOB_ID", "")
+    if not job_id.isdigit():
+        raise ValueError("real Slurm allocation required")
+    path = Path(queue_root).resolve() / "slurm" / f"startup_gate_{job_id}.json"
+    receipt = {"job_id": job_id, "queue": str(Path(queue_root).resolve()),
+               "allocation_approval": str(Path(approval_path).resolve()),
+               "expected_commit": os.environ.get("EXPECTED_COMMIT")}
+    try:
+        digest = startup_gate(queue_root, approval_path)
+    except Exception as exc:
+        receipt.update(verdict="BLOCKED", reason=f"{type(exc).__name__}: {exc}")
+        durable._write_new(path, receipt)
+        raise
+    receipt.update(verdict="PASS", approval_sha256=digest)
+    durable._write_new(path, receipt)
+    return digest
 
 
 def _allocation(approval, queue_root, commit):
@@ -351,6 +424,7 @@ def worker(queue_root, approval_path):
     if sha(approval_path) != os.getenv("EXP96_APPROVAL_SHA256"):
         raise ValueError("allocation approval changed since submission")
     approval = durable._read(approval_path)
+    _study_bound(plan, approval)
     resources, admission = _allocation(approval, queue_root, queue["commit"])
     job_id = os.environ.get("SLURM_JOB_ID", "")
     if not job_id.isdigit():
@@ -375,6 +449,8 @@ def worker(queue_root, approval_path):
     with ThreadPoolExecutor(max_workers=2) as validator:
       while time.time() < stop_at or active or validating or unrecorded:
         if (sha(approval_path) != os.environ["EXP96_APPROVAL_SHA256"]
+            or (plan["approval_sha256"] is None
+                and sha(plan["approval"]) != approval["study_approval_sha256"])
             or sha(queue["plan"]) != queue["plan_sha256"]
             or sha(Path(queue_root) / "queue.json") != approval["queue_sha256"]):
             raise ValueError("allocation/plan/queue changed during execution")
@@ -425,7 +501,18 @@ def main(argv=None):
     p = sub.add_parser("prepare")
     for opt in ("root", "commit", "approval", "queue"):
         p.add_argument("--" + opt, required=True)
+    p.add_argument("--staged", action="store_true",
+                   help="freeze identities before approval; startup still requires every gate")
     p = sub.add_parser("allocation-command")
+    p.add_argument("--queue", required=True)
+    p.add_argument("--approval", required=True)
+    p = sub.add_parser("pending-command")
+    p.add_argument("--queue", required=True)
+    p.add_argument("--approval", required=True)
+    p.add_argument("--cpus", type=int, required=True)
+    p.add_argument("--memory-gb", type=int, required=True)
+    p.add_argument("--wall-minutes", type=int, required=True)
+    p = sub.add_parser("startup-gate")
     p.add_argument("--queue", required=True)
     p.add_argument("--approval", required=True)
     p = sub.add_parser("worker")
@@ -437,9 +524,14 @@ def main(argv=None):
     p.add_argument("--decision", required=True)
     args = parser.parse_args(argv)
     if args.action == "prepare":
-        prepare(args.root, args.commit, args.approval, args.queue)
+        prepare(args.root, args.commit, args.approval, args.queue, staged=args.staged)
     elif args.action == "allocation-command":
         print(allocation_command(args.queue, args.approval))
+    elif args.action == "pending-command":
+        print(pending_command(args.queue, args.approval, cpus=args.cpus,
+                              memory_gb=args.memory_gb, wall_minutes=args.wall_minutes))
+    elif args.action == "startup-gate":
+        print(startup_gate_receipt(args.queue, args.approval))
     elif args.action == "review-retry":
         queue, _ = load(args.queue)
         matches = [x for x in queue["parents"] if x["id"] == args.id]

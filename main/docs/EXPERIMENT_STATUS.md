@@ -1,5 +1,11 @@
 # Exp1/Exp2 scientific and validation status
 
+The Exp96 staged queue path on `codex/exp96-pending-gate` is operational
+infrastructure only. A pending Slurm allocation is not approval to train:
+study calibration, source-matched A100 smoke, owner decisions, and measured
+resource profiles remain required by the startup gate. See
+[exp96_pending_queue.md](exp96_pending_queue.md).
+
 ## Ten-target CPU candidate (15 October 2026)
 
 The versioned ten-function Method C candidate has CPU probe/trigger,

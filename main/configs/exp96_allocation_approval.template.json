@@ -2,6 +2,7 @@
   "approved": false,
   "expected_commit": null,
   "queue_sha256": null,
+  "study_approval_sha256": null,
   "decision_reference": null,
   "resources": {"gpus": 1, "cpus": null, "memory_gb": null, "wall_minutes": null},
   "admission": {
