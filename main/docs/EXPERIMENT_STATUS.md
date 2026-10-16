@@ -1,5 +1,10 @@
 # Exp1/Exp2 scientific and validation status
 
+The Kaggle T4 Exp96 notebook is an engineering subset. Its result, even if
+`PASS` on T4, cannot qualify source-matched A100 concurrency or scientific
+calibration and cannot activate the official 96-parent queue. See
+`notebooks/exp96_kaggle_t4_engineering_smoke.ipynb`.
+
 The Exp96 staged queue path on `codex/exp96-pending-gate` is operational
 infrastructure only. A pending Slurm allocation is not approval to train:
 study calibration, source-matched A100 smoke, owner decisions, and measured

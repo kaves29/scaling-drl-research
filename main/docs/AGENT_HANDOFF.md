@@ -1,5 +1,14 @@
 # Shared agent handoff
 
+## Kaggle T4 Exp96 engineering smoke (16 October 2026)
+
+`codex/exp96-kaggle-t4-smoke` adds a Kaggle notebook and a development-only T4
+runner, based on `bd568d482c261f067add0b1d44bb57a6aceb52b1`. Resolve its
+tip from Git. The runner reuses the original four case commands and full probe
+settings, records hardware-limited coverage and packages evidence. CPU tests
+pass; no Kaggle GPU execution or A100 qualification is claimed. No official
+parent or Slurm job was submitted.
+
 ## Exp96 approval-pending queue (16 October 2026)
 
 `codex/exp96-pending-gate` adds staged creation of the immutable 96-parent queue
