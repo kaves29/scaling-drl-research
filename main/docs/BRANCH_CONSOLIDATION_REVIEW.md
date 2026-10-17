@@ -48,6 +48,10 @@ restored the source. Environment restoration passed for all 65 task-seed cells
 39 architecture-environment configurations, and 130 scaled eligibility
 candidates. The isolated runner recorded source fingerprint
 `950a7e5a9032429b8aecb35ebffcd72538eabf391256338d74b0fe09bfb689ad`.
+An isolated-interpreter comparison against the clean
+`be1ffae7a8dd9d43bc35a6c8c4b0be9e5582b574` checkout matched all 195
+resolved parent fingerprints; aggregate SHA-256
+`ca2ad6f165c3673dc9bf15faf944c291b16dac8af4b4f75243e6b3b08901d22a`.
 Final documentation edits do not affect that executable tree. These CPU
 checks do not certify A100 concurrency, statistical calibration, or
 source-bound launch approvals.
