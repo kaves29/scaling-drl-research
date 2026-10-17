@@ -7,6 +7,8 @@ commits versus that main (`+main`) and versus the *proposed local cleanup tree*
 plan, not deletion authorization. GitHub PR API returned Forbidden, so open PR
 ownership could not be verified from this environment. Local worktrees were
 listed, but remote collaborators may have other active checkouts.
+The [exact branch archival list](BRANCH_ARCHIVE_PLAN.md) separates tips already
+retained by this candidate from divergent tips requiring archival tags.
 Read-only Git ref inspection found `refs/pull/1/head` at `4afc772d5f2beab625e3b513e6f53cc72ea8e1c6`;
 the ref alone does not say whether PR 1 is open or closed.
 
@@ -24,19 +26,31 @@ isolated runner, W&B helper, draft resources and tests; the numerical harness
 adds isolated scripts/tests. The frozen `087feab` five-target config differs
 from the newer lineage only in W&B `project_name` and a comment; do not call
 that difference a scientific probe/training change or a source-equivalent job.
+The later review cherry-picked the validated retry-aware comparator change
+from `07721bf27055c2c407f635149bd9bbf54e97e989` as a separate commit.
+It changes only `scripts/exp12_fullwidth_gate.py`, its adversarial tests and
+the comparator review report. Failed attempts remain visible, successful
+attempts must bind to exact stage/job/spec/source receipts, and the CPU report
+is written outside immutable GPU evidence. Bitwise comparison and scientific
+criteria are unchanged. The original commit remains preserved by its remote
+archival tag even though the cherry-picked commit has a new SHA.
 
 ## CPU validation of the candidate
 
-Using Python 3.12.14/JAX 0.4.34 on CPU, the isolated repository runner recorded
-87 successful modules and 773 tests run. One optional compilation-cache test
-skipped because `filelock` is absent; no module failed. Its source fingerprint
-was `53997b282fd1280c3a9d5d6dd7ba9a41515c55660af6b61a2e9b084595f0a227`.
-The 74 declared mutation checks passed. Environment restoration passed for all
-65 task-seed cells (13 tasks × 5 seeds). The independent reference reported
-195 parent commands, 39 architecture-environment configurations, and 130
-scaled eligibility candidates. Focused pilot, harness, Exp96, and scheduler
-tests passed 45/45. These CPU checks do not certify A100 concurrency,
-statistical calibration, or source-bound launch approvals.
+Using Python 3.12.14/JAX 0.4.34 on CPU, the final comparator tree's isolated
+`unittest` runner recorded 88 successful modules and 788 tests run (787 passed,
+one optional compilation-cache skip because `filelock` is absent). Its six
+pytest-style modules imported with zero tests under that runner, so they were
+executed separately: 46 passed, one skipped. The comparator's 15 adversarial
+tests passed in the broad suite. All 74 declared mutation checks passed and
+restored the source. Environment restoration passed for all 65 task-seed cells
+(13 tasks × 5 seeds). The independent reference reported 195 parent commands,
+39 architecture-environment configurations, and 130 scaled eligibility
+candidates. The isolated runner recorded source fingerprint
+`950a7e5a9032429b8aecb35ebffcd72538eabf391256338d74b0fe09bfb689ad`.
+Final documentation edits do not affect that executable tree. These CPU
+checks do not certify A100 concurrency, statistical calibration, or
+source-bound launch approvals.
 
 | Remote branch | Tip SHA | Latest commit purpose | +main | +candidate | Proposed disposition | Evidence/condition |
 | --- | --- | --- | ---: | ---: | --- | --- |

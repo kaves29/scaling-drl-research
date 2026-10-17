@@ -34,9 +34,10 @@ under amendment (ab). The ten-target study requires its own protocol freeze,
 scientific validity and approval; it is not silently adopted for the
 195-parent experiment.
 
-CPU validation on the consolidation candidate previously recorded 773 tests
-run (772 passed, one optional skip), 74 mutation checks, 65 environment
-restoration checks, and 195 parent configuration references. These establish
-engineering coverage only. Read
+CPU validation on the consolidation candidate recorded 788 `unittest` tests
+run (787 passed, one optional skip) and, separately, 46 passed/one skipped in
+six pytest-style ten-target/Exp96 modules. All 74 mutation checks, 65
+environment restoration cells and the independent 195-parent reference
+passed. These establish engineering coverage only. Read
 [BRANCH_CONSOLIDATION_REVIEW.md](BRANCH_CONSOLIDATION_REVIEW.md) for the exact
 source and validation scope.

@@ -9,6 +9,8 @@ the [current status ledger](main/docs/EXPERIMENT_STATUS.md). The approved
 five-target Exp1/Exp2 methodology and the versioned ten-target 96-parent study
 have separate configurations and launch approvals. A queued Delta job remains
 bound to its original source commit; moving a branch does not update its source.
+Use the [script entrypoint index](main/scripts/README.md) to distinguish current
+launch paths from dated diagnostics.
 
 Research history and qualification reports remain in Git for reproducibility.
 Generated checkpoints, logs, caches, and result archives belong outside Git.

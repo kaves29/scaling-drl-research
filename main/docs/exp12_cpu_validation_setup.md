@@ -1,5 +1,20 @@
 # Reproducing CPU validation, including real HumanoidBench
 
+The isolated `run_exp12_cpu_validation.py` driver uses `unittest` discovery.
+Six pytest-style modules can therefore report `tests_run: 0` even when their
+module import succeeds. Run them explicitly after the isolated suite; do not
+count zero-test modules as scientific or engineering coverage:
+
+```bash
+python -m pytest -q \
+  tests/test_exp12_ten_cpu_qualification.py \
+  tests/test_exp96_campaign.py \
+  tests/test_method_c_validity_controls.py \
+  tests/test_exp96_pending_gate.py \
+  tests/test_method_c_ten_reference.py \
+  tests/test_exp96_kaggle_t4_smoke.py
+```
+
 No production environment or dependency lock was changed. The original `/workspace/scaling-drl-research/.venv` remains unchanged: Python3.12.14, JAX/JAXLIB0.4.34, NumPy1.26.4, Flax0.8.4, Optax0.2.3, Orbax0.5.3, MuJoCo3.6.0, dm-control1.0.38 and Gymnasium1.0.0a2. `uv --no-cache pip check` reports all117 installed packages compatible. This is not Delta's Python3.12.13/CUDA environment.
 
 The machine has Mesa EGL **llvmpipe (LLVM19.1.7,256 bits)** software rendering. An isolated overlay adds only editable `humanoid-bench@cb1189039151c8aadaaa987b442da54383c87fab`, the exact pin already specified by `scripts/install_humanoid_bench.sh`. A `.pth` file makes the unchanged base environment's packages visible. No shared packages are upgraded/downgraded. This avoids mutating a running validation environment or a historical checkout.
