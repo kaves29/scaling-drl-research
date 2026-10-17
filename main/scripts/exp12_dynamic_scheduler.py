@@ -1331,7 +1331,7 @@ def _owner(job_id):
     }
 
 
-def _start(item, token, approval, queue_root, ledger, job_id):
+def _start(item, token, approval, queue_root, ledger, job_id, training_checkout=None):
     owner = _owner(job_id)
     commit = approval["expected_commit"]
     if _CLAIM_BACKOFF.get(item["id"], 0) > time.time():
@@ -1374,6 +1374,15 @@ def _start(item, token, approval, queue_root, ledger, job_id):
             command[0] = sys.executable
         env = dict(os.environ)
         env["CUDA_VISIBLE_DEVICES"] = str(token)
+        if training_checkout is not None:
+            # The isolated pilot worker may have its own scheduler-only revision.
+            # Its Python path must never shadow modules in the frozen trainer.
+            env["PYTHONPATH"] = str(training_checkout)
+            # A stable ID covers a retry interrupted before the first checkpoint.
+            # The frozen logger still supplies the checkpointed ID on later restores.
+            env["WANDB_RUN_ID"] = item["id"][:16]
+            env["WANDB_RESUME"] = "allow"
+            env["WANDB_TAGS"] = "Exp1-production-pilot"
         if item["row"]["group"] == "humanoid_bench":
             env["MUJOCO_GL"] = "egl"
             env["PYOPENGL_PLATFORM"] = "egl"
@@ -1383,7 +1392,7 @@ def _start(item, token, approval, queue_root, ledger, job_id):
         try:
             process = subprocess.Popen(
                 command,
-                cwd=MAIN,
+                cwd=training_checkout or MAIN,
                 env=env,
                 stdout=logfile,
                 stderr=subprocess.STDOUT,

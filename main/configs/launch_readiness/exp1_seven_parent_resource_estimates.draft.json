@@ -1,0 +1,9 @@
+{
+  "bc7bfaefc044a4eeed395ebeb5423d4e9dd9ea616d0b3abb564d2cba3b90e018": {"cpus": 4, "host_ram_gb": 12, "gpu_memory_gb": 7},
+  "647d13185dbfb92efe265ce6466cd2119639ef724ba4706603c52ead9b2c7ced": {"cpus": 4, "host_ram_gb": 12, "gpu_memory_gb": 7},
+  "cefd3b972e81f44d8cca46ec0cd91b1b5d76ce85cdddfa3b53d7c438ca461c28": {"cpus": 4, "host_ram_gb": 8, "gpu_memory_gb": 4},
+  "ec74f9ae9d24ef87df9d754787e25c0fdb6fe40cbda22005eacea2da22b4a368": {"cpus": 4, "host_ram_gb": 12, "gpu_memory_gb": 8},
+  "8305ad187448eb88c98b6fa374e98319a68c96765903bc2d2192086ab0870de2": {"cpus": 4, "host_ram_gb": 12, "gpu_memory_gb": 6},
+  "5cb13be9c1556d1accb6a8e79e69a7c9c8d67ebd4b3721cbdda3cb27d696b5a4": {"cpus": 4, "host_ram_gb": 12, "gpu_memory_gb": 6},
+  "37e178ca5929f3a60420be2a1c4739c9d3d0a505c225ccb3de2a8ee7c8d6d5e6": {"cpus": 4, "host_ram_gb": 12, "gpu_memory_gb": 6}
+}
