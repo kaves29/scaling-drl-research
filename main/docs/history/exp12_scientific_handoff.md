@@ -2,9 +2,9 @@
 
 For the shared integration branch. Every result below names the source commit and the job that produced it.
 Nothing here changes an approved setting, threshold, rule or acceptance criterion. Full reports:
-[scientific_validation_investigation.md](scientific_validation_investigation.md),
-[null_followup_procedure.md](null_followup_procedure.md) and
-[null_followup_original_results.md](null_followup_original_results.md).
+[scientific_validation_investigation.md](../scientific_validation_investigation.md),
+[null_followup_procedure.md](../null_followup_procedure.md) and
+[null_followup_original_results.md](../null_followup_original_results.md).
 
 ## Commits
 

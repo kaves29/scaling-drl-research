@@ -84,7 +84,7 @@ something to fix in code.
 
 The original PR proposed a one-hour/16-CPU/64GB job running the whole relevant
 suite plus the eight-child probe. That allocation is **not approved**. Use
-[exp1_a100_minimal_gate.md](exp1_a100_minimal_gate.md), `STAGE=gpu_resume_95`,
+[exp1_a100_minimal_gate.md](../exp1_a100_minimal_gate.md), `STAGE=gpu_resume_95`,
 with the final delivered integration SHA: oneA100/fourCPUs/32GB/seven minutes,
 300-second total workload limit. Completion within that cap is unmeasured.
 The explicit crash95 subset includes two references, a crash, and a relaunch;

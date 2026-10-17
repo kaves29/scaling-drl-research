@@ -149,6 +149,8 @@ remain unverified because this workspace's GitHub PR API returned Forbidden.
 
 The only tracked generated artifact confirmed in the current tree is root
 `__pycache__/sparseppo.cpython-313.pyc`; it is removed from the candidate.
+The later cleanup also removes the tracked macOS `.DS_Store` file. Both
+removals are repository hygiene only.
 The existing `.gitignore` already covers Python bytecode, local checkpoints,
 logs and cache. Historical Angle experiment files are still imported by
 `experiments/__init__.py`, Exp1/Exp2, or tests, so deleting them would break
@@ -157,11 +159,19 @@ remain tracked because they explain scientific and engineering provenance.
 No dependency is removed without an import/runtime proof. No checkpoints,
 results, or Delta evidence are moved or deleted.
 
-Examples of **historical-document archive candidates** are
-`main/docs/exp12_oct12_execution_handoff.md`,
-`main/docs/exp12_overnight_readiness.md`,
-`main/docs/exp12_production_decision_2026_10_11.md`, and
-`main/docs/exp12_launch_validation_report.md`. They describe earlier readiness
-snapshots, not the current launch command, but each is referenced from two to
-five other tracked files. Moving them requires a separate link migration and
-review of source-specific evidence citations; they remain in place here.
+The later cleanup moved two superseded launch memos, five unlinked historical
+reports, and the dated handoff/status ledgers into
+[`docs/history/`](history/README.md). Current `AGENT_HANDOFF.md` and
+`EXPERIMENT_STATUS.md` now contain only live source-specific navigation.
+Markdown links to the moved memos were updated. Historical reports still
+needed by executable scripts and tests, including
+`exp12_overnight_readiness.md` and `exp12_launch_validation_report.md`,
+remain at their original paths. No scientific decision log, research
+methodology, experiment source, configuration, test or Slurm launcher was
+removed. This archive is a presentation change, not a new evidence verdict.
+
+Owner-reported job `22945337` subsequently changed from PENDING to
+`FAILED 3:0` after 45 seconds on 17 October. Its startup receipt, Slurm logs,
+and ledger are not present in this checkout; fail-closed behavior and lack of
+parent claims remain to be verified. Job `22952754` remained pending at last
+report. The jobs and their frozen source refs were not changed by cleanup.

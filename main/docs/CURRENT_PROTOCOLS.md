@@ -50,5 +50,6 @@ approval separately before any official 96-parent training.
 
 Before launching, read the applicable version's approval and qualification
 requirements. Use a clean checkout at the approved full SHA and write results
-outside Git. [Agent handoff](AGENT_HANDOFF.md) contains historical task records;
-its older branch commands are not standing authorization.
+outside Git. [Agent handoff](AGENT_HANDOFF.md) records current ownership and
+deployment status; [dated reports](history/README.md) preserve historical
+task records. Their old branch commands are not standing authorization.

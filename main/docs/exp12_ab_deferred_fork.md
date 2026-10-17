@@ -62,7 +62,7 @@ inspect retained logs before deciding on a retry. Historical PASS evidence
 remains historical and cannot be relabeled for the new source.
 
 The ready-to-copy guarded Slurm commands and artifact layout are in
-[`exp12_oct12_execution_handoff.md`](exp12_oct12_execution_handoff.md),
+[`exp12_oct12_execution_handoff.md`](history/exp12_oct12_execution_handoff.md),
 sections “Six independent cold identity cases” and “shared-mount/binding
 preflight”. Set `FINAL_SHA` to the final published commit before executing
 them, verify `git rev-parse HEAD` and a clean tree, and obtain explicit job

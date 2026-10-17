@@ -1,6 +1,6 @@
 # Scientific simplification review
 
-Scope: the isolated successor to approved `781dc6c`, not the checkout used by the queued diagnostic. Simplification is justified by approved equations and state/stream invariants, not by easier test passage. [Reconstruction](methodology_reconstruction.md) defines the contracts; [audit](methodology_implementation_audit.md) identifies source computations.
+Scope: the isolated successor to approved `781dc6c`, not the checkout used by the queued diagnostic. Simplification is justified by approved equations and state/stream invariants, not by easier test passage. [Reconstruction](../methodology_reconstruction.md) defines the contracts; [audit](../methodology_implementation_audit.md) identifies source computations.
 
 ## Implemented reductions and their preservation arguments
 
