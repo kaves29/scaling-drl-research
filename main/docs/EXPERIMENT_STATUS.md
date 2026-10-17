@@ -1,5 +1,17 @@
 # Exp1/Exp2 scientific and validation status
 
+## Source-specific status (17 October 2026)
+
+The current protocol map is [CURRENT_PROTOCOLS.md](CURRENT_PROTOCOLS.md).
+The owner reports Exp96 allocation `22945337` pending at `bd568d482c261f067add0b1d44bb57a6aceb52b1`
+and A100 engineering smoke `22952754` pending at `be1ffae7a8dd9d43bc35a6c8c4b0be9e5582b574`.
+This repository task has not independently queried their live Delta state.
+Neither a pending allocation nor the partial Kaggle T4 smoke establishes A100
+PASS or scientific calibration. The existing campaign gate requires its own
+source-matched PASS receipt; the two queued SHAs differ. The frozen five-target
+Exp1/Exp2 methodology and archived evidence remain separate from the 96-parent
+ten-target candidate. No branch consolidation changes either queued job.
+
 The Kaggle T4 Exp96 notebook is an engineering subset. Its result, even if
 `PASS` on T4, cannot qualify source-matched A100 concurrency or scientific
 calibration and cannot activate the official 96-parent queue. See

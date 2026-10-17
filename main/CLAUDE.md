@@ -3,3 +3,4 @@
 Read and follow [../AGENTS.md](../AGENTS.md), the authoritative shared agent protocol.
 Current handoff: [docs/AGENT_HANDOFF.md](docs/AGENT_HANDOFF.md).
 Scientific authority and qualification: [docs/EXPERIMENT_STATUS.md](docs/EXPERIMENT_STATUS.md).
+Versioned source map: [docs/CURRENT_PROTOCOLS.md](docs/CURRENT_PROTOCOLS.md).

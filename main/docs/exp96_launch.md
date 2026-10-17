@@ -1,5 +1,14 @@
 # Method C ten-target 96-parent study, version 1
 
+**Current deployment note (17 October 2026):** existing pending allocation
+`22945337` is pinned to `bd568d482c261f067add0b1d44bb57a6aceb52b1`
+and its `/work/hdd/biqc/skaveti1/exp96/` queue. Engineering smoke `22952754`
+is pinned to `be1ffae7a8dd9d43bc35a6c8c4b0be9e5582b574` and writes under
+`/projects/biqc/skaveti1/exp96/`. The commands below describe the source
+revision in which they were written; they are not instructions to resubmit or
+retarget either pending job. The unchanged allocation gate will reject a smoke
+receipt bound to the other source SHA.
+
 This study is isolated from the archived five-target pilot and 195-parent Exp1/2
 campaign. It is **not authorized to launch** by this document. The source commit,
 smoke evidence, scientific calibration, resource profiles, analysis plan, and

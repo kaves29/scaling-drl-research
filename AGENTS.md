@@ -25,8 +25,10 @@ merge into main, delete branches, force-push, or rewrite shared history.
 
 - Codex owns engineering, runtime, infrastructure, and integration.
 - Claude owns scientific investigation and validation.
-- Both start new tasks from the latest approved `origin/integration/exp12` HEAD,
-  recording its full SHA. If the remote tip is not approved, stop and resolve it.
+- For new work, resolve the owner-approved base from the current handoff and
+  live Git refs. `main` is the shared target after owner review; a queued Delta
+  job continues to use its own frozen SHA. Never substitute a newer branch tip
+  for a source-bound approval.
 - Use a separate task branch (`codex/<task>` or `claude/<task>`) and isolated
   checkout/worktree for each concurrent task. One writer per active branch.
 - Never directly edit another agent's active branch. Handoff via GitHub PRs;
@@ -50,7 +52,7 @@ change scientific settings to make checks pass.
 
 Update the handoff and experiment-status documents with source/evidence SHAs,
 ownership, active tasks, PRs, validation and unresolved decisions. Resolve the
-current integration tip from Git; a committed file cannot contain its own final
+current branch tip from Git; a committed file cannot contain its own final
 commit hash. Historical reports retain their original source/status snapshots.
 
 ## Code style

@@ -1,5 +1,15 @@
 # Shared agent handoff
 
+## Consolidation candidate (17 October 2026)
+
+The proposed cleanup branch starts from `be1ffae7a8dd9d43bc35a6c8c4b0be9e5582b574`
+and preserves the unique seven-parent pilot and numerical-isolation harness
+history. See [CURRENT_PROTOCOLS.md](CURRENT_PROTOCOLS.md) for the two versioned
+Exp1/Exp2 sources and [BRANCH_CONSOLIDATION_REVIEW.md](BRANCH_CONSOLIDATION_REVIEW.md)
+for branch disposition. The sections below are chronological records; old
+`integration/exp12` instructions and launch-readiness claims are historical.
+No Delta job or official parent run is authorized by this consolidation.
+
 ## Kaggle T4 Exp96 engineering smoke (16 October 2026)
 
 `codex/exp96-kaggle-t4-smoke` adds a Kaggle notebook and a development-only T4

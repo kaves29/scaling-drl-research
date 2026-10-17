@@ -1,5 +1,12 @@
 # Approval-pending Exp96 allocation
 
+**Historical command warning (17 October 2026):** job `22945337` is already
+pending at source `bd568d482c261f067add0b1d44bb57a6aceb52b1`. Do not run
+the submission example below again for that queue. The separately pending A100
+smoke `22952754` uses `be1ffae7a8dd9d43bc35a6c8c4b0be9e5582b574`; its
+receipt cannot satisfy the older job's unchanged source check. Preserve both
+jobs and their evidence while planning the next reviewed source-bound action.
+
 This is an operational queue reservation. It does **not** authorize any of the
 96 official parents. The job enters the normal Slurm queue without a hold. If
 approval is incomplete when it starts, the startup gate writes
