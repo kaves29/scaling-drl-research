@@ -35,8 +35,10 @@ scientific validity and approval; it is not silently adopted for the
 195-parent experiment.
 
 CPU validation on the consolidation candidate recorded 788 `unittest` tests
-run (787 passed, one optional skip) and, separately, 46 passed/one skipped in
-six pytest-style ten-target/Exp96 modules. All 74 mutation checks, 65
+run (787 passed, one optional skip) and, separately, 46 passed/one
+pilot-archive-path skip in six pytest-style ten-target/Exp96 modules. The
+single skipped curve-integrity test then passed with the original uploaded
+archive, giving 47/47 effective pytest coverage. All 74 mutation checks, 65
 environment restoration cells and the independent 195-parent reference
 passed. These establish engineering coverage only. Read
 [BRANCH_CONSOLIDATION_REVIEW.md](BRANCH_CONSOLIDATION_REVIEW.md) for the exact

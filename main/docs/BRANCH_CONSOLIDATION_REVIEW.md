@@ -41,7 +41,10 @@ Using Python 3.12.14/JAX 0.4.34 on CPU, the final comparator tree's isolated
 `unittest` runner recorded 88 successful modules and 788 tests run (787 passed,
 one optional compilation-cache skip because `filelock` is absent). Its six
 pytest-style modules imported with zero tests under that runner, so they were
-executed separately: 46 passed, one skipped. The comparator's 15 adversarial
+executed separately: 46 passed, one skipped because the pilot archive path was
+unset. The single skipped curve-integrity test then passed with the original
+uploaded pilot archive (three archived Myo Key Turn probe curves); effective
+pytest coverage is 47/47. The comparator's 15 adversarial
 tests passed in the broad suite. All 74 declared mutation checks passed and
 restored the source. Environment restoration passed for all 65 task-seed cells
 (13 tasks × 5 seeds). The independent reference reported 195 parent commands,
