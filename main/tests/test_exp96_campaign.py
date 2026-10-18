@@ -165,7 +165,8 @@ def test_smoke_commands_are_dev_only_and_keep_full_probe_fit(tmp_path):
         assert not any("probe.steps=" in arg or "probe.rounds=" in arg for arg in cmd)
 
 
-def test_completion_rejects_missing_rounds_curves_and_check_steps(tmp_path):
+@pytest.mark.parametrize("twin", [False, True])
+def test_completion_rejects_missing_rounds_curves_and_check_steps(tmp_path, twin):
     import numpy as np
     import pandas as pd
     run = tmp_path / "run"
@@ -179,22 +180,76 @@ def test_completion_rejects_missing_rounds_curves_and_check_steps(tmp_path):
         row.update({f"{stem}_r{r}": 0. for stem in ("score_current", "score_fresh", "loss")
                     for r in range(10)})
         rows.append(row)
+        names = (("fresh_q1_losses", "fresh_q2_losses", "current_q1_losses", "current_q2_losses")
+                 if twin else ("fresh_losses", "current_losses"))
         np.savez_compressed(curves / f"check_{k:02d}.npz",
                             fresh_score=np.zeros(10), current_score=np.zeros(10),
-                            fresh_q1_losses=zero, fresh_q2_losses=zero,
-                            current_q1_losses=zero, current_q2_losses=zero)
+                            **{name: zero for name in names})
     pd.DataFrame(rows).to_csv(curves / "probe_checks.csv", index=False)
-    assert campaign.validate_probe_artifacts(run, {"buffer": {"min_length": 5000}}, 500_000) == 50
+    cfg = {"buffer": {"min_length": 5000}, "agent": {"critic_use_cdq": twin}}
+    assert campaign.validate_probe_artifacts(run, cfg, 500_000) == 50
     rows[47]["interaction_step"] = 470_001
     pd.DataFrame(rows).to_csv(curves / "probe_checks.csv", index=False)
     with pytest.raises(ValueError, match="mistimed"):
-        campaign.validate_probe_artifacts(run, {"buffer": {"min_length": 5000}}, 500_000)
+        campaign.validate_probe_artifacts(run, cfg, 500_000)
     rows[47]["interaction_step"] = 470_000
     pd.DataFrame(rows).to_csv(curves / "probe_checks.csv", index=False)
     np.savez_compressed(curves / "check_47.npz", fresh_score=np.zeros(10),
                         current_score=np.zeros(9), fresh_q1_losses=zero)
     with pytest.raises(ValueError, match="ten current_score rounds"):
-        campaign.validate_probe_artifacts(run, {"buffer": {"min_length": 5000}}, 500_000)
+        campaign.validate_probe_artifacts(run, cfg, 500_000)
+
+
+@pytest.mark.parametrize("case", __import__("scripts.exp96_gpu_smoke", fromlist=["CASES"]).CASES)
+def test_completion_accepts_four_actual_single_critic_smoke_schemas(tmp_path, case):
+    import numpy as np
+    import pandas as pd
+    from experiments.exp1 import compose_config
+    from scripts.exp96_gpu_smoke import command
+
+    label, _, _, _, env, group, _ = case
+    cmd = command(case, tmp_path)
+    overrides = [cmd[i + 1] for i, arg in enumerate(cmd[:-1]) if arg == "--overrides"]
+    cfg = compose_config(str(campaign.MAIN / "configs"), "base_exp12_ten", overrides)
+    assert cfg.env_name == env and cfg.env.env_type in ("dmc", "myosuite")
+    assert not cfg.agent.critic_use_cdq  # All four A100 smoke cases have one critic.
+    run = tmp_path / label
+    probes = run / "probes"
+    probes.mkdir(parents=True)
+    rows = []
+    for k, step in enumerate((5000, 10_000, 20_000)):
+        row = {"check_index": k, "interaction_step": step, "loss_iqm": 0.,
+               "ci_low": 0., "ci_high": 0., "triggered": False, "valid": True}
+        row.update({f"{stem}_r{r}": 0. for stem in ("score_current", "score_fresh", "loss")
+                    for r in range(10)})
+        rows.append(row)
+        fields = {f"fresh_{name}": np.zeros(shape, dtype=np.float32)
+                  for name, shape in (("score", 10), ("losses", (10, 2000)),
+                                      ("final_loss", 10), ("offset", 10), ("b", 10))}
+        if k:
+            fields.update({f"current_{name}": np.zeros(shape, dtype=np.float32)
+                           for name, shape in (("score", 10), ("losses", (10, 2000)),
+                                               ("final_loss", 10), ("offset", 10), ("b", 10))})
+        np.savez_compressed(probes / f"check_{k:02d}.npz", **fields)
+    pd.DataFrame(rows).to_csv(probes / "probe_checks.csv", index=False)
+    assert campaign.validate_probe_artifacts(run, cfg, 20_000) == 2
+
+    path = probes / "check_01.npz"
+    good = dict(np.load(path))
+    for mutation in (lambda d: d.pop("current_losses"),
+                     lambda d: d.update(current_losses=np.zeros((9, 2000))),
+                     lambda d: d.update(current_losses=np.full((10, 2000), np.nan)),
+                     lambda d: d.update(current_q1_losses=d.pop("current_losses"))):
+        bad = dict(good)
+        mutation(bad)
+        np.savez_compressed(path, **bad)
+        with pytest.raises(ValueError):
+            campaign.validate_probe_artifacts(run, cfg, 20_000)
+    np.savez_compressed(path, **good)
+    rows[1]["ci_low"] = float("inf")
+    pd.DataFrame(rows).to_csv(probes / "probe_checks.csv", index=False)
+    with pytest.raises(ValueError, match="nonfinite"):
+        campaign.validate_probe_artifacts(run, cfg, 20_000)
 
 
 def test_exp2_check_47_boundary_uses_unchanged_horizon():

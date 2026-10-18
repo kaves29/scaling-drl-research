@@ -168,3 +168,18 @@ For planning, there are 32 runs of each size, so the nominal weights sum to
 32 × (1/6 + 1/4 + 1/2) = 29⅓ full-GPU slot equivalents **per common run
 duration**. This is a packing quantity, not a GPU-hour forecast; wall time and
 throughput can change when processes share a GPU.
+
+## Completion-validator correction (2026-10-18)
+
+The A100 engineering smoke at source `be1ffae7a8dd9d43bc35a6c8c4b0be9e5582b574`
+was reported PASS. Its four cases use `dmc_hard` or `myosuite_simba`, whose
+`episodic: false` configuration resolves `agent.critic_use_cdq: false`. The
+probe therefore saves `fresh_losses` and, at later checks,
+`current_losses`, each with ten 2,000-step curves. The earlier 96-parent
+completion validator incorrectly required twin-only `q1/q2` curve names.
+The consolidation-branch correction selects the required curves from the
+resolved, source-hashed critic configuration, retains the full check schedule
+and score/curve shape checks, and rejects wrong-schema or nonfinite evidence.
+It does not change training or probe computation. The original smoke PASS is
+evidence for its own source SHA; source-bound campaign approval for the
+corrected revision must name that revision explicitly.

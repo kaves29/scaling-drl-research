@@ -248,10 +248,13 @@ def validate_parent(item, commit, queue_root):
 
 
 def validate_probe_artifacts(run, cfg, end):
-    """Require every scheduled ten-round curve and its ordered CSV record."""
+    """Require every scheduled ten-round curve in the configured critic schema."""
     import numpy as np
     import pandas as pd
     run = Path(run)
+    twin = cfg["agent"]["critic_use_cdq"]
+    if type(twin) is not bool:
+        raise ValueError("critic schema must be specified by the resolved configuration")
     checks = pd.read_csv(run / "probes" / "probe_checks.csv")
     count = end // 10_000
     expected_steps = [int(cfg["buffer"]["min_length"])] + [i * 10_000 for i in range(1, count + 1)]
@@ -263,8 +266,9 @@ def validate_probe_artifacts(run, cfg, end):
                          for r in range(10)}
     if not required_columns <= set(checks.columns):
         raise ValueError("plasticity CSV lacks ten-round metrics/confidence bounds")
-    if not checks.loc[checks.check_index > 0, list(required_columns - {"triggered", "valid"})].notna().all().all():
-        raise ValueError("plasticity CSV contains missing measurements")
+    measured = checks.loc[checks.check_index > 0, list(required_columns - {"triggered", "valid"})]
+    if not np.isfinite(measured.to_numpy(dtype=float)).all():
+        raise ValueError("plasticity CSV contains missing/nonfinite measurements")
     for k in range(count + 1):
         with np.load(run / "probes" / f"check_{k:02d}.npz") as payload:
             if not payload.files or any(not np.isfinite(payload[x]).all() for x in payload.files):
@@ -272,8 +276,14 @@ def validate_probe_artifacts(run, cfg, end):
             for name in (("fresh_score",) if k == 0 else ("fresh_score", "current_score")):
                 if name not in payload or payload[name].shape != (10,):
                     raise ValueError(f"probe check {k} lacks ten {name} rounds")
-            for name in (("fresh_q1_losses", "fresh_q2_losses") if k == 0 else
-                         ("fresh_q1_losses", "fresh_q2_losses", "current_q1_losses", "current_q2_losses")):
+            prefixes = ("fresh",) if k == 0 else ("fresh", "current")
+            names = tuple(f"{prefix}_q{q}_losses" for prefix in prefixes for q in (1, 2)) if twin else tuple(
+                f"{prefix}_losses" for prefix in prefixes)
+            wrong = tuple(f"{prefix}_losses" for prefix in prefixes) if twin else tuple(
+                f"{prefix}_q{q}_losses" for prefix in prefixes for q in (1, 2))
+            if any(name in payload for name in wrong):
+                raise ValueError(f"probe check {k} has curves for the wrong critic schema")
+            for name in names:
                 if name not in payload or payload[name].shape != (10, 2000):
                     raise ValueError(f"probe check {k} lacks continuous 2,000-step {name} curves")
     return count
