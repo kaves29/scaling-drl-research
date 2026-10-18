@@ -45,3 +45,12 @@ does not satisfy the unchanged allocation's source-bound startup gate.
 - The current scientific and qualification limits are in
   [EXPERIMENT_STATUS.md](EXPERIMENT_STATUS.md). Neither this handoff nor a
   successful CPU suite authorizes official training.
+
+## Owner-authorized multi-GPU successor (18 October 2026)
+
+The task branch `codex/exp96-multigpu-754` adds a separate8GPU launcher and
+source-bound targeted qualification; see [operational design](exp96_multigpu_754.md).
+It preserves scientific rows/validators and old queues. Owner authorizes600SU
+including≤2physicalGPUh qualification; actual engineering PASS is external and
+must be inspected before approving/submitting the campaign. Do not infer PASS
+from this implementation or from the original one-GPU smoke alone.

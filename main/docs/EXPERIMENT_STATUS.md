@@ -43,3 +43,13 @@ environment restoration cells and the independent 195-parent reference
 passed. These establish engineering coverage only. Read
 [BRANCH_CONSOLIDATION_REVIEW.md](BRANCH_CONSOLIDATION_REVIEW.md) for the exact
 source and validation scope.
+
+## Multi-GPU successor engineering (18 October 2026)
+
+Owner requested8×A10040GB on gpuA100x8,7/5/4 packing, fixed96-parent science and
+600weightedSU including≤2physicalGPUh targeted qualification. The separate
+launcher preserves existing scientific/result/source gates and adds measured
+packing/orchestration evidence plus atomic cumulative spending reservations.
+The original smoke is inherited only for byte-matched scientific code, not
+relabeled as multi-GPU evidence. No qualification PASS or campaign submission
+is claimed by this source snapshot; inspect the durable Delta receipts.

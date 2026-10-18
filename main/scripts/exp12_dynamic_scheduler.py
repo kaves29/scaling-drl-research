@@ -1331,7 +1331,8 @@ def _owner(job_id):
     }
 
 
-def _start(item, token, approval, queue_root, ledger, job_id, training_checkout=None):
+def _start(item, token, approval, queue_root, ledger, job_id, training_checkout=None,
+           cpu_ids=None, child_env=None):
     owner = _owner(job_id)
     commit = approval["expected_commit"]
     if _CLAIM_BACKOFF.get(item["id"], 0) > time.time():
@@ -1374,6 +1375,15 @@ def _start(item, token, approval, queue_root, ledger, job_id, training_checkout=
             command[0] = sys.executable
         env = dict(os.environ)
         env["CUDA_VISIBLE_DEVICES"] = str(token)
+        if child_env:
+            if "CUDA_VISIBLE_DEVICES" in child_env:
+                raise ValueError("child environment cannot override assigned GPU")
+            env.update(child_env)
+        if cpu_ids is not None:
+            if not cpu_ids or not set(cpu_ids) <= os.sched_getaffinity(0):
+                raise ValueError("child CPU assignment is outside the allocation")
+            command = ["taskset", "--cpu-list", ",".join(map(str, sorted(cpu_ids))), *command]
+            env["EXP96_ASSIGNED_CPU_IDS"] = ",".join(map(str, sorted(cpu_ids)))
         if training_checkout is not None:
             # The isolated pilot worker may have its own scheduler-only revision.
             # Its Python path must never shadow modules in the frozen trainer.
