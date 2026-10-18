@@ -1,5 +1,8 @@
 # Method C ten-target 96-parent study, version 1
 
+For the proposed scientific freeze and remaining owner decisions, read
+[the 18 October launch decision](exp96_launch_decision_2026-10-18.md).
+
 **Current deployment note (17 October 2026):** existing pending allocation
 `22945337` is pinned to `bd568d482c261f067add0b1d44bb57a6aceb52b1`
 and its `/work/hdd/biqc/skaveti1/exp96/` queue. Engineering smoke `22952754`
@@ -122,8 +125,11 @@ env EXPECTED_COMMIT="$SHA" EXP96_SMOKE_ROOT="$ROOT" \
   scripts/sbatch_exp96_gpu_smoke.sh
 ```
 
-Maximum request: 1.5 A100 GPU-hours, 16 CPUs, 64 GiB host RAM. This is a
-proposed qualification, **not submitted**. Passing requires all four dev runs
+Maximum request: 1.5 A100 GPU-hours, 16 CPUs, 64 GiB host RAM. This is the
+historical qualification command. The owner reports that the four-case smoke
+passed at `be1ffae7a8dd9d43bc35a6c8c4b0be9e5582b574`; its receipt was
+not independently inspected in this cloud workspace and cannot qualify a
+different source SHA under the existing gate. Passing requires all four dev runs
 reach their 20,000-interaction endpoints, both scheduled probes and fresh
 baseline exist for each, the medium checkpoint restart succeeds, and no process
 fails. Peak VRAM and throughput must then be reviewed against the proposed
@@ -143,8 +149,9 @@ rate or detector sensitivity. A bounded next calibration would collect, for
 one preselected environment/architecture, independent fresh pairs at two
 scheduled replay/check positions under full ten-target 2,000-step fitting,
 with pair-order reversal on the same targets. Start with at most 40 pairs and
-a fixed four-hour, one-A100 cap (at most 4 GPU-hours); report per-check and
-two-consecutive rates separately. This is a proposed upper bound, not a measured
+a fixed four-hour, one-A100 cap (at most 4 GPU-hours); report per-check rates.
+Report a two-consecutive rate only if the same independent units are evaluated
+at adjacent scheduled check positions. This is a proposed upper bound, not a measured
 runtime or authorization to submit it.
 The owner must approve its source cell and compute cap. The sample remains
 exploratory and cannot prove a ≤5% longitudinal rate.

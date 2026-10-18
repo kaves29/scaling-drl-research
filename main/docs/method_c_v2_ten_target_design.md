@@ -1,8 +1,10 @@
 # Method C v2: ten-target validation design (draft, 2026-10-15)
 
-**Status:** exploratory protocol and isolated CPU reference only. The seven-run pilot
-and its five-target Method C source `f8619dd5f494399d9febc79fc9092010234c714d`
-remain immutable. Nothing in this branch activates ten targets in production.
+**Status:** historical design draft. The ten-target candidate is now implemented
+in `configs/base_exp12_ten.yaml`; its official collection remains separately
+gated. See [the current launch decision](exp96_launch_decision_2026-10-18.md)
+for proposed dispositions. The seven-run pilot and its five-target Method C
+source `f8619dd5f494399d9febc79fc9092010234c714d` remain immutable.
 Lyle et al., *Understanding Plasticity in Neural Networks*, ICML 2023,
 Appendix A.2 uses ten random target functions. Our sine target and score are
 described in `method_c_construct_validation_controls.md`. The bootstrap,
