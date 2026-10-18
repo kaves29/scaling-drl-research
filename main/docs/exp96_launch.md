@@ -177,7 +177,8 @@ was reported PASS. Its four cases use `dmc_hard` or `myosuite_simba`, whose
 probe therefore saves `fresh_losses` and, at later checks,
 `current_losses`, each with ten 2,000-step curves. The earlier 96-parent
 completion validator incorrectly required twin-only `q1/q2` curve names.
-The consolidation-branch correction selects the required curves from the
+The engineering fix is commit `d0bbde4352f6814c6ab8ae0736363469755fc540`
+on `codex/scaling-drl-consolidation`. It selects the required curves from the
 resolved, source-hashed critic configuration, retains the full check schedule
 and score/curve shape checks, and rejects wrong-schema or nonfinite evidence.
 It does not change training or probe computation. The original smoke PASS is
