@@ -420,6 +420,24 @@ def run(root, commit):
             cfg = m.read(run_dir / "run_metadata.json")["resolved_config"]
             if m.core().validate_probe_artifacts(run_dir, cfg, 20000) != 2:
                 raise ValueError("original artifact validation failed")
+        import numpy as np
+        from experiments.exp12.state import latest_state_dir
+
+        bounds = {}
+        for label in ("small", "medium", "large", "replacement"):
+            state = latest_state_dir(SMOKE / label / "state")
+            buffer_file = state / "buffer.npz"
+            with np.load(buffer_file) as payload:
+                obs = payload["observations"].shape[1]
+                act = payload["actions"].shape[1]
+            if obs > 223 or obs + act > 261:
+                raise ValueError(
+                    "retained dog dimensions do not bound all campaign inputs"
+                )
+            bounds[label] = {"observations": obs, "actions": act}
+            report["evidence_sha256"][str(buffer_file)] = m.digest(buffer_file)
+        report["environment_input_bounds"] = bounds
+        report["cpu_topology"] = m.checked(["lscpu", "--json"])
         gpus = m.gpu_inventory(8)
         cpu_lanes = m.cpu_partition(os.sched_getaffinity(0), 8)
         report["gpus"] = gpus
