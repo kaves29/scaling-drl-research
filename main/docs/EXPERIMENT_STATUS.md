@@ -74,3 +74,13 @@ three sequential homogeneous phases; optional mixed packing disabled. Seven
 focused new/affected CPU checks passed. No GPU result exists yet. New reservation
 maximum0.5SU/0.5GPUh; including prior0.24GPUh, qualification maximum0.74GPUh.
 The earlier13minute/eight-GPU proposal is historical and superseded.
+
+## Final owner-authorized qualification retry preparation (19 October2026)
+
+23020573 FAILED3:0 after17s, no children: invalid global-GPU-token/NVML-index
+comparison. Real consumption0.004722222SU and physicalGPUh. This was not memory
+qualification. Driver-identity successor preserves science and all gates; new
+identity/diagnostic tests pass. Real CPU paired ten-target2000-step fitting and
+bitwise checkpoint restore/next-update contracts passed in50.374s, explicitly
+using small synthetic fixtures. No new GPU PASS asserted. One final30min/oneGPU
+retry authorized; cumulative qualification maximum0.744722222physicalGPUh.

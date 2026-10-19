@@ -7,6 +7,7 @@ by repeating those transitions to test capacity, never called scientific data.
 """
 import argparse
 import ast
+import ctypes
 import json
 import math
 import os
@@ -14,6 +15,7 @@ import signal
 import subprocess
 import sys
 import time
+import traceback
 import uuid
 from pathlib import Path
 
@@ -179,6 +181,15 @@ def child(root, arch, label, representative):
 
     start = time.monotonic()
     root.mkdir()
+
+    def progress(stage):
+        m.write(
+            root / "progress.json",
+            dict(stage=stage, monotonic=time.monotonic(), pid=os.getpid()),
+            replace=True,
+        )
+
+    progress("GPU/CPU isolation")
     assigned = os.environ["CUDA_VISIBLE_DEVICES"]
     if len(jax.devices("gpu")) != 1 or jax.default_backend() != "gpu":
         raise ValueError("child did not initialize exactly one GPU")
@@ -212,12 +223,14 @@ def child(root, arch, label, representative):
             f'results_root={root / "results"}',
         ],
     )
+    progress("construct trainer and verify replay geometry")
     trainer = Exp12Trainer(cfg, str(root))
     obs_dim, act_dim = engineering_dimensions(trainer.train_env, trainer.buffer)
     input_root = PILOT / INPUTS[arch]
     state = latest_state_dir(input_root / "state")
     if state is None or not state.name.startswith("step_000500000_"):
         raise ValueError("retained input is not the verified500k state")
+    progress("restore retained checkpoint")
     trainer.restore(state, new_wandb_run=True)
     # Touch full1M replay capacity, using explicitly repeated real transitions.
     # This bounds the official <=595k occupancy without inventing a trained state.
@@ -242,6 +255,7 @@ def child(root, arch, label, representative):
         raise ValueError("restored model/optimizer is not FP32 GPU-backed")
     # The first call includes SAC compilation and the diagnostic path; subsequent
     # calls measure the complete warmed update and CPU dispatch under real packing.
+    progress("SAC warm updates")
     trainer.agent.update(
         trainer.update_step, b.sample(), compute_actor_grad_cosine=True
     )
@@ -265,6 +279,7 @@ def child(root, arch, label, representative):
     m.write(root / "ready.json", {"pid": os.getpid(), "gpu": assigned})
     while not (root.parent / "PROBES_GO.json").exists():
         time.sleep(0.2)
+    progress("full paired ten-target fitting")
     tick = time.monotonic()
     result = run_probe_networks(
         trainer.agent,
@@ -278,11 +293,7 @@ def child(root, arch, label, representative):
         probe_config(cfg),
     )
     probe_seconds = time.monotonic() - tick
-    for name in ("fresh", "current"):
-        if result[name]["losses"].shape != (10, 2000):
-            raise ValueError("fitting budget changed")
-        if any(not np.isfinite(v).all() for v in result[name].values()):
-            raise ValueError("nonfinite full probe")
+    validate_probe_result(result)
     curves = root / "full_paired_probe.npz"
     np.savez_compressed(
         curves,
@@ -295,6 +306,7 @@ def child(root, arch, label, representative):
     roundtrip = None
     save_seconds = 0
     if representative:
+        progress("checkpoint save/restore/save and bitwise comparison")
         tick = time.monotonic()
         a = trainer.save(root / "state_before")
         trainer.restore(a, new_wandb_run=True)
@@ -328,6 +340,7 @@ def child(root, arch, label, representative):
         "curve_path": str(curves),
         "curve_sha256": m.digest(curves),
     }
+    progress("complete; awaiting phase shutdown")
     m.write(root / "child_receipt.json", report)
     while not (root.parent / "EXIT_GO.json").exists():
         time.sleep(0.2)
@@ -477,27 +490,143 @@ def sample(processes):
     return device, applications, rss
 
 
-def qualification_device():
-    """Resolve the physical GPU from Slurm ownership on a shared x4 node."""
-    allocated = m.gpu_tokens(os.environ.get("SLURM_JOB_GPUS", ""))
-    if len(allocated) != 1:
-        raise ValueError("qualification requires exactly one Slurm-owned GPU")
-    devices = []
-    for line in m.checked(
-        [
-            "nvidia-smi",
-            "--query-gpu=index,uuid,name,memory.total",
-            "--format=csv,noheader,nounits",
-        ]
-    ).splitlines():
-        index, token, name, memory = [x.strip() for x in line.split(",")]
-        if allocated[0] in (index, token):
-            if name != "NVIDIA A100-SXM4-40GB" or not 39000 <= int(memory) <= 42000:
-                raise ValueError("unqualified GPU model/capacity")
-            devices.append(dict(index=index, uuid=token, memory_mb=int(memory)))
-    if len(devices) != 1:
-        raise ValueError("cannot bind allocated physical GPU unambiguously")
-    return devices[0]
+def cuda_visible_identity():
+    """Query CUDA's actual visible UUID without allocating a context or tensors."""
+    driver = ctypes.CDLL("libcuda.so.1")
+
+    class CuUuid(ctypes.Structure):
+        _fields_ = [("bytes", ctypes.c_ubyte * 16)]
+
+    signatures = {
+        "cuInit": [ctypes.c_uint],
+        "cuDeviceGetCount": [ctypes.POINTER(ctypes.c_int)],
+        "cuDeviceGet": [ctypes.POINTER(ctypes.c_int), ctypes.c_int],
+        "cuDeviceGetUuid": [ctypes.POINTER(CuUuid), ctypes.c_int],
+        "cuDeviceGetPCIBusId": [ctypes.c_char_p, ctypes.c_int, ctypes.c_int],
+        "cuCtxGetCurrent": [ctypes.POINTER(ctypes.c_void_p)],
+        "cuDriverGetVersion": [ctypes.POINTER(ctypes.c_int)],
+    }
+    for name, args in signatures.items():
+        f = getattr(driver, name)
+        f.argtypes, f.restype = args, ctypes.c_int
+
+    def call(name, *args):
+        result = getattr(driver, name)(*args)
+        if result != 0:
+            raise RuntimeError(f"{name} failed with CUDA error {result}")
+
+    call("cuInit", 0)
+    count = ctypes.c_int()
+    call("cuDeviceGetCount", ctypes.byref(count))
+    if count.value != 1:
+        raise ValueError(f"CUDA must expose exactly one GPU, found {count.value}")
+    device = ctypes.c_int()
+    call("cuDeviceGet", ctypes.byref(device), 0)
+    token = CuUuid()
+    call("cuDeviceGetUuid", ctypes.byref(token), device)
+    bus = ctypes.create_string_buffer(32)
+    call("cuDeviceGetPCIBusId", bus, len(bus), device)
+    context = ctypes.c_void_p()
+    call("cuCtxGetCurrent", ctypes.byref(context))
+    if context.value is not None:
+        raise ValueError("discovery unexpectedly created a CUDA context")
+    version = ctypes.c_int()
+    call("cuDriverGetVersion", ctypes.byref(version))
+    return dict(
+        uuid="GPU-" + str(uuid.UUID(bytes=bytes(token.bytes))),
+        pci_bus_id=bus.value.decode("ascii"),
+        visible_count=count.value,
+        driver_api_version=version.value,
+        controller_context=None,
+    )
+
+
+def pci_identity(value):
+    domain, bus, device = value.lower().split(":")
+    return int(domain, 16), int(bus, 16), device
+
+
+def qualification_device(diagnostic_path=None):
+    """Join CUDA and NVML by UUID/PCI identity, never by numeric ordinal."""
+    evidence = {
+        "environment": {
+            key: os.environ.get(key)
+            for key in (
+                "SLURM_JOB_ID",
+                "SLURM_JOB_GPUS",
+                "SLURM_STEP_GPUS",
+                "SLURM_GPUS_ON_NODE",
+                "CUDA_VISIBLE_DEVICES",
+                "CUDA_DEVICE_ORDER",
+            )
+        }
+    }
+    try:
+        ownership = os.environ.get("SLURM_JOB_GPUS") or os.environ.get(
+            "SLURM_STEP_GPUS"
+        )
+        allocated = m.gpu_tokens(ownership) if ownership else []
+        if (
+            os.environ.get("SLURM_GPUS_ON_NODE") != "1"
+            or (ownership and len(allocated) != 1)
+            or not os.environ.get("CUDA_VISIBLE_DEVICES")
+        ):
+            raise ValueError("one Slurm GPU and its inherited CUDA visibility required")
+        evidence["nvidia_smi"] = m.checked(
+            [
+                "nvidia-smi",
+                "--query-gpu=index,uuid,name,memory.total,pci.bus_id,minor_number",
+                "--format=csv,noheader,nounits",
+            ]
+        )
+        evidence["cuda"] = cuda_visible_identity()
+        identity = evidence["cuda"]
+        devices = []
+        for line in evidence["nvidia_smi"].splitlines():
+            index, token, name, memory, bus, minor = [
+                x.strip() for x in line.split(",")
+            ]
+            if token.lower() == identity["uuid"].lower():
+                if pci_identity(bus) != pci_identity(identity["pci_bus_id"]):
+                    raise ValueError("CUDA/NVML PCI identity disagreement")
+                if name != "NVIDIA A100-SXM4-40GB" or not 39000 <= int(memory) <= 42000:
+                    raise ValueError("unqualified GPU model/capacity: " + name)
+                if (
+                    allocated
+                    and allocated[0].startswith("GPU-")
+                    and allocated[0].lower() != token.lower()
+                ):
+                    raise ValueError("Slurm UUID disagrees with CUDA")
+                devices.append(
+                    dict(
+                        index=index,
+                        uuid=token,
+                        memory_mb=int(memory),
+                        pci_bus_id=bus,
+                        minor_number=minor,
+                    )
+                )
+        if len(devices) != 1:
+            raise ValueError("CUDA UUID not uniquely matched by NVIDIA inventory")
+        evidence["selected"] = devices[0]
+        return devices[0]
+    except Exception as exc:
+        evidence["error"] = f"{type(exc).__name__}: {exc}"
+        raise
+    finally:
+        if diagnostic_path is not None:
+            m.write(diagnostic_path, evidence)
+
+
+def validate_probe_result(result):
+    """Check the real single-critic output contract without changing fit budgets."""
+    import numpy as np
+
+    for name in ("fresh", "current"):
+        if result[name]["losses"].shape != (10, 2000):
+            raise ValueError("fitting budget changed")
+        if any(not np.isfinite(v).all() for v in result[name].values()):
+            raise ValueError("nonfinite full probe")
 
 
 def run(root, commit):
@@ -534,6 +663,8 @@ def run(root, commit):
             "memory_gb": 60,
             "wall_minutes": wall_minutes,
         }
+        report["resources"] = r
+        report["stage"] = "allocation/source verification"
         m.resources_valid(r, qualification=True)
         if workload_seconds <= 0:
             raise ValueError("insufficient qualification cleanup margin")
@@ -556,7 +687,11 @@ def run(root, commit):
         report["claims_race_passed"] = True
         report["evidence_sha256"].update(reused["evidence_sha256"])
         report["cpu_topology"] = m.checked(["lscpu", "--json"])
-        gpus = [qualification_device()]
+        report["stage"] = "GPU discovery"
+        gpus = [qualification_device(root / "gpu_discovery.json")]
+        report["evidence_sha256"][str(root / "gpu_discovery.json")] = m.digest(
+            root / "gpu_discovery.json"
+        )
         cpu_lanes = m.cpu_partition(os.sched_getaffinity(0), 1)
         report["gpus"] = gpus
         report["cpu_lanes"] = cpu_lanes
@@ -566,6 +701,8 @@ def run(root, commit):
         report["phase_peak_rss_gb"] = {}
         report["fitting_barrier_sha256"] = {}
         for lane, composition in enumerate(m.COMPOSITIONS):
+            report["stage"] = f"packed phase {lane}: {composition}"
+            print(report["stage"], flush=True)
             gpu, cpus = gpus[0], cpu_lanes[0]
             phase = work / f"phase_{lane}"
             phase.mkdir()
@@ -771,6 +908,7 @@ def run(root, commit):
         )
     except Exception as exc:
         report["error"] = f"{type(exc).__name__}: {exc}"
+        report["traceback"] = traceback.format_exc()
     finally:
         for p in records:
             if p["process"].poll() is None:
