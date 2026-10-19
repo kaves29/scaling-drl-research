@@ -54,3 +54,14 @@ It preserves scientific rows/validators and old queues. Owner authorizes600SU
 including≤2physicalGPUh qualification; actual engineering PASS is external and
 must be inspected before approving/submitting the campaign. Do not infer PASS
 from this implementation or from the original one-GPU smoke alone.
+
+## Qualification continuation (19 October 2026)
+
+`codex/exp96-qualification-shapes` is based on the frozen multi-GPU revision
+`a5c376d740b072d5211e55d94860a61dbd054fec`. Job22990946 failed after108s
+because its test read the vector batch dimension as the dog input width.
+Passed production-assignment and claim-race components are reused only with
+artifact hashes and unchanged implementation checks. Full packed fitting,
+memory and checkpoint qualification remain unverified until the new actual
+receipt passes. See [continuation scope](exp96_qualification_continuation.md).
+Do not release/retarget historical held campaign22996973 on this basis.

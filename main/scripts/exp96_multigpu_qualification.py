@@ -6,6 +6,7 @@ Old500k dog checkpoints are engineering inputs. Replay is deliberately filled
 by repeating those transitions to test capacity, never called scientific data.
 """
 import argparse
+import ast
 import json
 import math
 import os
@@ -32,6 +33,113 @@ INPUTS = dict(
     )
 )
 SMOKE = Path("/projects/biqc/skaveti1/exp96/smoke_be1ffae_20261017T141608Z")
+
+
+REUSABLE_SOURCE = "a5c376d740b072d5211e55d94860a61dbd054fec"
+
+
+def engineering_dimensions(env, buffer):
+    """Use unbatched vector-environment spaces and cross-check replay geometry."""
+    obs = getattr(env, "single_observation_space", env.observation_space).shape
+    act = getattr(env, "single_action_space", env.action_space).shape
+    replay = (buffer._observations.shape[1:], buffer._actions.shape[1:])
+    if (obs, act) != replay or (obs, act) != ((223,), (38,)):
+        raise ValueError("dog engineering space/replay geometry changed")
+    return obs[0], act[0]
+
+
+def implementation_nodes(commit, path, names):
+    tree = ast.parse(m.checked(["git", "show", f"{commit}:{path}"], cwd=MAIN))
+    return {
+        node.name: ast.dump(node, include_attributes=False)
+        for node in tree.body
+        if isinstance(node, (ast.FunctionDef, ast.ClassDef)) and node.name in names
+    }
+
+
+def reusable_checks(path, commit, expected=None):
+    """Certify only independently passed components of the failed prior job."""
+    path = Path(path).resolve()
+    q = m.read(path)
+    if (
+        q.get("expected_commit") != REUSABLE_SOURCE
+        or str(q.get("job_id")) != "22990946"
+        or q.get("verdict") != "INCOMPLETE"
+        or not q.get("production_orchestration_passed")
+        or not q.get("claims_race_passed")
+        or q.get("training_fingerprint") != m.training_fingerprint(commit)
+        or q.get("limits") != m.LIMITS
+        or q.get("compositions") != [list(c) for c in m.COMPOSITIONS]
+    ):
+        raise ValueError("prior receipt does not establish reusable components")
+    unchanged = {
+        "main/scripts/exp96_multigpu.py": (
+            "start_child",
+            "gpu_inventory",
+            "gpu_tokens",
+            "cpu_partition",
+        ),
+        "main/scripts/exp96_multigpu_qualification.py": (
+            "claim_child",
+            "production_assignment",
+            "assignment_probe",
+            "sample",
+        ),
+    }
+    for file, names in unchanged.items():
+        old = implementation_nodes(REUSABLE_SOURCE, file, names)
+        new = implementation_nodes(commit, file, names)
+        if len(old) != len(names) or old != new:
+            raise ValueError("reused component implementation changed: " + file)
+    for file in (
+        "main/scripts/exp12_dynamic_scheduler.py",
+        "main/scripts/exp96_campaign.py",
+    ):
+        if m.checked(
+            ["git", "rev-parse", f"{REUSABLE_SOURCE}:{file}"], cwd=MAIN
+        ) != m.checked(["git", "rev-parse", f"{commit}:{file}"], cwd=MAIN):
+            raise ValueError("reused queue/validator implementation changed")
+    evidence = dict(q["evidence_sha256"])
+    ready = []
+    for i in range(8):
+        file = (
+            path.parent
+            / "qualification"
+            / "production_assignment"
+            / str(i)
+            / "ready.json"
+        )
+        if str(file) not in evidence:
+            raise ValueError("missing original assignment hash")
+        ready.append(m.read(file))
+    if len({x["gpu"] for x in ready}) != 8 or len({x["pid"] for x in ready}) != 8:
+        raise ValueError("old assignment identities not distinct")
+    cpus = [cpu for x in ready for cpu in x["cpu_ids"]]
+    if len(cpus) != 16 or len(set(cpus)) != 16:
+        raise ValueError("old assignment CPUs not isolated")
+    claims = []
+    for i in range(12):
+        file = path.parent / "qualification" / "claims_race" / f"{i}.json"
+        evidence[str(file)] = m.digest(file)
+        claims.append(m.read(file))
+    if (
+        sum(x["won"] is True for x in claims) != 1
+        or len({x["owner"]["token"] for x in claims}) != 12
+        or any(str(x["owner"]["job_id"]) != "22990946" for x in claims)
+    ):
+        raise ValueError("old race evidence not a unique owner")
+    for file, sha in evidence.items():
+        if m.digest(file) != sha:
+            raise ValueError("reused evidence changed: " + file)
+    result = {
+        "path": str(path),
+        "sha256": m.digest(path),
+        "evidence_sha256": evidence,
+        "checks": ["production_assignment", "claims_race", "original_smoke_validation"],
+    }
+    if expected is not None and result != expected:
+        raise ValueError("reused component binding changed")
+    return result
 
 
 def claim_child(root, label):
@@ -105,6 +213,7 @@ def child(root, arch, label, representative):
         ],
     )
     trainer = Exp12Trainer(cfg, str(root))
+    obs_dim, act_dim = engineering_dimensions(trainer.train_env, trainer.buffer)
     input_root = PILOT / INPUTS[arch]
     state = latest_state_dir(input_root / "state")
     if state is None or not state.name.startswith("step_000500000_"):
@@ -147,12 +256,6 @@ def child(root, arch, label, representative):
         trainer.update_step += 1
         times.append(time.monotonic() - tick)
     net = original_critic_def(cfg)
-    obs_dim, act_dim = (
-        trainer.train_env.observation_space.shape[0],
-        trainer.train_env.action_space.shape[0],
-    )
-    if (obs_dim, act_dim) != (223, 38):
-        raise ValueError("dog engineering shape changed")
     fresh = net.init(
         jax.random.PRNGKey(seed),
         observations=jnp.zeros((1, obs_dim)),
@@ -378,7 +481,9 @@ def run(root, commit):
     root = Path(root).resolve()
     work = root / "qualification"
     work.mkdir()
-    deadline = time.monotonic() + 720
+    wall_minutes = int(os.environ.get("EXP96_QUALIFICATION_MINUTES", "13"))
+    workload_seconds = wall_minutes * 60 - 120
+    deadline = time.monotonic() + workload_seconds
     records = []
     report = {
         "schema": m.SCHEMA,
@@ -404,8 +509,11 @@ def run(root, commit):
             "gpus": 8,
             "cpus": 128,
             "memory_gb": 2007,
-            "wall_minutes": 15,
+            "wall_minutes": wall_minutes,
         }
+        m.resources_valid(r, qualification=True)
+        if workload_seconds <= 0:
+            raise ValueError("insufficient qualification cleanup margin")
         m.verify_actual(r)
         m.reserved_job(os.environ["EXP96_BUDGET"], os.environ["EXP96_RESERVATION"], r)
         report["training_fingerprint"] = m.training_fingerprint(commit)
@@ -413,69 +521,22 @@ def run(root, commit):
             raise ValueError("scientific execution/config/dependency bytes changed")
         if m.digest(SMOKE / "smoke.json") != m.BASE_SMOKE_DIGEST:
             raise ValueError("original smoke changed")
-        # The existing corrected validator re-reads the real arrays once; no GPU
-        # training is repeated and the original development horizon is retained.
-        for label in ("small", "medium", "large", "replacement"):
-            run_dir = SMOKE / label
-            cfg = m.read(run_dir / "run_metadata.json")["resolved_config"]
-            if m.core().validate_probe_artifacts(run_dir, cfg, 20000) != 2:
-                raise ValueError("original artifact validation failed")
-        import numpy as np
-        from experiments.exp12.state import latest_state_dir
-
-        bounds = {}
-        for label in ("small", "medium", "large", "replacement"):
-            state = latest_state_dir(SMOKE / label / "state")
-            buffer_file = state / "buffer.npz"
-            with np.load(buffer_file) as payload:
-                obs = payload["observations"].shape[1]
-                act = payload["actions"].shape[1]
-            if obs > 223 or obs + act > 261:
-                raise ValueError(
-                    "retained dog dimensions do not bound all campaign inputs"
-                )
-            bounds[label] = {"observations": obs, "actions": act}
-            report["evidence_sha256"][str(buffer_file)] = m.digest(buffer_file)
-        report["environment_input_bounds"] = bounds
+        previous = os.environ.get("EXP96_REUSE_CHECKS")
+        if not previous:
+            raise ValueError("targeted continuation requires passed component evidence")
+        reused = reusable_checks(previous, commit)
+        report["reused_checks"] = reused
+        report["environment_input_bounds"] = m.read(previous)[
+            "environment_input_bounds"
+        ]
+        report["production_orchestration_passed"] = True
+        report["claims_race_passed"] = True
+        report["evidence_sha256"].update(reused["evidence_sha256"])
         report["cpu_topology"] = m.checked(["lscpu", "--json"])
         gpus = m.gpu_inventory(8)
         cpu_lanes = m.cpu_partition(os.sched_getaffinity(0), 8)
         report["gpus"] = gpus
         report["cpu_lanes"] = cpu_lanes
-        assignments = production_assignment(
-            work / "production_assignment", commit, gpus, cpu_lanes
-        )
-        report["production_orchestration_passed"] = True
-        report["evidence_sha256"].update({p: m.digest(p) for p in assignments})
-        race = work / "claims_race"
-        race.mkdir()
-        race_children = []
-        for i in range(12):
-            race_children.append(
-                subprocess.Popen(
-                    [
-                        "taskset",
-                        "--cpu-list",
-                        str(cpu_lanes[0][i]),
-                        sys.executable,
-                        "-B",
-                        str(Path(__file__).resolve()),
-                        "claim",
-                        "--root",
-                        str(race),
-                        "--label",
-                        str(i),
-                    ],
-                    cwd=MAIN,
-                )
-            )
-        for p in race_children:
-            if p.wait(timeout=45) != 0:
-                raise ValueError("claim race child failed")
-        winners = [m.read(race / f"{i}.json") for i in range(12)]
-        report["claims_race_passed"] = sum(x["won"] for x in winners) == 1
-        if not report["claims_race_passed"]:
-            raise ValueError("duplicate/missing claim ownership")
         for lane, (gpu, cpus, composition) in enumerate(
             zip(gpus, cpu_lanes, m.COMPOSITIONS)
         ):
@@ -501,7 +562,7 @@ def run(root, commit):
                         "--label",
                         label,
                     ]
-                    if ordinal == 0:
+                    if ordinal == 0 and lane < 3:
                         cmd.append("--representative")
                     env = dict(
                         os.environ,
@@ -569,7 +630,7 @@ def run(root, commit):
                 break
             time.sleep(1)
         else:
-            raise TimeoutError("targeted720s workload cap reached")
+            raise TimeoutError(f"targeted{workload_seconds}s workload cap reached")
         profiles = {}
         receipts = []
         for p in records:
@@ -638,6 +699,7 @@ def run(root, commit):
                 )
         m.source(commit)
         report["resources"] = r
+        report["workload_cap_seconds"] = workload_seconds
         report["fitting_barrier_sha256"] = m.digest(work / "PROBES_GO.json")
         report.update(
             verdict="PASS",

@@ -200,16 +200,16 @@ def resources_valid(resources, *, qualification=False):
         "gpus": 8,
         "cpus": 128,
         "memory_gb": 2007,
-        "wall_minutes": 15 if qualification else resources.get("wall_minutes"),
+        "wall_minutes": resources.get("wall_minutes"),
     }:
         raise ValueError("reviewed full-node GPU/CPU/RAM shape required")
     wall = resources["wall_minutes"]
-    if type(wall) is not int or not 1 <= wall <= 2880:
+    if type(wall) is not int or not 1 <= wall <= (15 if qualification else 2880):
         raise ValueError("invalid walltime")
 
 
 def live_request(resources):
-    resources_valid(resources, qualification=resources["wall_minutes"] == 15)
+    resources_valid(resources)
     partition = checked(["scontrol", "show", "partition", resources["partition"]])
     config = checked(["scontrol", "show", "config"])
     if "CPU=93.75,Mem=6G,GRES/gpu=1500" not in partition or "MAX_TRES" not in config:
@@ -431,6 +431,10 @@ def qualification(path, commit):
         or not q.get("production_orchestration_passed")
     ):
         raise ValueError("orchestration qualification incomplete")
+    if q.get("reused_checks"):
+        from scripts.exp96_multigpu_qualification import reusable_checks
+
+        reusable_checks(q["reused_checks"]["path"], commit, q["reused_checks"])
     resources_valid(q["resources"], qualification=True)
     accounting = checked(
         [
@@ -450,9 +454,8 @@ def qualification(path, commit):
     if (
         len(rows) != 1
         or rows[0][1:3] != ["COMPLETED", "0:0"]
-        or not 0 < int(rows[0][3]) <= 900
+        or not 0 < int(rows[0][3]) <= q["resources"]["wall_minutes"] * 60
         or "gres/gpu=8" not in rows[0][4]
-        or q.get("resources", {}).get("wall_minutes") != 15
     ):
         raise ValueError("successful bounded Slurm qualification accounting required")
     return q
@@ -821,9 +824,26 @@ def worker(queue_root, approval_path, budget_root, reservation):
 
 
 def submit(
-    commit, root, resources, budget_root, category, *, queue=None, approval=None
+    commit,
+    root,
+    resources,
+    budget_root,
+    category,
+    *,
+    queue=None,
+    approval=None,
+    reuse_checks=None,
 ):
     source(commit)
+    resources_valid(resources, qualification=category == "qualification")
+    if category == "qualification":
+        from scripts.exp96_multigpu_qualification import reusable_checks
+
+        if not reuse_checks:
+            raise ValueError(
+                "passed component receipt required for targeted continuation"
+            )
+        reusable_checks(reuse_checks, commit)
     live_request(resources)
     root = Path(root).resolve()
     if category == "campaign":
@@ -844,6 +864,8 @@ def submit(
         EXP96_QUEUE=str(queue or ""),
         EXP96_ALLOCATION_APPROVAL=str(approval or ""),
         EXP96_APPROVAL_SHA256=digest(approval) if approval else "",
+        EXP96_QUALIFICATION_MINUTES=str(resources["wall_minutes"]),
+        EXP96_REUSE_CHECKS=str(Path(reuse_checks).resolve()) if reuse_checks else "",
     )
     for keyname in ("SBATCH_HOLD", "SBATCH_BEGIN", "SBATCH_DEPENDENCY"):
         env.pop(keyname, None)
@@ -874,6 +896,7 @@ def submit(
             "category": category,
             "approval_sha256": env["EXP96_APPROVAL_SHA256"],
             "queue": str(queue or ""),
+            "reuse_checks": str(reuse_checks or ""),
         },
     )
     # A timeout, unparsable reply or exception leaves the complete reservation in
@@ -917,6 +940,8 @@ def main():
     parser.add_argument("--budget", default=os.getenv("EXP96_BUDGET"))
     parser.add_argument("--reservation", default=os.getenv("EXP96_RESERVATION"))
     parser.add_argument("--reference")
+    parser.add_argument("--reuse-checks")
+    parser.add_argument("--wall-minutes", type=int)
     parser.add_argument("--prior-spent-su", type=float, default=0)
     args = parser.parse_args()
     if args.action == "init-budget":
@@ -937,7 +962,8 @@ def main():
             "gpus": 8,
             "cpus": 128,
             "memory_gb": 2007,
-            "wall_minutes": 15 if cat == "qualification" else 2880,
+            "wall_minutes": args.wall_minutes
+            or (13 if cat == "qualification" else 2880),
         }
         submit(
             args.commit,
@@ -947,6 +973,7 @@ def main():
             cat,
             queue=args.queue,
             approval=args.approval,
+            reuse_checks=args.reuse_checks,
         )
 
 
