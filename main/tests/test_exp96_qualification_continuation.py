@@ -15,11 +15,11 @@ from scripts import exp96_multigpu_qualification as q
 
 def resources(minutes):
     return dict(
-        partition="gpuA100x8",
+        partition="gpuA100x4",
         nodes=1,
-        gpus=8,
-        cpus=128,
-        memory_gb=2007,
+        gpus=1,
+        cpus=16,
+        memory_gb=60,
         wall_minutes=minutes,
     )
 
@@ -46,15 +46,29 @@ class Continuation(unittest.TestCase):
             q.engineering_dimensions(env, replay)
 
     def test_short_walltime_and_cumulative_physical_limit(self):
-        for minutes in (1, 13, 15):
+        for minutes in (1, 30, 120):
             m.resources_valid(resources(minutes), qualification=True)
-        for minutes in (0, 16, 2880):
+        for minutes in (0, 121, 2880):
             with self.assertRaises(ValueError):
                 m.resources_valid(resources(minutes), qualification=True)
         with tempfile.TemporaryDirectory() as tmp:
             b = m.Budget(Path(tmp) / "budget")
             b.initialize("owner authorization, test fixture")
-            b.reserve("old", resources(15), "qualification")
+            b.reserve("old", resources(120), "qualification")
+            data = m.read(b.path)
+            data["entries"]["old"].update(
+                resources=dict(
+                    partition="gpuA100x8",
+                    nodes=1,
+                    gpus=8,
+                    cpus=128,
+                    memory_gb=2007,
+                    wall_minutes=15,
+                ),
+                reserved_su=3.0105,
+                physical_gpu_hours=2,
+            )
+            m.write(b.path, data, replace=True)
             b.submitted("old", "22990946")
             with patch.object(
                 m,
@@ -65,11 +79,9 @@ class Continuation(unittest.TestCase):
             self.assertAlmostEqual(old["actual_gpu_hours"], 0.24)
             self.assertAlmostEqual(old["actual_su"], 0.36126)
             with self.assertRaises(ValueError):
-                b.reserve("too-long", resources(14), "qualification")
-            b.reserve("rerun", resources(13), "qualification")
-            self.assertAlmostEqual(
-                old["actual_gpu_hours"] + 8 * 13 / 60, 1.9733333333333334
-            )
+                b.reserve("too-long", resources(106), "qualification")
+            b.reserve("rerun", resources(30), "qualification")
+            self.assertAlmostEqual(old["actual_gpu_hours"] + 30 / 60, 0.74)
 
     def test_gate_uses_actual_short_slurm_bound(self):
         receipt = dict(
@@ -106,7 +118,7 @@ class Continuation(unittest.TestCase):
                 with patch.object(
                     m,
                     "checked",
-                    return_value=f"123|{state}|{code}|{seconds}|gres/gpu=8|",
+                    return_value=f"123|{state}|{code}|{seconds}|gres/gpu=1|",
                 ):
                     if valid:
                         m.qualification("report.json", "new")

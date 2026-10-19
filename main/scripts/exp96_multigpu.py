@@ -33,11 +33,6 @@ COMPOSITIONS = (
     (7, 0, 0),
     (0, 5, 0),
     (0, 0, 4),
-    (1, 0, 3),
-    (0, 1, 3),
-    (0, 2, 2),
-    (2, 1, 2),
-    (3, 1, 1),
 )
 BASE_SMOKE_SHA = "be1ffae7a8dd9d43bc35a6c8c4b0be9e5582b574"
 BASE_SMOKE_DIGEST = "effc8c6366b5de04c8bfff682b1886cbbd7c7c0c19a063a765013ac135a59c4d"
@@ -178,15 +173,17 @@ def gpu_inventory(count):
 
 
 def rate(resources):
-    """Delta gpuA100x8 live MAX_TRES weights, normalized by accounts' factor1000."""
-    if resources["partition"] != "gpuA100x8":
+    """Live-reviewed Delta MAX_TRES weights, normalized by account factor1000."""
+    weights = {"gpuA100x8": (93.75, 6, 1500), "gpuA100x4": (62.5, 16, 1000)}
+    if resources["partition"] not in weights:
         raise ValueError("unreviewed partition billing")
+    cpu, memory, gpu = weights[resources["partition"]]
     return (
         math.ceil(
             max(
-                resources["cpus"] * 93.75,
-                resources["memory_gb"] * 6,
-                resources["gpus"] * 1500,
+                resources["cpus"] * cpu,
+                resources["memory_gb"] * memory,
+                resources["gpus"] * gpu,
             )
         )
         / 1000
@@ -194,33 +191,36 @@ def rate(resources):
 
 
 def resources_valid(resources, *, qualification=False):
-    if resources != {
-        "partition": "gpuA100x8",
-        "nodes": 1,
-        "gpus": 8,
-        "cpus": 128,
-        "memory_gb": 2007,
-        "wall_minutes": resources.get("wall_minutes"),
-    }:
-        raise ValueError("reviewed full-node GPU/CPU/RAM shape required")
+    shape = (
+        dict(partition="gpuA100x4", nodes=1, gpus=1, cpus=16, memory_gb=60)
+        if qualification
+        else dict(partition="gpuA100x8", nodes=1, gpus=8, cpus=128, memory_gb=2007)
+    )
+    if resources != dict(shape, wall_minutes=resources.get("wall_minutes")):
+        raise ValueError("reviewed qualification/campaign GPU/CPU/RAM shape required")
     wall = resources["wall_minutes"]
-    if type(wall) is not int or not 1 <= wall <= (15 if qualification else 2880):
+    if type(wall) is not int or not 1 <= wall <= (120 if qualification else 2880):
         raise ValueError("invalid walltime")
 
 
 def live_request(resources):
-    resources_valid(resources)
+    single = resources["partition"] == "gpuA100x4"
+    resources_valid(resources, qualification=single)
     partition = checked(["scontrol", "show", "partition", resources["partition"]])
     config = checked(["scontrol", "show", "config"])
-    if "CPU=93.75,Mem=6G,GRES/gpu=1500" not in partition or "MAX_TRES" not in config:
+    weights = (
+        "CPU=62.5,Mem=16G,GRES/gpu=1000" if single else "CPU=93.75,Mem=6G,GRES/gpu=1500"
+    )
+    if weights not in partition or "MAX_TRES" not in config:
         raise ValueError("billing configuration changed; re-review required")
     nodes = checked(
         ["sinfo", "-p", resources["partition"], "-N", "-h", "-o", "%c %m %G"]
     )
+    cpus, memory, gpus = (64, 257000, ":4") if single else (128, 2063600, ":8")
     if not nodes or any(
-        int(line.split()[0]) != 128
-        or int(line.split()[1]) < 2063600
-        or ":8" not in line.split()[2]
+        int(line.split()[0]) != cpus
+        or int(line.split()[1]) < memory
+        or gpus not in line.split()[2]
         for line in nodes.splitlines()
     ):
         raise ValueError("partition topology changed")
@@ -385,10 +385,13 @@ class Budget:
                 raise ValueError("terminal unambiguous Slurm accounting not available")
             row = rows[0]
             billing = re.search(r"(?:^|,)billing=(\d+)(?:,|$)", row[3])
-            if not billing:
-                raise ValueError("missing actual billed TRES")
             seconds = int(row[2])
-            actual = int(billing[1]) * seconds / 3_600_000
+            never_allocated = (
+                row[1].split()[0] == "CANCELLED" and seconds == 0 and not row[3]
+            )
+            if not billing and not never_allocated:
+                raise ValueError("missing actual billed TRES")
+            actual = 0 if never_allocated else int(billing[1]) * seconds / 3_600_000
             if actual > item["reserved_su"] + 0.01:
                 raise ValueError(
                     "actual charge exceeds reservation; freeze further spending"
@@ -455,7 +458,7 @@ def qualification(path, commit):
         len(rows) != 1
         or rows[0][1:3] != ["COMPLETED", "0:0"]
         or not 0 < int(rows[0][3]) <= q["resources"]["wall_minutes"] * 60
-        or "gres/gpu=8" not in rows[0][4]
+        or not re.search(r"(?:^|,)gres/gpu=1(?:,|$)", rows[0][4])
     ):
         raise ValueError("successful bounded Slurm qualification accounting required")
     return q
@@ -874,12 +877,12 @@ def submit(
         "--parsable",
         "--export=ALL",
         "--account=biqc-delta-gpu",
-        "--partition=gpuA100x8",
+        f"--partition={resources['partition']}",
         "--nodes=1",
         "--ntasks=1",
-        "--gres=gpu:8",
-        "--cpus-per-task=128",
-        "--mem=2007G",
+        f"--gres=gpu:{resources['gpus']}",
+        f"--cpus-per-task={resources['cpus']}",
+        f"--mem={resources['memory_gb']}G",
         f"--time={resources['wall_minutes']}",
         f"--job-name=exp96-{category}-{key[-8:]}",
         f"--output={root}/slurm_%j.out",
@@ -957,13 +960,13 @@ def main():
     else:
         cat = "qualification" if args.action == "submit-qualification" else "campaign"
         r = {
-            "partition": "gpuA100x8",
+            "partition": "gpuA100x4" if cat == "qualification" else "gpuA100x8",
             "nodes": 1,
-            "gpus": 8,
-            "cpus": 128,
-            "memory_gb": 2007,
+            "gpus": 1 if cat == "qualification" else 8,
+            "cpus": 16 if cat == "qualification" else 128,
+            "memory_gb": 60 if cat == "qualification" else 2007,
             "wall_minutes": args.wall_minutes
-            or (13 if cat == "qualification" else 2880),
+            or (30 if cat == "qualification" else 2880),
         }
         submit(
             args.commit,

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Targeted new-launcher qualification, at most eight A100s for fifteen minutes.
+"""Required packing qualification, sequential phases on one A100.
 
 This does not rerun the four-case20k smoke or alter the scientific experiment.
 Old500k dog checkpoints are engineering inputs. Replay is deliberately filled
@@ -69,7 +69,7 @@ def reusable_checks(path, commit, expected=None):
         or not q.get("claims_race_passed")
         or q.get("training_fingerprint") != m.training_fingerprint(commit)
         or q.get("limits") != m.LIMITS
-        or q.get("compositions") != [list(c) for c in m.COMPOSITIONS]
+        or not all(list(c) in q.get("compositions", []) for c in m.COMPOSITIONS)
     ):
         raise ValueError("prior receipt does not establish reusable components")
     unchanged = {
@@ -477,11 +477,34 @@ def sample(processes):
     return device, applications, rss
 
 
+def qualification_device():
+    """Resolve the physical GPU from Slurm ownership on a shared x4 node."""
+    allocated = m.gpu_tokens(os.environ.get("SLURM_JOB_GPUS", ""))
+    if len(allocated) != 1:
+        raise ValueError("qualification requires exactly one Slurm-owned GPU")
+    devices = []
+    for line in m.checked(
+        [
+            "nvidia-smi",
+            "--query-gpu=index,uuid,name,memory.total",
+            "--format=csv,noheader,nounits",
+        ]
+    ).splitlines():
+        index, token, name, memory = [x.strip() for x in line.split(",")]
+        if allocated[0] in (index, token):
+            if name != "NVIDIA A100-SXM4-40GB" or not 39000 <= int(memory) <= 42000:
+                raise ValueError("unqualified GPU model/capacity")
+            devices.append(dict(index=index, uuid=token, memory_mb=int(memory)))
+    if len(devices) != 1:
+        raise ValueError("cannot bind allocated physical GPU unambiguously")
+    return devices[0]
+
+
 def run(root, commit):
     root = Path(root).resolve()
     work = root / "qualification"
     work.mkdir()
-    wall_minutes = int(os.environ.get("EXP96_QUALIFICATION_MINUTES", "13"))
+    wall_minutes = int(os.environ.get("EXP96_QUALIFICATION_MINUTES", "30"))
     workload_seconds = wall_minutes * 60 - 120
     deadline = time.monotonic() + workload_seconds
     records = []
@@ -504,11 +527,11 @@ def run(root, commit):
 
         require_pinned_stack()
         r = {
-            "partition": "gpuA100x8",
+            "partition": "gpuA100x4",
             "nodes": 1,
-            "gpus": 8,
-            "cpus": 128,
-            "memory_gb": 2007,
+            "gpus": 1,
+            "cpus": 16,
+            "memory_gb": 60,
             "wall_minutes": wall_minutes,
         }
         m.resources_valid(r, qualification=True)
@@ -533,13 +556,20 @@ def run(root, commit):
         report["claims_race_passed"] = True
         report["evidence_sha256"].update(reused["evidence_sha256"])
         report["cpu_topology"] = m.checked(["lscpu", "--json"])
-        gpus = m.gpu_inventory(8)
-        cpu_lanes = m.cpu_partition(os.sched_getaffinity(0), 8)
+        gpus = [qualification_device()]
+        cpu_lanes = m.cpu_partition(os.sched_getaffinity(0), 1)
         report["gpus"] = gpus
         report["cpu_lanes"] = cpu_lanes
-        for lane, (gpu, cpus, composition) in enumerate(
-            zip(gpus, cpu_lanes, m.COMPOSITIONS)
-        ):
+        report["execution_scope"] = (
+            "one GPU; homogeneous phases sequential; eight-GPU assignment inherited only"
+        )
+        report["phase_peak_rss_gb"] = {}
+        report["fitting_barrier_sha256"] = {}
+        for lane, composition in enumerate(m.COMPOSITIONS):
+            gpu, cpus = gpus[0], cpu_lanes[0]
+            phase = work / f"phase_{lane}"
+            phase.mkdir()
+            phase_records = []
             offset = 0
             ordinal = 0
             for arch, count in zip(m.ARCHS, composition):
@@ -556,7 +586,7 @@ def run(root, commit):
                         str(Path(__file__).resolve()),
                         "child",
                         "--root",
-                        str(work / label),
+                        str(phase / label),
                         "--arch",
                         arch,
                         "--label",
@@ -570,12 +600,12 @@ def run(root, commit):
                         JAX_PLATFORMS="cuda,cpu",
                         EXP96_ASSIGNED_CPU_IDS=",".join(map(str, ids)),
                         WANDB_MODE="disabled",
-                        EXP12_JAX_CACHE_DIR=str(work / (label + "_jax_cache")),
+                        EXP12_JAX_CACHE_DIR=str(phase / (label + "_jax_cache")),
                         WANDB_DIR=str(work),
                         PYTHONDONTWRITEBYTECODE="1",
                     )
                     env.pop("JAX_PLATFORM_NAME", None)
-                    stream = (work / (label + ".log")).open("xb")
+                    stream = (phase / (label + ".log")).open("xb")
                     p = subprocess.Popen(
                         cmd,
                         cwd=MAIN,
@@ -585,56 +615,84 @@ def run(root, commit):
                         start_new_session=True,
                     )
                     stream.close()
-                    records.append(
-                        {
-                            "process": p,
-                            "label": label,
-                            "arch": arch,
-                            "gpu": gpu["uuid"],
-                            "cpus": ids,
-                        }
+                    record = dict(
+                        process=p,
+                        label=label,
+                        arch=arch,
+                        gpu=gpu["uuid"],
+                        cpus=ids,
+                        path=phase / label,
                     )
+                    records.append(record)
+                    phase_records.append(record)
                     ordinal += 1
-        while time.monotonic() < deadline:
-            device, apps, rss = sample(records)
-            for token, (_, used) in device.items():
-                peak_device[token] = max(peak_device.get(token, 0), used)
-            for p in records:
-                pid = p["process"].pid
-                if pid in apps:
-                    if apps[pid][0] != p["gpu"]:
-                        raise ValueError("child escaped its assigned GPU")
-                    peak_pid[pid] = max(peak_pid.get(pid, 0), apps[pid][1])
-                peak_rss[pid] = max(peak_rss.get(pid, 0), rss.get(pid, 0))
-            if not (work / "PROBES_GO.json").exists() and all(
-                (work / p["label"] / "ready.json").exists() for p in records
-            ):
-                if not all(
-                    p["process"].pid in apps and apps[p["process"].pid][0] == p["gpu"]
-                    for p in records
+            while time.monotonic() < deadline:
+                device, apps, rss = sample(phase_records)
+                for token, (_, used) in device.items():
+                    if token == gpu["uuid"]:
+                        peak_device[token] = max(peak_device.get(token, 0), used)
+                for p in phase_records:
+                    pid = p["process"].pid
+                    if pid in apps:
+                        if apps[pid][0] != p["gpu"]:
+                            raise ValueError("child escaped its assigned GPU")
+                        peak_pid[pid] = max(peak_pid.get(pid, 0), apps[pid][1])
+                    peak_rss[pid] = max(peak_rss.get(pid, 0), rss.get(pid, 0))
+                if not (phase / "PROBES_GO.json").exists() and all(
+                    (p["path"] / "ready.json").exists() for p in phase_records
                 ):
-                    raise ValueError(
-                        "not all packed CUDA contexts observed at fitting barrier"
+                    if not all(
+                        p["process"].pid in apps
+                        and apps[p["process"].pid][0] == p["gpu"]
+                        for p in phase_records
+                    ):
+                        raise ValueError(
+                            "not all packed CUDA contexts observed at fitting barrier"
+                        )
+                    m.write(
+                        phase / "PROBES_GO.json",
+                        {"children": len(phase_records), "released": time.time()},
                     )
-                m.write(
-                    work / "PROBES_GO.json",
-                    {"children": len(records), "released": time.time()},
+                if not (phase / "EXIT_GO.json").exists() and all(
+                    (p["path"] / "child_receipt.json").exists() for p in phase_records
+                ):
+                    m.write(phase / "EXIT_GO.json", {"released": time.time()})
+                if any(p["process"].poll() not in (None, 0) for p in phase_records):
+                    raise ValueError("packed child failed; inspect logs")
+                if all(p["process"].poll() == 0 for p in phase_records):
+                    break
+                time.sleep(1)
+            else:
+                raise TimeoutError(f"targeted{workload_seconds}s workload cap reached")
+            children = [m.read(p["path"] / "child_receipt.json") for p in phase_records]
+            peak = max(
+                max(
+                    peak_pid[p["process"].pid],
+                    child["device_memory_stats"]["peak_bytes_in_use"] / 2**20 + 384,
                 )
-            if not (work / "EXIT_GO.json").exists() and all(
-                (work / p["label"] / "child_receipt.json").exists() for p in records
+                for p, child in zip(phase_records, children)
+            )
+            if (
+                len(children) * math.ceil(peak * 1.15) + 2048 > gpu["memory_mb"]
+                or peak_device[gpu["uuid"]] + 2048 > gpu["memory_mb"]
             ):
-                m.write(work / "EXIT_GO.json", {"released": time.time()})
-            if any(p["process"].poll() not in (None, 0) for p in records):
-                raise ValueError("packed child failed; inspect logs")
-            if all(p["process"].poll() == 0 for p in records):
-                break
-            time.sleep(1)
-        else:
-            raise TimeoutError(f"targeted{workload_seconds}s workload cap reached")
+                raise ValueError(
+                    "homogeneous packing lacks measured memory headroom; stop remaining phases"
+                )
+            barrier = phase / "PROBES_GO.json"
+            report["fitting_barrier_sha256"][str(barrier)] = m.digest(barrier)
+            report["evidence_sha256"][str(barrier)] = m.digest(barrier)
+            report["phase_peak_rss_gb"][str(lane)] = (
+                sum(peak_rss[p["process"].pid] for p in phase_records) / 2**30
+            )
+            m.write(
+                phase / "phase_complete.json",
+                dict(composition=composition, children=len(phase_records)),
+            )
         profiles = {}
         receipts = []
         for p in records:
-            path = work / p["label"] / "child_receipt.json"
+            path = p["path"] / "child_receipt.json"
             x = m.read(path)
             if (
                 x["source"] != commit
@@ -683,7 +741,8 @@ def run(root, commit):
             }
         headroom = 2048
         min_total = min(x["memory_mb"] for x in gpus)
-        for gpu, composition in zip(gpus, m.COMPOSITIONS):
+        for composition in m.COMPOSITIONS:
+            gpu = gpus[0]
             if peak_device[gpu["uuid"]] + headroom > gpu["memory_mb"]:
                 raise ValueError("actual packed peak lacks2GiB device headroom")
             if (
@@ -700,14 +759,13 @@ def run(root, commit):
         m.source(commit)
         report["resources"] = r
         report["workload_cap_seconds"] = workload_seconds
-        report["fitting_barrier_sha256"] = m.digest(work / "PROBES_GO.json")
         report.update(
             verdict="PASS",
             profiles=profiles,
             gpu_headroom_mb=headroom,
             all_devices_isolated=True,
             peak_device_mb=peak_device,
-            peak_host_rss_gb=sum(peak_rss.values()) / 2**30,
+            peak_host_rss_gb=max(report["phase_peak_rss_gb"].values()),
             original_smoke_sha256=m.BASE_SMOKE_DIGEST,
             reused_scope="unchanged trainer/probe/config and corrected actual artifact validation; this receipt newly qualifies launcher/packing only",
         )

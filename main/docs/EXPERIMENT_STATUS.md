@@ -65,3 +65,12 @@ Five focused CPU regression tests pass locally; no broad suite is repeated.
 A13minute8GPU continuation requests at most1.733333physicalGPUh; together with
 0.24actualGPUh previously charged, the maximum is1.973333GPUh, below2. No new
 engineering PASS is asserted by this document. Old source/queue/job remain frozen.
+
+## One-GPU qualification correction (19 October 2026)
+
+23020460 CANCELLED pending, elapsed0/noAllocTRES. Owner requires one-GPU test
+allocations. Successor requests one A100/16CPU/60GiB for30minutes on gpuA100x4,
+three sequential homogeneous phases; optional mixed packing disabled. Seven
+focused new/affected CPU checks passed. No GPU result exists yet. New reservation
+maximum0.5SU/0.5GPUh; including prior0.24GPUh, qualification maximum0.74GPUh.
+The earlier13minute/eight-GPU proposal is historical and superseded.
