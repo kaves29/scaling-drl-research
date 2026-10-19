@@ -46,8 +46,26 @@ def clean_checkout(path, commit):
     return root
 
 
+def qualified_parent(queue_root):
+    try:
+        return exp96_campaign.load(queue_root)
+    except ValueError as legacy_error:
+        queue, plan = exp96_campaign.load(queue_root, require_approval=False)
+        decision = durable._read(plan["approval"])
+        evidence = decision.get("gates", {}).get("gpu_smoke", {}).get("evidence", {})
+        if (
+            not evidence.get("path")
+            or durable._read(evidence["path"]).get("schema") != "exp96-multigpu-754-v1"
+        ):
+            raise legacy_error
+        from scripts.exp96_multigpu import study
+
+        study(plan)  # Real multi-GPU source-bound evidence; no receipt relabeling.
+        return queue, plan
+
+
 def approved(queue_root, path):
-    queue, plan = exp96_campaign.load(queue_root)
+    queue, plan = qualified_parent(queue_root)
     approval = durable._read(path)
     if (
         approval.get("approved") is not True
@@ -151,10 +169,44 @@ def approved(queue_root, path):
 
 def discover(queue_root, approval_path):
     queue, _, approval = approved(queue_root, approval_path)
-    arms = durable.discover_arms(queue_root, queue, approval["injection_m"])
+    ledger_root = arm_queue(queue_root, approval)
+    arms = durable.discover_arms(
+        ledger_root,
+        queue,
+        approval["injection_m"],
+        arm_root=approval.get("arm_output_root"),
+    )
     if any(arm["row"]["architecture"] not in ARCHS for arm in arms):
         raise ValueError("non-forking architecture has an injected arm")
     return arms
+
+
+def arm_queue(parent_queue, approval):
+    """Keep new arm claims and outputs outside the frozen parent campaign."""
+    root = Path(approval.get("arm_queue_root", parent_queue)).resolve()
+    if "arm_queue_root" in approval:
+        parent = Path(parent_queue).resolve()
+        output = Path(approval["arm_output_root"])
+        if (
+            not Path(approval["arm_queue_root"]).is_absolute()
+            or not output.is_absolute()
+            or root == parent
+            or root.is_relative_to(parent)
+            or not root.is_dir()
+        ):
+            raise ValueError(
+                "separate absolute prepared Exp2 queue/output paths required"
+            )
+        binding = durable._read(root / "parent_binding.json")
+        if binding != {
+            "parent_queue": str(parent),
+            "queue_sha256": approval["queue_sha256"],
+            "parent_commit": approval["expected_commit"],
+            "scheduler_commit": approval["scheduler_commit"],
+            "arm_output_root": str(output.resolve()),
+        }:
+            raise ValueError("Exp2 queue parent/source binding changed")
+    return root
 
 
 def resources(approval, visible, affinity):
@@ -223,6 +275,10 @@ def worker(queue_root, approval_path):
     from scripts.exp12_launch_plan import require_pinned_stack
 
     queue, _, approval = approved(queue_root, approval_path)
+    ledger_root = arm_queue(queue_root, approval)
+    from scripts.exp96_exp2_delta import funding_gate
+
+    funding_gate(approval, os.environ.get("SLURM_JOB_ID"))
     if sha(approval_path) != os.getenv("EXP2_APPROVAL_SHA256"):
         raise ValueError("Exp2 approval changed after submission")
     require_pinned_stack()
@@ -260,6 +316,9 @@ def worker(queue_root, approval_path):
         os.environ,
         description,
     )
+    from scripts.exp96_exp2_delta import verify_billing
+
+    verify_billing(requested, description)
     match = re.search(r"\bEndTime=(\S+)", description)
     if not match or match[1] in ("Unknown", "N/A"):
         raise ValueError("Slurm end time unavailable")
@@ -269,7 +328,7 @@ def worker(queue_root, approval_path):
     ]
     for token in visible:
         durable.gpu_snapshot(token)
-    ledger = durable.Ledger(queue_root)
+    ledger = durable.Ledger(ledger_root)
     active, validating, unrecorded, seen = [], {}, [], set()
     trainer = clean_checkout(approval["trainer_checkout"], queue["commit"])
     with ThreadPoolExecutor(max_workers=2) as pool:
@@ -285,7 +344,7 @@ def worker(queue_root, approval_path):
                     active.remove(job)
                     validating[
                         pool.submit(
-                            durable._finish, job, ledger, queue["commit"], queue_root
+                            durable._finish, job, ledger, queue["commit"], ledger_root
                         )
                     ] = job
             durable._collect_finished(validating, unrecorded, time.time())
@@ -294,7 +353,7 @@ def worker(queue_root, approval_path):
                     unrecorded.remove(job)
                     validating[
                         pool.submit(
-                            durable._finish, job, ledger, queue["commit"], queue_root
+                            durable._finish, job, ledger, queue["commit"], ledger_root
                         )
                     ] = job
             pending = [
@@ -351,7 +410,7 @@ def worker(queue_root, approval_path):
                             arm,
                             token,
                             child_approval,
-                            queue_root,
+                            ledger_root,
                             ledger,
                             job_id,
                             training_checkout=trainer,
@@ -382,6 +441,9 @@ def worker(queue_root, approval_path):
 
 def submission_command(queue_root, approval_path):
     _, _, approval = approved(queue_root, approval_path)
+    from scripts.exp96_exp2_delta import funding_gate
+
+    funding_gate(approval)
     r = approval["resources"]
     if (
         r.get("nodes") not in (1, 2)
@@ -394,7 +456,7 @@ def submission_command(queue_root, approval_path):
     resources(approval, ["0", "1", "2", "3"], set(range(r["cpus_per_node"])))
     if not discover(queue_root, approval_path):
         raise ValueError("no naturally eligible injected arms; do not reserve GPUs")
-    logs = Path(queue_root) / "slurm"
+    logs = arm_queue(queue_root, approval) / "slurm"
     logs.mkdir(exist_ok=True)
     command = [
         "env",
@@ -443,7 +505,8 @@ def main(argv=None):
         ]
         if len(matches) != 1:
             raise ValueError("arm retry identity is missing or ambiguous")
-        durable.Ledger(args.queue).review_retry(
+        _, _, approval = approved(args.queue, args.approval)
+        durable.Ledger(arm_queue(args.queue, approval)).review_retry(
             matches[0], queue["commit"], args.decision
         )
     else:

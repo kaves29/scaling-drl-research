@@ -7,6 +7,9 @@
   "decision_reference": "",
   "injection_m": "<OWNER_CHOSEN_LAST_HALF_OR_ALL>",
   "trainer_checkout": "<ABSOLUTE_CLEAN_MAIN_DIRECTORY_AT_PARENT_COMMIT>",
+  "arm_queue_root": "<ABSOLUTE_SEPARATE_EXP2_QUEUE>",
+  "arm_output_root": "<ABSOLUTE_SEPARATE_EXP2_OUTPUT_ROOT>",
+  "funding_path": "<ABSOLUTE_SEPARATE_OWNER_APPROVED_EXP2_BUDGET>",
   "positive_control": {
     "path": "<ABSOLUTE_SAME_SOURCE_POSITIVE_CONTROL_JSON>",
     "sha256": "<SHA256_OF_POSITIVE_CONTROL_JSON>"
@@ -17,7 +20,7 @@
     "nodes": 1,
     "gpus_per_node": 4,
     "cpus_per_node": 64,
-    "memory_gb_per_node": 256,
+    "memory_gb_per_node": 240,
     "wall_minutes": 480
   },
   "admission": {

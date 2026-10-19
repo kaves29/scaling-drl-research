@@ -853,7 +853,7 @@ def _natural_fork(parent_item, commit):
     return plan
 
 
-def _arm_item(parent_item, commit, injection_m):
+def _arm_item(parent_item, commit, injection_m, *, arm_root=None):
     from generate_manifest import exp12_paths
 
     parent_row = parent_item["row"]
@@ -867,6 +867,12 @@ def _arm_item(parent_item, commit, injection_m):
         }
     )
     root = Path(parent_row["checkpoint_dir"]).parents[3]
+    locations = []
+    if arm_root is not None:
+        if not Path(arm_root).is_absolute():
+            raise ValueError("absolute isolated arm output root required")
+        root = Path(arm_root).resolve() / "checkpoints"
+        locations = [f"results_root={Path(arm_root).resolve() / 'results'}"]
     _, arm_dir = exp12_paths(
         str(root),
         parent_row["architecture"],
@@ -874,7 +880,7 @@ def _arm_item(parent_item, commit, injection_m):
         parent_row["seed"],
     )
     # The checkpoint root is campaign_root/checkpoints, not campaign_root itself.
-    overrides = parent_row["overrides"] + [
+    overrides = parent_row["overrides"] + locations + [
         f"fork.source={parent_row['checkpoint_dir']}",
         "fork.arm=injected",
         f"injection.m={injection_m}",
@@ -920,7 +926,7 @@ def _arm_item(parent_item, commit, injection_m):
     }
 
 
-def discover_arms(queue_root, queue, injection_m):
+def discover_arms(queue_root, queue, injection_m, *, arm_root=None):
     """Idempotently publish eligible arms while parents continue training."""
     from generate_manifest import EXP12_FORKING
 
@@ -948,7 +954,7 @@ def discover_arms(queue_root, queue, injection_m):
         if path in _VERIFIED_ARM_FILES:
             if _VERIFIED_ARM_FILES[path] != digest:
                 raise ValueError("published arm manifest changed")
-        elif _arm_item(parents_by_id[source_id], queue["commit"], injection_m) != arm:
+        elif _arm_item(parents_by_id[source_id], queue["commit"], injection_m, arm_root=arm_root) != arm:
             raise ValueError("arm manifest differs from canonical source/configuration")
         _VERIFIED_ARM_FILES[path] = digest
         if source_id in existing and existing[source_id] != arm:
@@ -984,7 +990,7 @@ def discover_arms(queue_root, queue, injection_m):
                 except FileExistsError:
                     pass
             continue
-        arm = _arm_item(parent, queue["commit"], injection_m)
+        arm = _arm_item(parent, queue["commit"], injection_m, arm_root=arm_root)
         target = directory / (arm["id"] + ".json")
         if target.exists():
             if _read(target) != arm:
