@@ -28,7 +28,7 @@ def resources(minutes=30):
 
 class SingleGpu(unittest.TestCase):
     def test_partial_node_uses_slurm_physical_identity(self):
-        inventory = "0, GPU-2, NVIDIA A100-SXM4-40GB, 40960, 00000000:87:00.0, 2"
+        inventory = "0, GPU-2, NVIDIA A100-SXM4-40GB, 40960"
         identity = dict(uuid="GPU-2", pci_bus_id="0000:87:00.0")
         with patch.dict(
             os.environ,

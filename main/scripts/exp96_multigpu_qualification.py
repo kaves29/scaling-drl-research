@@ -541,13 +541,8 @@ def cuda_visible_identity():
     )
 
 
-def pci_identity(value):
-    domain, bus, device = value.lower().split(":")
-    return int(domain, 16), int(bus, 16), device
-
-
 def qualification_device(diagnostic_path=None):
-    """Join CUDA and NVML by UUID/PCI identity, never by numeric ordinal."""
+    """Match CUDA UUID to the inventory query already proven on Delta."""
     evidence = {
         "environment": {
             key: os.environ.get(key)
@@ -575,20 +570,17 @@ def qualification_device(diagnostic_path=None):
         evidence["nvidia_smi"] = m.checked(
             [
                 "nvidia-smi",
-                "--query-gpu=index,uuid,name,memory.total,pci.bus_id,minor_number",
+                "--query-gpu=index,uuid,name,memory.total",
                 "--format=csv,noheader,nounits",
-            ]
+            ],
+            stderr=subprocess.STDOUT,
         )
         evidence["cuda"] = cuda_visible_identity()
         identity = evidence["cuda"]
         devices = []
         for line in evidence["nvidia_smi"].splitlines():
-            index, token, name, memory, bus, minor = [
-                x.strip() for x in line.split(",")
-            ]
+            index, token, name, memory = [x.strip() for x in line.split(",")]
             if token.lower() == identity["uuid"].lower():
-                if pci_identity(bus) != pci_identity(identity["pci_bus_id"]):
-                    raise ValueError("CUDA/NVML PCI identity disagreement")
                 if name != "NVIDIA A100-SXM4-40GB" or not 39000 <= int(memory) <= 42000:
                     raise ValueError("unqualified GPU model/capacity: " + name)
                 if (
@@ -602,8 +594,7 @@ def qualification_device(diagnostic_path=None):
                         index=index,
                         uuid=token,
                         memory_mb=int(memory),
-                        pci_bus_id=bus,
-                        minor_number=minor,
+                        pci_bus_id=identity["pci_bus_id"],
                     )
                 )
         if len(devices) != 1:
@@ -612,6 +603,8 @@ def qualification_device(diagnostic_path=None):
         return devices[0]
     except Exception as exc:
         evidence["error"] = f"{type(exc).__name__}: {exc}"
+        if isinstance(exc, subprocess.CalledProcessError):
+            evidence["query_output"] = exc.output
         raise
     finally:
         if diagnostic_path is not None:

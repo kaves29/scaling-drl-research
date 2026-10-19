@@ -84,3 +84,13 @@ identity/diagnostic tests pass. Real CPU paired ten-target2000-step fitting and
 bitwise checkpoint restore/next-update contracts passed in50.374s, explicitly
 using small synthetic fixtures. No new GPU PASS asserted. One final30min/oneGPU
 retry authorized; cumulative qualification maximum0.744722222physicalGPUh.
+
+## Qualification remains incomplete (19 October2026)
+
+Final authorized retry23021182 FAILED3:0 after14s, before any workers, because
+an expanded nvidia-smi query returned exit2. RecordedGPUvars2(global)/0(CUDA)
+confirm distinct numbering namespaces. CPU mocks had not verified optional CLI
+columns. Portable-query correction prepared and focused tests pass; not GPU-run.
+Actual finalretry0.003888889SU/GPUh; cumulativetargetedqualification0.248611111
+physicalGPUh. No further retry submitted. Originalsmokeevidence/queues preserved;
+old96-parentcampaign22996973 remainsheld/blocked. No7/5/4memoryPASS exists.

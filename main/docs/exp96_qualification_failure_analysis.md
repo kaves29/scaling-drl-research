@@ -77,3 +77,33 @@ and blocked; a new source's receipt cannot release that old source automatically
 
 Sources: [Slurm GPU management](https://slurm.schedmd.com/gres.html#GPU_Management),
 [CUDA device identity API](https://docs.nvidia.com/cuda/cuda-driver-api/cuda_driver_api/group__CUDA__DEVICE.html).
+
+## Actual final retry outcome and correction without another GPU job
+
+23021182 atbab8d8d started21:42:22UTC and FAILED3:0 after14seconds on oneGPU.
+No child launched. The expanded NVIDIA inventory query returned exit2 before
+CUDA UUID discovery. Recorded runtime values: SLURM_JOB_GPUS=2,
+SLURM_STEP_GPUS=2, CUDA_VISIBLE_DEVICES=0, SLURM_GPUS_ON_NODE=1.
+The query added optional `pci.bus_id,minor_number` columns. Its error text was
+captured by check_output but omitted from the serialized exception, so the exact
+rejected field is not proven by preserved evidence. The failure is the inventory
+command itself, not fitting, checkpoint restoration or measured GPU memory.
+
+This was another avoidable harness mistake: an unverified optional diagnostic
+query was added to the critical path. The CPU mocks tested its assumed output
+rather than actual CLI compatibility. The corrected source restores the exact
+four-field inventory command that had already executed successfully in23020573:
+index,uuid,name,memory.total. CUDA's UUID still supplies the physical identity;
+CUDA PCI address is recorded but no unproven NVML PCI/minor columns are requested.
+Any CLI failure now persists merged stdout/stderr (`query_output`) as well as
+its exit status. A new regression checks the exact portable command and rejected
+query error preservation; four identity tests and the affected mapping test pass.
+Fitting/checkpoint implementations are unchanged, so their completed CPU contract
+checks are reused. They do not establish GPU qualification.
+
+Actual14s charge:0.003888889SU and physicalGPUh. All targeted qualification
+attempts together used0.248611111physicalGPUh. No further GPU job was submitted
+after this failure, respecting the owner's one-last-retry boundary. This source
+correction is prepared for review; actual CUDA UUID mapping, packed fitting,
+7/5/4 memory headroom and full checkpoint qualification remain UNVERIFIED.
+Oldcampaign22996973 is still held/blocked, with no official parents started.
