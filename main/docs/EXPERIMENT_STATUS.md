@@ -53,3 +53,15 @@ packing/orchestration evidence plus atomic cumulative spending reservations.
 The original smoke is inherited only for byte-matched scientific code, not
 relabeled as multi-GPU evidence. No qualification PASS or campaign submission
 is claimed by this source snapshot; inspect the durable Delta receipts.
+
+## Qualification continuation (19 October 2026)
+
+Delta22990946 FAILED3:0 after108s: packed-child test used batched environment
+shape[0] instead of the single-environment dimensions. This is not measured
+packing failure or qualification PASS. GPU assignment on eight devices and
+one-winner ownership race passed independently. The successor branch fixes the
+shape check before restore/work and binds reuse of those unchanged components.
+Five focused CPU regression tests pass locally; no broad suite is repeated.
+A13minute8GPU continuation requests at most1.733333physicalGPUh; together with
+0.24actualGPUh previously charged, the maximum is1.973333GPUh, below2. No new
+engineering PASS is asserted by this document. Old source/queue/job remain frozen.
