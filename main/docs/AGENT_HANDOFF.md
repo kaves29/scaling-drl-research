@@ -74,3 +74,14 @@ serializes homogeneous7/5/4 checks on one A100, disables unmeasured mixtures,
 and preserves source/result/spending gates. See [scope](exp96_single_gpu_qualification.md).
 Old campaign22996973 remains untouched and blocked; do not release it on a new
 source's receipt. No new GPU PASS is asserted by this source snapshot.
+
+## Driver-identity repair (19 October2026)
+
+OneGPU23020573 failed17s before workers: a Slurm global GPU token was compared
+to NVML ordinal. Exact raw values were not saved. Owner authorized one final
+retry after deep analysis. Successor `codex/exp96-qualification-driver-identity`
+uses inherited CUDA visibility and CUDA UUID/PCI-to-NVML matching, with durable
+raw diagnostics and per-child stages. See [failure analysis](exp96_qualification_failure_analysis.md).
+Two real pinned-stack CPU fitting/checkpoint contracts passed; five new/affected
+identity/controller tests passed. GPU packing remains unverified until actual
+artifacts pass. Keep one GPU/30min, no automatic further retry, old campaign frozen.

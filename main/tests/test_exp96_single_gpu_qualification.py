@@ -28,12 +28,16 @@ def resources(minutes=30):
 
 class SingleGpu(unittest.TestCase):
     def test_partial_node_uses_slurm_physical_identity(self):
-        inventory = "\n".join(
-            f"{i}, GPU-{i}, NVIDIA A100-SXM4-40GB, 40960" for i in range(4)
-        )
+        inventory = "0, GPU-2, NVIDIA A100-SXM4-40GB, 40960, 00000000:87:00.0, 2"
+        identity = dict(uuid="GPU-2", pci_bus_id="0000:87:00.0")
         with patch.dict(
-            os.environ, SLURM_JOB_GPUS="2", CUDA_VISIBLE_DEVICES="0"
-        ), patch.object(m, "checked", return_value=inventory):
+            os.environ,
+            SLURM_JOB_GPUS="2",
+            CUDA_VISIBLE_DEVICES="0",
+            SLURM_GPUS_ON_NODE="1",
+        ), patch.object(m, "checked", return_value=inventory), patch.object(
+            q, "cuda_visible_identity", return_value=identity
+        ):
             self.assertEqual(q.qualification_device()["uuid"], "GPU-2")
             with patch.dict(os.environ, SLURM_JOB_GPUS="1,2"):
                 with self.assertRaises(ValueError):
@@ -159,12 +163,13 @@ class SingleGpu(unittest.TestCase):
                     q, "reusable_checks", return_value=dict(evidence_sha256={})
                 )
             )
+
+            def discovered(path):
+                m.write(path, dict(synthetic=True))
+                return dict(uuid="GPU-2", memory_mb=40960)
+
             stack.enter_context(
-                patch.object(
-                    q,
-                    "qualification_device",
-                    return_value=dict(uuid="GPU-2", memory_mb=40960),
-                )
+                patch.object(q, "qualification_device", side_effect=discovered)
             )
             stack.enter_context(
                 patch.object(
