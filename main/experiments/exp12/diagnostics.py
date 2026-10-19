@@ -17,7 +17,7 @@ from typing import Dict, List, Optional
 
 import numpy as np
 
-from experiments.angle_1 import PendingUpdateMetrics
+from experiments.exp12.metric_buffer import PendingUpdateMetrics
 
 KL_STREAM = 0x4B4C5246  # "KLRF"
 RECORDING_ONLY_KEYS = frozenset(("train/policy_kl", "train/actor_saturation"))

@@ -1,6 +1,6 @@
 # Current Exp1/Exp2 protocol and source index
 
-Updated 17 October 2026. This is a navigation and status document, not a new
+Updated 19 October 2026 UTC. This is a navigation and status document, not a new
 scientific amendment or a launch approval. Resolve live Git refs and Delta job
 state before execution.
 
@@ -21,6 +21,10 @@ state before execution.
   `configs/base_exp12_ten.yaml`, `scripts/exp96_campaign.py`, and the shared
   Exp1 trainer. CPU implementation checks do not establish statistical
   calibration, A100 concurrency, or permission to train official parents.
+- The current Exp2 successor uses only naturally eligible control/injection
+  forks from the applicable parent protocol. See
+  [Exp96 Exp2 engineering handoff](EXP96_EXP2_SUCCESSOR.md). Historical
+  Angle 1/2A/2B/2C methods are retired and do not define its analyses.
 - The [Exp1 seven-parent pilot](exp1_seven_parent_pilot.md) and numerical
   [isolation harness](../scripts/exp12_diagnostic_isolation.py) are separate
   source-bound operational tools. They do not change the scientific authority
@@ -43,7 +47,7 @@ approval separately before any official 96-parent training.
 
 | Purpose | Active paths | Historical material |
 | --- | --- | --- |
-| SAC and shared infrastructure | `scale_rl/`, `experiments/exp12/`, `experiments/exp1.py`, `experiments/exp2_arm.py` | `experiments/angle_*` are imported by current code or tests; retain. |
+| SAC and shared infrastructure | `scale_rl/`, `experiments/exp12/`, `experiments/exp1.py`, `experiments/exp2_arm.py` | Retired Angle entry points are preserved in Git history. |
 | Five-target launch | `configs/base_exp12.yaml`, `generate_manifest.py`, `scripts/exp12_dynamic_scheduler.py` | Older launch reports and diagnostics in `docs/` remain provenance, not current commands. |
 | Ten-target 96-parent launch candidate | `configs/base_exp12_ten.yaml`, `scripts/exp96_campaign.py`, `scripts/sbatch_exp96_allocation.sh` | Kaggle notebook and runner are development evidence only. |
 | Tests and dependencies | `tests/`, `requirements.txt` | Keep pinned dependencies; do not infer a package is unused from import search alone. |

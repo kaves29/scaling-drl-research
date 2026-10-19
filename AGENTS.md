@@ -8,9 +8,9 @@ specifications, tests, and existing docs live under `main/`.
 
 Explicit user instructions take precedence. Exp1/Exp2 authority is
 `main/.claude/methodology-exp1-exp2.md`, including chronological amendments, and
-approved answers in `main/docs/exp12_decisions.md`. The older
-`main/.claude/research-methodology.md` governs its historical Angle scope; it does
-not override Exp1/Exp2. Investigation reports and exploratory scripts are
+approved answers in `main/docs/exp12_decisions.md`. Historical Angle 1/2A/2B/2C
+workflows are retired; their definitions do not govern current Exp1/Exp2.
+Investigation reports and exploratory scripts are
 analysis, not authority to adopt new settings.
 
 Never silently change methodology, metrics, RNG, optimizer/initialization

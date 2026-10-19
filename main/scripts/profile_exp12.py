@@ -4,10 +4,7 @@
 For each architecture: steady-state training it/s with probes off, wall time of
 one full probe check (rounds x {current, fresh} x steps, after a compile
 warm-up), the projected probe overhead over a whole run (checks per run x check
-time / run training time), and peak device memory (GPU only). With --angle1 it
-also times the existing angle_1 loop on the same config, for the
-"probes-off training unchanged" comparison (angle_1 only accepts its own core
-environments, e.g. dog-run, dog-trot, humanoid-run). WandB is stubbed, nothing is logged
+time / run training time), and peak device memory (GPU only). WandB is stubbed, nothing is logged
 remotely, and outputs go to a temporary directory.
 
 Also (each optional):
@@ -21,7 +18,7 @@ Also (each optional):
 
 Example (CUDA):
     python scripts/profile_exp12.py --env dog-run --env_group dmc_hard \\
-        --archs D2W512 D4W1024 D4W1536 --train_steps 2000 --angle1 --out profile_dog_run.json
+        --archs D2W512 D4W1024 D4W1536 --train_steps 2000 --out profile_dog_run.json
 """
 
 import argparse
@@ -213,31 +210,6 @@ def _eval_cost(trainer, cfg, it_per_s):
             "post_fork_eval_overhead_pct": 100 * evals * eval_s / (arm_train_s + evals * eval_s)}
 
 
-def profile_angle1(args, blocks, width):
-    """Wall time of a short angle_1 run vs the same exp1 run (probes off), end to end."""
-    from hydra.core.global_hydra import GlobalHydra
-
-    from experiments import angle_1, exp1
-
-    config_path = str(Path(__file__).resolve().parents[1] / "configs")
-    steps = int(args.compare_steps)
-    common = _overrides(args, blocks, width, [f"env.num_env_steps={2 * steps}"])
-    out = {}
-    for label, fn, config, extra in [
-        ("angle_1", angle_1.run, "base_sac", ["updates_per_interaction_step=2"]),
-        ("exp1_probes_off", exp1.run, "base_exp12", ["probe.enabled=false"]),
-    ]:
-        overrides = common + extra
-        GlobalHydra.instance().clear()
-        t0 = time.perf_counter()
-        fn({"experiment": label, "config_path": config_path, "config_name": config, "overrides": overrides,
-            "checkpoint_dir": tempfile.mkdtemp(prefix=f"cmp_{label}_"), "checkpoint_interval": 10**9,
-            "checkpoint_start_frac": 0.99})
-        out[f"{label}_wall_s"] = time.perf_counter() - t0
-    out["ratio_exp1_over_angle1"] = out["exp1_probes_off_wall_s"] / out["angle_1_wall_s"]
-    return out
-
-
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--env", default="dog-run")
@@ -247,7 +219,6 @@ def main():
     parser.add_argument("--warmup_steps", type=int, default=200)
     parser.add_argument("--train_steps", type=int, default=2000)
     parser.add_argument("--probe_repeats", type=int, default=2)
-    parser.add_argument("--angle1", action="store_true", help="also time angle_1 vs exp1 (probes off)")
     parser.add_argument("--compare_steps", type=int, default=6000)
     parser.add_argument("--diagnostics_off", action="store_true", help="also time training with diagnostics off")
     parser.add_argument("--fork_timing", action="store_true", help="time complete-state save/restore at fork size")
@@ -260,8 +231,6 @@ def main():
     for name in args.archs:
         blocks, width = ARCHS[name]
         r = profile_arch(args, name, blocks, width)
-        if args.angle1:
-            r.update(profile_angle1(args, blocks, width))
         print(json.dumps(r), flush=True)
         results.append(r)
     if args.out:

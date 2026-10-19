@@ -662,9 +662,10 @@ class Ledger:
                 or not decision.get("decision_reference")
             ):
                 raise ValueError("explicit matching recovery decision required")
-            # Raises unless the run is resumable from a valid checkpoint or, for an Exp1
-            # parent interrupted before its first checkpoint, restartable from scratch.
-            if not validate_resume(item, commit) and item["kind"] != "exp1":
+            # A parent may restart before its first checkpoint. An injected arm may
+            # restart from the validated immutable parent fork before its first save.
+            # validate_resume rechecks that source before returning False for an arm.
+            if not validate_resume(item, commit) and item["kind"] not in ("exp1", "exp2_injected"):
                 raise ValueError("recovery requires an existing valid checkpoint")
             retries = directory / "retry_decisions"
             retries.mkdir(exist_ok=True)
@@ -734,6 +735,8 @@ def _checkpoint_valid(run, item=None, commit=None):
 def validate_resume(item, commit):
     run = Path(item["row"]["checkpoint_dir"])
     if not run.exists():
+        if item["kind"] == "exp2_injected":
+            _validate_arm_parent_fork(item, commit)
         return False
     if (run / "DONE").exists():
         raise ValueError("DONE must be reconciled, never restarted")
@@ -748,6 +751,11 @@ def validate_resume(item, commit):
         # Interrupted before its first committed checkpoint: exp1 restarts from scratch
         # deterministically (tests KillMatrixTest.test_killed_before_the_first_checkpoint_*).
         return False
+    if item["kind"] == "exp2_injected" and _latest(run / "state") is None:
+        # The immutable, complete parent fork is the initial arm checkpoint.
+        # Revalidate it before restarting an arm killed during initialization.
+        _validate_arm_parent_fork(item, commit)
+        return False
     state = _checkpoint_valid(run, item, commit)
     from experiments.exp12.state import load_agent_tree
     from scripts.exp12_launch_plan import validate_replay_normalization
@@ -760,6 +768,26 @@ def validate_resume(item, commit):
     if not {"actor", "critic", "target_critic", "rng"} <= tree.keys():
         raise ValueError("resume checkpoint lacks essential agent state")
     return True
+
+
+def _validate_arm_parent_fork(item, commit):
+    row = item["row"]
+    fields = {"source_dir", "source_id", "overrides", "architecture", "environment",
+              "seed", "group", "budget", "run_key"}
+    if not fields <= row.keys():
+        raise ValueError("arm resume lacks its immutable source checkpoint identity")
+    source_hash = row.get("source_config_hash")
+    if source_hash is None:
+        if row.get("study") == "method-c-ten-96-v1":
+            raise ValueError("ten-target arm lacks the immutable parent config hash")
+        source_hash = config_hash(row["overrides"][:-3])
+    parent = {"kind": "exp1", "id": row["source_id"], "row": {
+        **{key: row[key] for key in ("architecture", "environment", "seed", "group", "budget")},
+        "checkpoint_dir": row["source_dir"], "run_key": row["run_key"],
+        "config_hash": source_hash, "overrides": row["overrides"][:-3],
+        "study": row.get("study"),
+    }}
+    _natural_fork(parent, commit)
 
 
 def _receipt_path(queue_root, item):
@@ -856,6 +884,10 @@ def _arm_item(parent_item, commit, injection_m):
     command[command.index(parent_row["checkpoint_dir"])] = arm_dir
     for override in overrides[len(parent_row["overrides"]) :]:
         command += ["--overrides", override]
+    if parent_row.get("study") == "method-c-ten-96-v1":
+        from scripts.exp96_campaign import _config_hash as arm_config_hash
+    else:
+        arm_config_hash = config_hash
     arm_row = {
         **{
             key: parent_row[key]
@@ -868,10 +900,13 @@ def _arm_item(parent_item, commit, injection_m):
         "fork_sha256": fork_sha256,
         "checkpoint_dir": arm_dir,
         "overrides": overrides,
-        "config_hash": config_hash(overrides),
+        "config_hash": arm_config_hash(overrides),
         "command": command,
         "injection_m": injection_m,
     }
+    if parent_row.get("study") == "method-c-ten-96-v1":
+        arm_row["source_config_hash"] = parent_row["config_hash"]
+        arm_row["study"] = parent_row["study"]
     return {
         "kind": "exp2_injected",
         "row": arm_row,
@@ -1088,12 +1123,14 @@ def validate_arm(item, commit, queue_root):
 
 
 def validate_done(item, commit, queue_root):
+    if item["kind"] == "exp2_injected":
+        return validate_arm(item, commit, queue_root)
     if item["row"].get("study") == "method-c-ten-96-v1":
         from scripts.exp96_campaign import validate_parent as validate_96_parent
         return validate_96_parent(item, commit, queue_root)
     if item["kind"] == "exp1":
         return validate_parent(item, commit, queue_root)
-    return validate_arm(item, commit, queue_root)
+    raise ValueError("unknown experiment kind")
 
 
 def gpu_snapshot(token):
@@ -1392,7 +1429,10 @@ def _start(item, token, approval, queue_root, ledger, job_id, training_checkout=
             # The frozen logger still supplies the checkpointed ID on later restores.
             env["WANDB_RUN_ID"] = item["id"][:16]
             env["WANDB_RESUME"] = "allow"
-            env["WANDB_TAGS"] = "Exp1-production-pilot"
+            env["WANDB_TAGS"] = (
+                "Exp2-injected" if item["kind"] == "exp2_injected"
+                else "Exp1-production-pilot"
+            )
         if item["row"]["group"] == "humanoid_bench":
             env["MUJOCO_GL"] = "egl"
             env["PYOPENGL_PLATFORM"] = "egl"

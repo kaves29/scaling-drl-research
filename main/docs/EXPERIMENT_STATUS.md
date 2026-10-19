@@ -1,5 +1,14 @@
 # Experiment status by source
 
+**Exp2 successor (19 October 2026 UTC):** Branch `codex/exp2-successor`
+develops source-bound natural-fork admission for the 96-parent ten-target
+candidate, on top of `a5c376d740b072d5211e55d94860a61dbd054fec`.
+The obsolete Angle workflows were removed from this branch. The 195-parent
+protocol and active frozen Exp1 execution are unchanged. Exp2 injected arms
+remain unapproved pending a same-source positive control, chosen m, measured
+arm resources, A100 qualification and a ten-target result certificate. See
+[`EXP96_EXP2_SUCCESSOR.md`](EXP96_EXP2_SUCCESSOR.md).
+
 Updated 17 October 2026. This is a status index, not methodology or approval.
 The [dated status history](history/EXPERIMENT_STATUS_2026-10-17.md) preserves
 earlier results and evidence references. Read [CURRENT_PROTOCOLS.md](CURRENT_PROTOCOLS.md)

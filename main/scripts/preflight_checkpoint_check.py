@@ -48,8 +48,8 @@ SMOKE_OVERRIDES_EXP12 = [
 
 def build_parser():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--experiment", default="angle_1")
-    parser.add_argument("--config_name", default="base_sac")
+    parser.add_argument("--experiment", default="exp1")
+    parser.add_argument("--config_name", default="base_exp12")
     parser.add_argument(
         "--override",
         action="append",

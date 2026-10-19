@@ -10,7 +10,7 @@ from unittest import mock
 import jax
 import numpy as np
 
-from experiments.angle_1 import ACTOR_GRAD_COSINE_KEY
+from experiments.exp12.metric_buffer import ACTOR_GRAD_COSINE_KEY
 from experiments.exp12.diagnostics import DiagnosticPendingUpdateMetrics
 from experiments.exp12.state import state_differences
 from experiments.exp12.trainer import Exp12Trainer

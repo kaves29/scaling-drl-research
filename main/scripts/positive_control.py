@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Positive control and m-selection (Methodology "Positive control", amendments (c)-(e), (q)).
 
-Reads a finished-or-forked DEVELOPMENT Exp 1 run (run_role=dev, seed outside 1-5,
+Reads a finished-or-forked DEVELOPMENT Exp 1 run (run_role=dev, seed outside
+the five-target seeds 1-5 or ten-target seeds 1-8,
 D4W1536 on dog-run) and never trains. At the run's own fork state (its f*_run,
 taken with the unchanged Exp 1 trigger) it probes, on one shared pool, target and
 minibatch order (the trigger check's own probe streams):
@@ -58,8 +59,13 @@ def _setting_errors(cfg, allow_any_setting: bool):
     errors = []
     if cfg.run_role != "dev":
         errors.append(f"run_role is {cfg.run_role!r}, not 'dev'")
-    if 1 <= int(cfg.seed) <= 5:
-        errors.append(f"seed {cfg.seed} is a main-run seed (1-5)")
+    rounds = int(cfg.probe.rounds)
+    if rounds not in (5, 10):
+        errors.append(f"positive-control probe must have 5 or 10 rounds, got {rounds}")
+    confirmatory_seeds = 8 if rounds == 10 else 5
+    if ((rounds == 10 and int(cfg.seed) <= confirmatory_seeds)
+            or (rounds == 5 and 1 <= int(cfg.seed) <= confirmatory_seeds)):
+        errors.append(f"seed {cfg.seed} is a main-run seed (1-{confirmatory_seeds})")
     pc = cfg.positive_control
     if not allow_any_setting:
         if get_architecture_id(cfg) != pc.architecture:
@@ -70,10 +76,12 @@ def _setting_errors(cfg, allow_any_setting: bool):
             errors.append("forced triggers cannot qualify a positive control")
         from experiments.exp1 import compose_config
         from utils.run_metadata import _strip_locations, differing_keys
+        canonical_name = "base_exp12_ten" if rounds == 10 else "base_exp12"
         canonical = compose_config(str(Path(__file__).resolve().parents[1] / "configs"),
-                                   "base_exp12", ["env_name=dog-run", "env=dmc_hard",
+                                   canonical_name, ["env_name=dog-run", "env=dmc_hard",
                                    "critic_num_blocks=4", "critic_hidden_dim=1536",
-                                   "run_role=dev", f"seed={cfg.seed}"])
+                                   "run_role=dev", f"seed={cfg.seed}",
+                                   *(["env.num_env_steps=1000000"] if rounds == 10 else [])])
         import omegaconf
         actual = omegaconf.OmegaConf.to_container(cfg, resolve=True)
         approved = omegaconf.OmegaConf.to_container(canonical, resolve=True)
@@ -178,7 +186,7 @@ def run(args) -> int:
     import omegaconf
     import orbax.checkpoint
 
-    from experiments.angle_1 import DONE_MARKER
+    from experiments.exp12.metric_buffer import DONE_MARKER
     from experiments.exp12 import fork
     from experiments.exp12.m_selection import evaluate, loss_rounds
     from experiments.exp12.probe import critic_optimizer, iqm, probe_config, run_probe
@@ -201,11 +209,20 @@ def run(args) -> int:
     report = {
         "created_at": datetime.now(timezone.utc).isoformat(), "run_dir": str(run_dir),
         "run_identity": meta.get("identity"), "healthy_reference": "fresh critic (check 0), L_healthy = 0",
+        "development_config_hash": meta.get("config_hash"),
         "noise_statistic": "pooled SD of per-round L / L_trigger", "noise_threshold": float(cfg.positive_control.noise_threshold),
         "similar_within": float(cfg.positive_control.similar_within), "allow_any_setting": args.allow_any_setting,
         "status": None, "stop": None, "chosen_m": None,
         "source_code": meta.get("code"), "analysis_code": code_version(),
-        "analysis_runtime": runtime_info(),
+        "analysis_runtime": runtime_info(), "development_seed": int(cfg.seed),
+        "probe_configuration": {"rounds": int(cfg.probe.rounds), "steps": int(cfg.probe.steps),
+                                "checks": int(cfg.probe.checks), "pool_size": int(cfg.probe.pool_size),
+                                "batch_size": int(cfg.probe.batch_size)},
+        "qualification_criteria": {"natural_unforced_trigger": True,
+                                   "healthy_reference": "fresh critic at check 0",
+                                   "noise_threshold": float(cfg.positive_control.noise_threshold),
+                                   "similar_within": float(cfg.positive_control.similar_within),
+                                   "rounds": int(cfg.probe.rounds)},
     }
 
     def finish(status, stop=None):
@@ -266,7 +283,8 @@ def run(args) -> int:
     report["shared_offset_sensitivity"] = sensitivity
 
     pc = cfg.positive_control
-    selection = evaluate(loss, float(pc.noise_threshold), float(pc.similar_within))
+    selection = evaluate(loss, float(pc.noise_threshold), float(pc.similar_within),
+                         rounds=int(cfg.probe.rounds))
     report["selection"] = selection
     report["chosen_m"] = selection["chosen_m"]
     trainer.close()

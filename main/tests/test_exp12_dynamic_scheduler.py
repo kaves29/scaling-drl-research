@@ -212,9 +212,8 @@ class DurableLedgerTest(unittest.TestCase):
             arm_decision = root / "arm_retry.json"
             arm_decision.write_text(json.dumps(dict(
                 payload, blocked_sha256=scheduler.sha(ledger._row_dir(arm_row) / "blocked.json"))))
-            with mock.patch.object(scheduler, "validate_resume", return_value=False):
-                with self.assertRaisesRegex(ValueError, "valid checkpoint"):
-                    ledger.review_retry(arm_row, "a" * 40, arm_decision)
+            with self.assertRaisesRegex(ValueError, "source checkpoint identity"):
+                ledger.review_retry(arm_row, "a" * 40, arm_decision)
             self.assertEqual(ledger.state(arm_row), "blocked")
             self.assertEqual(ledger.state(row), "blocked")
             payload["blocked_sha256"] = "wrong"

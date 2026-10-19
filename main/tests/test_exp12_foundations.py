@@ -1,5 +1,5 @@
 """Phase 1 (Exp 1/2 foundations): exact env restore, seeding, bit-exact resume,
-kill-and-resume through the real entry point, and parity with angle_1's loop."""
+kill-and-resume through the real current experiment entry point."""
 
 import importlib.util
 import json
@@ -424,56 +424,6 @@ class DiscountAndHorizonTest(unittest.TestCase):
         for a, c in zip(same, critic_after(0.0, 1.0)):
             np.testing.assert_array_equal(a, c)  # truncation: bootstrapped exactly like a mid-episode step
         self.assertTrue(any(not np.array_equal(a, c) for a, c in zip(same, critic_after(1.0, 0.0))))
-
-class Angle1ParityTest(unittest.TestCase):
-    """With probes off, exp1's loop reproduces experiments/angle_1.py's training bit-for-bit."""
-
-    def setUp(self):
-        from hydra.core.global_hydra import GlobalHydra
-
-        # Earlier Exp 1/2 tests compose configs; angle_1 expects a fresh Hydra singleton.
-        GlobalHydra.instance().clear()
-        self.tmp = tempfile.mkdtemp()
-        self.patchers = patch_wandb()
-
-    def tearDown(self):
-        for p in self.patchers:
-            p.stop()
-        shutil.rmtree(self.tmp, ignore_errors=True)
-
-    def test_same_params_optimizer_state_rng_and_metrics(self):
-        from experiments import angle_1, exp1
-
-        steps = 290  # not an evaluation step, so angle_1's mid-step checkpoint equals end-of-step
-        # min_length=1: SimBa's random warm-up (exp1) and angle_1's single random first action coincide.
-        overrides = tiny_overrides("cheetah-run", "dmc_medium", steps=steps, extra=["buffer.min_length=1"])
-        da, de = os.path.join(self.tmp, "a"), os.path.join(self.tmp, "e")
-        angle1_overrides = [o for o in overrides if not o.startswith("probe.")]
-        angle_1.run({"experiment": "angle_1", "config_path": CONFIG_PATH, "config_name": "base_sac",
-                     "overrides": angle1_overrides + ["updates_per_interaction_step=2"], "checkpoint_dir": da,
-                     "checkpoint_interval": steps, "checkpoint_start_frac": 0.0})
-        exp1.run({"experiment": "exp1", "config_path": CONFIG_PATH, "config_name": "base_exp12",
-                  "overrides": overrides + ["probe.enabled=false"], "checkpoint_dir": de, "checkpoint_interval": 10**9,
-                  "checkpoint_start_frac": 0.0})
-        state = latest_state_dir(Path(de) / "state")
-        leaves_a = jax.tree_util.tree_leaves_with_path(load_agent_tree(da))
-        leaves_e = jax.tree_util.tree_leaves_with_path(load_agent_tree(state))
-        self.assertEqual(len(leaves_a), len(leaves_e))
-        for (path, a), (_, e) in zip(leaves_a, leaves_e):
-            np.testing.assert_array_equal(np.asarray(a), np.asarray(e), err_msg=str(path))
-        with open(Path(da) / "obs_rms.pkl", "rb") as f:
-            rms_a = pickle.load(f)
-        with open(state / "obs_rms.pkl", "rb") as f:
-            rms_e = pickle.load(f)
-        for k in rms_a:
-            np.testing.assert_array_equal(rms_a[k], rms_e[k])
-        csv_a = pd.read_csv(next((Path(da) / "logs").glob("*.csv")))
-        csv_e = pd.read_csv(next(p for p in (Path(de) / "logs").glob("*.csv") if "eval_episodes" not in p.name))
-        # exp1 adds only the Exp 1/2 actor diagnostics (on by default); every shared column is identical.
-        self.assertEqual(set(csv_e.columns) - set(csv_a.columns),
-                         {"train/policy_kl", "train/actor_saturation", "train/actor_gnorm_std"})
-        self.assertEqual(set(csv_a.columns) - set(csv_e.columns), set())
-        pd.testing.assert_frame_equal(csv_a, csv_e[csv_a.columns], check_exact=True)
 
 
 if __name__ == "__main__":

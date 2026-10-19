@@ -214,7 +214,7 @@ class RuntimeTrace:
         from scale_rl.agents.sac.sac_agent import SACAgent
         from scale_rl.buffers.numpy_buffer import NpyUniformBuffer
         from experiments.exp12.diagnostics import ActorDiagnostics, DiagnosticPendingUpdateMetrics
-        from experiments.angle_1 import PendingUpdateMetrics
+        from experiments.exp12.metric_buffer import PendingUpdateMetrics
         from scale_rl.common.logger import WandbTrainerLogger
 
         def pending_metadata(pending):

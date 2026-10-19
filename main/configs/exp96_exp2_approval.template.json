@@ -1,0 +1,51 @@
+{
+  "approved": false,
+  "study_version": "method-c-ten-96-v1",
+  "expected_commit": "<EXACT_FROZEN_PARENT_COMMIT>",
+  "scheduler_commit": "<EXACT_EXP2_SUCCESSOR_COMMIT>",
+  "queue_sha256": "<SHA256_OF_PARENT_QUEUE_JSON>",
+  "decision_reference": "",
+  "injection_m": "<OWNER_CHOSEN_LAST_HALF_OR_ALL>",
+  "trainer_checkout": "<ABSOLUTE_CLEAN_MAIN_DIRECTORY_AT_PARENT_COMMIT>",
+  "positive_control": {
+    "path": "<ABSOLUTE_SAME_SOURCE_POSITIVE_CONTROL_JSON>",
+    "sha256": "<SHA256_OF_POSITIVE_CONTROL_JSON>"
+  },
+  "resources": {
+    "account": "biqc-delta-gpu",
+    "partition": "gpuA100x4",
+    "nodes": 1,
+    "gpus_per_node": 4,
+    "cpus_per_node": 64,
+    "memory_gb_per_node": 256,
+    "wall_minutes": 480
+  },
+  "admission": {
+    "max_processes_per_gpu": 1,
+    "gpu_headroom_gb": 2,
+    "host_headroom_gb": 8,
+    "stop_margin_minutes": 15,
+    "architectures": {
+      "D4W1024": {
+        "cpus": 16,
+        "host_ram_gb": "<MEASURED_GB>",
+        "gpu_memory_gb": "<MEASURED_GB>",
+        "min_interactions_per_second": "<MEASURED_FLOOR>",
+        "estimated_arm_minutes_by_group": {
+          "dmc_hard": "<MEASURED_MINUTES>",
+          "myosuite_simba": "<MEASURED_MINUTES>"
+        }
+      },
+      "D4W1536": {
+        "cpus": 16,
+        "host_ram_gb": "<MEASURED_GB>",
+        "gpu_memory_gb": "<MEASURED_GB>",
+        "min_interactions_per_second": "<MEASURED_FLOOR>",
+        "estimated_arm_minutes_by_group": {
+          "dmc_hard": "<MEASURED_MINUTES>",
+          "myosuite_simba": "<MEASURED_MINUTES>"
+        }
+      }
+    }
+  }
+}

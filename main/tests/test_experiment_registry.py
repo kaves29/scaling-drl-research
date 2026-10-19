@@ -9,44 +9,16 @@ from experiments.registry import (
 
 
 class TestExperimentPackageImports(unittest.TestCase):
-    """Regression guard: `experiments/angle_2_a.py` (the entry-point module,
-    WITH the underscore between "2" and "a") must never be renamed to
-    `angle_2a.py` - that collides with the `experiments/angle_2a/` package
-    directory, Python silently resolves `import experiments.angle_2a` to the
-    PACKAGE instead of the module, and `@register_experiment("angle_2_a")`
-    inside the module never runs. This previously broke `import experiments`
-    entirely (and therefore `run.py` for Angle 1 too), confirmed by direct
-    execution during the post-audit correction pass."""
-
-    def test_experiments_package_imports_without_error(self):
-        import experiments  # noqa: F401 - the import succeeding is the test
-
-    def test_both_angle_1_and_angle_2_a_are_registered_after_import(self):
+    def test_only_current_experiments_are_registered(self):
         import experiments  # noqa: F401
 
         registered = list_experiments()
-        self.assertIn("angle_1", registered)
-        self.assertIn("angle_2_a", registered)
-
-    def test_baseline_calibration_pool_runs_angle_1(self):
-        import experiments  # noqa: F401
-        from analysis.baseline_calibration_pool import POOL_EXPERIMENT
-        from experiments.angle_1 import run
-
-        self.assertIs(get_experiment(POOL_EXPERIMENT), run)
-        self.assertIs(get_experiment("angle_1"), run)
-
-    def test_angle_2_a_entry_point_module_is_not_named_angle_2a(self):
-        import pathlib
-
-        entry_point = pathlib.Path(__file__).resolve().parent.parent / "experiments" / "angle_2_a.py"
-        colliding_name = pathlib.Path(__file__).resolve().parent.parent / "experiments" / "angle_2a.py"
-        self.assertTrue(entry_point.exists(), "entry-point module experiments/angle_2_a.py must exist")
-        self.assertFalse(
-            colliding_name.exists(),
-            "experiments/angle_2a.py must not exist alongside the experiments/angle_2a/ "
-            "package - it would shadow the real entry point and never register",
-        )
+        self.assertIn("exp1", registered)
+        self.assertIn("exp2_arm", registered)
+        self.assertNotIn("angle_1", registered)
+        self.assertNotIn("angle_2_a", registered)
+        self.assertNotIn("angle_2_b", registered)
+        self.assertNotIn("angle_2_c", registered)
 
 
 class TestExperimentRegistry(unittest.TestCase):

@@ -126,6 +126,36 @@ class PositiveControlInputsTest(unittest.TestCase):
             edited[parent][field] = cfg[parent][field] * 2
             self.assertTrue(positive_control._setting_errors(edited, False), key)
 
+    def test_ten_target_positive_control_is_canonical_and_seed_disjoint(self):
+        cfg = compose_config(
+            exp12_helpers.CONFIG_PATH, "base_exp12_ten",
+            ["env_name=dog-run", "env=dmc_hard", "run_role=dev", "seed=991",
+             "critic_num_blocks=4", "critic_hidden_dim=1536",
+             "env.num_env_steps=1000000"],
+        )
+        self.assertEqual(positive_control._setting_errors(cfg, False), [])
+        for seed in range(1, 9):
+            edited = copy.deepcopy(cfg)
+            edited.seed = seed
+            self.assertTrue(any("main-run seed" in e for e in
+                                positive_control._setting_errors(edited, False)))
+        for field, value in (("rounds", 5), ("steps", 1000), ("checks", 20)):
+            edited = copy.deepcopy(cfg)
+            edited.probe[field] = value
+            self.assertTrue(positive_control._setting_errors(edited, False), field)
+
+    def test_ten_paired_rounds_keep_existing_recovery_rule(self):
+        loss = {name: np.full(10, value) for name, value in
+                (("degraded", 0.8), ("injected_last", 0.7),
+                 ("injected_half", 0.1), ("injected_all", 0.05))}
+        result = m_selection.evaluate(loss, 0.1, 0.1, rounds=10)
+        self.assertEqual(result["chosen_m"], "half")
+        self.assertAlmostEqual(result["recovery"]["half"], 0.875)
+        loss["injected_half"] = loss["injected_half"][:-1]
+        result = m_selection.evaluate(loss, 0.1, 0.1, rounds=10)
+        self.assertIsNone(result["chosen_m"])
+        self.assertIn("ten paired", result["stop"].replace("10", "ten"))
+
     def test_forced_run_cannot_qualify(self):
         cfg = compose_config(
             exp12_helpers.CONFIG_PATH,

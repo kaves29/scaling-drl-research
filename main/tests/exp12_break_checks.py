@@ -332,7 +332,7 @@ MUTATIONS += [
                      "                if True:\n"),
      f"{MAN}.test_done_and_resume_classification"),
     ("manifest: relative --ckpt-root accepted", generate_manifest, "main",
-     source_mutation(generate_manifest, "main", 'ckpt_root = require_absolute(args.ckpt_root or "", "--ckpt-root")',
+     source_mutation(generate_manifest, "main", 'ckpt_root = require_absolute(args.ckpt_root, "--ckpt-root")',
                      "ckpt_root = os.path.abspath(args.ckpt_root)"),
      f"{MAN}.test_cli_writes_the_manifests"),
     ("manifest: arm config differs from its parent's (results_root dropped)", generate_manifest, "add_exp12_grid",

@@ -7,7 +7,7 @@ from unittest import mock
 import jax
 import numpy as np
 
-from experiments.angle_1 import ACTOR_GRAD_COSINE_KEY, PendingUpdateMetrics
+from experiments.exp12.metric_buffer import ACTOR_GRAD_COSINE_KEY, PendingUpdateMetrics
 from experiments.exp12.diagnostics import (
     ActorDiagnostics,
     DiagnosticPendingUpdateMetrics,

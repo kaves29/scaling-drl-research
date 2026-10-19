@@ -496,7 +496,7 @@ class IdentityValidationTest(unittest.TestCase):
         shutil.rmtree(cls.tmp, ignore_errors=True)
 
     def test_jobs_stop_at_the_snapshot(self):
-        from experiments.angle_1 import DONE_MARKER
+        from experiments.exp12.metric_buffer import DONE_MARKER
 
         for d in (self.run_dir, self.arm_dir):
             self.assertFalse((Path(d) / DONE_MARKER).exists())

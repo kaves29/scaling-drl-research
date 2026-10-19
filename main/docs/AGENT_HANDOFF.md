@@ -1,5 +1,15 @@
 # Current agent handoff
 
+## Exp2 successor (19 October 2026 UTC)
+
+`codex/exp2-successor` is an isolated branch based on Exp1 multi-GPU source
+`a5c376d740b072d5211e55d94860a61dbd054fec`. The owner retired historical
+Angle 1/2A/2B/2C workflows. Current Exp2 is the natural-trigger
+control/injection intervention; see [successor handoff](EXP96_EXP2_SUCCESSOR.md).
+No frozen Exp1 queue, checkout, checkpoint, or Delta job is changed here.
+Separate same-source positive control, m selection, measured arm resources,
+A100 restore qualification and ten-target analysis certification remain.
+
 Updated 17 October 2026. Resolve live refs and job state before acting. This
 page is a navigation handoff, not a scientific amendment or launch approval.
 The [dated handoff history](history/AGENT_HANDOFF_2026-10-17.md) preserves

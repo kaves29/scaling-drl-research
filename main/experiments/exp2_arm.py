@@ -18,7 +18,7 @@ from pathlib import Path
 import numpy as np
 from dotmap import DotMap
 
-from experiments.angle_1 import DONE_MARKER
+from experiments.exp12.metric_buffer import DONE_MARKER
 from experiments.exp1 import compose_config, record_metadata, run_identity
 from experiments.exp12 import exp2_ledger, fork
 from experiments.exp12.fork import Check1Failed
