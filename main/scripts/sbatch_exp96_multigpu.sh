@@ -20,5 +20,5 @@ unset JAX_PLATFORM_NAME JAX_DEFAULT_MATMUL_PRECISION NVIDIA_TF32_OVERRIDE
 unset XLA_PYTHON_CLIENT_MEM_FRACTION XLA_FLAGS
 # Admission/qualification controllers remain CPU-only. Each child gets one
 # physical GPU UUID, disjoint allocated CPUs and a private compilation cache.
-srun --ntasks=1 --cpus-per-task="${SLURM_CPUS_PER_TASK:?}" --gpus-per-task=8 \
+srun --ntasks=1 --cpus-per-task="${SLURM_CPUS_PER_TASK:?}" --gpus-per-task="${SLURM_GPUS_ON_NODE:?}" \
   python -u scripts/exp96_multigpu.py "$EXP96_ACTION" --root "$EXP96_ROOT"

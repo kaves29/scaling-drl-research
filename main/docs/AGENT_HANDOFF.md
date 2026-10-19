@@ -65,3 +65,12 @@ artifact hashes and unchanged implementation checks. Full packed fitting,
 memory and checkpoint qualification remain unverified until the new actual
 receipt passes. See [continuation scope](exp96_qualification_continuation.md).
 Do not release/retarget historical held campaign22996973 on this basis.
+
+## One-GPU correction (19 October 2026)
+
+Owner limited qualification allocations to one GPU. Eight-GPU23020460 was
+cancelled pending, with zero runtime/no allocation. `codex/exp96-single-gpu-qualification`
+serializes homogeneous7/5/4 checks on one A100, disables unmeasured mixtures,
+and preserves source/result/spending gates. See [scope](exp96_single_gpu_qualification.md).
+Old campaign22996973 remains untouched and blocked; do not release it on a new
+source's receipt. No new GPU PASS is asserted by this source snapshot.

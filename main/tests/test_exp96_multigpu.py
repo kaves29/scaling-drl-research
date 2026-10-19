@@ -25,6 +25,17 @@ def resources(minutes=2880):
     )
 
 
+def qualification_resources(minutes=15):
+    return dict(
+        partition="gpuA100x4",
+        nodes=1,
+        gpus=1,
+        cpus=16,
+        memory_gb=60,
+        wall_minutes=minutes,
+    )
+
+
 class Infrastructure(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
@@ -75,15 +86,15 @@ class Infrastructure(unittest.TestCase):
 
     def test_budget_bounds_and_duplicate_submission_fence(self):
         b = self.budget()
-        b.reserve("q", resources(15), "qualification")
+        b.reserve("q", qualification_resources(15), "qualification")
         b.reserve("first", resources(), "campaign")
         self.assertAlmostEqual(
-            sum(x["reserved_su"] for x in m.read(b.path)["entries"].values()), 581.0265
+            sum(x["reserved_su"] for x in m.read(b.path)["entries"].values()), 578.266
         )
         for key, r, cat in [
             ("first", resources(), "campaign"),
             ("again", resources(), "campaign"),
-            ("q2", resources(15), "qualification"),
+            ("q2", qualification_resources(120), "qualification"),
         ]:
             with self.assertRaises(ValueError):
                 b.reserve(key, r, cat)
@@ -109,7 +120,7 @@ class Infrastructure(unittest.TestCase):
 
     def test_ambiguous_submission_stays_reserved(self):
         b = self.budget()
-        b.reserve("q", resources(15), "qualification")
+        b.reserve("q", qualification_resources(15), "qualification")
         with self.assertRaises(ValueError):
             b.submitted("q", "not-a-job")
         with self.assertRaises(ValueError):
@@ -118,19 +129,19 @@ class Infrastructure(unittest.TestCase):
 
     def test_budget_releases_only_accounted_terminal_charge(self):
         b = self.budget()
-        b.reserve("q", resources(15), "qualification")
+        b.reserve("q", qualification_resources(15), "qualification")
         b.submitted("q", "123")
         with patch.object(
-            m, "checked", return_value="123|RUNNING|60|billing=12042,gres/gpu=8|"
+            m, "checked", return_value="123|RUNNING|60|billing=1000,gres/gpu=1|"
         ):
             with self.assertRaises(ValueError):
                 b.settle("q")
         with patch.object(
-            m, "checked", return_value="123|COMPLETED|600|billing=12042,gres/gpu=8|"
+            m, "checked", return_value="123|COMPLETED|600|billing=1000,gres/gpu=1|"
         ):
             result = b.settle("q")
-        self.assertAlmostEqual(result["actual_su"], 2.007)
-        self.assertAlmostEqual(result["actual_gpu_hours"], 8 / 6)
+        self.assertAlmostEqual(result["actual_su"], 1 / 6)
+        self.assertAlmostEqual(result["actual_gpu_hours"], 1 / 6)
 
     def test_gpu_inventory_refuses_partial_or_wrong_device(self):
         lines = "\n".join(
@@ -334,7 +345,7 @@ class Infrastructure(unittest.TestCase):
                 m.submit(
                     "a" * 40,
                     self.root / "submission",
-                    resources(15),
+                    qualification_resources(15),
                     b.root,
                     "qualification",
                 )
@@ -361,7 +372,7 @@ class Infrastructure(unittest.TestCase):
             all_devices_isolated=True,
             production_orchestration_passed=True,
             job_id="123",
-            resources=resources(15),
+            resources=qualification_resources(15),
         )
         m.write(receipt, q)
         return receipt, smoke, curve, q
@@ -371,7 +382,7 @@ class Infrastructure(unittest.TestCase):
         with patch.object(m, "BASE_SMOKE_DIGEST", m.digest(smoke)), patch.object(
             m, "training_fingerprint", return_value="fixture"
         ), patch.object(
-            m, "checked", return_value="123|COMPLETED|0:0|600|billing=12042,gres/gpu=8|"
+            m, "checked", return_value="123|COMPLETED|0:0|600|billing=1000,gres/gpu=1|"
         ):
             self.assertEqual(m.qualification(receipt, "a" * 40)["job_id"], "123")
             with self.assertRaises(ValueError):
@@ -383,7 +394,7 @@ class Infrastructure(unittest.TestCase):
         with patch.object(m, "BASE_SMOKE_DIGEST", m.digest(smoke)), patch.object(
             m, "training_fingerprint", return_value="fixture"
         ), patch.object(
-            m, "checked", return_value="123|RUNNING|0:0|600|billing=12042,gres/gpu=8|"
+            m, "checked", return_value="123|RUNNING|0:0|600|billing=1000,gres/gpu=1|"
         ):
             with self.assertRaises(ValueError):
                 m.qualification(receipt, "a" * 40)
