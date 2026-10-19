@@ -1,5 +1,14 @@
 # Experiment status by source
 
+**Delta Exp2 staging (19 October 2026 UTC):** The separate integration branch
+on defd636 prepares a source-bound arm ledger, canonical independent dev seed991
+and unfunded qualification commands. Existing five-target forks cannot qualify
+ten-target m selection. Scientific methods are unchanged; natural development
+trigger, real positive-control evidence, owner m approval, measured injected
+profiles/recovery and separate spending authorization remain. The ten-target
+paired result certifier is still Cloud's open scientific implementation item.
+See [readiness and cost scenarios](EXP96_EXP2_DELTA_READINESS.md).
+
 **Exp2 successor (19 October 2026 UTC):** Branch `codex/exp2-successor`
 develops source-bound natural-fork admission for the 96-parent ten-target
 candidate, on top of `a5c376d740b072d5211e55d94860a61dbd054fec`.

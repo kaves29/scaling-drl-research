@@ -1,5 +1,16 @@
 # Current agent handoff
 
+## Delta Exp2 integration preparation (19 October 2026 UTC)
+
+`codex/exp2-delta-integration` descends from Cloud's immutable
+`defd636e68554d60dc07ab6a30ce6ee5be60d516`. See
+[Delta readiness](EXP96_EXP2_DELTA_READINESS.md). It adapts parent approval
+to the real multi-GPU schema, isolates arm data, fixes the impossible256GiB
+A100x4 request, pins the Slurm environment and requires separate Exp2 funding.
+No Exp2 GPU work or m approval is authorized. Frozen Exp1 source/jobs remain
+unchanged. Refer to external Delta preparation receipts for the final SHA and
+targeted integration results; do not repeat Cloud's completed broad CPU suites.
+
 ## Exp2 successor (19 October 2026 UTC)
 
 `codex/exp2-successor` is an isolated branch based on Exp1 multi-GPU source
