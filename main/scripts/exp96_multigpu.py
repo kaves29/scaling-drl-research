@@ -409,6 +409,10 @@ class Budget:
 
 def qualification(path, commit):
     q = read(path)
+    if q.get("schema") == "exp96-owner-disposition-v1":
+        from scripts.exp96_owner_disposition import validate
+
+        return validate(path, commit)
     if (
         q.get("schema") != SCHEMA
         or q.get("verdict") != "PASS"
@@ -488,7 +492,10 @@ def study(plan):
         "cross_seed_analysis",
     ):
         decision = a.get("gates", {}).get(gate, {})
-        if decision.get("status") != "APPROVED" or not decision.get(
+        statuses = (
+            ("APPROVED", "OWNER_WAIVED") if gate == "gpu_smoke" else ("APPROVED",)
+        )
+        if decision.get("status") not in statuses or not decision.get(
             "decision_reference"
         ):
             raise ValueError("unapproved study gate: " + gate)

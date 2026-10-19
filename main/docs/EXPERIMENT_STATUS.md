@@ -104,3 +104,13 @@ fitting starts. Six new/affected local gate/controller checks pass. CPU numerica
 fixture is explicitly not GPU evidence. Existing fitting/checkpoint CPU contracts,
 portable-query tests and passed historical components are reused. No scientific
 settings change. Required7/5/4 memory and full checkpoints remain unqualified.
+
+## Owner accepts partial engineering qualification (19 October2026)
+
+23021908 FAILED3:0 after28m51s at28min workload cap. Actual GPU startup and
+7small/5medium full paired ten-target fitting, checkpoint round trips and phase
+memory headroom checks passed. Fourlarge workers reached fitting but produced no
+completed curves/checkpoint receipts. Source-bound owner disposition records this
+as unverified and profiles as planning reservations. No fabricated PASS. Explicit
+owner instruction now authorizes campaign submission under that disclosed risk.
+See exp96_owner_disposition.md; inspect actual submission receipts for live status.

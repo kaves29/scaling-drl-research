@@ -108,3 +108,12 @@ identity/kernel/CPU/telemetry success. No repeated broad tests or separate GPU
 diagnostic job. See [minimal scope](exp96_minimal_gpu_startup_gate.md). Preserve
 old jobs/evidence, all scientific bytes and spending/source gates; no GPU PASS
 is asserted by this source snapshot.
+
+## Explicit owner launch disposition (19 October2026)
+
+Owner accepts unverified4large packing/recovery after23021908 timed out. New
+`codex/exp96-owner-disposition` supports an explicit OWNER_WAIVED engineering
+admission, never engineering PASS. See exp96_owner_disposition.md. Preserve all
+scientific bytes, original evidence, source/queue integrity, physical admission
+and shared600SU accounting. Only the obsolete held allocation is superseded;
+new immutable source/queue must be verified before replacement submission.
