@@ -97,3 +97,14 @@ mapping test pass. No GPU job was submitted for this correction. The final retry
 authorization is consumed; all actual packing/UUID GPU qualification remains
 unverified. Preserve old campaigns and require explicit authorization before any
 further GPU retry. See the actual-outcome addendum in the failure analysis.
+
+## Renewed minimal qualification direction (19 October2026)
+
+Owner now requests minimal required checks only, with extensive relevant
+preparation and real GPU execution verification before fitting. Separate branch
+`codex/exp96-gpu-startup-gate` adds a90s real GPU startup stage inside the same
+one-GPU allocation, then admits only unfinished homogeneous7/5/4 phases after
+identity/kernel/CPU/telemetry success. No repeated broad tests or separate GPU
+diagnostic job. See [minimal scope](exp96_minimal_gpu_startup_gate.md). Preserve
+old jobs/evidence, all scientific bytes and spending/source gates; no GPU PASS
+is asserted by this source snapshot.

@@ -611,6 +611,136 @@ def qualification_device(diagnostic_path=None):
             m.write(diagnostic_path, evidence)
 
 
+def gpu_startup_worker(root):
+    """Exercise the new partial-GPU identity and a real synchronized GPU kernel."""
+    root.mkdir()
+    identity = cuda_visible_identity()
+    assigned = os.environ["CUDA_VISIBLE_DEVICES"]
+    if identity["uuid"].lower() != assigned.lower():
+        raise ValueError("startup CUDA UUID differs from assigned physical GPU")
+    import jax
+    import jax.numpy as jnp
+    import numpy as np
+    from experiments.exp12.precision import set_matmul_precision, runtime_info
+
+    expected = sorted(map(int, os.environ["EXP96_ASSIGNED_CPU_IDS"].split(",")))
+    if sorted(os.sched_getaffinity(0)) != expected:
+        raise ValueError("startup CPU affinity mismatch")
+    if jax.default_backend() != "gpu" or len(jax.devices("gpu")) != 1:
+        raise ValueError("startup did not initialize exactly one JAX GPU")
+    set_matmul_precision()
+    value = jnp.ones((8, 8), dtype=jnp.float32)
+    result = jax.block_until_ready(value @ value)
+    host = np.asarray(result)
+    if host.dtype != np.float32 or not np.array_equal(
+        host, np.full((8, 8), 8, np.float32)
+    ):
+        raise ValueError("startup GPU kernel failed its exact finite FP32 check")
+    m.write(
+        root / "ready.json",
+        dict(
+            source=m.checked(["git", "rev-parse", "HEAD"], cwd=MAIN),
+            pid=os.getpid(),
+            gpu=assigned,
+            cpu_ids=expected,
+            cuda_identity=identity,
+            runtime=runtime_info(),
+            scope="startup only; not packing qualification",
+            kernel_finite_fp32=True,
+        ),
+    )
+    while not (root / "EXIT.json").exists():
+        time.sleep(0.1)
+
+
+def gpu_startup_gate(root, commit, gpu, cpu_ids):
+    """Run before any retained-state loading/fitting; use the actual telemetry path."""
+    cpu_ids = list(cpu_ids[:2])
+    env = dict(
+        os.environ,
+        CUDA_VISIBLE_DEVICES=gpu["uuid"],
+        JAX_PLATFORMS="cuda,cpu",
+        EXP96_ASSIGNED_CPU_IDS=",".join(map(str, cpu_ids)),
+        EXP12_JAX_CACHE_DIR="off",
+        WANDB_MODE="disabled",
+        PYTHONDONTWRITEBYTECODE="1",
+    )
+    env.pop("JAX_PLATFORM_NAME", None)
+    log = root.with_suffix(".log")
+    with log.open("xb") as stream:
+        process = subprocess.Popen(
+            [
+                "taskset",
+                "--cpu-list",
+                ",".join(map(str, cpu_ids)),
+                sys.executable,
+                "-B",
+                str(Path(__file__).resolve()),
+                "startup",
+                "--root",
+                str(root),
+                "--label",
+                "startup",
+            ],
+            cwd=MAIN,
+            env=env,
+            stdout=stream,
+            stderr=subprocess.STDOUT,
+            start_new_session=True,
+        )
+    try:
+        deadline = time.monotonic() + 90
+        while time.monotonic() < deadline:
+            if process.poll() is not None:
+                raise ValueError("GPU startup worker exited; inspect startup log")
+            ready = root / "ready.json"
+            if ready.exists():
+                receipt = m.read(ready)
+                device, applications, rss = sample([dict(process=process)])
+                if (
+                    receipt["source"] != commit
+                    or receipt["pid"] != process.pid
+                    or receipt["gpu"] != gpu["uuid"]
+                    or receipt["cpu_ids"] != cpu_ids
+                    or not receipt.get("kernel_finite_fp32")
+                    or receipt["runtime"]["platform"] != "gpu"
+                    or receipt["runtime"]["jax"] != "0.4.34"
+                    or receipt["runtime"]["matmul_precision"] != "tensorfloat32"
+                    or applications.get(process.pid, (None,))[0] != gpu["uuid"]
+                    or gpu["uuid"] not in device
+                    or process.pid not in rss
+                ):
+                    raise ValueError(
+                        "GPU startup identity/kernel/runtime/telemetry verification failed"
+                    )
+                m.write(root / "EXIT.json", dict(observed=time.time()))
+                if process.wait(timeout=15) != 0:
+                    raise ValueError("GPU startup worker did not exit successfully")
+                proof = dict(
+                    ready_path=str(ready),
+                    ready_sha256=m.digest(ready),
+                    log_path=str(log),
+                    log_sha256=m.digest(log),
+                    observed_gpu_uuid=applications[process.pid][0],
+                    observed_driver_mb=applications[process.pid][1],
+                    observed_rss_bytes=rss[process.pid],
+                    passed=True,
+                    source=commit,
+                )
+                m.write(root / "verified.json", proof)
+                return proof
+            time.sleep(0.2)
+        raise TimeoutError("GPU startup gate exceeded90s; no fitting allowed")
+    finally:
+        if process.poll() is None:
+            os.killpg(process.pid, signal.SIGTERM)
+            try:
+                process.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                os.killpg(process.pid, signal.SIGKILL)
+                process.wait(timeout=5)
+
+
 def validate_probe_result(result):
     """Check the real single-critic output contract without changing fit budgets."""
     import numpy as np
@@ -688,6 +818,23 @@ def run(root, commit):
         cpu_lanes = m.cpu_partition(os.sched_getaffinity(0), 1)
         report["gpus"] = gpus
         report["cpu_lanes"] = cpu_lanes
+        report["stage"] = "real GPU startup gate"
+        startup = gpu_startup_gate(root / "gpu_startup", commit, gpus[0], cpu_lanes[0])
+        report["gpu_startup_passed"] = True
+        report["gpu_startup"] = startup
+        report["evidence_sha256"].update(
+            {
+                startup["ready_path"]: startup["ready_sha256"],
+                startup["log_path"]: startup["log_sha256"],
+                str(root / "gpu_startup" / "verified.json"): m.digest(
+                    root / "gpu_startup" / "verified.json"
+                ),
+            }
+        )
+        print(
+            "Real GPU startup kernel, identity and telemetry passed; starting required packing phases",
+            flush=True,
+        )
         report["execution_scope"] = (
             "one GPU; homogeneous phases sequential; eight-GPU assignment inherited only"
         )
@@ -931,13 +1078,15 @@ def run(root, commit):
 
 def main():
     p = argparse.ArgumentParser()
-    p.add_argument("action", choices=("child", "claim", "assign"))
+    p.add_argument("action", choices=("child", "claim", "assign", "startup"))
     p.add_argument("--root", type=Path, required=True)
     p.add_argument("--arch", choices=m.ARCHS)
     p.add_argument("--label", required=True)
     p.add_argument("--representative", action="store_true")
     a = p.parse_args()
-    if a.action == "assign":
+    if a.action == "startup":
+        gpu_startup_worker(a.root)
+    elif a.action == "assign":
         assignment_probe(a.root)
     elif a.action == "claim":
         claim_child(a.root, a.label)

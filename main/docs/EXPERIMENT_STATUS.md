@@ -94,3 +94,13 @@ columns. Portable-query correction prepared and focused tests pass; not GPU-run.
 Actual finalretry0.003888889SU/GPUh; cumulativetargetedqualification0.248611111
 physicalGPUh. No further retry submitted. Originalsmokeevidence/queues preserved;
 old96-parentcampaign22996973 remainsheld/blocked. No7/5/4memoryPASS exists.
+
+## Minimal startup-first qualification preparation (19 October2026)
+
+Latest owner direction permits renewed minimal qualification after relevant
+preparation. Startup gate inside the one-GPU job must actually execute a finite
+FP32 GPU kernel on the correct UUID/CPUs with observable telemetry before any
+fitting starts. Six new/affected local gate/controller checks pass. CPU numerical
+fixture is explicitly not GPU evidence. Existing fitting/checkpoint CPU contracts,
+portable-query tests and passed historical components are reused. No scientific
+settings change. Required7/5/4 memory and full checkpoints remain unqualified.
