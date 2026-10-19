@@ -79,6 +79,51 @@ class Contract(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "budget"):
             validate_probe_result(result)
 
+    def test_startup_worker_real_kernel_cpu_fixture(self):
+        import jax
+        from experiments.exp12 import precision
+        from types import SimpleNamespace as NS
+        from unittest.mock import patch
+        from scripts import exp96_multigpu as m
+        from scripts import exp96_multigpu_qualification as q
+
+        self.assertEqual(jax.default_backend(), "cpu")
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp).resolve() / "startup"
+            original_write = m.write
+
+            def write(path, value, **kwargs):
+                original_write(path, value, **kwargs)
+                if Path(path).name == "ready.json":
+                    original_write(root / "EXIT.json", dict(synthetic=True))
+
+            with patch.dict(
+                os.environ,
+                CUDA_VISIBLE_DEVICES="GPU-fixture",
+                EXP96_ASSIGNED_CPU_IDS="0,1",
+            ), patch.object(
+                q, "cuda_visible_identity", return_value=dict(uuid="GPU-fixture")
+            ), patch.object(
+                os, "sched_getaffinity", return_value={0, 1}
+            ), patch.object(
+                jax, "default_backend", return_value="gpu"
+            ), patch.object(
+                jax, "devices", return_value=[NS()]
+            ), patch.object(
+                m, "checked", return_value="unit-fixture"
+            ), patch.object(
+                m, "write", side_effect=write
+            ), patch.object(
+                precision,
+                "runtime_info",
+                return_value=dict(hardware_mocked=True, actual_backend="cpu"),
+            ):
+                q.gpu_startup_worker(root)
+            receipt = m.read(root / "ready.json")
+            self.assertTrue(receipt["kernel_finite_fp32"])
+            self.assertTrue(receipt["runtime"]["hardware_mocked"])
+            self.assertEqual(receipt["source"], "unit-fixture")
+
     def test_real_trainer_checkpoint_roundtrip_and_next_update(self):
         import jax
         from experiments.exp1 import compose_config

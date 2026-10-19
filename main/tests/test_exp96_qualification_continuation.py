@@ -96,6 +96,7 @@ class Continuation(unittest.TestCase):
             claims_race_passed=True,
             all_devices_isolated=True,
             production_orchestration_passed=True,
+            gpu_startup_passed=True,
             resources=resources(13),
             job_id="123",
         )
@@ -145,6 +146,7 @@ class Continuation(unittest.TestCase):
                 job_id="22990946",
                 verdict="INCOMPLETE",
                 production_orchestration_passed=True,
+                gpu_startup_passed=True,
                 claims_race_passed=True,
                 training_fingerprint=m.training_fingerprint("HEAD"),
                 limits=m.LIMITS,

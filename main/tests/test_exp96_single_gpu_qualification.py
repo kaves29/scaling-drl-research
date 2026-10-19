@@ -176,6 +176,26 @@ class SingleGpu(unittest.TestCase):
                     os, "sched_getaffinity", return_value=set(range(16)), create=True
                 )
             )
+
+            def startup(path, commit, gpu, cpus):
+                path.mkdir()
+                ready = path / "ready.json"
+                log = path / "worker.log"
+                m.write(ready, dict(synthetic=True))
+                log.write_text("synthetic fixture")
+                proof = dict(
+                    ready_path=str(ready),
+                    ready_sha256=m.digest(ready),
+                    log_path=str(log),
+                    log_sha256=m.digest(log),
+                    passed=True,
+                )
+                m.write(path / "verified.json", proof)
+                return proof
+
+            stack.enter_context(
+                patch.object(q, "gpu_startup_gate", side_effect=startup)
+            )
             stack.enter_context(patch.object(q.subprocess, "Popen", Process))
             stack.enter_context(patch.object(q, "sample", side_effect=sample))
             stack.enter_context(patch.object(q.time, "sleep", return_value=None))
@@ -187,6 +207,18 @@ class SingleGpu(unittest.TestCase):
             self.assertEqual(report["resources"]["gpus"], 1)
             self.assertEqual(len(report["attempts"]), 16)
             self.assertEqual(len(report["fitting_barrier_sha256"]), 3)
+            self.assertTrue(report["gpu_startup_passed"])
+            phase_counts.clear()
+            failed = root / "startup_failure"
+            failed.mkdir()
+            with patch.object(
+                q,
+                "gpu_startup_gate",
+                side_effect=ValueError("synthetic failed GPU startup"),
+            ):
+                self.assertEqual(q.run(failed, "test-source"), 3)
+            self.assertEqual(phase_counts, [])
+            self.assertEqual(m.read(failed / "qualification.json")["attempts"], [])
 
 
 if __name__ == "__main__":

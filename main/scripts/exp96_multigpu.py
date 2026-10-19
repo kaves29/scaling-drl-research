@@ -432,6 +432,7 @@ def qualification(path, commit):
         not q.get("claims_race_passed")
         or not q.get("all_devices_isolated")
         or not q.get("production_orchestration_passed")
+        or not q.get("gpu_startup_passed")
     ):
         raise ValueError("orchestration qualification incomplete")
     if q.get("reused_checks"):

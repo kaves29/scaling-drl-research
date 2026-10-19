@@ -371,6 +371,7 @@ class Infrastructure(unittest.TestCase):
             claims_race_passed=True,
             all_devices_isolated=True,
             production_orchestration_passed=True,
+            gpu_startup_passed=True,
             job_id="123",
             resources=qualification_resources(15),
         )
