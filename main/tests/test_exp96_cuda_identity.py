@@ -2,6 +2,7 @@
 
 import ctypes
 import os
+import subprocess
 from pathlib import Path
 import sys
 import tempfile
@@ -22,7 +23,7 @@ IDENTITY = dict(
     driver_api_version=12040,
     controller_context=None,
 )
-INVENTORY = f"0, {TOKEN}, NVIDIA A100-SXM4-40GB, 40960, 00000000:87:00.0, 3"
+INVENTORY = f"0, {TOKEN}, NVIDIA A100-SXM4-40GB, 40960"
 ENV = dict(
     SLURM_JOB_GPUS="3",
     SLURM_STEP_GPUS="3",
@@ -74,13 +75,43 @@ class Identity(unittest.TestCase):
         ):
             file = Path(tmp) / "discovery.json"
             self.assertEqual(q.qualification_device(file)["uuid"], TOKEN)
-            self.assertEqual(m.read(file)["selected"]["minor_number"], "3")
+            self.assertEqual(
+                m.read(file)["selected"]["pci_bus_id"], IDENTITY["pci_bus_id"]
+            )
             with patch.dict(os.environ, SLURM_JOB_GPUS="", SLURM_STEP_GPUS=""):
                 self.assertEqual(q.qualification_device()["uuid"], TOKEN)
             # Multiple NVML rows are harmless; only CUDA's actual UUID matches.
-            other = "3, GPU-ffffffff-ffff-ffff-ffff-ffffffffffff, NVIDIA A100-SXM4-40GB, 40960, 00000000:ca:00.0, 0"
+            other = "3, GPU-ffffffff-ffff-ffff-ffff-ffffffffffff, NVIDIA A100-SXM4-40GB, 40960"
             with patch.object(m, "checked", return_value=other + "\n" + INVENTORY):
                 self.assertEqual(q.qualification_device()["index"], "0")
+
+    def test_inventory_command_uses_only_proven_fields_and_preserves_cli_error(self):
+        def inventory(command, **kwargs):
+            self.assertEqual(
+                command,
+                [
+                    "nvidia-smi",
+                    "--query-gpu=index,uuid,name,memory.total",
+                    "--format=csv,noheader,nounits",
+                ],
+            )
+            self.assertEqual(kwargs["stderr"], subprocess.STDOUT)
+            return INVENTORY
+
+        with tempfile.TemporaryDirectory() as tmp, patch.dict(
+            os.environ, ENV
+        ), patch.object(m, "checked", side_effect=inventory), patch.object(
+            q, "cuda_visible_identity", return_value=IDENTITY
+        ):
+            self.assertEqual(q.qualification_device()["uuid"], TOKEN)
+            error = subprocess.CalledProcessError(
+                2, ["nvidia-smi"], output="synthetic unsupported-query error"
+            )
+            file = Path(tmp) / "error.json"
+            with patch.object(m, "checked", side_effect=error):
+                with self.assertRaises(subprocess.CalledProcessError):
+                    q.qualification_device(file)
+            self.assertEqual(m.read(file)["query_output"], error.output)
 
     def test_conflicting_identity_and_oversized_visibility_fail_closed(self):
         with tempfile.TemporaryDirectory() as tmp, patch.dict(
@@ -89,9 +120,11 @@ class Identity(unittest.TestCase):
             q, "cuda_visible_identity", return_value=IDENTITY
         ):
             with patch.object(
-                m, "checked", return_value=INVENTORY.replace("87:00.0", "88:00.0")
+                q,
+                "cuda_visible_identity",
+                return_value=dict(IDENTITY, uuid="GPU-wrong"),
             ):
-                with self.assertRaisesRegex(ValueError, "PCI identity"):
+                with self.assertRaisesRegex(ValueError, "uniquely matched"):
                     q.qualification_device()
             with patch.object(m, "checked", return_value=INVENTORY + "\n" + INVENTORY):
                 with self.assertRaisesRegex(ValueError, "uniquely matched"):

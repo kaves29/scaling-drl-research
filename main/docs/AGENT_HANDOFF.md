@@ -85,3 +85,15 @@ raw diagnostics and per-child stages. See [failure analysis](exp96_qualification
 Two real pinned-stack CPU fitting/checkpoint contracts passed; five new/affected
 identity/controller tests passed. GPU packing remains unverified until actual
 artifacts pass. Keep one GPU/30min, no automatic further retry, old campaign frozen.
+
+## Final retry failed; no further submission (19 October2026)
+
+23021182 FAILED14s/no children because the expanded NVIDIA inventory command
+returned exit2. Optional PCI/minor diagnostic columns were unverified; exact
+CLI error text was not preserved. `codex/exp96-portable-discovery-query` restores
+the previously successful four-field inventory query, retains CUDA UUID identity,
+and records any future CLI stdout/stderr. Four identity tests plus the affected
+mapping test pass. No GPU job was submitted for this correction. The final retry
+authorization is consumed; all actual packing/UUID GPU qualification remains
+unverified. Preserve old campaigns and require explicit authorization before any
+further GPU retry. See the actual-outcome addendum in the failure analysis.
