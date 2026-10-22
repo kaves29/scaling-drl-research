@@ -79,6 +79,13 @@ class FixedTaskTests(unittest.TestCase):
         self.assertEqual(ft.tree_sha256(st.params), ft.tree_sha256(st2.params))
         self.assertEqual(ft.tree_sha256(self.p), before)
         self.assertEqual(int(st.optimizer[0].count), 2000)
+        initial = ft.FitState(self.p, self.tx.init(self.p))
+        exe = ft.fit_segment.lower(
+            self.net, self.tx, initial, self.o, self.a, target, self.idx[:1000]
+        ).compile()
+        carry, _ = exe(initial, self.o, self.a, target, self.idx[:1000])
+        carry, _ = exe(carry, self.o, self.a, target, self.idx[1000:2000])
+        self.assertEqual(ft.tree_sha256(carry.params), ft.tree_sha256(st.params))
 
     def test_pool_error_decomposition(self):
         m = ft.pool_metrics(self.net, self.p, self.o, self.a, self.z, 16)

@@ -6,9 +6,12 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import sys
 import threading
 import time
 import xml.etree.ElementTree as ET
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import jax
 import jax.numpy as jnp
@@ -16,6 +19,7 @@ import numpy as np
 from omegaconf import OmegaConf
 
 from experiments.exp12 import fixed_task as ft
+from experiments.exp12 import probe as probe_module
 from experiments.exp12.diagnostic_artifacts import (
     atomic_json,
     initial_normalizer,
@@ -551,6 +555,12 @@ def main():
     )
     if actual != args.commit or dirty:
         raise RuntimeError("diagnostic checkout is not clean and source matched")
+    source_root = Path(__file__).resolve().parents[1]
+    if not all(
+        Path(path).resolve().is_relative_to(source_root)
+        for path in [ft.__file__, probe_module.__file__]
+    ):
+        raise RuntimeError("diagnostic imported a module from a different checkout")
     if (
         jax.default_backend() != "gpu"
         or len(jax.devices()) != 1
@@ -569,6 +579,7 @@ def main():
             "job_id": os.environ["SLURM_JOB_ID"],
             "CUDA_VISIBLE_DEVICES": os.environ.get("CUDA_VISIBLE_DEVICES"),
             "expected_commit": args.commit,
+            "module_paths": {"fixed_task": ft.__file__, "probe": probe_module.__file__},
         },
     )
     runner = Investigation(args)
