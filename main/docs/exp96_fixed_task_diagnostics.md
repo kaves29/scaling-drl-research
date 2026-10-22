@@ -76,3 +76,15 @@ and synchronized before/after measurements before being adopted.
 Seven small real-JAX CPU contracts passed on Delta's pinned stack in3.426seconds
 at initial diagnostic commit `f297dd49088a3ef7184fe13c884fa3f7ce8d58b0`.
 This is CPU engineering evidence only; no GPU results are asserted here.
+
+## Short diagnostic scheduling disposition, before GPU execution
+
+Normal-queue job23120674 remained pending with unknown start time. Delta's
+published policy explicitly permits short-duration tests of a new workflow in
+the interactive partition. If and only if the pending job remains unallocated,
+cancel it with a pending-state filter, verify zero elapsed/no allocation, and
+replace it with a single one-hourA100 diagnostic in gpuA100x4-interactive.
+Set DIAGNOSTIC_CAP_SECONDS=3000 so work ends at50minutes, with a55-minute process
+limit. The live interactive billing rate is2weightedSU/hour: maximum charge2SU
+and maximum physical GPU use1hour. Never leave both allocations eligible.
+All original scientific controls and the4physicalGPU-hour total ceiling remain.
