@@ -6,11 +6,14 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import threading
 import time
+import xml.etree.ElementTree as ET
 
 import jax
 import jax.numpy as jnp
 import numpy as np
+from omegaconf import OmegaConf
 
 from experiments.exp12 import fixed_task as ft
 from experiments.exp12.diagnostic_artifacts import (
@@ -68,12 +71,16 @@ class Investigation:
         if len(self.parents) != 96:
             raise ValueError("not the canonical96-parent queue")
         self.host_models = {}
-        self.tx = critic_optimizer(
-            type(
-                "Config",
-                (),
-                {"critic_learning_rate": 1e-4, "critic_weight_decay": 0.01},
-            )()
+        self.segment_executables = {}
+        optimizer_config = (
+            Path(__file__).resolve().parents[1] / "configs/agent/sac.yaml"
+        )
+        self.tx = critic_optimizer(OmegaConf.load(optimizer_config))
+        self.inputs.append(
+            {
+                "optimizer_config": str(optimizer_config),
+                "sha256": hashlib.sha256(optimizer_config.read_bytes()).hexdigest(),
+            }
         )
 
     def time_call(self, label, call):
@@ -194,15 +201,26 @@ class Investigation:
         )
         rows = [{"step": 0, **{k: float(v) for k, v in metrics.items()}}]
         state, curves = ft.FitState(params, self.tx.init(params)), []
+        compile_key = (env, arch)
+        if compile_key not in self.segment_executables:
+            before = time.monotonic()
+            self.segment_executables[compile_key] = ft.fit_segment.lower(
+                net, self.tx, state, obs, act, targets, idx[:1000]
+            ).compile()
+            self.timing.append(
+                {
+                    "label": "segment_lower_compile/" + env + "/" + arch,
+                    "seconds": time.monotonic() - before,
+                }
+            )
+        executable = self.segment_executables[compile_key]
         for lo in range(0, steps, 1000):
             if not self.allowed(90):
                 break
             before = time.monotonic()
             state, curve = self.time_call(
                 "fit_segment/" + name + "/" + str(lo),
-                lambda: ft.fit_segment(
-                    net, self.tx, state, obs, act, targets, idx[lo : lo + 1000]
-                ),
+                lambda: executable(state, obs, act, targets, idx[lo : lo + 1000]),
             )
             curves.append(np.asarray(curve))
             metrics = self.time_call(
@@ -265,6 +283,26 @@ class Investigation:
             lambda: _base_targets(net, target_key, o, a, 2560, 100000.0),
         )
         idx = ft.extended_indices(index_key, 8000, 256, 25600)
+        out = self.root / f"original_{row['run_key']}_r{round_index}"
+        out.mkdir(exist_ok=False)
+        np.savez(
+            out / "task.npz",
+            obs=np.asarray(o),
+            act=np.asarray(a),
+            base=np.asarray(base),
+            indices=np.asarray(idx),
+            replay_indices=indices,
+        )
+        self.inputs.append(
+            {
+                "original_probe_path": str(cp / "probes/check_50.npz"),
+                "original_probe_sha256": hashlib.sha256(
+                    (cp / "probes/check_50.npz").read_bytes()
+                ).hexdigest(),
+                "reconstructed_task": str(out / "task.npz"),
+                "base_sha256": array_hash(base),
+            }
+        )
         with np.load(cp / "probes/check_50.npz") as original:
             for kind in ["fresh", "latest"]:
                 params = (
@@ -312,6 +350,12 @@ class Investigation:
                         abs(jnp.var(base) - original[label + "_b"][round_index])
                     ),
                 )
+                np.savez(
+                    out / (kind + "_original_fit.npz"),
+                    losses=np.asarray(loss),
+                    final_mse=np.asarray(mse),
+                    offset=np.asarray(offset),
+                )
                 self.rows.append({"original_reproduction": record})
                 self.save()
                 if arch == "D4W1536":
@@ -335,6 +379,45 @@ class Investigation:
                     if not np.array_equal(np.asarray(again[0]), np.asarray(loss)):
                         raise RuntimeError(
                             "identical frozen-fit repetition changed losses"
+                        )
+                    state = ft.FitState(params, self.tx.init(params))
+                    segments = []
+                    for lo in [0, 1000]:
+                        state, curve = self.time_call(
+                            "segmented_equivalence/" + row["run_key"] + "/" + str(lo),
+                            lambda: ft.fit_segment(
+                                net,
+                                self.tx,
+                                state,
+                                o,
+                                a,
+                                offset + base,
+                                idx[lo : lo + 1000],
+                            ),
+                        )
+                        segments.append(np.asarray(curve))
+                    final = sync(
+                        ft.pool_metrics(net, state.params, o, a, offset + base, 2560)
+                    )["mse"]
+                    delta = float(
+                        np.max(np.abs(np.concatenate(segments) - np.asarray(loss)))
+                    )
+                    final_delta = float(abs(final - mse))
+                    atomic_json(
+                        out / "segmented_equivalence.json",
+                        {
+                            "curve_max_abs_error": delta,
+                            "final_abs_error": final_delta,
+                            "bitwise_curve_equal": bool(
+                                np.array_equal(
+                                    np.concatenate(segments), np.asarray(loss)
+                                )
+                            ),
+                        },
+                    )
+                    if final_delta > max(1e-4, 0.005 * abs(float(mse))):
+                        raise RuntimeError(
+                            "segmented fit differs materially from frozen implementation"
                         )
 
     def run(self):
@@ -489,6 +572,51 @@ def main():
         },
     )
     runner = Investigation(args)
+    stop = threading.Event()
+
+    def telemetry():
+        with (root / "telemetry.jsonl").open("x") as stream:
+            while not stop.is_set():
+                try:
+                    result = subprocess.run(
+                        ["nvidia-smi", "-q", "-x"],
+                        capture_output=True,
+                        text=True,
+                        timeout=10,
+                    )
+                    if result.returncode:
+                        raise RuntimeError(result.stderr[:500])
+                    for gpu in ET.fromstring(result.stdout).findall("gpu"):
+                        processes = [
+                            x
+                            for x in gpu.findall("processes/process_info")
+                            if x.findtext("pid") == str(os.getpid())
+                        ]
+                        if processes:
+                            row = {
+                                "elapsed_seconds": time.monotonic() - runner.start,
+                                "uuid": gpu.findtext("uuid"),
+                                "name": gpu.findtext("product_name"),
+                                "total_memory": gpu.findtext("fb_memory_usage/total"),
+                                "own_process_memory": processes[0].findtext(
+                                    "used_memory"
+                                ),
+                                "shared_gpu_utilization": gpu.findtext(
+                                    "utilization/gpu_util"
+                                ),
+                            }
+                            stream.write(json.dumps(row) + "\n")
+                            stream.flush()
+                except Exception as exc:
+                    stream.write(
+                        json.dumps({"telemetry_unavailable": repr(exc)}) + "\n"
+                    )
+                    stream.flush()
+                    return
+                stop.wait(5)
+
+    monitor = threading.Thread(target=telemetry, daemon=True)
+    monitor.start()
     try:
         runner.run()
         atomic_json(
@@ -502,6 +630,9 @@ def main():
         runner.save()
         atomic_json(root / "status.json", {"status": "FAILED", "error": repr(exc)})
         raise
+    finally:
+        stop.set()
+        monitor.join(timeout=12)
 
 
 if __name__ == "__main__":
