@@ -1,5 +1,27 @@
 # Current agent handoff
 
+## Exp96 diagnostic engineering implementation (23 October 2026)
+
+Owner-authorized implementation branch `codex/exp96-diagnostic-engineering-20261023`
+starts at handoff `6af1bb463eba6d8856606bc040d003d1cb4df2be`. The constructor
+regression reproduced the wrong generic optimizer; correction `b98e5ed` binds
+AdamW to validated archived parent metadata. The delivered implementation adds
+first-update function-space diagnostics, explicit retrospective plans, durable
+partial results, allocation/accounting preflight and compact evidence export.
+See [implementation and execution guide](exp96_diagnostic_engineering.md) for
+files, schemas, CPU validation and source-bound Delta commands. Resolve the final
+implementation SHA and PR from Git/the delivery; this file cannot contain its own
+final commit hash.
+
+The authenticated Mac worker reconciled jobs 23120674/23120792: 181 cumulative
+physical A100-seconds, no other investigation allocations/restarts, 14219 seconds
+remaining at that audit. Historical remote budget.json is stale and preserved.
+The old GPU segmentation error remains unresolved and its guard is unchanged;
+new corrected-source A100/TF32 reconstruction, equivalence and full-size runtime
+validation have not run. No GPU job or scientific-methodology change is authorized
+by this implementation/status update. The next experiment/allocation requires
+owner approval after fresh accounting.
+
 Updated 17 October 2026. Resolve live refs and job state before acting. This
 page is a navigation handoff, not a scientific amendment or launch approval.
 The [dated handoff history](history/AGENT_HANDOFF_2026-10-17.md) preserves
