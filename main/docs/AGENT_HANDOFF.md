@@ -8,6 +8,11 @@ regression reproduced the wrong generic optimizer; correction `b98e5ed` binds
 AdamW to validated archived parent metadata. The delivered implementation adds
 first-update function-space diagnostics, explicit retrospective plans, durable
 partial results, allocation/accounting preflight and compact evidence export.
+Review: [PR #8](https://github.com/kaves29/scaling-drl-research/pull/8),
+owned by Codex; implementation/test checkpoint
+`ac360d9a07f3632a25a8f6401fcf950549f9208d`. Later publication edits are
+documentation only. All 36 targeted CPU tests passed with no skips.
+
 See [implementation and execution guide](exp96_diagnostic_engineering.md) for
 files, schemas, CPU validation and source-bound Delta commands. Resolve the final
 implementation SHA and PR from Git/the delivery; this file cannot contain its own

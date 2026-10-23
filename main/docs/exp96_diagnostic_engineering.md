@@ -145,3 +145,5 @@ main/scripts/sbatch_exp96_fixed_task_diagnostics.sh
 main/tests/test_exp96_diagnostic_engineering.py
 main/tests/test_exp96_diagnostic_execution.py
 ```
+
+Reviewable delivery: [PR #8](https://github.com/kaves29/scaling-drl-research/pull/8), targeting the diagnostic branch. Implementation/test checkpoint: `ac360d9a07f3632a25a8f6401fcf950549f9208d`; later publication edits are documentation only. Full commit history is retained in the PR.
