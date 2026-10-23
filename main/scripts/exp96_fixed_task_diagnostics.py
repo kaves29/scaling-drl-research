@@ -21,8 +21,10 @@ from omegaconf import OmegaConf
 from experiments.exp12 import fixed_task as ft
 from experiments.exp12 import probe as probe_module
 from experiments.exp12 import probe_tasks as task_module
+from experiments.exp12.diagnostic_plan import load_plan
 from experiments.exp12.diagnostic_artifacts import (
     atomic_json,
+    atomic_npz,
     initial_normalizer,
     load_critic,
     normalizer,
@@ -63,6 +65,9 @@ class Investigation:
         self.deadline = self.start + args.cap_seconds
         self.root.mkdir(parents=True, exist_ok=True)
         self.rows, self.timing, self.inputs = [], [], []
+        self.plan, self.plan_sha256 = (
+            load_plan(args.plan) if getattr(args, "plan", None) else (None, None)
+        )
         self.seconds_per_1000 = 120.0
         self.queue = json.loads((Path(args.campaign) / "queue/queue.json").read_text())
         if self.queue["commit"] != FROZEN:
@@ -76,8 +81,12 @@ class Investigation:
             ): p["row"]
             for p in self.queue["parents"]
         }
-        expected = {(e, a, s) for e in ("dog-run", "humanoid-run", "myo-key-turn", "myo-pen-twirl")
-                    for a in ARCHS for s in range(1, 9)}
+        expected = {
+            (e, a, s)
+            for e in ("dog-run", "humanoid-run", "myo-key-turn", "myo-pen-twirl")
+            for a in ARCHS
+            for s in range(1, 9)
+        }
         if len(parent_rows) != 96 or set(self.parents) != expected:
             raise ValueError("not the canonical96-parent queue")
         self.host_models = {}
@@ -91,9 +100,11 @@ class Investigation:
             self.optimizer_config = settings
             self.optimizer_provenance.append(binding)
         self.tx = critic_optimizer(OmegaConf.create(self.optimizer_config))
-        self.optimizer_sha256 = hashlib.sha256(json.dumps(
-            self.optimizer_provenance[0]["optimizer"], sort_keys=True
-        ).encode()).hexdigest()
+        self.optimizer_sha256 = hashlib.sha256(
+            json.dumps(
+                self.optimizer_provenance[0]["optimizer"], sort_keys=True
+            ).encode()
+        ).hexdigest()
         self.inputs.extend(self.optimizer_provenance)
 
     def time_call(self, label, call):
@@ -147,7 +158,7 @@ class Investigation:
         tag = f"{env}_{seed}_{period}_{norm}_{support}"
         path = self.root / ("pool_" + tag + ".npz")
         if not path.exists():
-            np.savez(
+            atomic_npz(
                 path,
                 raw_obs=raw,
                 obs=normalized,
@@ -181,6 +192,9 @@ class Investigation:
                 "inputs": self.inputs,
                 "optimizer": self.optimizer_provenance[0]["optimizer"],
                 "optimizer_sha256": self.optimizer_sha256,
+                "plan": self.plan,
+                "plan_sha256": self.plan_sha256,
+                "conditions": getattr(self, "condition_status", []),
                 "elapsed_seconds": time.monotonic() - self.start,
                 "jax_memory_stats": jax.devices()[0].memory_stats(),
             },
@@ -209,40 +223,110 @@ class Investigation:
         )
         return restored.task_id
 
-    def fit(self, name, env, arch, seed, kind, obs, act, z, idx, offset_mode, steps):
+    def fit(
+        self,
+        name,
+        env,
+        arch,
+        seed,
+        kind,
+        obs,
+        act,
+        z,
+        idx,
+        offset_mode,
+        steps,
+        shared_offset=None,
+    ):
+        if offset_mode not in ("own", "zero", "shared", "incremental"):
+            raise ValueError("unknown target construction")
+        if offset_mode == "shared" and shared_offset is None:
+            raise ValueError("shared targets require an explicit reference offset")
+        if steps not in (2000, 4000, 8000) or len(idx) < steps:
+            raise ValueError("unsupported or incomplete fitting horizon")
         estimated = 180 + steps / 1000 * self.seconds_per_1000
         if not self.allowed(estimated):
+            self.rows.append(
+                {"name": name, "status": "SKIPPED_BUDGET", "requested_steps": steps}
+            )
+            self.save()
             return False
         net, params = self.model(env, arch, seed, kind)
-        q = sync(ft.predictions(net, params, obs, act, 2560))
-        offset = jnp.mean(q) if offset_mode == "own" else jnp.array(0, jnp.float32)
+        chunk = getattr(self, "eval_chunk", 2560)
+        initial_hash = ft.tree_sha256(params)
+        q = sync(ft.predictions(net, params, obs, act, chunk))
+        offset = (
+            jnp.mean(q)
+            if offset_mode == "own"
+            else jnp.asarray(
+                shared_offset if offset_mode == "shared" else 0, jnp.float32
+            )
+        )
         targets = q + z if offset_mode == "incremental" else offset + z
         # Numeric targets are durable; incremental tasks explicitly differ by starting function.
         out = self.root / name
         out.mkdir(exist_ok=False)
-        np.savez(
+        atomic_npz(
             out / "task.npz",
             targets=np.asarray(targets),
             base=np.asarray(z),
             indices=np.asarray(idx[:steps]),
             offset=np.asarray(offset),
+            starting_predictions=np.asarray(q),
         )
         task_id = self.bank_task(
             out / "numeric_task", obs, act, targets, idx[:steps], z, offset_mode
         )
         metrics = self.time_call(
             "initial_pool_metrics/" + name,
-            lambda: ft.pool_metrics(net, params, obs, act, targets, 2560),
-        )
-        loss, grad_norm = self.time_call(
-            "initial_gradient/" + name,
-            lambda: ft.initial_gradient(
-                net, params, obs[idx[0]], act[idx[0]], targets[idx[0]]
-            ),
+            lambda: ft.pool_metrics(net, params, obs, act, targets, chunk),
         )
         rows = [{"step": 0, **{k: float(v) for k, v in metrics.items()}}]
         state, curves = ft.FitState(params, self.tx.init(params)), []
-        compile_key = (env, arch)
+        first_update = self.time_call(
+            "first_update/" + name,
+            lambda: ft.first_update(
+                net, self.tx, state, obs, act, targets, idx[0], chunk
+            ),
+        )
+        record = {
+            "name": name,
+            "environment": env,
+            "architecture": arch,
+            "seed": seed,
+            "kind": kind,
+            "offset_mode": offset_mode,
+            "requested_steps": steps,
+            "steps": 0,
+            "status": "PARTIAL",
+            "measurements": rows,
+            "initial_gradient_norm": float(first_update["gradient_l2"]),
+            "first_update": {k: float(v) for k, v in first_update.items()},
+            "starting_parameters_sha256": initial_hash,
+            "optimizer_sha256": self.optimizer_sha256,
+            "task_id": task_id,
+            "base_sha256": array_hash(z),
+            "target_mean": float(jnp.mean(targets)),
+            "target_variance": float(jnp.var(targets)),
+            "initial_function_mismatch_rms": float(jnp.sqrt(metrics["mse"])),
+            "pairing": (
+                "identical_numeric_task_required"
+                if offset_mode in ("zero", "shared")
+                else "learner_specific_targets; not a common fixed-task comparison"
+            ),
+        }
+        self.rows.append(record)
+        atomic_json(out / "progress.json", record)
+        self.save()
+        compile_key = (
+            env,
+            arch,
+            obs.shape,
+            act.shape,
+            obs.dtype,
+            act.dtype,
+            self.optimizer_sha256,
+        )
         if compile_key not in self.segment_executables:
             before = time.monotonic()
             self.segment_executables[compile_key] = ft.fit_segment.lower(
@@ -266,46 +350,37 @@ class Investigation:
             curves.append(np.asarray(curve))
             metrics = self.time_call(
                 "pool_metrics/" + name + "/" + str(lo + 1000),
-                lambda: ft.pool_metrics(net, state.params, obs, act, targets, 2560),
+                lambda: ft.pool_metrics(net, state.params, obs, act, targets, chunk),
             )
             rows.append(
                 {
                     "step": lo + 1000,
                     "segment_seconds_including_dispatch": time.monotonic() - before,
+                    "mse_reduction_per_update": (
+                        rows[-1]["mse"] - float(metrics["mse"])
+                    )
+                    / 1000,
                     **{k: float(v) for k, v in metrics.items()},
                 }
             )
-            np.savez(
+            atomic_npz(
                 out / f"curve_through_{lo+1000:04d}.npz", losses=np.concatenate(curves)
             )
-            atomic_json(
-                out / "progress.json",
-                {
-                    "measurements": rows,
-                    "offset_mode": offset_mode,
-                    "initial_minibatch_loss": float(loss),
-                    "initial_gradient_norm": float(grad_norm),
-                    "target_sha256": array_hash(targets),
-                    "base_sha256": array_hash(z),
-                    "optimizer_count": int(state.optimizer[0].count),
-                    "task_id": task_id,
-                },
+            record.update(
+                steps=lo + 1000,
+                optimizer_count=int(state.optimizer[0].count),
+                curve_summary=ft.curve_summary(np.concatenate(curves)),
             )
+            atomic_json(out / "progress.json", record)
             self.save()
-        self.rows.append(
-            {
-                "name": name,
-                "environment": env,
-                "architecture": arch,
-                "seed": seed,
-                "kind": kind,
-                "offset_mode": offset_mode,
-                "steps": rows[-1]["step"],
-                "measurements": rows,
-                "initial_gradient_norm": float(grad_norm),
-                "task_id": task_id,
-            }
+        if ft.tree_sha256(params) != initial_hash:
+            raise RuntimeError("diagnostic mutated original checkpoint parameters")
+        record.update(
+            status="COMPLETE" if rows[-1]["step"] == steps else "PARTIAL",
+            final_state_sha256=ft.tree_sha256(state),
+            starting_parameters_unchanged=True,
         )
+        atomic_json(out / "progress.json", record)
         self.save()
         print("FIT", name, rows[-1], flush=True)
         return rows[-1]["step"] == steps
@@ -315,6 +390,8 @@ class Investigation:
         cp = Path(row["checkpoint_dir"])
         st = state_dir(cp, "latest")
         obs, act = replay_array(st, "observations"), replay_array(st, "actions")
+        if len(obs) < 500000 or len(act) < 500000:
+            raise ValueError("historical check 50 replay prefix is unavailable")
         rms = normalizer(st)
         indices = probe_rng(seed, 50, round_index).integers(0, 500000, 25600)
         o = jnp.asarray((obs[indices] - rms["mean"]) / np.sqrt(rms["var"] + 1e-8))
@@ -328,7 +405,7 @@ class Investigation:
         idx = ft.extended_indices(index_key, 8000, 256, 25600)
         out = self.root / f"original_{row['run_key']}_r{round_index}"
         out.mkdir(exist_ok=False)
-        np.savez(
+        atomic_npz(
             out / "task.npz",
             obs=np.asarray(o),
             act=np.asarray(a),
@@ -348,10 +425,34 @@ class Investigation:
         )
         with np.load(cp / "probes/check_50.npz") as original:
             for kind in ["fresh", "latest"]:
+                if not self.allowed(180):
+                    self.rows.append(
+                        {
+                            "original_reproduction": {
+                                "environment": env,
+                                "architecture": arch,
+                                "seed": seed,
+                                "kind": kind,
+                                "round": round_index,
+                                "status": "SKIPPED_BUDGET",
+                            }
+                        }
+                    )
+                    self.save()
+                    return False
                 params = (
                     fresh if kind == "fresh" else self.model(env, arch, seed, kind)[1]
                 )
                 label = "fresh" if kind == "fresh" else "current"
+                for field, shape in (
+                    ("losses", (10, 2000)),
+                    ("final_loss", (10,)),
+                    ("offset", (10,)),
+                    ("b", (10,)),
+                ):
+                    values = original[label + "_" + field]
+                    if values.shape != shape or not np.isfinite(values).all():
+                        raise ValueError("incomplete/nonfinite archived original probe")
                 before = time.monotonic()
                 executable = _fit.lower(
                     net, self.tx, params, o, a, base, idx[:2000], 2560
@@ -392,8 +493,20 @@ class Investigation:
                     variance_error=float(
                         abs(jnp.var(base) - original[label + "_b"][round_index])
                     ),
+                    optimizer_sha256=self.optimizer_sha256,
                 )
-                np.savez(
+                if not all(
+                    np.isfinite(record[key])
+                    for key in (
+                        "final_mse",
+                        "reference_mse",
+                        "curve_max_abs_error",
+                        "offset_error",
+                        "variance_error",
+                    )
+                ):
+                    raise ValueError("nonfinite historical reconstruction")
+                atomic_npz(
                     out / (kind + "_original_fit.npz"),
                     losses=np.asarray(loss),
                     final_mse=np.asarray(mse),
@@ -451,141 +564,113 @@ class Investigation:
                     final = sync(
                         ft.pool_metrics(net, state.params, o, a, offset + base, 2560)
                     )["mse"]
-                    delta = float(
-                        np.max(np.abs(np.concatenate(segments) - np.asarray(loss)))
+                    report = ft.equivalence_report(
+                        loss, float(mse), np.concatenate(segments), float(final)
                     )
-                    final_delta = float(abs(final - mse))
+                    atomic_npz(
+                        out / "segmented_fit.npz",
+                        losses=np.concatenate(segments),
+                        final_mse=np.asarray(final),
+                    )
                     atomic_json(
                         out / "segmented_equivalence.json",
                         {
-                            "curve_max_abs_error": delta,
-                            "final_abs_error": final_delta,
-                            "bitwise_curve_equal": bool(
-                                np.array_equal(
-                                    np.concatenate(segments), np.asarray(loss)
-                                )
-                            ),
+                            **report,
+                            "optimizer_sha256": self.optimizer_sha256,
+                            "starting_parameters_sha256": ft.tree_sha256(params),
+                            "segmented_state_sha256": ft.tree_sha256(state),
                         },
                     )
-                    if final_delta > max(1e-4, 0.005 * abs(float(mse))):
+                    if not report["passed_existing_final_guard"]:
                         raise RuntimeError(
                             "segmented fit differs materially from frozen implementation"
                         )
+        return True
 
     def run(self):
-        self.original_reproduction("myo-pen-twirl", "D2W512", 5)
-        if self.allowed(600):
-            self.original_reproduction("humanoid-run", "D4W1536", 1)
-        # Common numeric tasks and minibatches; teacher is fixed across learners and normalizers.
-        for r in range(3):
-            for env, seed in [
-                (e, s) for e in ["myo-key-turn", "myo-pen-twirl"] for s in [1, 2]
-            ]:
-                teacher = SACCritic("residual", *ARCHS["D4W1536"], jnp.float32)
-                if self.allowed(300):
-                    key = jax.random.PRNGKey(20261022 + seed * 100 + r)
-                    target_key, index_key = jax.random.split(key)
-                    idx = ft.extended_indices(index_key, 8000, 256, 25600)
-                    # The same keyed teacher weights are generated for every crossed condition.
-                    prior_base = None
-                    for period, norm, support in [
-                        ("late", "latest", None),
-                        ("late", "latest", 5000),
-                        ("early", "latest", 5000),
-                        ("early", "early", 5000),
-                    ]:
-                        if not self.allowed(300):
-                            return
-                        tag, o, a = self.pool(
-                            env, seed, period=period, norm=norm, support=support
-                        )
-                        z = self.time_call(
-                            "target/" + tag,
-                            lambda: _base_targets(
-                                teacher, target_key, o, a, 2560, 100000.0
-                            ),
-                        )
-                        name = f"{tag}_r{r}_fresh_zero"
-                        horizon = (
-                            8000
-                            if period == "late"
-                            and norm == "latest"
-                            and support is None
-                            and seed == 1
-                            else 2000
-                        )
-                        self.fit(
+        """Execute only a reviewed explicit plan, retaining budget omissions."""
+        if self.plan is None:
+            raise ValueError("an explicit diagnostic plan is required")
+        self.condition_status = []
+        chunk = getattr(self, "eval_chunk", 2560)
+        for condition in self.plan["conditions"]:
+            status = {"id": condition["id"], "status": "PARTIAL"}
+            self.condition_status.append(status)
+            if not self.allowed(300):
+                status["status"] = "SKIPPED_BUDGET"
+                self.save()
+                continue
+            env, seed, r = (
+                condition["environment"],
+                condition["seed"],
+                condition["round"],
+            )
+            if condition["type"] == "original":
+                done = self.original_reproduction(
+                    env, condition["architecture"], seed, r
+                )
+                status["status"] = "COMPLETE" if done else "PARTIAL_BUDGET"
+                self.save()
+                continue
+            pool = condition["pool"]
+            _, obs, act = self.pool(
+                env,
+                seed,
+                period=pool["period"],
+                norm=pool["normalizer"],
+                support=pool["support"],
+            )
+            target_obs = obs
+            if pool["target_normalizer"] != "same":
+                _, target_obs, target_act = self.pool(
+                    env,
+                    seed,
+                    period=pool["period"],
+                    norm=pool["target_normalizer"],
+                    support=pool["support"],
+                )
+                if not np.array_equal(np.asarray(act), np.asarray(target_act)):
+                    raise ValueError("input-only crossover changed sampled actions")
+            target_key, index_key = jax.random.split(
+                jax.random.PRNGKey(20261022 + seed * 100 + r)
+            )
+            teacher = SACCritic("residual", *ARCHS["D4W1536"], jnp.float32)
+            base = self.time_call(
+                "target/" + condition["id"],
+                lambda: _base_targets(
+                    teacher, target_key, target_obs, act, chunk, 100000.0
+                ),
+            )
+            horizon = max(condition["horizons"])
+            idx = ft.extended_indices(index_key, horizon, 256, len(obs))
+            shared = None
+            if "shared" in condition["offset_modes"]:
+                ref = condition["shared_reference"]
+                net, params = self.model(env, ref["architecture"], seed, ref["kind"])
+                shared = sync(jnp.mean(ft.predictions(net, params, obs, act, chunk)))
+            done = True
+            for arch in condition["architectures"]:
+                for kind in condition["learners"]:
+                    for mode in condition["offset_modes"]:
+                        name = f"{condition['id']}_{arch}_{kind}_{mode}"
+                        complete = self.fit(
                             name,
                             env,
-                            "D4W1536",
+                            arch,
                             seed,
-                            "fresh",
-                            o,
-                            a,
-                            z,
+                            kind,
+                            obs,
+                            act,
+                            base,
                             idx,
-                            "zero",
+                            mode,
                             horizon,
+                            shared_offset=shared,
                         )
-                        if period == "early" and norm == "latest":
-                            prior_base = z
-                        if period == "early" and norm == "early":
-                            self.fit(
-                                f"{tag}_r{r}_fresh_input_only",
-                                env,
-                                "D4W1536",
-                                seed,
-                                "fresh",
-                                o,
-                                a,
-                                prior_base,
-                                idx,
-                                "zero",
-                                2000,
-                            )
-                        if period == "late" and norm == "latest" and support is None:
-                            for kind in ["early", "latest"]:
-                                self.fit(
-                                    f"{tag}_r{r}_{kind}_shared_zero",
-                                    env,
-                                    "D4W1536",
-                                    seed,
-                                    kind,
-                                    o,
-                                    a,
-                                    z,
-                                    idx,
-                                    "zero",
-                                    horizon,
-                                )
-                            self.fit(
-                                f"{tag}_r{r}_latest_own",
-                                env,
-                                "D4W1536",
-                                seed,
-                                "latest",
-                                o,
-                                a,
-                                z,
-                                idx,
-                                "own",
-                                2000,
-                            )
-                            for arch in ["D2W512", "D4W1024"]:
-                                self.fit(
-                                    f"{tag}_r{r}_{arch}_fresh_zero",
-                                    env,
-                                    arch,
-                                    seed,
-                                    "fresh",
-                                    o,
-                                    a,
-                                    z,
-                                    idx,
-                                    "zero",
-                                    2000,
-                                )
-        self.save()
+                        done = complete and done
+            status["status"] = "COMPLETE" if done else "PARTIAL_BUDGET"
+            self.save()
+        return all(c["status"] == "COMPLETE" for c in self.condition_status)
 
 
 def main():
@@ -594,7 +679,13 @@ def main():
     p.add_argument("--campaign", required=True)
     p.add_argument("--commit", required=True)
     p.add_argument("--cap-seconds", type=int, default=6600)
+    p.add_argument(
+        "--plan", required=True, help="Explicit reviewed diagnostic plan JSON"
+    )
     args = p.parse_args()
+    load_plan(args.plan)
+    if not 0 < args.cap_seconds <= 6600:
+        raise ValueError("work cap must be positive and at most 6600 seconds")
     if not os.environ.get("SLURM_JOB_ID"):
         raise RuntimeError("GPU diagnostics require the authorized Slurm allocation")
     actual = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
@@ -609,17 +700,19 @@ def main():
         for path in [ft.__file__, probe_module.__file__, task_module.__file__]
     ):
         raise RuntimeError("diagnostic imported a module from a different checkout")
+    root = Path(args.root).resolve()
+    if root.is_relative_to(source_root.parent) or root.is_relative_to(
+        Path(args.campaign).resolve()
+    ):
+        raise ValueError("diagnostic output must be outside source and frozen campaign")
     if (
         jax.default_backend() != "gpu"
         or len(jax.devices()) != 1
         or "A100" not in jax.devices()[0].device_kind
     ):
         raise RuntimeError("requires exactly one visible A100")
-    if args.cap_seconds > 13800:
-        raise ValueError("work cap exceeds the4physicalGPUh authorization margin")
     set_matmul_precision()
-    root = Path(args.root)
-    root.mkdir(parents=True, exist_ok=True)
+    root.mkdir(parents=True, exist_ok=False)
     atomic_json(
         root / "runtime.json",
         {
@@ -627,10 +720,17 @@ def main():
             "job_id": os.environ["SLURM_JOB_ID"],
             "CUDA_VISIBLE_DEVICES": os.environ.get("CUDA_VISIBLE_DEVICES"),
             "expected_commit": args.commit,
+            "plan_sha256": load_plan(args.plan)[1],
             "module_paths": {"fixed_task": ft.__file__, "probe": probe_module.__file__},
         },
     )
-    runner = Investigation(args)
+    try:
+        runner = Investigation(args)
+    except Exception as exc:
+        atomic_json(
+            root / "status.json", {"status": "FAILED_PREFLIGHT", "error": repr(exc)}
+        )
+        raise
     stop = threading.Event()
 
     def telemetry():
@@ -677,17 +777,23 @@ def main():
     monitor = threading.Thread(target=telemetry, daemon=True)
     monitor.start()
     try:
-        runner.run()
+        complete = runner.run()
         atomic_json(
             root / "status.json",
             {
-                "status": "COMPLETED_BUDGETED_STAGE",
+                "status": "COMPLETED_BUDGETED_STAGE" if complete else "PARTIAL_BUDGET",
                 "elapsed_seconds": time.monotonic() - runner.start,
             },
         )
+        if not complete:
+            return 3
     except Exception as exc:
-        runner.save()
-        atomic_json(root / "status.json", {"status": "FAILED", "error": repr(exc)})
+        status = {"status": "FAILED", "error": repr(exc)}
+        try:
+            runner.save()
+        except Exception as save_error:
+            status["result_save_error"] = repr(save_error)
+        atomic_json(root / "status.json", status)
         raise
     finally:
         stop.set()
@@ -695,4 +801,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

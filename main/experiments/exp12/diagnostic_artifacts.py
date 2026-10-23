@@ -3,8 +3,10 @@
 import ast
 import hashlib
 import json
+import os
 import pickle
 import struct
+import tempfile
 import zipfile
 from pathlib import Path
 
@@ -38,36 +40,54 @@ def optimizer_binding(row, frozen_source):
     for key in ("environment", "architecture", "seed", "run_key"):
         if metadata.get("identity", {}).get(key) != row[key]:
             raise ValueError("checkpoint logical identity mismatch: " + key)
-    if (metadata.get("config_hash") != row["config_hash"] or
-            metadata["config_hash"] != _hash(_strip_locations(cfg))):
+    if metadata.get("config_hash") != row["config_hash"] or metadata[
+        "config_hash"
+    ] != _hash(_strip_locations(cfg)):
         raise ValueError("checkpoint resolved configuration hash mismatch")
     launches = metadata.get("launches")
-    if not launches or any(x.get("commit") != frozen_source or
-                           x.get("dirty") is not False for x in launches):
+    if not launches or any(
+        x.get("commit") != frozen_source or x.get("dirty") is not False
+        for x in launches
+    ):
         raise ValueError("checkpoint launch source mismatch")
     if cfg.get("seed") != row["seed"] or cfg.get("env_name") != row["environment"]:
         raise ValueError("resolved configuration identity mismatch")
     agent = cfg["agent"]
-    settings = {key: agent[key] for key in
-                ("critic_learning_rate", "critic_weight_decay")}
-    if any(type(v) not in (float, int) or not np.isfinite(v)
-           for v in settings.values()):
+    settings = {
+        key: agent[key] for key in ("critic_learning_rate", "critic_weight_decay")
+    }
+    if any(
+        type(v) not in (float, int) or not np.isfinite(v) for v in settings.values()
+    ):
         raise ValueError("optimizer settings must be finite numbers")
     if settings["critic_learning_rate"] <= 0 or settings["critic_weight_decay"] < 0:
         raise ValueError("invalid original optimizer settings")
     # Only these residual, single-critic models are reconstructed by this runner.
     from re import fullmatch
+
     match = fullmatch(r"D(\d+)W(\d+)", row["architecture"])
-    if (match is None or agent.get("critic_block_type") != "residual" or
-            (agent.get("critic_num_blocks"), agent.get("critic_hidden_dim")) !=
-            tuple(map(int, match.groups())) or agent.get("critic_use_cdq") is not False):
+    if (
+        match is None
+        or agent.get("critic_block_type") != "residual"
+        or (agent.get("critic_num_blocks"), agent.get("critic_hidden_dim"))
+        != tuple(map(int, match.groups()))
+        or agent.get("critic_use_cdq") is not False
+    ):
         raise ValueError("unsupported or inconsistent archived critic architecture")
     return settings, {
-        "parent": row["run_key"], "metadata_path": str(path),
+        "parent": row["run_key"],
+        "metadata_path": str(path),
         "metadata_sha256": hashlib.sha256(raw).hexdigest(),
-        "config_hash": metadata["config_hash"], "source": frozen_source,
-        "optimizer": {"algorithm": "optax.adamw", **settings,
-                      "b1": 0.9, "b2": 0.999, "eps": 1e-8, "eps_root": 0.0},
+        "config_hash": metadata["config_hash"],
+        "source": frozen_source,
+        "optimizer": {
+            "algorithm": "optax.adamw",
+            **settings,
+            "b1": 0.9,
+            "b2": 0.999,
+            "eps": 1e-8,
+            "eps_root": 0.0,
+        },
     }
 
 
@@ -163,3 +183,18 @@ def atomic_json(path, data):
         stream.flush()
         __import__("os").fsync(stream.fileno())
     temporary.replace(path)
+
+
+def atomic_npz(path, **arrays):
+    """Publish complete numeric evidence; a killed write cannot replace a receipt."""
+    path = Path(path)
+    fd, temporary = tempfile.mkstemp(dir=path.parent, prefix="." + path.name)
+    try:
+        with os.fdopen(fd, "wb") as stream:
+            np.savez(stream, **arrays)
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(temporary, path)
+    finally:
+        if os.path.exists(temporary):
+            os.unlink(temporary)
