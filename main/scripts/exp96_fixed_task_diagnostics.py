@@ -694,6 +694,9 @@ def main():
     )
     if actual != args.commit or dirty:
         raise RuntimeError("diagnostic checkout is not clean and source matched")
+    from scripts.exp12_launch_plan import require_pinned_stack
+
+    require_pinned_stack()
     source_root = Path(__file__).resolve().parents[1]
     if not all(
         Path(path).resolve().is_relative_to(source_root)
@@ -712,11 +715,17 @@ def main():
     ):
         raise RuntimeError("requires exactly one visible A100")
     set_matmul_precision()
+    runtime = runtime_info()
+    if jax.config.jax_enable_x64 or any(
+        runtime.get(name) != "0.4.34"
+        for name in ("jax_cuda12_plugin", "jax_cuda12_pjrt")
+    ):
+        raise RuntimeError("requires the pinned CUDA plugins and FP32 policy")
     root.mkdir(parents=True, exist_ok=False)
     atomic_json(
         root / "runtime.json",
         {
-            "runtime": runtime_info(),
+            "runtime": runtime,
             "job_id": os.environ["SLURM_JOB_ID"],
             "CUDA_VISIBLE_DEVICES": os.environ.get("CUDA_VISIBLE_DEVICES"),
             "expected_commit": args.commit,
