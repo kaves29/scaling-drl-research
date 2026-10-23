@@ -26,6 +26,7 @@ from experiments.exp12.diagnostic_artifacts import (
     initial_normalizer,
     load_critic,
     normalizer,
+    optimizer_binding,
     replay_array,
     state_dir,
 )
@@ -66,6 +67,7 @@ class Investigation:
         self.queue = json.loads((Path(args.campaign) / "queue/queue.json").read_text())
         if self.queue["commit"] != FROZEN:
             raise ValueError("wrong frozen campaign source")
+        parent_rows = [p["row"] for p in self.queue["parents"]]
         self.parents = {
             (
                 p["row"]["environment"],
@@ -74,23 +76,25 @@ class Investigation:
             ): p["row"]
             for p in self.queue["parents"]
         }
-        if len(self.parents) != 96:
+        expected = {(e, a, s) for e in ("dog-run", "humanoid-run", "myo-key-turn", "myo-pen-twirl")
+                    for a in ARCHS for s in range(1, 9)}
+        if len(parent_rows) != 96 or set(self.parents) != expected:
             raise ValueError("not the canonical96-parent queue")
         self.host_models = {}
         self.segment_executables = {}
-        optimizer_config = (
-            Path(__file__).resolve().parents[1] / "configs/agent/sac.yaml"
-        )
-        self.tx = critic_optimizer(OmegaConf.load(optimizer_config))
-        self.optimizer_sha256 = hashlib.sha256(
-            optimizer_config.read_bytes()
-        ).hexdigest()
-        self.inputs.append(
-            {
-                "optimizer_config": str(optimizer_config),
-                "sha256": self.optimizer_sha256,
-            }
-        )
+        self.optimizer_provenance = []
+        self.optimizer_config = None
+        for row in parent_rows:
+            settings, binding = optimizer_binding(row, FROZEN)
+            if self.optimizer_config is not None and settings != self.optimizer_config:
+                raise ValueError("selected parent optimizer settings disagree")
+            self.optimizer_config = settings
+            self.optimizer_provenance.append(binding)
+        self.tx = critic_optimizer(OmegaConf.create(self.optimizer_config))
+        self.optimizer_sha256 = hashlib.sha256(json.dumps(
+            self.optimizer_provenance[0]["optimizer"], sort_keys=True
+        ).encode()).hexdigest()
+        self.inputs.extend(self.optimizer_provenance)
 
     def time_call(self, label, call):
         before = time.monotonic()
@@ -175,6 +179,8 @@ class Investigation:
                 "rows": self.rows,
                 "timings": self.timing,
                 "inputs": self.inputs,
+                "optimizer": self.optimizer_provenance[0]["optimizer"],
+                "optimizer_sha256": self.optimizer_sha256,
                 "elapsed_seconds": time.monotonic() - self.start,
                 "jax_memory_stats": jax.devices()[0].memory_stats(),
             },
