@@ -88,3 +88,19 @@ Set DIAGNOSTIC_CAP_SECONDS=3000 so work ends at50minutes, with a55-minute proces
 limit. The live interactive billing rate is2weightedSU/hour: maximum charge2SU
 and maximum physical GPU use1hour. Never leave both allocations eligible.
 All original scientific controls and the4physicalGPU-hour total ceiling remain.
+
+## Immutable task-bank continuation (23 October UTC)
+
+The four task-bank tests at `5d86e23a3ad5c009f31bd67149e15c11e0ccd16b`
+passed on Delta's CPU stack in0.014seconds. The queued job23120792 remains
+bound to its earlier `bcf6cf3` checkout, which is not modified by development.
+The successor runner persists each exact numerical task through `FrozenTask`,
+reads it back with checksum verification, and records its identity in fit
+receipts. Provenance includes source, optimizer configuration and target recipe;
+learner names are excluded so identical tasks retain identity across critics.
+Own-offset tasks need not have the same identity as shared-offset tasks.
+
+New integration coverage checks that the runner's persisted task reproduces the
+same CPU scan curve and final parameter/optimizer state, and that changed numeric
+payloads are rejected. This is numerical persistence coverage, not A100 execution
+or scientific calibration. No additional GPU allocation is submitted on this basis.

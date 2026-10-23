@@ -20,6 +20,7 @@ from omegaconf import OmegaConf
 
 from experiments.exp12 import fixed_task as ft
 from experiments.exp12 import probe as probe_module
+from experiments.exp12 import probe_tasks as task_module
 from experiments.exp12.diagnostic_artifacts import (
     atomic_json,
     initial_normalizer,
@@ -29,6 +30,7 @@ from experiments.exp12.diagnostic_artifacts import (
     state_dir,
 )
 from experiments.exp12.precision import runtime_info, set_matmul_precision
+from experiments.exp12.probe_tasks import FrozenTask
 from experiments.exp12.probe import (
     _base_targets,
     _fit,
@@ -80,10 +82,13 @@ class Investigation:
             Path(__file__).resolve().parents[1] / "configs/agent/sac.yaml"
         )
         self.tx = critic_optimizer(OmegaConf.load(optimizer_config))
+        self.optimizer_sha256 = hashlib.sha256(
+            optimizer_config.read_bytes()
+        ).hexdigest()
         self.inputs.append(
             {
                 "optimizer_config": str(optimizer_config),
-                "sha256": hashlib.sha256(optimizer_config.read_bytes()).hexdigest(),
+                "sha256": self.optimizer_sha256,
             }
         )
 
@@ -175,6 +180,29 @@ class Investigation:
             },
         )
 
+    def bank_task(self, directory, obs, act, targets, indices, base, offset_mode):
+        """Persist exact numeric inputs; learner identity cannot change task identity."""
+        task = FrozenTask(
+            np.asarray(obs),
+            np.asarray(act),
+            np.asarray(targets),
+            np.asarray(indices),
+            {
+                "diagnostic_source": self.args.commit,
+                "frozen_source": FROZEN,
+                "optimizer_config_sha256": self.optimizer_sha256,
+                "base_sha256": array_hash(base),
+                "offset_mode": offset_mode,
+                "precision": "float32",
+            },
+        )
+        task.save(directory)
+        restored = FrozenTask.load(directory)
+        self.inputs.append(
+            {"numeric_task": str(directory), "task_id": restored.task_id}
+        )
+        return restored.task_id
+
     def fit(self, name, env, arch, seed, kind, obs, act, z, idx, offset_mode, steps):
         estimated = 180 + steps / 1000 * self.seconds_per_1000
         if not self.allowed(estimated):
@@ -192,6 +220,9 @@ class Investigation:
             base=np.asarray(z),
             indices=np.asarray(idx[:steps]),
             offset=np.asarray(offset),
+        )
+        task_id = self.bank_task(
+            out / "numeric_task", obs, act, targets, idx[:steps], z, offset_mode
         )
         metrics = self.time_call(
             "initial_pool_metrics/" + name,
@@ -251,6 +282,7 @@ class Investigation:
                     "target_sha256": array_hash(targets),
                     "base_sha256": array_hash(z),
                     "optimizer_count": int(state.optimizer[0].count),
+                    "task_id": task_id,
                 },
             )
             self.save()
@@ -265,6 +297,7 @@ class Investigation:
                 "steps": rows[-1]["step"],
                 "measurements": rows,
                 "initial_gradient_norm": float(grad_norm),
+                "task_id": task_id,
             }
         )
         self.save()
@@ -359,6 +392,15 @@ class Investigation:
                     losses=np.asarray(loss),
                     final_mse=np.asarray(mse),
                     offset=np.asarray(offset),
+                )
+                record["task_id"] = self.bank_task(
+                    out / (kind + "_numeric_task"),
+                    o,
+                    a,
+                    offset + base,
+                    idx[:2000],
+                    base,
+                    "own",
                 )
                 self.rows.append({"original_reproduction": record})
                 self.save()
@@ -558,7 +600,7 @@ def main():
     source_root = Path(__file__).resolve().parents[1]
     if not all(
         Path(path).resolve().is_relative_to(source_root)
-        for path in [ft.__file__, probe_module.__file__]
+        for path in [ft.__file__, probe_module.__file__, task_module.__file__]
     ):
         raise RuntimeError("diagnostic imported a module from a different checkout")
     if (

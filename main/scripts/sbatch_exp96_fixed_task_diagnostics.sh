@@ -8,7 +8,8 @@ set -euo pipefail
 cd "${SLURM_SUBMIT_DIR:?}"
 source scripts/check_exp12_validation_checkout.sh
 exp12_check_checkout scripts/exp96_fixed_task_diagnostics.py experiments/exp12/fixed_task.py \
-  experiments/exp12/diagnostic_artifacts.py scripts/sbatch_exp96_fixed_task_diagnostics.sh
+  experiments/exp12/diagnostic_artifacts.py experiments/exp12/probe_tasks.py \
+  scripts/sbatch_exp96_fixed_task_diagnostics.sh
 test -z "$(git status --porcelain --untracked-files=all)"
 test "${SLURM_GPUS_ON_NODE:?}" = 1
 module reset
