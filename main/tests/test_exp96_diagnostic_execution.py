@@ -162,5 +162,101 @@ class BudgetTest(unittest.TestCase):
             export(source, self.root / "unsafe")
 
 
+class EntryPointTest(unittest.TestCase):
+    def exercise(self, *, partial=False, save_failure=False, unsafe_output=False):
+        from contextlib import ExitStack
+        from types import SimpleNamespace
+        import time
+        from scripts import exp96_fixed_task_diagnostics as module
+
+        with tempfile.TemporaryDirectory() as tmp, ExitStack() as stack:
+            root = Path(tmp)
+            output = root / "output"
+            campaign = root / "campaign"
+            if unsafe_output:
+                output = campaign / "nested-output"
+            args = SimpleNamespace(
+                root=str(output),
+                campaign=str(campaign),
+                commit="a" * 40,
+                cap_seconds=3000,
+                plan=str(
+                    Path(__file__).resolve().parents[1]
+                    / "configs/diagnostics/reconstruction.json"
+                ),
+            )
+            runner = mock.Mock(start=time.monotonic())
+            runner.run.return_value = not partial
+            if save_failure:
+                runner.run.side_effect = RuntimeError("original fit error")
+                runner.save.side_effect = ValueError("nonfinite results")
+            stack.enter_context(
+                mock.patch.object(
+                    module.argparse.ArgumentParser, "parse_args", return_value=args
+                )
+            )
+            stack.enter_context(
+                mock.patch.dict(module.os.environ, {"SLURM_JOB_ID": "42"})
+            )
+            stack.enter_context(
+                mock.patch.object(
+                    module.subprocess, "check_output", side_effect=[args.commit, ""]
+                )
+            )
+            backend = stack.enter_context(
+                mock.patch.object(module.jax, "default_backend", return_value="gpu")
+            )
+            stack.enter_context(
+                mock.patch.object(
+                    module.jax,
+                    "devices",
+                    return_value=[SimpleNamespace(device_kind="NVIDIA A100-SXM4-40GB")],
+                )
+            )
+            stack.enter_context(mock.patch.object(module, "set_matmul_precision"))
+            stack.enter_context(
+                mock.patch.object(
+                    module,
+                    "runtime_info",
+                    return_value={
+                        "jax_cuda12_plugin": "0.4.34",
+                        "jax_cuda12_pjrt": "0.4.34",
+                    },
+                )
+            )
+            stack.enter_context(
+                mock.patch.object(module, "Investigation", return_value=runner)
+            )
+            stack.enter_context(mock.patch.object(module.threading, "Thread"))
+            if unsafe_output:
+                with self.assertRaisesRegex(
+                    ValueError, "outside source and frozen campaign"
+                ):
+                    module.main()
+                backend.assert_not_called()
+                self.assertFalse(output.exists())
+            elif save_failure:
+                with self.assertRaisesRegex(RuntimeError, "original fit error"):
+                    module.main()
+                status = json.loads((output / "status.json").read_text())
+                self.assertEqual(status["status"], "FAILED")
+                self.assertIn("nonfinite results", status["result_save_error"])
+            else:
+                self.assertEqual(module.main(), 3)
+                self.assertEqual(
+                    json.loads((output / "status.json").read_text())["status"],
+                    "PARTIAL_BUDGET",
+                )
+
+    def test_partial_execution_has_nonzero_exit_and_preserved_status(self):
+        self.exercise(partial=True)
+
+    def test_primary_failure_survives_result_serialization_failure(self):
+        self.exercise(save_failure=True)
+
+    def test_output_cannot_be_created_in_frozen_campaign(self):
+        self.exercise(unsafe_output=True)
+
+
 if __name__ == "__main__":
     unittest.main()

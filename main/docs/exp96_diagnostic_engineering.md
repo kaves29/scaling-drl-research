@@ -119,3 +119,29 @@ Transfer the archive through the authorized local executor or approved artifact 
 No new GPU job ran in this implementation task. Required next evidence is corrected-source reconstruction, original/segmented comparison and repeatability on A100/TF32, actual production-size memory/timing, and metadata validation against the full real selected checkpoint set. The known optimizer correction must not be presented as the proven cause of the old segmentation failure. If divergence persists, preserve both curves and diagnose arithmetic/compilation/state boundaries without relaxing guards.
 
 The owner chooses the next contrast, replication scope and allocation. Named shared/incremental/normalization tasks are retrospective diagnostic alternatives; they do not replace the official detector. CPU success, a lower fitting loss, or a completed bounded stage grants no scientific validation or production permission.
+
+## Delivery validation and changed files
+
+The final targeted run executed **36 tests: 36 passed, zero failures/errors/skips** (13 existing contracts and 23 new tests). Python exit status was 0. Pyflakes, Bash syntax, CLI help and Git whitespace checks also passed. GPU/Slurm operations in entrypoint/budget tests are mocked; they are not GPU qualification.
+
+```text
+main/configs/diagnostics/architectures.json
+main/configs/diagnostics/extended_replication.json
+main/configs/diagnostics/normalization.json
+main/configs/diagnostics/pen_targets.json
+main/configs/diagnostics/reconstruction.json
+main/configs/diagnostics/training_states.json
+main/docs/AGENT_HANDOFF.md
+main/docs/EXPERIMENT_STATUS.md
+main/docs/exp96_diagnostic_engineering.md
+main/experiments/exp12/diagnostic_artifacts.py
+main/experiments/exp12/diagnostic_budget.py
+main/experiments/exp12/diagnostic_plan.py
+main/experiments/exp12/fixed_task.py
+main/scripts/check_exp96_diagnostic_budget.py
+main/scripts/exp96_fixed_task_diagnostics.py
+main/scripts/export_exp96_diagnostics.py
+main/scripts/sbatch_exp96_fixed_task_diagnostics.sh
+main/tests/test_exp96_diagnostic_engineering.py
+main/tests/test_exp96_diagnostic_execution.py
+```
