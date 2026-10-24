@@ -6,6 +6,7 @@ Each line reports whether the named test FAILED under the mutation (expected)
 and PASSED again without it.
 """
 
+import io
 import sys
 import unittest
 from pathlib import Path
@@ -404,11 +405,12 @@ from experiments.exp12 import twin as twin_module  # noqa: E402
 
 
 def metadata_without_critic_count(resolved_cfg, identity, launch):
-    return exp1_module.__dict__["_real_build_run_metadata"](resolved_cfg, identity,
-                                                           {k: v for k, v in launch.items() if k != "critic_count"})
+    return _real_build_run_metadata(
+        resolved_cfg, identity, {k: v for k, v in launch.items() if k != "critic_count"}
+    )
 
 
-exp1_module._real_build_run_metadata = exp1_module.build_run_metadata
+_real_build_run_metadata = exp1_module.build_run_metadata
 
 MUTATIONS += [
     ("twin probe: aggregate P from network 1 only", twin_module, "combine",
@@ -456,15 +458,22 @@ MUTATIONS += [
 
 def _run(test_id):
     suite = unittest.defaultTestLoader.loadTestsFromName(test_id)
-    result = unittest.TextTestRunner(stream=open("/dev/null", "w"), verbosity=0).run(suite)
+    global _last_output
+    stream = io.StringIO()
+    result = unittest.TextTestRunner(stream=stream, verbosity=2).run(suite)
+    _last_output = stream.getvalue()
     return result.wasSuccessful(), "error" if result.errors else "assertion"
 
 
 def main():
     ok = True
     import importlib
+    from mutation_support import StableSource
+
+    source = StableSource(Path(__file__).resolve().parents[2])
 
     for label, module, attr, replacement, test_id in MUTATIONS:
+        source.check()
         test_module = importlib.import_module(test_id.rsplit(".", 2)[0])
         patches = [mock.patch.object(module, attr, replacement)]
         if getattr(test_module, attr, None) is getattr(module, attr):  # names a test module imported directly
@@ -476,7 +485,11 @@ def main():
         finally:
             for p in patches:
                 p.stop()
+        source.check()
         restored_passes, _ = _run(test_id)
+        source.check()
+        if not restored_passes:
+            print(_last_output, file=sys.stderr)
         status = "OK" if (not broken_passes and restored_passes) else "PROBLEM"
         ok &= status == "OK"
         print(f"[{status}] {label}: mutated -> {'PASS' if broken_passes else f'FAIL ({how})'}, "

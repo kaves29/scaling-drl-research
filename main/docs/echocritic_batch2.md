@@ -62,3 +62,46 @@ with DiagnosticSession(new_output, repository, resolved_config,
 ```
 
 Final focused offline validation adds lifecycle failure/no-measurement coverage: 19 tests passed. Earlier combined regression ran 81 tests successfully (17 new plus 64 existing); the expanded 19-test suite is separately rerun. These counts overlap and must not be added as independent coverage. Required mutation results are recorded in the delivery when complete. The unchanged broad simulator restoration suite was not rerun because this change does not touch environments or training state.
+
+## Runner integration and finalization (24 October 2026)
+
+Exp1 (`experiments.exp1.run`), Exp2 (`experiments.exp2_arm.run`) and
+`scripts/exp96_fixed_task_diagnostics.py` now connect the optional lifecycle API.
+Set `ECHOCRITIC_INSTRUMENTATION_ROOT=/absolute/new/sidecar-directory` for one
+invocation. The directory must not exist and must be outside the source tree,
+training checkpoint directory and frozen diagnostic campaign. Leave the variable
+unset for the ordinary execution path. Use a different directory for every
+resume/invocation; earlier sidecars are never replaced.
+
+Training sidecars observe the existing initial/logging snapshots and successful
+checkpoint save/restore boundaries. They include resolved configuration, actual
+live parameter counts (including injected heads), effective constant AdamW
+settings and the injected trunk/new versus frozen old/copy optimizer rules,
+replay occupancy, online target definition, runtime precision, seed, checkpoint
+identity and both counters. No additional sample, action, optimizer update,
+probe, evaluation or Q forward pass is requested. The full configuration is
+kept separate from changing replay occupancy. Existing metric windows, units and
+averaging semantics are retained.
+
+Fixed-task sidecars mirror existing result rows and input/optimizer bindings at
+initialization and result publication. Row task IDs, fitting steps, status,
+first-update and loss measurements retain their existing meanings. Training
+counters unavailable to this offline runner are explicitly null; missing global
+seed/architecture/task fields remain listed as incomplete rather than invented
+for a multi-condition session. Numeric NumPy/JAX values are serialized without
+rounding; nonfinite values receive explicit `nonfinite` markers, and media not
+serializable as numbers receive an `unserialized_type` marker. Raw artifacts
+remain authoritative. Sidecars do not add expensive diagnostics or change their
+scientific definitions.
+
+Launch, configuration revisions, measurements and terminal receipts use
+exclusive creation. Partial budget completion remains partial; an empty session
+is `no_measurements`; exceptions remain failed and propagate even if terminal
+receipt writing also fails. Disabled instrumentation does not capture provenance
+or transfer arrays. CPU end-to-end comparisons exercise enabled/disabled Exp1
+and restored injected Exp2, comparing complete saved learning state.
+
+The integration and mutation investigation are tracked in
+[the finalization report](pr11_finalization.md). A real 103-record archive has
+not been supplied to this Cloud workspace. Synthetic fixtures do not qualify
+that archive, and no real campaign result is claimed here.

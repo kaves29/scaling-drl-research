@@ -18,6 +18,9 @@ import jax.numpy as jnp
 import numpy as np
 from omegaconf import OmegaConf
 
+from experiments.exp12.instrumentation import (
+    entrypoint, diagnostic_state, diagnostic_output,
+)
 from experiments.exp12 import fixed_task as ft
 from experiments.exp12 import probe as probe_module
 from experiments.exp12 import probe_tasks as task_module
@@ -199,6 +202,8 @@ class Investigation:
                 "jax_memory_stats": jax.devices()[0].memory_stats(),
             },
         )
+
+        diagnostic_state(self)
 
     def bank_task(self, directory, obs, act, targets, indices, base, offset_mode):
         """Persist exact numeric inputs; learner identity cannot change task identity."""
@@ -673,6 +678,7 @@ class Investigation:
         return all(c["status"] == "COMPLETE" for c in self.condition_status)
 
 
+@entrypoint("diagnostic")
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("--root", required=True)
@@ -683,6 +689,7 @@ def main():
         "--plan", required=True, help="Explicit reviewed diagnostic plan JSON"
     )
     args = p.parse_args()
+    diagnostic_output(args)
     load_plan(args.plan)
     if not 0 < args.cap_seconds <= 6600:
         raise ValueError("work cap must be positive and at most 6600 seconds")
@@ -735,6 +742,7 @@ def main():
     )
     try:
         runner = Investigation(args)
+        diagnostic_state(runner)
     except Exception as exc:
         atomic_json(
             root / "status.json", {"status": "FAILED_PREFLIGHT", "error": repr(exc)}

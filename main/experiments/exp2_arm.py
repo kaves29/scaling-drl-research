@@ -29,6 +29,7 @@ from experiments.exp12.run_probes import RunProbes, run_probe_networks
 from experiments.exp12.state import latest_state_dir
 from experiments.exp12.trainer import Exp12Trainer
 from experiments.exp12.trigger import bootstrap_interval, trigger_config
+from experiments.exp12.instrumentation import entrypoint
 from experiments.registry import register_experiment
 from utils.atomic_io import atomic_write_text
 from utils.paths import require_absolute
@@ -86,6 +87,7 @@ def check2(trainer, probes, plan, pre_params) -> dict:
 
 
 @register_experiment("exp2_arm")
+@entrypoint("training")
 def run(args: dict) -> None:
     set_matmul_precision()
     configure_compilation_cache()

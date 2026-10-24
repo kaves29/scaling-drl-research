@@ -36,7 +36,11 @@ def fake_wandb_init(*args, **kwargs):
 
 
 def patch_wandb():
-    patchers = [mock.patch("wandb.init", side_effect=fake_wandb_init), mock.patch("wandb.log")]
+    patchers = [
+        mock.patch("wandb.run", None),
+        mock.patch("wandb.init", side_effect=fake_wandb_init),
+        mock.patch("wandb.log"),
+    ]
     for p in patchers:
         p.start()
     return patchers

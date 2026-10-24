@@ -149,10 +149,74 @@ class DiagnosticSession:
 
     def __init__(self, output, repository, config, **fields):
         self.output = Path(output)
+        self.receipt_repository = repository
+        self.fields = dict(fields)
         self.output.mkdir(parents=True, exist_ok=False)
         self.receipt = capture(repository, config, **{**fields, "status": "running"})
         self.count = 0
+        self.configuration_count = 0
+        self.completion_status = "complete"
         write_sidecar(self.output / "launch.json", self.receipt)
+
+    def configure(self, config, **fields):
+        """Append resolved provenance without replacing the original launch receipt."""
+        self.fields.update(fields)
+        receipt = capture(
+            self.receipt_repository, config, **{**self.fields, "status": "running"}
+        )
+        write_sidecar(
+            self.output / f"configuration_{self.configuration_count:06d}.json", receipt
+        )
+        self.configuration_count += 1
+        self.receipt = receipt
+
+    def record_observation(
+        self, metrics, interaction_step, optimizer_update, checkpoint
+    ):
+        """Runner observations allow unknown counters, explicitly recorded as null."""
+
+        def numeric(value):
+            if isinstance(value, dict):
+                return {str(k): numeric(v) for k, v in value.items()}
+            if isinstance(value, (list, tuple)):
+                return [numeric(v) for v in value]
+            if isinstance(value, np.ndarray) or (
+                hasattr(value, "shape") and hasattr(value, "dtype")
+            ):
+                return numeric(np.asarray(value).tolist())
+            if isinstance(value, np.generic):
+                return numeric(value.item())
+            if isinstance(value, float) and not np.isfinite(value):
+                return {"nonfinite": repr(value)}
+            if value is None or isinstance(value, (str, int, float, bool)):
+                return value
+            return {
+                "unserialized_type": f"{type(value).__module__}.{type(value).__name__}"
+            }
+
+        for counter in (interaction_step, optimizer_update):
+            if counter is not None and (type(counter) is not int or counter < 0):
+                raise ValueError(
+                    "nonnegative integer or explicit unknown counter required"
+                )
+        event = {
+            "runner_version": VERSION,
+            "interaction_step": interaction_step,
+            "optimizer_update": optimizer_update,
+            "checkpoint": checkpoint,
+            "metrics": numeric(metrics),
+            "task_id": self.receipt.get("task_id"),
+            "missing_counters": [
+                name
+                for name, value in (
+                    ("interaction_step", interaction_step),
+                    ("optimizer_update", optimizer_update),
+                )
+                if value is None
+            ],
+        }
+        write_sidecar(self.output / f"measurement_{self.count:06d}.json", event)
+        self.count += 1
 
     def __enter__(self):
         return self
@@ -175,7 +239,7 @@ class DiagnosticSession:
     def __exit__(self, exception_type, exception, traceback):
         terminal = {
             **self.receipt,
-            "status": "failed" if exception is not None else "complete",
+            "status": "failed" if exception is not None else self.completion_status,
             "measurement_count": self.count,
             "failure": (
                 {"type": exception_type.__name__, "message": str(exception)}
@@ -186,5 +250,10 @@ class DiagnosticSession:
         # No measurements is explicitly distinct from a successful diagnostic.
         if exception is None and not self.count:
             terminal["status"] = "no_measurements"
-        write_sidecar(self.output / "terminal.json", terminal)
+        try:
+            write_sidecar(self.output / "terminal.json", terminal)
+        except Exception as receipt_error:
+            if exception is None:
+                raise
+            exception.add_note(f"Terminal receipt write also failed: {receipt_error!r}")
         return False
