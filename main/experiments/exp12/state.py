@@ -98,6 +98,21 @@ def load_buffer(buffer, path: Path) -> None:
     capacity = len(buffer._observations)
     if (type(n) is not int or type(idx) is not int or not 0 <= n <= capacity or not 0 <= idx < capacity):
         raise ValueError("invalid replay count or index")
+    if n < capacity and idx != n:
+        raise ValueError("partially filled replay index must equal its count")
+    pending = meta.get("n_step_transitions")
+    limit = buffer._n_step_transitions.maxlen
+    if not isinstance(pending, list) or (limit is not None and len(pending) > limit):
+        raise ValueError("invalid pending replay transitions")
+    for transition in pending:
+        fields = {k.lstrip("_")[:-1]: k for k in BUFFER_ARRAYS}
+        if not isinstance(transition, dict) or set(transition) != set(fields):
+            raise ValueError("invalid pending replay transition fields")
+        for name, value in transition.items():
+            target = getattr(buffer, fields[name])
+            expected = (buffer._add_batch_size, *target.shape[1:])
+            if not isinstance(value, np.ndarray) or value.shape != expected or value.dtype.kind not in "bifu":
+                raise ValueError("invalid pending replay transition array: " + name)
     # Validate all array headers before mutating any replay array; avoid loading
     # a second full replay into RAM just for structural validation.
     with zipfile.ZipFile(path / "buffer.npz") as archive:
