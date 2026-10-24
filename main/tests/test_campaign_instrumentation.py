@@ -21,6 +21,71 @@ class InstrumentationTest(unittest.TestCase):
         self.addCleanup(self.tmp.cleanup)
         self.root = Path(self.tmp.name)
 
+    def assert_checkpoint_receipt(self, run_dir, receipt):
+        import pickle
+        import numpy as np
+        import jax
+        from experiments.exp12.state import latest_state_dir, load_agent_tree, load_meta
+
+        state = latest_state_dir(run_dir / "state")
+        tree, meta = load_agent_tree(state), load_meta(state)
+        self.assertEqual(receipt["checkpoint"], str(state))
+        self.assertEqual(receipt["interaction_step"], meta["interaction_step"])
+        self.assertEqual(receipt["optimizer_update"], meta["update_step"])
+        for name in ("actor", "critic"):
+            stored_count = sum(
+                np.asarray(leaf).size
+                for leaf in jax.tree_util.tree_leaves(tree[name]["params"])
+            )
+            self.assertEqual(receipt["parameter_counts"][name], stored_count)
+        with (state / "buffer_meta.pkl").open("rb") as stream:
+            buffer_meta = pickle.load(stream)
+        self.assertEqual(
+            receipt["replay"]["populated_transitions"], buffer_meta["num_in_buffer"]
+        )
+        self.assertEqual(
+            receipt["source"]["commit"],
+            subprocess.check_output(
+                [
+                    "git",
+                    "-C",
+                    str(Path(__file__).resolve().parents[2]),
+                    "rev-parse",
+                    "HEAD",
+                ],
+                text=True,
+            ).strip(),
+        )
+
+    def test_actual_diagnostic_rejects_campaign_before_writes_for_both_argument_forms(
+        self,
+    ):
+        from scripts import exp96_fixed_task_diagnostics as module
+
+        campaign = self.root / "frozen_campaign"
+        campaign.mkdir()
+        sentinel = campaign / "historical.txt"
+        sentinel.write_text("original evidence")
+        output = campaign / "sidecars"
+        args = SimpleNamespace(campaign=str(campaign), plan="must-not-be-read")
+        for keyword in (False, True):
+            with self.subTest(keyword=keyword), mock.patch.dict(
+                os.environ, {recording.ENVIRONMENT_VARIABLE: str(output)}
+            ), mock.patch.object(
+                module,
+                "load_plan",
+                side_effect=AssertionError("must reject before preflight"),
+            ) as preflight:
+                with self.assertRaisesRegex(ValueError, "frozen campaign"):
+                    if keyword:
+                        module.execute(args=args)
+                    else:
+                        module.execute(args)
+                preflight.assert_not_called()
+                self.assertFalse(output.exists())
+                self.assertEqual(list(campaign.iterdir()), [sentinel])
+                self.assertEqual(sentinel.read_text(), "original evidence")
+
     def test_observation_arrays_nonfinite_and_media_are_explicit(self):
         import jax.numpy as jnp
         import numpy as np
@@ -293,6 +358,7 @@ class InstrumentationTest(unittest.TestCase):
         )
         terminal = json.loads((output / "terminal.json").read_text())
         self.assertEqual(terminal["status"], "complete")
+        self.assert_checkpoint_receipt(enabled, terminal)
         self.assertIn(
             "injected_optimizer", terminal["optimizer"]["critic"]["transformation"]
         )
@@ -343,6 +409,7 @@ class InstrumentationTest(unittest.TestCase):
         )
         terminal = json.loads((output / "terminal.json").read_text())
         self.assertEqual(terminal["status"], "complete")
+        self.assert_checkpoint_receipt(enabled, terminal)
         self.assertEqual(terminal["interaction_step"], 100)
         self.assertGreater(terminal["optimizer_update"], 0)
         self.assertEqual(terminal["optimizer"]["critic"]["learning_rate"], 1e-4)

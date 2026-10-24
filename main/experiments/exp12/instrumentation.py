@@ -31,8 +31,9 @@ def entrypoint(kind):
                 checkpoint = training_args.get("checkpoint_dir")
                 if checkpoint:
                     protected.append(Path(checkpoint).resolve())
-            if kind == "diagnostic" and args:
-                campaign = getattr(args[0], "campaign", None)
+            if kind == "diagnostic":
+                diagnostic_args = args[0] if args else kwargs.get("args")
+                campaign = getattr(diagnostic_args, "campaign", None)
                 if campaign:
                     protected.append(Path(campaign).resolve())
             if any(destination == p or p in destination.parents for p in protected):

@@ -28,7 +28,8 @@ parent, including during the twin restored-state fixture. A controlled test
 reproduces that source mismatch failure. The mutation harness now fingerprints
 HEAD and tracked file contents around each run and stops with an explicit
 source-changed error. It retains restored-failure tracebacks rather than
-silently discarding them in `/dev/null` and leaking file descriptors.
+silently discarding them in an unmanaged `/dev/null` stream. A persistent
+file-descriptor leak was not established.
 
 The original failure traceback was discarded by the old harness. Source
 instability and failed-setup pollution are demonstrated hazards, but attribution
@@ -93,3 +94,39 @@ qualification guard changes. These two fixture corrections duplicate the
 already-reviewed engineering changes in sibling PR #12; they do not import its
 other checkpoint/audit work. Resolve identical hunks once when integrating the
 siblings rather than overwriting either branch.
+
+
+### Corrections from the first full CPU run
+
+At `3f56f677fefd6dd93cb9ddba3ff19206c82c1032`, all103 modules completed
+900 test executions with an unchanged source fingerprint: 899 passed and one
+raised a test-fixture error. `test_a_double_claim_is_detected` assumed worker1
+must lose at least one of150 claims; worker1 legitimately won every claim and
+selection raised `StopIteration`. Positive ownership/handoff verification
+passed. The corruption now first asserts one winner for row0, then marks row0
+claimed in both worker reports and requires the same two-winner diagnostic.
+Actual workers, ledger, verifier and acceptance criteria are unchanged.
+
+A separate deterministic temporary-directory reproduction found that calling
+`execute(args=namespace)` bypassed the new campaign-output guard, which examined
+only positional arguments. Both forms now resolve the same argument before any
+receipt is created. The actual-runner regression exercises positional and keyword
+calls, requires rejection before preflight, and checks that the campaign directory
+and historical sentinel are unchanged. No real campaign was used by that
+reproduction. This correction affects only opt-in sidecar path admission.
+
+Enabled-training tests also compare recorded parameter counts, checkpoint path,
+replay occupancy, counters and source revision against the actual saved checkpoint.
+State comparisons use the existing `state_differences` contract (only external
+W&B run identity is excluded), not archive-container byte identity.
+
+
+The combined focused run also reproduced import-order pollution in the planned-
+pause test fixtures: replacing `sys.modules["scripts.exp12_dynamic_scheduler"]`
+does not replace `scripts.exp12_dynamic_scheduler` already cached on the parent
+package. Production pause code therefore called the real validator against the
+minimal mock job and raised a missing-`row` error. The fixtures now import the
+actual dependency and patch its methods, verify the validator arguments, and
+require the corrupt-checkpoint path to report the intended `corrupt` error.
+The scheduler remains unchanged. This test pollution is distinct from, and does
+not establish the cause of, the historical twin-metadata failure.

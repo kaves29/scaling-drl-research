@@ -307,12 +307,11 @@ class Infrastructure(unittest.TestCase):
                 m.training_fingerprint("HEAD")
 
     def test_planned_pause_retires_only_stopped_validated_owner(self):
-        from types import SimpleNamespace
         from unittest.mock import Mock
+        from scripts import exp12_dynamic_scheduler as d
 
         attempt = self.root / "attempt"
         attempt.mkdir()
-        d = SimpleNamespace(validate_resume=Mock(return_value=True), _finish=Mock())
         ledger = Mock()
         p = Mock()
         p.poll.return_value = None
@@ -321,23 +320,23 @@ class Infrastructure(unittest.TestCase):
         job = dict(
             process=p, item={"id": "one"}, owner={"token": "owner"}, attempt=attempt
         )
-        with patch.dict(
-            sys.modules, {"scripts.exp12_dynamic_scheduler": d}
-        ), patch.object(m.os, "killpg") as kill:
+        with patch.object(
+            d, "validate_resume", return_value=True
+        ) as validate, patch.object(d, "_finish") as finish, patch.object(
+            m.os, "killpg"
+        ) as kill:
             m.pause(job, ledger, "a" * 40)
+        validate.assert_called_once_with(job["item"], "a" * 40)
         kill.assert_called_once()
         p.wait.assert_called_once()
         ledger.finish.assert_called_once_with(job["item"], job["owner"])
-        self.assertFalse(d._finish.called)
+        finish.assert_not_called()
         self.assertTrue(m.read(attempt / "planned_pause.json")["checkpoint_available"])
 
     def test_planned_pause_invalid_checkpoint_blocks_instead_of_resuming(self):
-        from types import SimpleNamespace
         from unittest.mock import Mock
+        from scripts import exp12_dynamic_scheduler as d
 
-        d = SimpleNamespace(
-            validate_resume=Mock(side_effect=ValueError("corrupt")), _finish=Mock()
-        )
         ledger = Mock()
         p = Mock()
         p.poll.return_value = None
@@ -345,11 +344,12 @@ class Infrastructure(unittest.TestCase):
         job = dict(
             process=p, item={"id": "one"}, owner={"token": "x"}, attempt=self.root
         )
-        with patch.dict(
-            sys.modules, {"scripts.exp12_dynamic_scheduler": d}
-        ), patch.object(m.os, "killpg"):
+        with patch.object(
+            d, "validate_resume", side_effect=ValueError("corrupt")
+        ) as validate, patch.object(d, "_finish"), patch.object(m.os, "killpg"):
             m.pause(job, ledger, "a" * 40)
-        self.assertIn("error", ledger.finish.call_args.kwargs)
+        validate.assert_called_once_with(job["item"], "a" * 40)
+        self.assertIn("corrupt", ledger.finish.call_args.kwargs["error"])
 
     def test_submit_timeout_never_frees_or_retries_reservation(self):
         b = self.budget()
