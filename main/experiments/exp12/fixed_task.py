@@ -94,9 +94,17 @@ def first_update(network_def, tx, state, obs, act, targets, indices, chunk):
     )
     after = predictions(network_def, after_state.params, obs, act, chunk)
     delta = after - before
+    changes = jax.tree_util.tree_leaves(
+        jax.tree_util.tree_map(lambda a, b: a - b, after_state.params, state.params)
+    )
+    parameter_squared_change = sum(jnp.sum(x * x) for x in changes)
     return {
         "minibatch_mse_before": loss,
         "gradient_l2": grad_norm,
+        "parameter_change_l2": jnp.sqrt(parameter_squared_change),
+        "parameter_change_rms": jnp.sqrt(
+            parameter_squared_change / sum(x.size for x in changes)
+        ),
         "prediction_change_rms": jnp.sqrt(jnp.mean(delta**2)),
         "prediction_change_mean": jnp.mean(delta),
         "full_pool_mse_before": jnp.mean((before - targets) ** 2),

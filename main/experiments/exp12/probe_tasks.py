@@ -148,6 +148,13 @@ def fixed_task_paired_summary(
         raise ValueError(
             "ten distinct target tasks are required, not duplicated records"
         )
+    if any(
+        isinstance(n, (bool, np.bool_))
+        or not isinstance(n, (int, np.integer))
+        or n <= 0
+        for n in (fresh_steps, current_steps)
+    ):
+        raise ValueError("pairing requires positive integer completed fitting horizons")
     if fresh_steps != current_steps:
         raise ValueError("cannot pair different fitting horizons")
     loss = (b - f) - (b - c)
