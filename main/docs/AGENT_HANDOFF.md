@@ -7,7 +7,8 @@ at PR #9 `55166a643c979240510f3bdb76484c9777d72fee`, preserving PR #8.
 Implementation `89cb004` corrects terminal success attribution after auto-reset
 and rejects invalid completed horizons in the retrospective pairing API;
 `51f33a3` adds the configured-decay known answer and final CPU evidence fields.
-See [audit and correction report](pilot_root_cause_corrections.md).
+See [audit and correction report](pilot_root_cause_corrections.md) and
+[PR #10](https://github.com/kaves29/scaling-drl-research/pull/10).
 
 The specified f861 pilot source uses the intended AdamW1e-4/.01. Its actual
 seven runtime records and `/workspace/echo_pilot_local_partial.zip` are absent,

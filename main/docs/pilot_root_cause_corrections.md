@@ -1,5 +1,7 @@
 # Pilot root-cause audit and engineering corrections — 23 October 2026
 
+Review: [PR #10](https://github.com/kaves29/scaling-drl-research/pull/10).
+
 The source audit did **not** find the later retrospective optimizer-selection
 bug in the specified pilot source. Two independently reproduced engineering
 defects are corrected here: terminal success can be attributed to a reset
