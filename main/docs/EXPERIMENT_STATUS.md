@@ -183,3 +183,20 @@ completed curves/checkpoint receipts. Source-bound owner disposition records thi
 as unverified and profiles as planning reservations. No fabricated PASS. Explicit
 owner instruction now authorizes campaign submission under that disclosed risk.
 See exp96_owner_disposition.md; inspect actual submission receipts for live status.
+
+## Recovered Batch1 correctness audit (24 October 2026)
+
+The interrupted branch and exact705490f commit were recovered locally with
+original receipts. `codex/overnight-batch1-correctness-20261023` preserves
+#8→#9→#10 and is a sibling of offline-analysis PR #11. Recovery core
+`e26e37f3cb353e212be02c151fd2d84aded63f53` rejects changed static-mask seeds
+for sparse checkpoint restores while retaining dense seed portability. Same
+masks, moments, counters, RNG and next updates are checked exactly. See the
+[correctness report](overnight_batch1_correctness.md).
+
+Fresh checks:77 focused tests,51 pytest passes/one unavailable-archive skip,
+4 broader restore/isolation tests,74 mutation checks,65 simulator cells and
+19 isolated PR #11 compatibility tests pass. Counts overlap. The recovered
+889-test run at705 had two stale infrastructure fixture failures, corrected
+without weakening production gates. Results retain their actual source scopes.
+The A100 segmentation failure remains unresolved; no GPU jobs or merges occurred.

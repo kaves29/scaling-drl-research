@@ -148,7 +148,38 @@ or bypasses were made. Any proposed GPU reproduction must retain the failure.
 
 ## Validation receipts
 
-FINAL_VALIDATION_RESULTS
+The recovered source705490f completed103 isolated unittest modules:889
+executions,886 passes, one assertion failure, one error and one optional cache
+skip. Its original failed summary is preserved. Both failing cases were stale
+`test_exp96_multigpu` assumptions: HEAD was incorrectly assumed identical to
+the frozen smoke's training fingerprint, and the timeout fixture omitted a
+required reusable-component receipt. Updated fixtures retain a known-answer
+immutable fingerprint, explicitly reject changed-source qualification, and
+verify that ambiguous submission retains its reservation after the mocked
+prerequisite is supplied. All16 infrastructure tests now pass. The old test
+module has identical bytes at c05 and705; c05 already differed from the smoke.
+No production qualification or submission gate was weakened.
+
+Fresh recovery validation at core commit
+`e26e37f3cb353e212be02c151fd2d84aded63f53`:
+
+| Check | Actual completed result |
+| --- | --- |
+| Focused SAC, sparse/dense checkpoint, probe, diagnostic and infrastructure suite |77 passed, no failures/errors/skips; structured source fingerprint unchanged |
+| Six pytest-style qualification/configuration/validity modules |51 passed, one archive-input skip; exit0 |
+| Broader full-trainer restore and probe-isolation classes |4 passed; isolated receipts, source unchanged |
+| Existing break-and-restore mutation suite |74/74 mutations detected and restored; exit0 |
+| Simulator restoration |65/65 task×seed cells, including H1; exit0 |
+| Cache eviction with filelock |1 passed; resolves the earlier optional dependency skip |
+| Historical/default compatibility harness |COMPLETE; single/twin initialization, four updates, metrics and RNG match bitwise |
+| PR #11 offline APIs over Batch1 in an isolated detached checkout |19/19 passed; analysis-only overlay, not a branch merge |
+| Style/static checks |Black on new/formatted files, Pyflakes on new modules/tests, git diff --check pass |
+
+Counts overlap and must not be summed as independent experiments. The889-test
+receipt belongs to705; it is not relabeled as a complete run at the later
+sparse-guard revision. Fresh focused and directly affected broader tests cover
+the recovery delta; the entire audit was not restarted. The missing archive
+hash test remains unverified. CPU execution is not GPU qualification.
 
 Generated evidence lives outside Git in `/workspace/artifacts/overnight-batch1/`:
 full isolated per-module receipts/log hashes, final pytest output, mutation
@@ -195,3 +226,47 @@ A missing archived-pilot test input remains a skip, never an archive-hash PASS.
   condition, not a retroactive PASS for the failed legacy execution.
   Full-size single/twin checkpoint/device behavior is a separate qualification,
   not inferred from these fixtures. No GPU allocation is authorized by this report.
+
+
+## PR #8–#11 compatibility and integration
+
+Pinned inspected heads: #8 `868cab4346f2f3124d1a459e34a2d66fed28c794`,
+#9 `55166a643c979240510f3bdb76484c9777d72fee`,
+#10 `c05d77cc9899e50e857c170faf9937e5635c3663`,
+#11 `b0617c60cfff4b33bc267773f888d6059e9cbc17`.
+This PR and #11 are siblings from #10. #8→#9→#10 are inherited ancestors;
+none was overwritten or merged by this recovery.
+
+PR #11 adds analysis/campaign, its example CLI and offline tests. It does not
+implement the core SAC checkpoint/mask guard and has no duplicate runtime fix.
+Its opt-in provenance API complements sac_config.json; neither substitutes
+for original run/source metadata. Production/test paths do not overlap.
+Shared navigation documents are appended here to avoid colliding with #11's
+prepended section; the delivery merge-tree receipt records the exact dry run.
+No branch merge or PR #11 modification occurred.
+
+The isolated combined offline suite passes19 tests. This does not resolve
+PR #11's independently reported full-mutation suite-order issue or qualify
+real W&B ingestion; those remain its review items. New engineering bytes do
+not inherit a frozen GPU smoke's source-bound approval. Integration and GPU
+work still require separate owner authorization.
+
+## Reproducing the focused checks
+
+Use the pinned CPU environment in exp12_cpu_validation_setup.md, with EGL
+configured for simulator checks, then from main/:
+
+```bash
+python -m unittest tests.test_batch1_sparse_checkpoint \
+  tests.test_batch1_reproducibility tests.test_batch1_sac_equations \
+  tests.test_sac_agent_checkpoint tests.test_exp96_multigpu
+python -u -m tests.exp12_break_checks
+python scripts/check_exp12_cpu_environments.py
+python scripts/audit_batch1_compatibility.py --repository /absolute/repository \
+  --out /absolute/new-output
+```
+
+Historical Git objects named by the compatibility script must be available.
+The evidence archive retains exact commands, source hashes, recovery receipts
+and failed-before/successful-after logs. Historical records keep their original
+status and source revision.
