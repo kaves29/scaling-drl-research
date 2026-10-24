@@ -53,11 +53,20 @@ def evaluate_episodes(agent, env, num_episodes: int):
             prev_timestep = {"next_observation": observations}
             episode_return += rewards[0]
             length += 1
-            if "success" in infos:
-                success += float(infos["success"][0])
-            elif "final_info" in infos and "success" in infos["final_info"][0]:
-                success += float(infos["final_info"][0]["success"])
             done = bool(terminateds[0] or truncateds[0])
+            # Auto-reset vector envs put the completed episode's info here;
+            # top-level info then belongs to the next episode's reset.
+            episode_info = (
+                infos["final_info"][0]
+                if done and "final_info" in infos
+                else None
+            )
+            if episode_info is not None:
+                success += float(episode_info.get("success", 0.0))
+            elif not done and "success" in infos:
+                success += float(infos["success"][0])
+            elif "final_info" not in infos and "success" in infos:
+                success += float(infos["success"][0])
         returns.append(episode_return)
         lengths.append(length)
         successes.append(float(bool(success)))
