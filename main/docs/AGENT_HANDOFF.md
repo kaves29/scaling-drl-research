@@ -11,6 +11,9 @@ original-archive statistics, not results of the failed wrong-config runner. Thei
 exact counts and all96 raw runtime records were not independently reprocessed
 in this Cloud audit. Preserve that evidence limitation.
 
+Review: [PR #9](https://github.com/kaves29/scaling-drl-research/pull/9),
+Codex-owned audit checkpoint `b78cfb07010c5ecaf5f736739d475416c6fdf9ae`.
+
 [Optimizer validity audit](exp96_optimizer_validity_audit.md) contains immutable
 source/line citations, executed scope, validity classifications, controlled CPU
 results and a minimal proposed GPU sensitivity screen.36 small CPU fits and

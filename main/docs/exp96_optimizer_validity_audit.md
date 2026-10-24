@@ -183,3 +183,5 @@ PR #8 deliberately rejects optimizer overrides that conflict with original metad
 ## Retained audit evidence
 
 Cloud task evidence is under `/workspace/artifacts/exp96-optimizer-audit/`: `canonical-verified/census.json`, the 96-row CSV, `cpu-controls-verified/comparison.json`, `comparison.csv`, `loss_curves.csv` (72,000 rows), per-case task/parameter/condition NPZs, `cpu_optimizer_controls.png`/`.pdf`, `source-guard.json`, `determinism-check.json`, `audit-evidence.json`, and captured `job23120792-results-from-worker.json`. This directory is task evidence, not a promise of restoration elsewhere. The delivery provides a compact downloadable package; numeric arrays remain outside Git.
+
+Reviewable audit: [PR #9](https://github.com/kaves29/scaling-drl-research/pull/9), based on PR #8. Audit/reproducer checkpoint `b78cfb07010c5ecaf5f736739d475416c6fdf9ae`; publication-link changes are documentation only.
