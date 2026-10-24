@@ -52,8 +52,8 @@ def checkpoint_config(agent):
     seed = config.pop("seed")
     return {
         "schema": 1,
-        # Restoration replaces the full saved PRNG; a constructor seed is not
-        # an optimizer setting. Preserve its provenance without requiring it.
+        # Dense restores replace the full RNG; sparse restores also need this
+        # seed to reconstruct the static masks omitted from the Trainer pytree.
         "initialization_seed": seed,
         "configuration": config,
         "observation_dim": agent._observation_dim,
@@ -87,8 +87,12 @@ def check_checkpoint_config(agent, directory):
     saved, current = json.loads(path.read_text()), checkpoint_config(agent)
     if not isinstance(saved, dict) or set(saved) != set(current):
         raise ValueError("SAC checkpoint configuration must be an object")
-    saved.pop("initialization_seed", None)
-    current.pop("initialization_seed")
+    if (
+        current["configuration"]["actor_sparsity"] == 0
+        and current["configuration"]["critic_sparsity"] == 0
+    ):
+        saved.pop("initialization_seed")
+        current.pop("initialization_seed")
     if saved != current:
         raise ValueError("SAC checkpoint configuration/optimizer mismatch")
     return True
