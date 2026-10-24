@@ -31,9 +31,13 @@ def entrypoint(kind):
                 checkpoint = training_args.get("checkpoint_dir")
                 if checkpoint:
                     protected.append(Path(checkpoint).resolve())
+            if kind == "diagnostic" and args:
+                campaign = getattr(args[0], "campaign", None)
+                if campaign:
+                    protected.append(Path(campaign).resolve())
             if any(destination == p or p in destination.parents for p in protected):
                 raise ValueError(
-                    "instrumentation output must be outside source/checkpoints"
+                    "instrumentation output must be outside source/checkpoints/frozen campaign"
                 )
             with DiagnosticSession(
                 destination, repository, {}, runner_kind=kind
@@ -115,15 +119,6 @@ def training_state(trainer, metrics, checkpoint=None):
     session.record_observation(
         metrics, fields["interaction_step"], fields["optimizer_update"], checkpoint
     )
-
-
-def diagnostic_output(args):
-    session = _active.get()
-    if session is None:
-        return
-    campaign = Path(args.campaign).resolve()
-    if session.output == campaign or campaign in session.output.parents:
-        raise ValueError("instrumentation output must be outside the frozen campaign")
 
 
 def diagnostic_state(runner):

@@ -142,15 +142,13 @@ class InstrumentationTest(unittest.TestCase):
         output = self.root / "campaign" / "receipts"
 
         @recording.entrypoint("diagnostic")
-        def diagnostic():
-            recording.diagnostic_output(SimpleNamespace(campaign=str(output.parent)))
+        def diagnostic(args):
+            self.fail("must reject before creating receipts")
 
         with mock.patch.dict(os.environ, {recording.ENVIRONMENT_VARIABLE: str(output)}):
             with self.assertRaisesRegex(ValueError, "frozen campaign"):
-                diagnostic()
-        self.assertEqual(
-            json.loads((output / "terminal.json").read_text())["status"], "failed"
-        )
+                diagnostic(SimpleNamespace(campaign=str(output.parent)))
+        self.assertFalse(output.exists())
 
     def test_live_diagnostic_entrypoint_and_save_record_partial_results(self):
         from contextlib import ExitStack

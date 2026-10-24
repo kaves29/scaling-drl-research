@@ -73,3 +73,23 @@ Final validation receipts are recorded after stable-source execution. Artifacts
 are outside Git in `/workspace/artifacts/pr11-finalization-20261024`.
 CPU scope does not qualify CUDA/A100 numerical equivalence. The historical A100
 segmentation failure remains unresolved and no GPU work is authorized here.
+
+### Additional integration guards
+
+Diagnostic CLI arguments are parsed before entering its instrumented `execute`
+function. The campaign path is therefore available for validation before even
+`launch.json` is created. Unsafe output tests assert that no directory is
+created. Argument-parser failures retain argparse's ordinary behavior and do
+not create a sidecar session. The first final-validation attempt was stopped
+for this correction; incomplete receipts are not counted as completed suites.
+
+Two existing `test_exp96_multigpu` fixtures fail independently before correction:
+one incorrectly assumes HEAD still has the frozen GPU-smoke training fingerprint;
+the other omits the now-required reusable-component receipt before the mocked
+submission-timeout path. The corrected tests pin the actual immutable smoke
+fingerprint, verify rejection of changed source and supply/mock the required
+receipt so the timeout/reservation assertion is reached. No scheduler or GPU
+qualification guard changes. These two fixture corrections duplicate the
+already-reviewed engineering changes in sibling PR #12; they do not import its
+other checkpoint/audit work. Resolve identical hunks once when integrating the
+siblings rather than overwriting either branch.

@@ -19,7 +19,8 @@ import numpy as np
 from omegaconf import OmegaConf
 
 from experiments.exp12.instrumentation import (
-    entrypoint, diagnostic_state, diagnostic_output,
+    entrypoint,
+    diagnostic_state,
 )
 from experiments.exp12 import fixed_task as ft
 from experiments.exp12 import probe as probe_module
@@ -678,7 +679,6 @@ class Investigation:
         return all(c["status"] == "COMPLETE" for c in self.condition_status)
 
 
-@entrypoint("diagnostic")
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("--root", required=True)
@@ -689,7 +689,11 @@ def main():
         "--plan", required=True, help="Explicit reviewed diagnostic plan JSON"
     )
     args = p.parse_args()
-    diagnostic_output(args)
+    return execute(args)
+
+
+@entrypoint("diagnostic")
+def execute(args):
     load_plan(args.plan)
     if not 0 < args.cap_seconds <= 6600:
         raise ValueError("work cap must be positive and at most 6600 seconds")

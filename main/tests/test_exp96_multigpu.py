@@ -283,10 +283,25 @@ class Infrastructure(unittest.TestCase):
             )
         )
 
-    def test_source_fingerprint_is_nonempty_and_matches_unmodified_training(self):
+    def test_source_fingerprint_matches_frozen_reference_and_rejects_changed_training(
+        self,
+    ):
+        # The frozen smoke stays immutable; later engineering commits must not
+        # inherit its qualification merely because this test runs at HEAD.
         self.assertEqual(
-            m.training_fingerprint("HEAD"), m.training_fingerprint(m.BASE_SMOKE_SHA)
+            m.training_fingerprint(m.BASE_SMOKE_SHA),
+            "718a7ec41f3ed8814472bf1eca125f0bae85c69f76712d1008e585e0bf02acf9",
         )
+        receipt, _, _, q = self.fixture_receipt()
+        q.update(expected_commit="HEAD", training_fingerprint="changed-source")
+        m.write(receipt, q, replace=True)
+        with patch.object(
+            m,
+            "training_fingerprint",
+            side_effect=["changed-source", "changed-source", "frozen-source"],
+        ):
+            with self.assertRaisesRegex(ValueError, "source-bound"):
+                m.qualification(receipt, "HEAD")
         with patch.object(m, "checked", return_value=""):
             with self.assertRaises(ValueError):
                 m.training_fingerprint("HEAD")
@@ -338,7 +353,9 @@ class Infrastructure(unittest.TestCase):
 
     def test_submit_timeout_never_frees_or_retries_reservation(self):
         b = self.budget()
-        with patch.object(m, "source"), patch.object(m, "live_request"), patch.object(
+        with patch.object(m, "source"), patch.object(m, "live_request"), patch(
+            "scripts.exp96_multigpu_qualification.reusable_checks"
+        ) as reuse, patch.object(
             m, "checked", side_effect=TimeoutError("ambiguous sbatch")
         ):
             with self.assertRaises(TimeoutError):
@@ -348,7 +365,11 @@ class Infrastructure(unittest.TestCase):
                     qualification_resources(15),
                     b.root,
                     "qualification",
+                    reuse_checks=self.root / "validated-component-fixture.json",
                 )
+        reuse.assert_called_once_with(
+            self.root / "validated-component-fixture.json", "a" * 40
+        )
         data = m.read(b.path)
         self.assertEqual(len(data["entries"]), 1)
         self.assertEqual(next(iter(data["entries"].values()))["status"], "RESERVED")
