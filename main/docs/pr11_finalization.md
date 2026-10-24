@@ -48,30 +48,82 @@ Original runner failures survive secondary terminal-sidecar I/O failures.
 
 ## Real campaign archive
 
-BLOCKED: no complete W&B metadata/history ZIP is available in this Cloud task's
-uploads or artifacts. The only accessible archives contain prior engineering
-evidence. No 103-record ingestion, pilot/canonical attribution, seed independence,
-crash/missing-metric inventory or raw-value comparison against real histories is
-claimed. Existing synthetic tests remain synthetic.
+The owner supplied `echocritic-comprehensive-20261024.zip` (SHA256
+`f7337130705a59622e1b639449e0dad452317fa2a45b479760a92aa3d9b12a44`).
+The unchanged offline CLI processed this actual ZIP, separately from synthetic
+fixtures. Independent checks establish:
 
-Once supplied, run from `main/` in the pinned CPU environment:
+- 103 unique record IDs; 96 campaign declarations at f597 and seven pilot
+  declarations at f861. Source and probe configuration distinguish these cohorts;
+  names are not identifiers.
+- Complete four-environment × three-architecture × eight-seed campaign grid;
+  12 groups of eight seeds. Across seeds, configurations differ only at `seed`,
+  `agent.seed` and `env.seed`.
+- Seven duplicate display-name pairs, no duplicate IDs. Pilot records are kept
+  separate; observational identity is examined in the separate forensic audit.
+- 95 finished records and eight crashed campaign records; no restart stitching,
+  extrapolation or imputation. The crashed runs lack62 scheduled probe checks.
+- 25,557 history rows; all103 counts match `attrs.historyLineCount`. Every raw
+  history value, including nulls, survives the original pipeline unchanged.
+- All697 raw-file manifest hashes/sizes verified. All52 supplied source snapshots
+  match their manifest and immutable Git objects at the declared revision.
+- Pilot W&B histories contain no probe measurements. Campaign nonzero checks
+  retain round scores but do not directly log contemporary `score_fresh_iqm`;
+  that field is initial-only. Per-record missing/null/observed coverage is retained.
+
+**Native-export compatibility remains unqualified.** The current CLI expects
+explicit normalized `code`, `campaign` and counter declarations; this export
+records source under `attrs.commit` and uses `_step` plus explicit probe counters.
+Consequently the current validator inventories all103 but labels every cohort/
+source/counter unverified and emits zero qualified aggregate groups. Its generic
+`partial_history` flags are not evidence that all103 raw exports are incomplete.
+Independent accounting above does not make those failed integration gates pass.
+Recorded revisions and matching source snapshots also do not establish that
+launch worktrees were clean; that status is not silently invented.
+
+A reviewed schema/counter/provenance adapter and seed-configuration grouping
+checks are still required before qualifying real-data aggregates. Under the
+owner's subsequent read-only forensic-audit instruction, newly discovered
+analysis corrections are prepared separately as proposals, not silently adopted
+in the production pipeline. The actual archive has been tested; synthetic103
+success is not presented as compatibility evidence.
+
+Reproduction command from `main/`:
 
 ```bash
-python -m analysis.campaign.pipeline /absolute/path/real-export.zip \
+python -m analysis.campaign.pipeline /absolute/path/echocritic-comprehensive-20261024.zip \
   --out /absolute/new/real-analysis --bootstrap-reps 10000
 ```
 
-Before accepting aggregation, review the validation report against raw metadata
-for every ID, nominal condition, source, campaign declaration, seed and crash;
-reconcile duplicates and compare every metric row directly to the ZIP. Unknown
-membership/provenance stays excluded rather than inferred from names. Real
-schema adaptation, if required, must preserve raw evidence and receive its own
-fixtures. The command alone is not that validation.
-
 ## Validation
 
-Final validation receipts are recorded after stable-source execution. Artifacts
-are outside Git in `/workspace/artifacts/pr11-finalization-20261024`.
+The final tested implementation is
+`f8ad82f064547c76e12539804c98be75b32656d8`. All runners exited successfully
+with an unchanged source fingerprint. Artifacts are outside Git in
+`/workspace/artifacts/pr11-finalization-20261024`.
+
+| Check | Result |
+| --- | --- |
+| Isolated full CPU suite | 901 passed, 103 modules, no failures/errors/skips |
+| Complete mutation suite | 74/74 pairs twice, including restored twin metadata |
+| Combined focused integration/offline/qualification | 79 passed; overlaps full suite |
+| Six supplementary pytest modules | 51 passed, one archive-dependent skip |
+| Simulator restoration | 65/65 exact cells |
+| Methodology/configuration reference | Passed; 195 parent commands / 39 configs checked |
+| Both offline import CLIs | Passed on explicitly synthetic103 fixtures |
+| Real ZIP | 103 records inventoried; original pipeline aggregate qualification blocked as above |
+| Static | Scoped Black, compilation and production/new-module Pyflakes passed |
+
+Six pytest-only modules reported zero unittest tests and were run explicitly;
+they are not counted as unittest coverage. The skip requires absent
+`PILOT_ARCHIVE_ROOT`; the supplied single campaign NPZ is not that pilot archive.
+All-changed-file Pyflakes additionally reports four pre-existing test warnings,
+reproduced at b061: two intentional helper re-exports and two unused imports.
+No test is disabled and no numerical acceptance threshold is loosened.
+
+Earlier failed/development and intentionally interrupted attempts are preserved
+separately and are not counted as passing final suites. Counts overlap where
+noted; do not sum focused tests with the full suite.
 CPU scope does not qualify CUDA/A100 numerical equivalence. The historical A100
 segmentation failure remains unresolved and no GPU work is authorized here.
 
@@ -130,3 +182,23 @@ actual dependency and patch its methods, verify the validator arguments, and
 require the corrupt-checkpoint path to report the intended `corrupt` error.
 The scheduler remains unchanged. This test pollution is distinct from, and does
 not establish the cause of, the historical twin-metadata failure.
+
+
+## Remaining qualification and scientific impact
+
+The historical Mac restored-case failure cannot be definitively attributed from
+its discarded traceback. Confirmed fixture leaks, import-order mocking and source
+instability are separately identified; current repeated full mutation runs pass.
+Real export mapping/grouping and unrecorded worktree provenance remain integration
+limits, now backed by actual-data validation rather than an unavailable-file claim.
+
+No historical parameter, result or score is changed. Fixture fixes change testing
+reliability; sidecars change optional recording and I/O overhead. Small CPU enabled/
+disabled Exp1 and injected-Exp2 learning states match. That does not establish
+wall-time invariance, all-architecture instrumentation qualification or GPU identity.
+
+GPU-dependent work remains the exact original A100 segmentation-equivalence
+reproduction with fixed numeric inputs, optimizer state, streams and unchanged
+acceptance guard, plus source-bound enabled/disabled recording checks under the
+reviewed GPU precision modes. No such jobs are authorized or launched here.
+PR #11 remains draft; nothing has been merged.

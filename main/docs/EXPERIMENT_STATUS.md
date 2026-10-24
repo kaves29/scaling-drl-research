@@ -1,5 +1,25 @@
 # Experiment status by source
 
+## PR #11 integration finalization (24 October 2026)
+
+PR #11 continues b061 on `codex/echocritic-batch2-20261024`, preserving #8 →
+#9 → #10. Tested implementation `f8ad82f064547c76e12539804c98be75b32656d8`:
+901 CPU tests across103 modules; complete mutation74/74 twice; supplementary
+pytest51 passed/one unavailable-pilot-archive skip; simulator65/65. Focused79
+overlaps the full suite. Source stayed unchanged and no threshold changed.
+Opt-in runner lifecycle/provenance is wired to Exp1, Exp2 and fixed-task results;
+failed-setup cleanup, source-change guards and order-dependent test mocks are fixed.
+
+The supplied real ZIP was processed:103 unique IDs,96 campaign/seven pilot,
+eight crashes,25,557 preserved history rows,697 raw hashes and52 source snapshots
+verified. Native schema/counter/provenance mapping still prevents qualified
+aggregation in the existing CLI. Historical twin-failure attribution and A100
+segmentation equivalence remain unverified. PR stays draft; no GPU job or merge.
+See [finalization report](pr11_finalization.md). The owner's subsequent forensic
+probe audit is separate and keeps production/frozen code unchanged; new corrections
+are proposals requiring owner adoption.
+
+
 ## Batch 2 offline campaign infrastructure (24 October 2026)
 
 Codex branch `codex/echocritic-batch2-20261024` starts at PR #10 head
