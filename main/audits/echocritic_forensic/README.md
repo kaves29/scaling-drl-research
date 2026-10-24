@@ -57,3 +57,20 @@ NPZ evidence and PDFs are retained outside Git. Large raw histories are not
 republished in the repository. Per-point tables contain no interpolation;
 figures show all three architectures/four environments on both linear and
 symlog axes, with per-seed trained traces and matched observed-seed anchors.
+
+## Read-only diagnostic/probe disagreement follow-up
+
+`diagnostic_review.py` imports only the raw-data reader and NumPy/standard
+libraries. It executes no model code, forward pass, gradient or fit. It verifies
+per-seed published metric summaries and source blobs, not scientific causality.
+
+```bash
+python -m audits.echocritic_forensic.diagnostic_review \
+  --package "$PACKAGE" --metric-package "$METRICS" --repository "$REPO" \
+  --current 2b1862167fb71ded30521df55cc6f74cdeea3526 --out "$OUT/metric-review"
+```
+
+The follow-up used this read-only command and scoped static checks only; none of
+the older fit controls or proposal regression tests above was rerun. Results
+are recorded in `diagnostic_review_receipt.json`; see the focused report in
+`main/docs/diagnostic_probe_disagreement_audit_20261024.md`.

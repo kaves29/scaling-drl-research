@@ -1,5 +1,20 @@
 # Current agent handoff
 
+## Diagnostic/probe disagreement follow-up (24 October 2026)
+
+Continuing draft PR13 on its existing branch. Read-only code/artifact review
+adds [a focused report](diagnostic_probe_disagreement_audit_20261024.md) and
+an audit reader; no production changes, new fits, training, forwards, gradients
+or GPU execution. Independent raw checks:2,784 per-seed values match supplement,
+23,512 exact single-critic q1/q2 matches, no checked metric invariant failures.
+Fourteen campaign/current source paths compared;13 are byte-identical, with
+trainer differences limited to prior success correction/provenance observations.
+All48 Myo rank declines and large-humanoid8/8 rank declines reproduce; no
+campaign defect explaining disagreement is established. Prior synthetic fit
+controls are cited as prior evidence and were not rerun under this restriction.
+Remaining need: existing original parameter/pool/normalizer/target artifacts;
+future diagnostic or measurement changes require separate authorization.
+
 ## Forensic probe audit (24 October 2026)
 
 [Draft PR13](https://github.com/kaves29/scaling-drl-research/pull/13), tested audit

@@ -1,0 +1,250 @@
+{
+  "analyzed_document_sha256": {
+    "DISCOVERY_LEDGER.md": "ac28540b56da86272793ac14d56e1dc11671bd19203269b61b3f781cf75b2f75",
+    "FINDINGS.md": "3745e59563122bb8185c967f2298631f0b881c2fdafb3d469a31f2c6e8da4711",
+    "REPORT.md": "05fbbe833027741887694126c096a6883280c5a703d797dddafb4f7d91bbbacc"
+  },
+  "audit_reader_sha256": "5d69de589bbbe3190e1cf2bc6da809be4a87eff9573cbe25b84603594cfc9240",
+  "campaign": "f597ee9898e4d401912092c336c3e5330cf2fda1",
+  "checks": 2784,
+  "current_comparison": "2b1862167fb71ded30521df55cc6f74cdeea3526",
+  "evidence_type": "read-only stored raw JSON and Git blobs; no fits or model execution",
+  "failures": [],
+  "first_interaction_per_metric": {
+    "train/critic_DR0.1": [
+      2000.0
+    ],
+    "train/critic_DR0.2": [
+      2000.0
+    ],
+    "train/critic_fnorm": [
+      2000.0
+    ],
+    "train/critic_gnorm": [
+      6000.0
+    ],
+    "train/critic_loss": [
+      6000.0
+    ],
+    "train/critic_srank": [
+      2000.0
+    ],
+    "train/critic_wnorm": [
+      2000.0
+    ],
+    "train/q1_mean": [
+      6000.0
+    ],
+    "train/td_error_var": [
+      6000.0
+    ]
+  },
+  "gpu_jobs": 0,
+  "groups": [
+    {
+      "anchored_gap70": 0.12751661241054535,
+      "architecture": "D2W512",
+      "dormancy_common70": 0.002219460206106305,
+      "dormancy_down_seeds": 8,
+      "dormancy_early": 0.08655895036645234,
+      "environment": "dog-run",
+      "gradient_common70": 1.0364586493950338,
+      "gradient_early": 0.36784565970784755,
+      "gradient_up_seeds": 8,
+      "n_seeds": 8,
+      "rank_common70": 234.875,
+      "rank_down_seeds": 2,
+      "rank_initial": 230.0
+    },
+    {
+      "anchored_gap70": 0.0021071143448352855,
+      "architecture": "D4W1024",
+      "dormancy_common70": 0.08167085377499461,
+      "dormancy_down_seeds": 8,
+      "dormancy_early": 0.3197079664096236,
+      "environment": "dog-run",
+      "gradient_common70": 1.3281335260979832,
+      "gradient_early": 0.7221231965984916,
+      "gradient_up_seeds": 8,
+      "n_seeds": 8,
+      "rank_common70": 229.5,
+      "rank_down_seeds": 5,
+      "rank_initial": 233.25
+    },
+    {
+      "anchored_gap70": 0.002473343163728714,
+      "architecture": "D4W1536",
+      "dormancy_common70": 0.6785559728741646,
+      "dormancy_down_seeds": 8,
+      "dormancy_early": 1.4851889088749886,
+      "environment": "dog-run",
+      "gradient_common70": 1.3252262350430246,
+      "gradient_early": 1.024253184770816,
+      "gradient_up_seeds": 7,
+      "n_seeds": 8,
+      "rank_common70": 237.8125,
+      "rank_down_seeds": 2,
+      "rank_initial": 234.25
+    },
+    {
+      "anchored_gap70": 0.009652919694781305,
+      "architecture": "D2W512",
+      "dormancy_common70": 0.35733310552313924,
+      "dormancy_down_seeds": 8,
+      "dormancy_early": 4.327947571873665,
+      "environment": "humanoid-run",
+      "gradient_common70": 0.33422100765642243,
+      "gradient_early": 0.08981470612234715,
+      "gradient_up_seeds": 8,
+      "n_seeds": 8,
+      "rank_common70": 230.6875,
+      "rank_down_seeds": 4,
+      "rank_initial": 229.5
+    },
+    {
+      "anchored_gap70": 0.0036370582878589713,
+      "architecture": "D4W1024",
+      "dormancy_common70": 2.10135330632329,
+      "dormancy_down_seeds": 7,
+      "dormancy_early": 4.030354931950569,
+      "environment": "humanoid-run",
+      "gradient_common70": 0.40658411619579415,
+      "gradient_early": 0.13339655370891068,
+      "gradient_up_seeds": 8,
+      "n_seeds": 8,
+      "rank_common70": 219.9375,
+      "rank_down_seeds": 7,
+      "rank_initial": 233.125
+    },
+    {
+      "anchored_gap70": 0.002457475662231444,
+      "architecture": "D4W1536",
+      "dormancy_common70": 1.5940834190696478,
+      "dormancy_down_seeds": 8,
+      "dormancy_early": 5.068630903959274,
+      "environment": "humanoid-run",
+      "gradient_common70": 0.5331280738225324,
+      "gradient_early": 0.15726258332134602,
+      "gradient_up_seeds": 8,
+      "n_seeds": 8,
+      "rank_common70": 201.75,
+      "rank_down_seeds": 8,
+      "rank_initial": 234.25
+    },
+    {
+      "anchored_gap70": 0.6541113398969173,
+      "architecture": "D2W512",
+      "dormancy_common70": 0.01886541210114956,
+      "dormancy_down_seeds": 5,
+      "dormancy_early": 0.056596235488541424,
+      "environment": "myo-key-turn",
+      "gradient_common70": 85.29445246028901,
+      "gradient_early": 70.02119217769801,
+      "gradient_up_seeds": 5,
+      "n_seeds": 8,
+      "rank_common70": 200.75,
+      "rank_down_seeds": 8,
+      "rank_initial": 229.25
+    },
+    {
+      "anchored_gap70": 0.5293086800724268,
+      "architecture": "D4W1024",
+      "dormancy_common70": 0.5289713684469461,
+      "dormancy_down_seeds": 3,
+      "dormancy_early": 0.38016184233129025,
+      "environment": "myo-key-turn",
+      "gradient_common70": 66.2044082551226,
+      "gradient_early": 69.81148350985347,
+      "gradient_up_seeds": 4,
+      "n_seeds": 8,
+      "rank_common70": 172.875,
+      "rank_down_seeds": 8,
+      "rank_initial": 232.375
+    },
+    {
+      "anchored_gap70": 0.6081433095037937,
+      "architecture": "D4W1536",
+      "dormancy_common70": 1.2660435941070318,
+      "dormancy_down_seeds": 3,
+      "dormancy_early": 0.6944444887340069,
+      "environment": "myo-key-turn",
+      "gradient_common70": 56.121383365333074,
+      "gradient_early": 63.622668052524325,
+      "gradient_up_seeds": 1,
+      "n_seeds": 8,
+      "rank_common70": 167.0,
+      "rank_down_seeds": 8,
+      "rank_initial": 233.25
+    },
+    {
+      "anchored_gap70": 7.525899283587932,
+      "architecture": "D2W512",
+      "dormancy_common70": 0.30184660339728,
+      "dormancy_down_seeds": 1,
+      "dormancy_early": 0.12650923803448677,
+      "environment": "myo-pen-twirl",
+      "gradient_common70": 22030.932763384546,
+      "gradient_early": 9712.431471060612,
+      "gradient_up_seeds": 6,
+      "n_seeds": 8,
+      "rank_common70": 190.3125,
+      "rank_down_seeds": 8,
+      "rank_initial": 226.25
+    },
+    {
+      "anchored_gap70": 0.855015578866005,
+      "architecture": "D4W1024",
+      "dormancy_common70": 2.96049577370286,
+      "dormancy_down_seeds": 3,
+      "dormancy_early": 2.8299968130886555,
+      "environment": "myo-pen-twirl",
+      "gradient_common70": 4502.474749340427,
+      "gradient_early": 3815.2580085377836,
+      "gradient_up_seeds": 2,
+      "n_seeds": 8,
+      "rank_common70": 109.625,
+      "rank_down_seeds": 8,
+      "rank_initial": 229.25
+    },
+    {
+      "anchored_gap70": 3.086219587549568,
+      "architecture": "D4W1536",
+      "dormancy_common70": 2.1939717531204224,
+      "dormancy_down_seeds": 7,
+      "dormancy_early": 3.133525725454092,
+      "environment": "myo-pen-twirl",
+      "gradient_common70": 25846.17435089743,
+      "gradient_early": 14235.035943950832,
+      "gradient_up_seeds": 4,
+      "n_seeds": 8,
+      "rank_common70": 94.6875,
+      "rank_down_seeds": 8,
+      "rank_initial": 230.25
+    }
+  ],
+  "max_error": 1.7763568394002505e-15,
+  "metric_coverage": {
+    "train/critic_DR0.1": 23704,
+    "train/critic_DR0.2": 23704,
+    "train/critic_fnorm": 23704,
+    "train/critic_gnorm": 23512,
+    "train/critic_loss": 23512,
+    "train/critic_srank": 23704,
+    "train/critic_wnorm": 23704,
+    "train/q1_mean": 23512,
+    "train/td_error_var": 23512
+  },
+  "metric_invariant_errors": [],
+  "new_model_evaluations": 0,
+  "new_probe_fits": 0,
+  "new_training_runs": 0,
+  "q_label_exact_matches": 23512,
+  "records": 96,
+  "source_paths_checked": 14,
+  "source_paths_identical": 13,
+  "static_checks": {
+    "black": "25.1.0 passed",
+    "compileall": "passed",
+    "pyflakes": "3.4.0 passed"
+  }
+}
