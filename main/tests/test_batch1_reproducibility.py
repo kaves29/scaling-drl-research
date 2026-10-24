@@ -256,5 +256,42 @@ class ConfigAndCheckpointTest(unittest.TestCase):
                 agent().load_checkpoint(tmp)
 
 
+class DiagnosticReconstructionContractTest(unittest.TestCase):
+    def test_matching_hash_does_not_admit_unsupported_precision_or_sparsity(self):
+        from tests.test_exp96_diagnostic_engineering import MetadataFixture
+        from experiments.exp12.diagnostic_artifacts import optimizer_binding
+        from scripts.exp96_fixed_task_diagnostics import FROZEN
+        from utils.run_metadata import _hash, _strip_locations
+
+        fixture = MetadataFixture()
+        fixture.setUp()
+        try:
+            row = fixture.rows[0]
+            path = Path(row["checkpoint_dir"]) / "run_metadata.json"
+            baseline = json.loads(path.read_text())
+            for field, value in (
+                ("mixed_precision", True),
+                ("critic_sparsity", 0.25),
+                ("mixed_precision", None),
+                ("critic_sparsity", None),
+            ):
+                metadata = copy.deepcopy(baseline)
+                if value is None:
+                    metadata["resolved_config"]["agent"].pop(field)
+                else:
+                    metadata["resolved_config"]["agent"][field] = value
+                metadata["config_hash"] = _hash(
+                    _strip_locations(metadata["resolved_config"])
+                )
+                row["config_hash"] = metadata["config_hash"]
+                path.write_text(json.dumps(metadata))
+                with self.subTest(field=field, value=value), self.assertRaises(
+                    ValueError
+                ):
+                    optimizer_binding(row, FROZEN)
+        finally:
+            fixture.doCleanups()
+
+
 if __name__ == "__main__":
     unittest.main()

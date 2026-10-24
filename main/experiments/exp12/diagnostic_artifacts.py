@@ -53,6 +53,10 @@ def optimizer_binding(row, frozen_source):
     if cfg.get("seed") != row["seed"] or cfg.get("env_name") != row["environment"]:
         raise ValueError("resolved configuration identity mismatch")
     agent = cfg["agent"]
+    if agent.get("mixed_precision") is not False or agent.get("critic_sparsity") != 0:
+        raise ValueError(
+            "diagnostic reconstruction requires explicit dense FP32 provenance"
+        )
     settings = {
         key: agent[key] for key in ("critic_learning_rate", "critic_weight_decay")
     }

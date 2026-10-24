@@ -33,6 +33,8 @@ class MetadataFixture(unittest.TestCase):
                             critic_num_blocks=depth,
                             critic_hidden_dim=width,
                             critic_use_cdq=False,
+                            mixed_precision=False,
+                            critic_sparsity=0.0,
                         ),
                     )
                     row = dict(
