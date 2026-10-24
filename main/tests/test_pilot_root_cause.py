@@ -16,6 +16,29 @@ from tests.test_fixed_task import Tiny
 
 
 class PilotContracts(unittest.TestCase):
+    def test_weight_decay_breaks_fit_translation_invariance_as_configured(self):
+        from tests.test_exp12_probe import ConstantCritic
+
+        net = ConstantCritic()
+        # Both start with exactly zero residual to their own-offset zero base.
+        # Adam moments start at zero; only the approved decay moves the bias.
+        for value in (0.0, 10000.0):
+            losses, final, _ = probe._fit(
+                net,
+                optax.adamw(1e-4, weight_decay=0.01),
+                {"c": jnp.array([value])},
+                jnp.zeros((4, 2)),
+                jnp.zeros((4, 1)),
+                jnp.zeros(4),
+                jnp.array([[0, 1]]),
+                2,
+            )
+            self.assertEqual(float(losses[0]), 0.0)
+            if value:
+                self.assertGreater(float(final), 0.0)
+            else:
+                self.assertEqual(float(final), 0.0)
+
     def test_terminal_success_belongs_to_finished_episode(self):
         # SyncVectorEnv auto-resets: top-level info is the NEXT episode's reset.
         for terminal, reset in ((True, False), (False, True)):

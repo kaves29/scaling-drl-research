@@ -218,6 +218,10 @@ def main():
                 "optimizer": {"lr": 0.0001, "decay": 0.01},
                 "first_update": {k: float(v) for k, v in step.items()},
                 "initial_full_pool_mse": float(jnp.mean((q - targets) ** 2)),
+                "frozen_final_pool_mse": float(mse),
+                "materialized_final_pool_mse": float(whole_mse),
+                "segmented_final_pool_mse": float(split_mse),
+                "own_offset": float(offset),
                 "initial_error_decomposition": {
                     "centered_q_variance": float(jnp.var(q)),
                     "base_variance": float(jnp.var(base)),
