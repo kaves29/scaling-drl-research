@@ -3,7 +3,7 @@
 
 import argparse
 import hashlib
-import importlib.util
+from importlib import util
 import json
 import os
 from pathlib import Path
@@ -97,10 +97,10 @@ def main():
             raise ValueError("wrong dependency: " + package)
     if jax.default_backend() != "cpu" or jax.config.jax_enable_x64:
         raise ValueError("requires FP32 CPU")
-    spec = importlib.util.spec_from_file_location(
+    spec = util.spec_from_file_location(
         "verified_pilot_probe", source / "experiments/exp12/probe.py"
     )
-    pilot = importlib.util.module_from_spec(spec)
+    pilot = util.module_from_spec(spec)
     sys.modules[spec.name] = pilot
     spec.loader.exec_module(pilot)
     out.mkdir(parents=True, exist_ok=False)
