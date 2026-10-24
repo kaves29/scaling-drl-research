@@ -1,5 +1,7 @@
 # Overnight Batch1 — implementation correctness and reproducibility
 
+Review: [PR #12](https://github.com/kaves29/scaling-drl-research/pull/12).
+
 This is an engineering audit of the current review stack. It does not analyze
 or explain the pilot results. It adds no numerical stabilizer, changes no
 approved optimizer value or diagnostic definition, and submits no GPU job.
@@ -28,16 +30,17 @@ approved optimizer value or diagnostic definition, and submits no GPU job.
 - Coverage concerns the configured dense FP32, n_step=1 SAC paths, single/twin
   critics and current engineering tools. Sparse variants additionally receive
   deterministic static-mask restoration and next-update CPU tests. Neither
-  sparse nor mixed-precision variants receive production/GPU qualification. Prioritized replay is not enabled by the factory and is not
+  sparse nor mixed-precision variants receive production/GPU qualification.
+  Prioritized replay is not enabled by the factory and is not
   certified as an alternative algorithm.
 
 ## Verified defects and corrections
 
 | Defect and precise source | Reproduction and correction | Could historical numerical results be affected? |
 | --- | --- | --- |
-| Replay reset retains old write pointer — `scale_rl/buffers/numpy_buffer.py:NpyUniformBuffer.reset` | After3 writes, reset sets length0 but leaves pointer3; the next item is written outside the filled prefix from which sampling reads. Reset now resets pointer0. A sentinel fixture proves the next sampled observations are the new item, not unfilled storage. | Yes if a populated buffer was reset and reused. Normal fresh construction starts at0 and is unchanged; no occurrence in archived runs is asserted. |
+| Replay reset retains old write pointer — `scale_rl/buffers/numpy_buffer.py:NpyUniformBuffer.reset` | After 3 writes, reset sets length 0 but leaves pointer 3; the next item is written outside the filled prefix from which sampling reads. Reset now resets pointer 0. A sentinel fixture proves the next sampled observations are the new item, not unfilled storage. | Yes if a populated buffer was reset and reused. Normal fresh construction starts at0 and is unchanged; no occurrence in archived runs is asserted. |
 | Multi-step truncation has an incorrect bootstrap exponent — same file's n-step accumulation, with `sac_update.update_critic` | At n=3,gamma=.5, a first-transition truncation retains a one-reward prefix and terminal next observation but the target uses gamma^3 instead of gamma^1. Executing immutable pre-fix code gives target2.25 versus6 in a known-answer fixture. The buffer now explicitly rejects n_step≠1; no new multi-step scientific definition or checkpoint format was introduced. | All supplied study configurations have n_step=1, so their numerical behavior is unchanged. Any independently overridden multi-step run needs review. Supporting correct variable-horizon returns would require a separate implementation/protocol decision. |
-| Invalid replay dimensions/warmup accepted — `NpyUniformBuffer.__init__` | Zero capacity, zero batch sizes, warmup0, warmup larger than capacity, invalid n_step types could be constructed or fail late. Explicit positive-integer/capacity checks now reject them before allocation. | Valid configured runs unchanged. This is input validation, not evidence that archived runs used invalid settings. |
+| Invalid replay dimensions/warmup accepted — `NpyUniformBuffer.__init__` | Zero capacity, zero batch sizes, warmup 0, warmup larger than capacity, invalid n_step types could be constructed or fail late. Explicit positive-integer/capacity checks now reject them before allocation. | Valid configured runs unchanged. This is input validation, not evidence that archived runs used invalid settings. |
 | Invalid replay metadata accepted or rejected after mutation — `experiments/exp12/state.py:load_buffer` | Partially filled replay accepted an unrelated pointer; malformed/oversized pending queues could be truncated or raise after replay arrays were written. Validate pointer=count when not full, queue length, six transition fields and array shapes/types before copying arrays. | Valid saved states are unchanged. Corrupt/inconsistent metadata is now rejected; no historical state was edited or declared corrupt without evidence. This is not a claim of transactional rollback after arbitrary I/O corruption. |
 | Explicit entropy target silently overwritten — `scale_rl/agents/sac/sac_agent.py:SACAgent.__init__` | An explicit target−3 with2 actions became−1 from the coefficient. Derive from the coefficient only when target is None. The ordinary None/−.5 configuration still gives−action_dim/2. | Could affect configurations that explicitly supplied a different target; metadata alone previously overstated that field's effect. Default pilot/Exp96 settings use None and are numerically unchanged. This does not authorize a new entropy setting for the study. |
 | Invalid SAC scalar settings reach initialization — `SACConfig.__post_init__`, new `configuration.validate_config` | NaN/Inf, negative optimizer settings, invalid gamma/tau, nonpositive initial temperature and invalid sparsity/n_step are rejected before network construction. Zero learning rates remain usable in controlled fixtures. | Valid settings unchanged. No sign, schedule, clipping or optimizer transformation changed. |
@@ -45,9 +48,10 @@ approved optimizer value or diagnostic definition, and submits no GPU job.
 | Sparse masks can differ despite identical restored dynamic state — `Trainer.network_mask` static field and `configuration.check_checkpoint_config` | Immutable/recovered code reproduced equal restored parameters/moments/counters but different constructor-derived masks and a divergent next update. Retain the initialization-seed comparison if either actor or critic is sparse; only dense checkpoints waive it. Tests reject changed actor/critic mask seeds, require identical same-seed masks and next-update state, and preserve dense cross-seed restoration. | Could affect standalone sparse restores under another seed. Current study configurations are dense and unchanged. Legacy sidecar-free restores still require original configuration/source/seed evidence; this guard does not fabricate missing provenance. |
 | PR #8 accepted unsupported reconstruction settings — `experiments/exp12/diagnostic_artifacts.py:optimizer_binding` | A matching row/metadata hash still admitted mixed_precision=true, nonzero sparsity or missing precision fields, while its runner constructs a dense FP32 critic. Require explicit mixed_precision=false and critic_sparsity=0. Four negative cases fail before correction and pass afterward. Synthetic metadata fixtures now include the actual required fields. | Canonical dense FP32 Exp96 settings remain accepted. Unsupported or incomplete metadata is rejected; no archived result is recomputed or changed. |
 
-Regression receipts before correction contain23 assertion failures plus one
-error across13 tests/subcases, four failures in the additional diagnostic
-contract test, and two sparse-seed rejection failures in four restore tests. Missing validation is distinguished from a demonstrated error
+Regression receipts before correction contain 23 assertion failures plus one
+error across 13 tests/subcases, four failures in the additional diagnostic
+contract test, and two sparse-seed rejection failures in four restore tests.
+Missing validation is distinguished from a demonstrated error
 in valid production data. The passing legacy read and valid-roundtrip controls
 were retained; existing failures or numerical thresholds were not disabled.
 
@@ -148,15 +152,15 @@ or bypasses were made. Any proposed GPU reproduction must retain the failure.
 
 ## Validation receipts
 
-The recovered source705490f completed103 isolated unittest modules:889
-executions,886 passes, one assertion failure, one error and one optional cache
+The recovered source 705490f completed 103 isolated unittest modules:889
+executions, 886 passes, one assertion failure, one error and one optional cache
 skip. Its original failed summary is preserved. Both failing cases were stale
 `test_exp96_multigpu` assumptions: HEAD was incorrectly assumed identical to
 the frozen smoke's training fingerprint, and the timeout fixture omitted a
 required reusable-component receipt. Updated fixtures retain a known-answer
 immutable fingerprint, explicitly reject changed-source qualification, and
 verify that ambiguous submission retains its reservation after the mocked
-prerequisite is supplied. All16 infrastructure tests now pass. The old test
+prerequisite is supplied. All 16 infrastructure tests now pass. The old test
 module has identical bytes at c05 and705; c05 already differed from the smoke.
 No production qualification or submission gate was weakened.
 
@@ -175,7 +179,7 @@ Fresh recovery validation at core commit
 | PR #11 offline APIs over Batch1 in an isolated detached checkout |19/19 passed; analysis-only overlay, not a branch merge |
 | Style/static checks |Black on new/formatted files, Pyflakes on new modules/tests, git diff --check pass |
 
-Counts overlap and must not be summed as independent experiments. The889-test
+Counts overlap and must not be summed as independent experiments. The 889-test
 receipt belongs to705; it is not relabeled as a complete run at the later
 sparse-guard revision. Fresh focused and directly affected broader tests cover
 the recovery delta; the entire audit was not restarted. The missing archive
@@ -243,9 +247,9 @@ Its opt-in provenance API complements sac_config.json; neither substitutes
 for original run/source metadata. Production/test paths do not overlap.
 Shared navigation documents are appended here to avoid colliding with #11's
 prepended section; the delivery merge-tree receipt records the exact dry run.
-No branch merge or PR #11 modification occurred.
+The dry run merged cleanly at the inspected heads. No branch merge or PR #11 modification occurred.
 
-The isolated combined offline suite passes19 tests. This does not resolve
+The isolated combined offline suite passes 19 tests. This does not resolve
 PR #11's independently reported full-mutation suite-order issue or qualify
 real W&B ingestion; those remain its review items. New engineering bytes do
 not inherit a frozen GPU smoke's source-bound approval. Integration and GPU
