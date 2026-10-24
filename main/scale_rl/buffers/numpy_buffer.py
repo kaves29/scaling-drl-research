@@ -18,6 +18,18 @@ class NpyUniformBuffer(BaseBuffer):
         add_batch_size: int,
         sample_batch_size: int,
     ):
+        for name, value in (
+            ("max_length", max_length), ("min_length", min_length),
+            ("add_batch_size", add_batch_size), ("sample_batch_size", sample_batch_size),
+        ):
+            if type(value) is not int or value < 1:
+                raise ValueError(name + " must be a positive integer")
+        if min_length > max_length or add_batch_size > max_length:
+            raise ValueError("replay warmup/add batch exceeds capacity")
+        if type(n_step) is not int or n_step != 1:
+            raise ValueError(
+                "only n_step=1 is supported: early truncations require per-transition bootstrap discounts"
+            )
         super(NpyUniformBuffer, self).__init__(
             observation_space,
             action_space,
@@ -35,6 +47,7 @@ class NpyUniformBuffer(BaseBuffer):
         return self._num_in_buffer
 
     def reset(self) -> None:
+        self._current_idx = 0
         m = self._max_length
 
         # for pixel-based environments, we would prefer uint8 dtype.

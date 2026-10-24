@@ -34,6 +34,9 @@ from scale_rl.networks.trainer import PRNGKey, Trainer
 from scale_rl.agents.sparse import get_sparsities_erdos_renyi,get_var_shape_dict,create_random_mask
 from scale_rl.networks.metrics import print_num_parameters,flatten_dict,format_params_str
 from utils.paths import require_absolute
+from scale_rl.agents.sac.configuration import (
+    check_checkpoint_config, save_checkpoint_config, validate_config,
+)
 """
 The @dataclass decorator must have `frozen=True` to ensure the instance is immutable,
 allowing it to be treated as a static variable in JAX.
@@ -74,6 +77,9 @@ class SACConfig:
 
     actor_sparsity: float
     critic_sparsity: float
+
+    def __post_init__(self):
+        validate_config(self)
 
 
 # @functools.partial(
@@ -444,7 +450,8 @@ class SACAgent(BaseAgent):
         self._observation_dim = observation_space.shape[-1]
         self._action_dim = action_space.shape[-1]
 
-        cfg["temp_target_entropy"] = cfg["temp_target_entropy_coef"] * self._action_dim
+        if cfg["temp_target_entropy"] is None:
+            cfg["temp_target_entropy"] = cfg["temp_target_entropy_coef"] * self._action_dim
 
         super(SACAgent, self).__init__(
             observation_space,
@@ -701,6 +708,7 @@ class SACAgent(BaseAgent):
 
         checkpointer = orbax.checkpoint.PyTreeCheckpointer()
         checkpointer.save(ckpt_path, state, force=True)
+        save_checkpoint_config(self, checkpoint_dir)
 
     def load_checkpoint(self, checkpoint_dir: str):
         """Restores the agent's JAX PyTree state back into their exact Flax TrainState structures."""
@@ -709,6 +717,8 @@ class SACAgent(BaseAgent):
 
         if not os.path.exists(ckpt_path):
             raise FileNotFoundError(f"No checkpoint found at {ckpt_path}")
+
+        check_checkpoint_config(self, checkpoint_dir)
 
         checkpointer = orbax.checkpoint.PyTreeCheckpointer()
 
