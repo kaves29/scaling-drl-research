@@ -106,13 +106,17 @@ class SharedFilesystemClaimCheckTest(unittest.TestCase):
 
     def test_a_double_claim_is_detected(self):
         copy = self._copy("double")
-        path = copy / "result_1.json"
-        result = json.loads(path.read_text())
-        loser = next(row for row in result["rows"] if not row["claimed"])
-        loser["claimed"] = True
-        path.write_text(json.dumps(result))
+        paths = [copy / f"result_{rank}.json" for rank in (0, 1)]
+        results = [json.loads(path.read_text()) for path in paths]
+        self.assertEqual(sum(result["rows"][0]["claimed"] for result in results), 1)
+        # Either worker may legitimately win every row. Corrupt row 0 in both
+        # reports so the fixture never depends on which worker lost the race.
+        for path, result in zip(paths, results):
+            self.assertEqual(result["rows"][0]["index"], 0)
+            result["rows"][0]["claimed"] = True
+            path.write_text(json.dumps(result))
         report = claim_check.verify(copy, require_distinct_hosts=False)
-        self.assertIn(f"row {loser['index']}: 2 ledger claim winners", report["failures"])
+        self.assertIn("row 0: 2 ledger claim winners", report["failures"])
 
     def test_a_wrong_link_owner_a_left_guard_and_a_temporary_file_are_detected(self):
         copy = self._copy("damaged")

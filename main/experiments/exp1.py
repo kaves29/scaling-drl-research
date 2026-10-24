@@ -24,6 +24,7 @@ from experiments.exp12.precision import configure_compilation_cache, runtime_inf
 from experiments.exp12.run_probes import FRESH_CRITIC_DIR, RunProbes
 from experiments.exp12.state import latest_state_dir, load_meta
 from experiments.exp12.trainer import Exp12Trainer
+from experiments.exp12.instrumentation import entrypoint
 from experiments.registry import register_experiment
 from scale_rl.common.logger import get_architecture_id
 from utils.atomic_io import atomic_write_text
@@ -84,6 +85,7 @@ def record_metadata(cfg, run_dir: Path, resumed: bool, experiment: str = EXPERIM
 
 
 @register_experiment(EXPERIMENT)
+@entrypoint("training")
 def run(args: dict) -> None:
     set_matmul_precision()
     configure_compilation_cache()

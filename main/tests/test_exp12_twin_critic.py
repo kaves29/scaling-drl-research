@@ -349,7 +349,10 @@ class TwinForkEndToEndTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.patchers = patch_wandb()
+        for patcher in cls.patchers:
+            cls.addClassCleanup(patcher.stop)
         cls.tmp = tempfile.mkdtemp()
+        cls.addClassCleanup(shutil.rmtree, cls.tmp, ignore_errors=True)
         cls.results = os.path.join(cls.tmp, "results")
         cls.overrides = fork_overrides(cls.results, ["agent.critic_use_cdq=true"])
         cls.run_dir = os.path.join(cls.tmp, "run")
@@ -359,12 +362,6 @@ class TwinForkEndToEndTest(unittest.TestCase):
             cls.arm_dirs[arm] = os.path.join(cls.tmp, f"arm_{arm}")
             run_arm(cls.arm_dirs[arm], cls.overrides, cls.run_dir, arm)
         cls.exp2 = exp2_ledger.run_root(fork.read_fork(cls.run_dir)["run_key"], cls.results)
-
-    @classmethod
-    def tearDownClass(cls):
-        for p in cls.patchers:
-            p.stop()
-        shutil.rmtree(cls.tmp, ignore_errors=True)
 
     def _meta(self, state_dir):
         with open(Path(state_dir) / "meta.pkl", "rb") as f:

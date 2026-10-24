@@ -19,6 +19,7 @@ import numpy as np
 import omegaconf
 import pandas as pd
 
+from experiments.exp12.instrumentation import training_state
 from experiments.exp12.diagnostics import ActorDiagnostics, DiagnosticPendingUpdateMetrics
 from experiments.exp12.envs import create_envs, env_restore_state, restore_env
 from experiments.exp12.state import (
@@ -126,6 +127,7 @@ class Exp12Trainer:
         self.metrics_rows.append(snapshot)
         self.logger.reset()
         self.observations, _ = self.train_env.reset()
+        training_state(self, snapshot)
 
     def _evaluate(self, interaction_step: int, num_episodes: int) -> None:
         eval_info, returns, lengths, successes = evaluate_episodes(self.agent, self.eval_env, num_episodes)
@@ -206,6 +208,7 @@ class Exp12Trainer:
                 snapshot.update(self.logger.average_meter_dict.averages())
                 snapshot.update(self.logger.media_dict)
                 self.metrics_rows.append(snapshot)
+                training_state(self, snapshot)
                 self.logger.log_metric(step=env_step)
                 self.logger.reset()
 
@@ -244,6 +247,7 @@ class Exp12Trainer:
         })
         commit_state_dir(root, path, keep_previous=keep_previous)
         self.write_logs()
+        training_state(self, {"event": "checkpoint_saved"}, path)
         return path
 
     def restore(self, state_dir, new_wandb_run: bool = False) -> None:
@@ -277,6 +281,7 @@ class Exp12Trainer:
         for name, values in meta["agent_window_buffers"].items():
             setattr(self._sac_agent, name, [jnp.asarray(v) for v in values])
         self.diagnostics.load_state(meta["actor_diagnostics"])
+        training_state(self, {"event": "checkpoint_restored"}, state_dir)
 
     def inject(self, m_label: str, seed: int) -> None:
         """Plasticity injection into the online and target critic (experiments/exp12/injection.py)."""
