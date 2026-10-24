@@ -272,3 +272,28 @@ class SnapshotTests(unittest.TestCase):
         self.assertEqual(r["fixed_batch_mse"], 1)
         self.assertEqual(r["varying_minibatch_mse"], 100)
         self.assertEqual(state.params["x"][0], 3)
+
+
+class LifecycleTests(unittest.TestCase):
+    def test_failed_and_empty_sessions_are_explicit(self):
+        from analysis.campaign.provenance import DiagnosticSession
+        from unittest.mock import patch
+
+        with tempfile.TemporaryDirectory() as d, patch(
+            "analysis.campaign.provenance.capture", return_value={"task_id": "task"}
+        ):
+            path = Path(d) / "failed"
+            with self.assertRaises(RuntimeError):
+                with DiagnosticSession(path, ".", {}) as session:
+                    session.record({"initial_mse": 1}, 0, 0, "before")
+                    raise RuntimeError("fixture failure")
+            result = json.loads((path / "terminal.json").read_text())
+            self.assertEqual(result["status"], "failed")
+            self.assertEqual(result["measurement_count"], 1)
+            path = Path(d) / "empty"
+            with DiagnosticSession(path, ".", {}):
+                pass
+            self.assertEqual(
+                json.loads((path / "terminal.json").read_text())["status"],
+                "no_measurements",
+            )

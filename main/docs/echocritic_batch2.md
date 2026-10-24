@@ -44,3 +44,21 @@ Synthetic export generation imports the shared deterministic fixture and labels 
 See the delivery/PR for exact final test counts. The initial shared environment had NumPy 2.x and could not satisfy the existing tests' NumPy 1.26.4 contract. A temporary `/tmp/echocritic-batch2-deps` overlay installs NumPy 1.26.4 and SciPy 1.14.1 without mutating shared dependencies. It is an isolated testing workaround, not a dependency-lock amendment. Regression commands set `PYTHONPATH` to this overlay and JAX platforms to CPU. Initial failed attempts are retained outside Git. Existing simulation/GPU qualification remains separate.
 
 Before scientific use: inspect the real export schema, validate resolved optimizer/source evidence, supply campaign membership and expected checkpoint/metric manifests, reconcile restarts, and review exclusions. Broader simulator restoration and full-suite qualification are not established by focused tests. Review this dependent PR after #8–#10; do not merge the stack automatically. Corrected-source A100 equivalence remains a separately authorized future gate.
+
+### Opt-in lifecycle example
+
+`DiagnosticSession` writes exclusive immutable launch/measurement/terminal files, retains exception type/message on failure and propagates the original exception. Exiting without measurements records `no_measurements`, never successful scientific evidence. Callers supply exact already-validated fields; omitted provenance remains explicitly incomplete.
+
+```python
+from analysis.campaign.provenance import DiagnosticSession, critic_snapshot
+
+with DiagnosticSession(new_output, repository, resolved_config,
+                       optimizer=validated_optimizer, task_id=task_id,
+                       seed=training_seed, checkpoint=checkpoint_id) as session:
+    session.record(critic_snapshot(q, original_bellman_targets),
+                   interaction_step=interaction_step,
+                   optimizer_update=optimizer_update,
+                   checkpoint=checkpoint_id)
+```
+
+Final focused offline validation adds lifecycle failure/no-measurement coverage: 19 tests passed. Earlier combined regression ran 81 tests successfully (17 new plus 64 existing); the expanded 19-test suite is separately rerun. These counts overlap and must not be added as independent coverage. Required mutation results are recorded in the delivery when complete. The unchanged broad simulator restoration suite was not rerun because this change does not touch environments or training state.

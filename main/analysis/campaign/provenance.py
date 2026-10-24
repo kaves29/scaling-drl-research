@@ -142,3 +142,49 @@ def validate(receipt):
     if not isinstance(opt, dict) or not opt or any(v is None for v in opt.values()):
         issues.append("incomplete_optimizer")
     return issues
+
+
+class DiagnosticSession:
+    """Opt-in runner lifecycle: immutable launch, measurement and terminal receipts."""
+
+    def __init__(self, output, repository, config, **fields):
+        self.output = Path(output)
+        self.output.mkdir(parents=True, exist_ok=False)
+        self.receipt = capture(repository, config, **{**fields, "status": "running"})
+        self.count = 0
+        write_sidecar(self.output / "launch.json", self.receipt)
+
+    def __enter__(self):
+        return self
+
+    def record(self, metrics, interaction_step, optimizer_update, checkpoint):
+        for counter in (interaction_step, optimizer_update):
+            if type(counter) is not int or counter < 0:
+                raise ValueError("explicit nonnegative integer counters required")
+        event = {
+            "runner_version": VERSION,
+            "interaction_step": interaction_step,
+            "optimizer_update": optimizer_update,
+            "checkpoint": checkpoint,
+            "metrics": metrics,
+            "task_id": self.receipt.get("task_id"),
+        }
+        write_sidecar(self.output / f"measurement_{self.count:06d}.json", event)
+        self.count += 1
+
+    def __exit__(self, exception_type, exception, traceback):
+        terminal = {
+            **self.receipt,
+            "status": "failed" if exception is not None else "complete",
+            "measurement_count": self.count,
+            "failure": (
+                {"type": exception_type.__name__, "message": str(exception)}
+                if exception is not None
+                else None
+            ),
+        }
+        # No measurements is explicitly distinct from a successful diagnostic.
+        if exception is None and not self.count:
+            terminal["status"] = "no_measurements"
+        write_sidecar(self.output / "terminal.json", terminal)
+        return False
