@@ -1,0 +1,37 @@
+{
+  "schema": 1,
+  "description": "Configuration template only; owner must approve the scientific experiment and allocation before execution.",
+  "conditions": [
+    {
+      "id": "architecture_common_task",
+      "type": "comparison",
+      "environment": "myo-pen-twirl",
+      "seed": 5,
+      "round": 0,
+      "architectures": [
+        "D2W512",
+        "D4W1024",
+        "D4W1536"
+      ],
+      "learners": [
+        "fresh"
+      ],
+      "offset_modes": [
+        "zero"
+      ],
+      "horizons": [
+        2000
+      ],
+      "pool": {
+        "period": "late",
+        "normalizer": "latest",
+        "support": null,
+        "target_normalizer": "same"
+      },
+      "shared_reference": {
+        "architecture": "D2W512",
+        "kind": "fresh"
+      }
+    }
+  ]
+}

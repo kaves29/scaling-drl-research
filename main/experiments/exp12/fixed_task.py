@@ -82,6 +82,74 @@ def initial_gradient(network_def, params, obs, act, targets):
     return value, jnp.sqrt(sum(jnp.sum(g * g) for g in leaves))
 
 
+@functools.partial(jax.jit, static_argnames=("network_def", "tx", "chunk"))
+def first_update(network_def, tx, state, obs, act, targets, indices, chunk):
+    """Measure one real AdamW update on copies, including its full-pool effect."""
+    loss, grad_norm = initial_gradient(
+        network_def, state.params, obs[indices], act[indices], targets[indices]
+    )
+    before = predictions(network_def, state.params, obs, act, chunk)
+    after_state, _ = fit_segment(
+        network_def, tx, state, obs, act, targets, indices[None, :]
+    )
+    after = predictions(network_def, after_state.params, obs, act, chunk)
+    delta = after - before
+    return {
+        "minibatch_mse_before": loss,
+        "gradient_l2": grad_norm,
+        "prediction_change_rms": jnp.sqrt(jnp.mean(delta**2)),
+        "prediction_change_mean": jnp.mean(delta),
+        "full_pool_mse_before": jnp.mean((before - targets) ** 2),
+        "full_pool_mse_after": jnp.mean((after - targets) ** 2),
+    }
+
+
+def curve_summary(losses):
+    """Descriptive pre-update minibatch curves; no scientific pass threshold."""
+    x = np.asarray(losses)
+    if x.ndim != 1 or not len(x) or not np.isfinite(x).all():
+        raise ValueError("loss curve must be finite and nonempty")
+    early = x[: min(100, len(x))].astype(np.float64)
+    first = float(x[0])
+    # A zero initial loss has no defined ratio; do not add an arbitrary epsilon.
+    return {
+        "updates": len(x),
+        "initial_minibatch_mse": first,
+        "early_mean_mse": float(early.mean()),
+        "early_peak_mse": float(early.max()),
+        "early_mean_over_initial": float(early.mean() / first) if first else None,
+        "early_peak_over_initial": float(early.max() / first) if first else None,
+        "final_minibatch_mse": float(x[-1]),
+    }
+
+
+def equivalence_report(
+    reference_losses, reference_mse, segmented_losses, segmented_mse
+):
+    """Retain the existing GPU guard, reporting rather than hiding divergence."""
+    a, b = np.asarray(reference_losses), np.asarray(segmented_losses)
+    if (
+        a.ndim != 1
+        or a.shape != b.shape
+        or not a.size
+        or not np.isfinite(a).all()
+        or not np.isfinite(b).all()
+        or not np.isfinite([reference_mse, segmented_mse]).all()
+    ):
+        raise ValueError("equivalence requires complete finite matching curves")
+    final_error = float(abs(float(segmented_mse) - float(reference_mse)))
+    guard = max(1e-4, 0.005 * abs(float(reference_mse)))
+    return {
+        "curve_max_abs_error": float(np.max(np.abs(a - b))),
+        "curve_rmse": float(np.sqrt(np.mean((a.astype(np.float64) - b) ** 2))),
+        "final_abs_error": final_error,
+        "final_abs_guard": guard,
+        "bitwise_curve_equal": bool(np.array_equal(a, b)),
+        "passed_existing_final_guard": final_error <= guard,
+        "qualification": "engineering guard only; no historical task identity proof",
+    }
+
+
 def tree_sha256(tree):
     digest = hashlib.sha256()
     for path, value in jax.tree_util.tree_flatten_with_path(tree)[0]:

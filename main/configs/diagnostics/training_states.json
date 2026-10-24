@@ -1,0 +1,37 @@
+{
+  "schema": 1,
+  "description": "Configuration template only; owner must approve the scientific experiment and allocation before execution.",
+  "conditions": [
+    {
+      "id": "training_states",
+      "type": "comparison",
+      "environment": "myo-key-turn",
+      "seed": 1,
+      "round": 0,
+      "architectures": [
+        "D4W1536"
+      ],
+      "learners": [
+        "fresh",
+        "early",
+        "latest"
+      ],
+      "offset_modes": [
+        "zero"
+      ],
+      "horizons": [
+        2000
+      ],
+      "pool": {
+        "period": "late",
+        "normalizer": "latest",
+        "support": null,
+        "target_normalizer": "same"
+      },
+      "shared_reference": {
+        "architecture": "D2W512",
+        "kind": "fresh"
+      }
+    }
+  ]
+}

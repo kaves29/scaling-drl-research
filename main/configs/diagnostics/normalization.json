@@ -1,0 +1,93 @@
+{
+  "schema": 1,
+  "description": "Configuration template only; owner must approve the scientific experiment and allocation before execution.",
+  "conditions": [
+    {
+      "id": "early_latest",
+      "type": "comparison",
+      "environment": "myo-pen-twirl",
+      "seed": 1,
+      "round": 0,
+      "architectures": [
+        "D4W1536"
+      ],
+      "learners": [
+        "fresh"
+      ],
+      "offset_modes": [
+        "zero"
+      ],
+      "horizons": [
+        2000
+      ],
+      "pool": {
+        "period": "early",
+        "normalizer": "latest",
+        "support": 5000,
+        "target_normalizer": "same"
+      },
+      "shared_reference": {
+        "architecture": "D2W512",
+        "kind": "fresh"
+      }
+    },
+    {
+      "id": "early_early_input_only",
+      "type": "comparison",
+      "environment": "myo-pen-twirl",
+      "seed": 1,
+      "round": 0,
+      "architectures": [
+        "D4W1536"
+      ],
+      "learners": [
+        "fresh"
+      ],
+      "offset_modes": [
+        "zero"
+      ],
+      "horizons": [
+        2000
+      ],
+      "pool": {
+        "period": "early",
+        "normalizer": "early",
+        "support": 5000,
+        "target_normalizer": "latest"
+      },
+      "shared_reference": {
+        "architecture": "D2W512",
+        "kind": "fresh"
+      }
+    },
+    {
+      "id": "late_restricted",
+      "type": "comparison",
+      "environment": "myo-pen-twirl",
+      "seed": 1,
+      "round": 0,
+      "architectures": [
+        "D4W1536"
+      ],
+      "learners": [
+        "fresh"
+      ],
+      "offset_modes": [
+        "zero"
+      ],
+      "horizons": [
+        2000
+      ],
+      "pool": {
+        "period": "late",
+        "normalizer": "latest",
+        "support": 5000,
+        "target_normalizer": "same"
+      },
+      "shared_reference": {
+        "architecture": "D2W512",
+        "kind": "fresh"
+      }
+    }
+  ]
+}
