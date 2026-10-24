@@ -1,5 +1,26 @@
 # Current agent handoff
 
+## Forensic probe audit (24 October 2026)
+
+Separate task branch `codex/forensic-probe-audit-20261024`, based on PR11
+`5880ec010e6ff185fcd8a9313d695ec29dda1305`. Production/frozen code unchanged;
+all four proposed corrections remain unapplied. Both real ZIPs are available
+and hash-verified:103 records,96 canonical/seven non-independent pilot records,
+eight crashes; independent reconstruction4,834 points/52,214 table comparisons,
+operational CI9,476 checks, seed aggregates1,188 and metric windows3,456, all pass.
+Focused pytest15 pass; nine synthetic source-bound parameter routes pass across
+campaign/pilot/current. This is CPU evidence, not production checkpoint identity
+or GPU qualification. DMC stability and fresh drift survive raw reconstruction;
+causes remain unresolved. Native PR11 ingestion/provenance and seed grouping
+remain integration work requiring separate reviewed changes. No GPU jobs,
+new parent training, production reruns, external-agent contact or merges.
+
+See [audit report](forensic_probe_audit_20261024.md),
+[source-linked dataflow](forensic_probe_dataflow.md) and
+[validation receipt](../audits/echocritic_forensic/validation_receipt.json).
+Production PR11 validation is reused explicitly, not claimed as newly rerun.
+Historical sections below retain their original availability/status snapshots.
+
 ## PR #11 integration finalization (24 October 2026)
 
 PR #11 continues b061 on `codex/echocritic-batch2-20261024`, preserving #8 →

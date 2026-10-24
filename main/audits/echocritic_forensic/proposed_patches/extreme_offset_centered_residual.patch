@@ -1,0 +1,24 @@
+--- a/main/experiments/exp12/probe.py
++++ b/main/experiments/exp12/probe.py
+@@ -83,11 +83,10 @@
+ 
+     if offset is None:
+         offset = jnp.mean(predict(params))
+-    targets = offset + base_targets
+ 
+     def loss_fn(p, batch_idx):
+         q = network_def.apply({"params": p}, obs[batch_idx], act[batch_idx]).reshape(-1)
+-        return jnp.mean((q - targets[batch_idx]) ** 2)
++        return jnp.mean(((q - offset) - base_targets[batch_idx]) ** 2)
+ 
+     def step(carry, batch_idx):
+         p, opt_state = carry
+@@ -96,7 +95,7 @@
+         return (optax.apply_updates(p, updates), opt_state), loss
+ 
+     (fitted, _), losses = jax.lax.scan(step, (params, tx.init(params)), idx)
+-    final = jnp.mean((predict(fitted) - targets) ** 2)
++    final = jnp.mean(((predict(fitted) - offset) - base_targets) ** 2)
+     return losses, final, offset
+ 
+ 

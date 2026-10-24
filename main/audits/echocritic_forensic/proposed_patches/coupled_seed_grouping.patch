@@ -1,0 +1,38 @@
+--- a/main/analysis/campaign/pipeline.py
++++ b/main/analysis/campaign/pipeline.py
+@@ -1,12 +1,26 @@
+ """CPU offline CLI. Ambiguous conditions are inventoried, never auto-stitched."""
+ 
+ import argparse
++from copy import deepcopy
+ import json
+ from pathlib import Path
+ from collections import Counter, defaultdict
+ import numpy as np
+ from .ingest import ingest
+ from .statistics import summary, trajectory
++
++
++def replicate_configuration(config):
++    """Candidate for the verified EchoCritic coupled-seed schema, not arbitrary studies."""
++    result = deepcopy(config)
++    seed = result.pop("seed", None)
++    for section in ("agent", "env"):
++        values = result.get(section)
++        if isinstance(values, dict) and "seed" in values:
++            if values["seed"] != seed:
++                raise ValueError("unsupported non-coupled seed configuration")
++            values.pop("seed")
++    return result
+ 
+ 
+ def json_safe(value):
+@@ -78,7 +92,7 @@
+         rows.append(row)
+         if not reasons:
+             # Exact config minus explicit replicate identity only. All other settings/source retained.
+-            cfg = {k: v for k, v in r["config"].items() if k != "seed"}
++            cfg = replicate_configuration(r["config"])
+             from .ingest import digest
+ 
+             group = (

@@ -1,0 +1,11 @@
+--- a/main/experiments/exp12/run_probes.py
++++ b/main/experiments/exp12/run_probes.py
+@@ -135,6 +135,8 @@
+             wandb.log({"probe/interaction_step": int(row["interaction_step"]),
+                        "probe/env_step": int(row["interaction_step"] * self.trainer.cfg.action_repeat),
+                        "probe/check_index": int(k), "probe/loss_iqm": float(row["loss_iqm"]),
++                       "probe/score_current_iqm": float(row["score_current_iqm"]),
++                       "probe/score_fresh_iqm": float(row["score_fresh_iqm"]),
+                        "probe/ci_low": float(low), "probe/ci_high": float(high),
+                        "probe/triggered": int(row["triggered"]),
+                        **{f"probe/{name}_r{r}": float(row[f"{name}_r{r}"])
