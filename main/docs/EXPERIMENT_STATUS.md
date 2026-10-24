@@ -1,5 +1,24 @@
 # Experiment status by source
 
+## Exp96 optimizer validity audit (23 October 2026)
+
+Codex audited the frozen f597 source and PR #8 without GPU execution or changes
+to the original training/probe implementation. All 96 canonical configurations
+resolve to critic AdamW 1e-4/.01; the selected actual pen-seed5 metadata hash
+matches. The initial f297 diagnostic draft used those values; regression4f10ca9
+introduced generic3e-4/0. Historical64/64 and96/96 findings are documented as
+original-archive statistics, not results of the failed wrong-config runner. Their
+exact counts and all96 raw runtime records were not independently reprocessed
+in this Cloud audit. Preserve that evidence limitation.
+
+[Optimizer validity audit](exp96_optimizer_validity_audit.md) contains immutable
+source/line citations, executed scope, validity classifications, controlled CPU
+results and a minimal proposed GPU sensitivity screen.36 small CPU fits and
+their exact repeat demonstrate configuration sensitivity, not a production-scale
+mechanism. Job23120792's old segmentation discrepancy remains unresolved. No
+scientific conclusion, new metric, GPU allocation or experiment is approved by
+this technical audit; the owner retains scientific authority.
+
 ## Exp96 implementation status: CPU validated, GPU qualification pending (23 October 2026)
 
 Owner-authorized implementation branch `codex/exp96-diagnostic-engineering-20261023`
