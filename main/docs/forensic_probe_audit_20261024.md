@@ -1,5 +1,9 @@
 # EchoCritic forensic probe audit — 24 October 2026
 
+Published as [draft PR13](https://github.com/kaves29/scaling-drl-research/pull/13).
+Audit implementation/test commit: `30a9f6663ec21a55eca3266160418f2e2cf3983b`;
+resolve the live PR head for documentation-only followups.
+
 ## Conclusions
 
 **The large-critic DMC stability survives independent reconstruction.** Raw round

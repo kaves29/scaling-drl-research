@@ -2,7 +2,9 @@
 
 ## Forensic probe audit (24 October 2026)
 
-Separate task branch `codex/forensic-probe-audit-20261024`, based on PR11
+[Draft PR13](https://github.com/kaves29/scaling-drl-research/pull/13), tested audit
+implementation `30a9f6663ec21a55eca3266160418f2e2cf3983b`. Separate task
+branch `codex/forensic-probe-audit-20261024`, based on PR11
 `5880ec010e6ff185fcd8a9313d695ec29dda1305`. Production/frozen code unchanged;
 all four proposed corrections remain unapplied. Both real ZIPs are available
 and hash-verified:103 records,96 canonical/seven non-independent pilot records,
