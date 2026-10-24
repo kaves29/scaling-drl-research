@@ -1,5 +1,16 @@
 # Experiment status by source
 
+## Batch 2 offline campaign infrastructure (24 October 2026)
+
+Codex branch `codex/echocritic-batch2-20261024` starts at PR #10 head
+`c05d77cc9899e50e857c170faf9937e5635c3663`, preserving the #8 → #9 → #10
+stack. Additive offline ingestion, validation, statistics, plotting and opt-in
+diagnostic APIs are documented in [the usage guide](echocritic_batch2.md).
+Focused CPU suite: 81 tests passed with an isolated pinned NumPy overlay.
+Final mutation/check receipts are in the delivery. No real 103-record campaign
+export was processed, no historical artifact or training kernel was changed,
+and the original A100 segmentation-equivalence failure remains unresolved.
+
 ## Pilot root-cause corrections (23 October 2026)
 
 Codex's dedicated `codex/pilot-root-cause-corrections-20261023` branch starts
