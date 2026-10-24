@@ -1,0 +1,10 @@
+--- a/critic_metric_comparison/analyze.py
++++ b/critic_metric_comparison/analyze.py
+@@ -40,6 +40,7 @@
+   row={'environment':env,'architecture':arch,'metric':metric,'n_seeds':len(d)}
+   for label in ['initial','early','common70','late_observed','change','ratio']:
+    m,lo,hi=ci(d[metric+'_'+label]);row[label]=m;row[label+'_ci_low']=lo;row[label+'_ci_high']=hi
++   row[label+'_n_seeds']=int(np.isfinite(np.asarray(d[metric+'_'+label],float)).sum())
+   agg.append(row)
+ G=pd.DataFrame(agg);G.to_csv(R/'architecture_summaries.csv',index=False)
+ # Derived relative norms for visualization only; preserve original units and original logged values.

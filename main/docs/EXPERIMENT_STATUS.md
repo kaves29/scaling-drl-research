@@ -1,5 +1,43 @@
 # Experiment status by source
 
+## Diagnostic/probe disagreement follow-up (24 October 2026)
+
+Continuing draft PR13 on its existing branch. Read-only code/artifact review
+adds [a focused report](diagnostic_probe_disagreement_audit_20261024.md) and
+an audit reader; no production changes, new fits, training, forwards, gradients
+or GPU execution. Independent raw checks:2,784 per-seed values match supplement,
+23,512 exact single-critic q1/q2 matches, no checked metric invariant failures.
+Fourteen campaign/current source paths compared;13 are byte-identical, with
+trainer differences limited to prior success correction/provenance observations.
+All48 Myo rank declines and large-humanoid8/8 rank declines reproduce; no
+campaign defect explaining disagreement is established. Prior synthetic fit
+controls are cited as prior evidence and were not rerun under this restriction.
+Remaining need: existing original parameter/pool/normalizer/target artifacts;
+future diagnostic or measurement changes require separate authorization.
+
+## Forensic probe audit (24 October 2026)
+
+[Draft PR13](https://github.com/kaves29/scaling-drl-research/pull/13), tested audit
+implementation `30a9f6663ec21a55eca3266160418f2e2cf3983b`. Separate task
+branch `codex/forensic-probe-audit-20261024`, based on PR11
+`5880ec010e6ff185fcd8a9313d695ec29dda1305`. Production/frozen code unchanged;
+all four proposed corrections remain unapplied. Both real ZIPs are available
+and hash-verified:103 records,96 canonical/seven non-independent pilot records,
+eight crashes; independent reconstruction4,834 points/52,214 table comparisons,
+operational CI9,476 checks, seed aggregates1,188 and metric windows3,456, all pass.
+Focused pytest15 pass; nine synthetic source-bound parameter routes pass across
+campaign/pilot/current. This is CPU evidence, not production checkpoint identity
+or GPU qualification. DMC stability and fresh drift survive raw reconstruction;
+causes remain unresolved. Native PR11 ingestion/provenance and seed grouping
+remain integration work requiring separate reviewed changes. No GPU jobs,
+new parent training, production reruns, external-agent contact or merges.
+
+See [audit report](forensic_probe_audit_20261024.md),
+[source-linked dataflow](forensic_probe_dataflow.md) and
+[validation receipt](../audits/echocritic_forensic/validation_receipt.json).
+Production PR11 validation is reused explicitly, not claimed as newly rerun.
+Historical sections below retain their original availability/status snapshots.
+
 ## PR #11 integration finalization (24 October 2026)
 
 PR #11 continues b061 on `codex/echocritic-batch2-20261024`, preserving #8 →
