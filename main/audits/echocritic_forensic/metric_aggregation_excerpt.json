@@ -1,0 +1,5 @@
+{
+  "source_file_sha256": "a71f98ec79797c8119180514d7a25cb4e86f965778c6f203b91d3c62e72e722f",
+  "source_file": "critic_metric_comparison/analyze.py",
+  "excerpt": "for (env,arch),d in S.groupby(['environment','architecture']):\n for metric in metrics:\n  row={'environment':env,'architecture':arch,'metric':metric,'n_seeds':len(d)}\n  for label in ['initial','early','common70','late_observed','change','ratio']:\n   m,lo,hi=ci(d[metric+'_'+label]);row[label]=m;row[label+'_ci_low']=lo;row[label+'_ci_high']=hi\n  agg.append(row)\n"
+}

@@ -1,0 +1,1241 @@
+{
+  "additional_metric_source_snapshots_verified": 7,
+  "audit_base": "5880ec010e6ff185fcd8a9313d695ec29dda1305",
+  "audit_source_sha256": {
+    "main/audits/__init__.py": "e38be094a3eb5d2dfa0cb7bdb7219c1bd6bbb727e5ba53a009069372e0d33763",
+    "main/audits/echocritic_forensic/__init__.py": "f9e12343e79ba98a1b0abf1877785e9ee5b75e894cb3b0ee286928a25c4232c6",
+    "main/audits/echocritic_forensic/controls.py": "23b59cae617993bba11a46f2500f77106072b0d7e2557b0e423a64af31575d7d",
+    "main/audits/echocritic_forensic/evidence.py": "9f417f5283060f5d82fd4550a46dad203a96194f6bddb8b5d098f51fef6a7230",
+    "main/audits/echocritic_forensic/plots.py": "dd0e24dd85d83c8fa22e55e7385f9eee942910023eb22d1a3a0f635b1c478cd9",
+    "main/audits/echocritic_forensic/proposals.py": "b4cb27663df2350333e2b6b8df3a5d99d7877d5ae44f29443f9536d4dc65171e",
+    "main/audits/echocritic_forensic/statistics_checks.py": "68e4ae13e707cdd9f8ce86fb12682f8cb115984ab568c395c1a0ba44f05a69ea",
+    "main/tests/test_forensic_probe_audit.py": "95d927bad5ae5f327657b61b12e24aa0da9b79e3dec916a90c48f32ae22d1677"
+  },
+  "campaign": "f597ee9898e4d401912092c336c3e5330cf2fda1",
+  "controls": {
+    "campaign": {
+      "dormancy": {
+        "actual_campaign_post_relu_activity": "unavailable without original activations/parameters",
+        "historical_dense_preactivation_dormancy_percent": 0.0,
+        "interpretation": "Different measured populations; low historical DR does not establish post-ReLU activity",
+        "post_relu_expansion_inactive_percent": 100.0
+      },
+      "evidence_type": "synthetic CPU controls, not original campaign data",
+      "revision": "f597ee9898e4d401912092c336c3e5330cf2fda1",
+      "routes": [
+        {
+          "changed_check_changes_result": true,
+          "checkpoint_params_optimizer_normalizer_roundtrip": true,
+          "first_and_followup_1000_indices_match": true,
+          "fixed_task_repeat_bitwise": true,
+          "fresh_hash_unchanged": true,
+          "fresh_prediction": 1.0,
+          "fresh_scores_check1": [
+            -0.02660226821899414,
+            -0.16754016280174255
+          ],
+          "fresh_scores_check2": [
+            -0.0008147358894348145,
+            -0.0042803287506103516
+          ],
+          "global_rng_and_replay_unchanged": true,
+          "normalization_once_matches_expected": true,
+          "same_inputs_base_and_indices_within_pair": true,
+          "seed": 1,
+          "trained_prediction": [
+            3.000000476837158,
+            4.999999523162842,
+            3.000000476837158,
+            4.999999523162842,
+            3.000000476837158,
+            4.999999523162842,
+            3.000000476837158,
+            4.999999523162842
+          ],
+          "training_params_optimizer_unchanged_by_probe": true
+        },
+        {
+          "changed_check_changes_result": true,
+          "checkpoint_params_optimizer_normalizer_roundtrip": true,
+          "first_and_followup_1000_indices_match": true,
+          "fixed_task_repeat_bitwise": true,
+          "fresh_hash_unchanged": true,
+          "fresh_prediction": 1.0,
+          "fresh_scores_check1": [
+            -0.0003468245267868042,
+            -0.0006867051124572754
+          ],
+          "fresh_scores_check2": [
+            -0.003818899393081665,
+            -0.0940968468785286
+          ],
+          "global_rng_and_replay_unchanged": true,
+          "normalization_once_matches_expected": true,
+          "same_inputs_base_and_indices_within_pair": true,
+          "seed": 3,
+          "trained_prediction": [
+            3.000000476837158,
+            4.999999523162842,
+            3.000000476837158,
+            4.999999523162842,
+            3.000000476837158,
+            4.999999523162842,
+            3.000000476837158,
+            4.999999523162842
+          ],
+          "training_params_optimizer_unchanged_by_probe": true
+        },
+        {
+          "changed_check_changes_result": true,
+          "checkpoint_params_optimizer_normalizer_roundtrip": true,
+          "first_and_followup_1000_indices_match": true,
+          "fixed_task_repeat_bitwise": true,
+          "fresh_hash_unchanged": true,
+          "fresh_prediction": 1.0,
+          "fresh_scores_check1": [
+            -0.004491060972213745,
+            -0.000319063663482666
+          ],
+          "fresh_scores_check2": [
+            -0.06013694405555725,
+            -0.0007625222206115723
+          ],
+          "global_rng_and_replay_unchanged": true,
+          "normalization_once_matches_expected": true,
+          "same_inputs_base_and_indices_within_pair": true,
+          "seed": 8,
+          "trained_prediction": [
+            3.000000476837158,
+            4.999999523162842,
+            3.000000476837158,
+            4.999999523162842,
+            3.000000476837158,
+            4.999999523162842,
+            3.000000476837158,
+            4.999999523162842
+          ],
+          "training_params_optimizer_unchanged_by_probe": true
+        }
+      ],
+      "runtime": {
+        "backend_platform_version": "<unknown>",
+        "compilation_cache_dir": null,
+        "device_kind": "cpu",
+        "jax": "0.4.34",
+        "jax_cuda12_pjrt": null,
+        "jax_cuda12_plugin": null,
+        "jaxlib": "0.4.34",
+        "matmul_precision": null,
+        "platform": "cpu"
+      },
+      "scalar": {
+        "float32_translation": [
+          {
+            "base_variance": 0.0625,
+            "bias": 0.0,
+            "centred_real_arithmetic_mse": 0.0625,
+            "materialized_target_variance": 0.0625,
+            "source_zero_lr_pool_mse": 0.0625
+          },
+          {
+            "base_variance": 0.0625,
+            "bias": 2000.0,
+            "centred_real_arithmetic_mse": 0.0625,
+            "materialized_target_variance": 0.0625,
+            "source_zero_lr_pool_mse": 0.0625
+          },
+          {
+            "base_variance": 0.0625,
+            "bias": 16777216.0,
+            "centred_real_arithmetic_mse": 0.0625,
+            "materialized_target_variance": 0.0,
+            "source_zero_lr_pool_mse": 0.0
+          }
+        ],
+        "one_update": {
+          "analytic_fp32_final_mse": 0.9998040199279785,
+          "preupdate_minibatch_loss": 1.0,
+          "source_final_mse": 0.9998040199279785
+        },
+        "optimizer": {
+          "b1": 0.9,
+          "b2": 0.999,
+          "eps": 1e-08,
+          "eps_root": 0.0,
+          "learning_rate": 0.0001,
+          "mask": null,
+          "name": "optax.adamw",
+          "version": "0.2.3",
+          "weight_decay": 0.01
+        },
+        "own_offset_weight_decay": {
+          "large_bias_final": 0.06250381469726562,
+          "same_initial_mse": 0.0625,
+          "zero_bias_final": 0.0625
+        },
+        "segmentation": {
+          "losses_and_final_mse_bitwise_equal": true,
+          "optimizer_reset_negative_control_differs": true,
+          "steps": 2000
+        },
+        "zero_lr": {
+          "baseline": 2.5,
+          "final_pool_mse": 2.5,
+          "initial_pool_mse": 2.5,
+          "params_unchanged": true,
+          "preupdate_minibatch_losses": [
+            4.0,
+            1.0,
+            1.0,
+            4.0
+          ],
+          "score": 0.0
+        }
+      },
+      "warmup_flow": {
+        "pool_normalization_exactly_once": true,
+        "pool_sampling_does_not_update_statistics": true,
+        "raw_observations_preserved_in_replay": true,
+        "sac_updates": 0,
+        "transitions": 4
+      }
+    },
+    "current": {
+      "dormancy": {
+        "actual_campaign_post_relu_activity": "unavailable without original activations/parameters",
+        "historical_dense_preactivation_dormancy_percent": 0.0,
+        "interpretation": "Different measured populations; low historical DR does not establish post-ReLU activity",
+        "post_relu_expansion_inactive_percent": 100.0
+      },
+      "evidence_type": "synthetic CPU controls, not original campaign data",
+      "revision": "f8ad82f064547c76e12539804c98be75b32656d8",
+      "routes": [
+        {
+          "changed_check_changes_result": true,
+          "checkpoint_params_optimizer_normalizer_roundtrip": true,
+          "first_and_followup_1000_indices_match": true,
+          "fixed_task_repeat_bitwise": true,
+          "fresh_hash_unchanged": true,
+          "fresh_prediction": 1.0,
+          "fresh_scores_check1": [
+            -0.02660226821899414,
+            -0.16754016280174255
+          ],
+          "fresh_scores_check2": [
+            -0.0008147358894348145,
+            -0.0042803287506103516
+          ],
+          "global_rng_and_replay_unchanged": true,
+          "normalization_once_matches_expected": true,
+          "same_inputs_base_and_indices_within_pair": true,
+          "seed": 1,
+          "trained_prediction": [
+            3.000000476837158,
+            4.999999523162842,
+            3.000000476837158,
+            4.999999523162842,
+            3.000000476837158,
+            4.999999523162842,
+            3.000000476837158,
+            4.999999523162842
+          ],
+          "training_params_optimizer_unchanged_by_probe": true
+        },
+        {
+          "changed_check_changes_result": true,
+          "checkpoint_params_optimizer_normalizer_roundtrip": true,
+          "first_and_followup_1000_indices_match": true,
+          "fixed_task_repeat_bitwise": true,
+          "fresh_hash_unchanged": true,
+          "fresh_prediction": 1.0,
+          "fresh_scores_check1": [
+            -0.0003468245267868042,
+            -0.0006867051124572754
+          ],
+          "fresh_scores_check2": [
+            -0.003818899393081665,
+            -0.0940968468785286
+          ],
+          "global_rng_and_replay_unchanged": true,
+          "normalization_once_matches_expected": true,
+          "same_inputs_base_and_indices_within_pair": true,
+          "seed": 3,
+          "trained_prediction": [
+            3.000000476837158,
+            4.999999523162842,
+            3.000000476837158,
+            4.999999523162842,
+            3.000000476837158,
+            4.999999523162842,
+            3.000000476837158,
+            4.999999523162842
+          ],
+          "training_params_optimizer_unchanged_by_probe": true
+        },
+        {
+          "changed_check_changes_result": true,
+          "checkpoint_params_optimizer_normalizer_roundtrip": true,
+          "first_and_followup_1000_indices_match": true,
+          "fixed_task_repeat_bitwise": true,
+          "fresh_hash_unchanged": true,
+          "fresh_prediction": 1.0,
+          "fresh_scores_check1": [
+            -0.004491060972213745,
+            -0.000319063663482666
+          ],
+          "fresh_scores_check2": [
+            -0.06013694405555725,
+            -0.0007625222206115723
+          ],
+          "global_rng_and_replay_unchanged": true,
+          "normalization_once_matches_expected": true,
+          "same_inputs_base_and_indices_within_pair": true,
+          "seed": 8,
+          "trained_prediction": [
+            3.000000476837158,
+            4.999999523162842,
+            3.000000476837158,
+            4.999999523162842,
+            3.000000476837158,
+            4.999999523162842,
+            3.000000476837158,
+            4.999999523162842
+          ],
+          "training_params_optimizer_unchanged_by_probe": true
+        }
+      ],
+      "runtime": {
+        "backend_platform_version": "<unknown>",
+        "compilation_cache_dir": null,
+        "device_kind": "cpu",
+        "jax": "0.4.34",
+        "jax_cuda12_pjrt": null,
+        "jax_cuda12_plugin": null,
+        "jaxlib": "0.4.34",
+        "matmul_precision": null,
+        "platform": "cpu"
+      },
+      "scalar": {
+        "float32_translation": [
+          {
+            "base_variance": 0.0625,
+            "bias": 0.0,
+            "centred_real_arithmetic_mse": 0.0625,
+            "materialized_target_variance": 0.0625,
+            "source_zero_lr_pool_mse": 0.0625
+          },
+          {
+            "base_variance": 0.0625,
+            "bias": 2000.0,
+            "centred_real_arithmetic_mse": 0.0625,
+            "materialized_target_variance": 0.0625,
+            "source_zero_lr_pool_mse": 0.0625
+          },
+          {
+            "base_variance": 0.0625,
+            "bias": 16777216.0,
+            "centred_real_arithmetic_mse": 0.0625,
+            "materialized_target_variance": 0.0,
+            "source_zero_lr_pool_mse": 0.0
+          }
+        ],
+        "one_update": {
+          "analytic_fp32_final_mse": 0.9998040199279785,
+          "preupdate_minibatch_loss": 1.0,
+          "source_final_mse": 0.9998040199279785
+        },
+        "optimizer": {
+          "b1": 0.9,
+          "b2": 0.999,
+          "eps": 1e-08,
+          "eps_root": 0.0,
+          "learning_rate": 0.0001,
+          "mask": null,
+          "name": "optax.adamw",
+          "version": "0.2.3",
+          "weight_decay": 0.01
+        },
+        "own_offset_weight_decay": {
+          "large_bias_final": 0.06250381469726562,
+          "same_initial_mse": 0.0625,
+          "zero_bias_final": 0.0625
+        },
+        "segmentation": {
+          "losses_and_final_mse_bitwise_equal": true,
+          "optimizer_reset_negative_control_differs": true,
+          "steps": 2000
+        },
+        "zero_lr": {
+          "baseline": 2.5,
+          "final_pool_mse": 2.5,
+          "initial_pool_mse": 2.5,
+          "params_unchanged": true,
+          "preupdate_minibatch_losses": [
+            4.0,
+            1.0,
+            1.0,
+            4.0
+          ],
+          "score": 0.0
+        }
+      }
+    },
+    "pilot": {
+      "dormancy": {
+        "actual_campaign_post_relu_activity": "unavailable without original activations/parameters",
+        "historical_dense_preactivation_dormancy_percent": 0.0,
+        "interpretation": "Different measured populations; low historical DR does not establish post-ReLU activity",
+        "post_relu_expansion_inactive_percent": 100.0
+      },
+      "evidence_type": "synthetic CPU controls, not original campaign data",
+      "revision": "f8619dd5f494399d9febc79fc9092010234c714d",
+      "routes": [
+        {
+          "changed_check_changes_result": true,
+          "checkpoint_params_optimizer_normalizer_roundtrip": true,
+          "first_and_followup_1000_indices_match": true,
+          "fixed_task_repeat_bitwise": true,
+          "fresh_hash_unchanged": true,
+          "fresh_prediction": 1.0,
+          "fresh_scores_check1": [
+            -0.02660226821899414,
+            -0.16754016280174255
+          ],
+          "fresh_scores_check2": [
+            -0.0008147358894348145,
+            -0.0042803287506103516
+          ],
+          "global_rng_and_replay_unchanged": true,
+          "normalization_once_matches_expected": true,
+          "same_inputs_base_and_indices_within_pair": true,
+          "seed": 1,
+          "trained_prediction": [
+            3.000000476837158,
+            4.999999523162842,
+            3.000000476837158,
+            4.999999523162842,
+            3.000000476837158,
+            4.999999523162842,
+            3.000000476837158,
+            4.999999523162842
+          ],
+          "training_params_optimizer_unchanged_by_probe": true
+        },
+        {
+          "changed_check_changes_result": true,
+          "checkpoint_params_optimizer_normalizer_roundtrip": true,
+          "first_and_followup_1000_indices_match": true,
+          "fixed_task_repeat_bitwise": true,
+          "fresh_hash_unchanged": true,
+          "fresh_prediction": 1.0,
+          "fresh_scores_check1": [
+            -0.0003468245267868042,
+            -0.0006867051124572754
+          ],
+          "fresh_scores_check2": [
+            -0.003818899393081665,
+            -0.0940968468785286
+          ],
+          "global_rng_and_replay_unchanged": true,
+          "normalization_once_matches_expected": true,
+          "same_inputs_base_and_indices_within_pair": true,
+          "seed": 3,
+          "trained_prediction": [
+            3.000000476837158,
+            4.999999523162842,
+            3.000000476837158,
+            4.999999523162842,
+            3.000000476837158,
+            4.999999523162842,
+            3.000000476837158,
+            4.999999523162842
+          ],
+          "training_params_optimizer_unchanged_by_probe": true
+        },
+        {
+          "changed_check_changes_result": true,
+          "checkpoint_params_optimizer_normalizer_roundtrip": true,
+          "first_and_followup_1000_indices_match": true,
+          "fixed_task_repeat_bitwise": true,
+          "fresh_hash_unchanged": true,
+          "fresh_prediction": 1.0,
+          "fresh_scores_check1": [
+            -0.004491060972213745,
+            -0.000319063663482666
+          ],
+          "fresh_scores_check2": [
+            -0.06013694405555725,
+            -0.0007625222206115723
+          ],
+          "global_rng_and_replay_unchanged": true,
+          "normalization_once_matches_expected": true,
+          "same_inputs_base_and_indices_within_pair": true,
+          "seed": 8,
+          "trained_prediction": [
+            3.000000476837158,
+            4.999999523162842,
+            3.000000476837158,
+            4.999999523162842,
+            3.000000476837158,
+            4.999999523162842,
+            3.000000476837158,
+            4.999999523162842
+          ],
+          "training_params_optimizer_unchanged_by_probe": true
+        }
+      ],
+      "runtime": {
+        "backend_platform_version": "<unknown>",
+        "compilation_cache_dir": null,
+        "device_kind": "cpu",
+        "jax": "0.4.34",
+        "jax_cuda12_pjrt": null,
+        "jax_cuda12_plugin": null,
+        "jaxlib": "0.4.34",
+        "matmul_precision": null,
+        "platform": "cpu"
+      },
+      "scalar": {
+        "float32_translation": [
+          {
+            "base_variance": 0.0625,
+            "bias": 0.0,
+            "centred_real_arithmetic_mse": 0.0625,
+            "materialized_target_variance": 0.0625,
+            "source_zero_lr_pool_mse": 0.0625
+          },
+          {
+            "base_variance": 0.0625,
+            "bias": 2000.0,
+            "centred_real_arithmetic_mse": 0.0625,
+            "materialized_target_variance": 0.0625,
+            "source_zero_lr_pool_mse": 0.0625
+          },
+          {
+            "base_variance": 0.0625,
+            "bias": 16777216.0,
+            "centred_real_arithmetic_mse": 0.0625,
+            "materialized_target_variance": 0.0,
+            "source_zero_lr_pool_mse": 0.0
+          }
+        ],
+        "one_update": {
+          "analytic_fp32_final_mse": 0.9998040199279785,
+          "preupdate_minibatch_loss": 1.0,
+          "source_final_mse": 0.9998040199279785
+        },
+        "optimizer": {
+          "b1": 0.9,
+          "b2": 0.999,
+          "eps": 1e-08,
+          "eps_root": 0.0,
+          "learning_rate": 0.0001,
+          "mask": null,
+          "name": "optax.adamw",
+          "version": "0.2.3",
+          "weight_decay": 0.01
+        },
+        "own_offset_weight_decay": {
+          "large_bias_final": 0.06250381469726562,
+          "same_initial_mse": 0.0625,
+          "zero_bias_final": 0.0625
+        },
+        "segmentation": {
+          "losses_and_final_mse_bitwise_equal": true,
+          "optimizer_reset_negative_control_differs": true,
+          "steps": 2000
+        },
+        "zero_lr": {
+          "baseline": 2.5,
+          "final_pool_mse": 2.5,
+          "initial_pool_mse": 2.5,
+          "params_unchanged": true,
+          "preupdate_minibatch_losses": [
+            4.0,
+            1.0,
+            1.0,
+            4.0
+          ],
+          "score": 0.0
+        }
+      }
+    }
+  },
+  "focused_pytest": {
+    "failed": 0,
+    "log": "regressions-delivery.log",
+    "passed": 15
+  },
+  "gpu_jobs": 0,
+  "limitations": [
+    "No original production parameters, replay pools, normalizer snapshots, targets or minibatch indices",
+    "Original GPU segmented-equivalence failure remains unresolved",
+    "Initial-reference directory/PDF absent in supplied ZIPs",
+    "Real native CLI provenance/seed-grouping integration unresolved"
+  ],
+  "original_production_checkpoint_identity_verified": false,
+  "patches_applicable": true,
+  "patches_applied": false,
+  "pilot": "f8619dd5f494399d9febc79fc9092010234c714d",
+  "reconstruction": {
+    "archived_probe": {
+      "arrays": {
+        "current_b": {
+          "dtype": "float32",
+          "shape": [
+            10
+          ]
+        },
+        "current_final_loss": {
+          "dtype": "float32",
+          "shape": [
+            10
+          ]
+        },
+        "current_losses": {
+          "dtype": "float32",
+          "shape": [
+            10,
+            2000
+          ]
+        },
+        "current_offset": {
+          "dtype": "float32",
+          "shape": [
+            10
+          ]
+        },
+        "current_score": {
+          "dtype": "float32",
+          "shape": [
+            10
+          ]
+        },
+        "fresh_b": {
+          "dtype": "float32",
+          "shape": [
+            10
+          ]
+        },
+        "fresh_final_loss": {
+          "dtype": "float32",
+          "shape": [
+            10
+          ]
+        },
+        "fresh_losses": {
+          "dtype": "float32",
+          "shape": [
+            10,
+            2000
+          ]
+        },
+        "fresh_offset": {
+          "dtype": "float32",
+          "shape": [
+            10
+          ]
+        },
+        "fresh_score": {
+          "dtype": "float32",
+          "shape": [
+            10
+          ]
+        }
+      },
+      "can_reconstruct": [
+        "stored FP32 b-minus-final-MSE scores",
+        "W&B round binding",
+        "2000 changing-minibatch pre-update losses",
+        "per-round offsets and shared variance"
+      ],
+      "cannot_reconstruct": [
+        "actual parameter hashes",
+        "original replay/normalizer",
+        "numeric targets/indices",
+        "full-pool initial/intermediate MSE",
+        "optimizer states or exact GPU execution"
+      ],
+      "check": 50,
+      "current": {
+        "curve_finite": true,
+        "last_minibatch_score_differs_from_actual_max": 7.616615295410156,
+        "median_final_pool_mse": 14.801420211791992,
+        "median_initial_minibatch_mse": 164001.53125,
+        "median_offset": 1998.7064208984375,
+        "score_identity_exact": true,
+        "wandb_score_max_error": 0.0
+      },
+      "file": "D2W512_myo-pen-twirl_seed5_check50.npz",
+      "fresh": {
+        "curve_finite": true,
+        "last_minibatch_score_differs_from_actual_max": 0.05062437057495117,
+        "median_final_pool_mse": 0.1422702968120575,
+        "median_initial_minibatch_mse": 0.8756130933761597,
+        "median_offset": -0.4285156726837158,
+        "score_identity_exact": true,
+        "wandb_score_max_error": 0.0
+      },
+      "run_id": "63b389qb",
+      "sha256": "66a223890220be7aa9d022e9cdfbcd90909d6580132e20315492a0ff307839ca",
+      "shared_variances_exact": true
+    },
+    "campaign": 96,
+    "common70_runs": 96,
+    "derived_point_checks": 52214,
+    "derived_point_failures": [],
+    "duplicate_pilot_trajectories": [
+      {
+        "campaign": "3hfsq13w",
+        "differences": [],
+        "exact_matches": 7989,
+        "pilot": "ecls9oz9",
+        "shared_values": 7989
+      },
+      {
+        "campaign": "7egofbq8",
+        "differences": [],
+        "exact_matches": 7989,
+        "pilot": "eoja0jna",
+        "shared_values": 7989
+      },
+      {
+        "campaign": "onrxf1xo",
+        "differences": [],
+        "exact_matches": 7989,
+        "pilot": "es456sr1",
+        "shared_values": 7989
+      },
+      {
+        "campaign": "lcmc7x3b",
+        "differences": [],
+        "exact_matches": 7989,
+        "pilot": "hy3xeazk",
+        "shared_values": 7989
+      },
+      {
+        "campaign": "5z1wpev1",
+        "differences": [],
+        "exact_matches": 7989,
+        "pilot": "iwapnp9m",
+        "shared_values": 7989
+      },
+      {
+        "campaign": "jbcstd01",
+        "differences": [],
+        "exact_matches": 7989,
+        "pilot": "xcyqf9a1",
+        "shared_values": 7989
+      },
+      {
+        "campaign": "86itjkh3",
+        "differences": [],
+        "exact_matches": 7989,
+        "pilot": "xthjkzd5",
+        "shared_values": 7989
+      }
+    ],
+    "fresh_declines_at70": 96,
+    "initial_reference_directory_present": false,
+    "interpretation": "Source and numeric data validation only; no causal mechanism or production checkpoint identity inferred",
+    "max_derived_point_error": 3.552713678800501e-15,
+    "max_source_iqm_error": 1.7763568394002505e-15,
+    "nonzero_probe_points": 4738,
+    "numerical_checks": 4834,
+    "numerical_failures": [],
+    "pairing_nonadditivity_max": 0.05248989462852549,
+    "pilot": 7,
+    "probe_points": 4834,
+    "records": 103,
+    "source_snapshots": [
+      {
+        "commit": "f597ee9898e4d401912092c336c3e5330cf2fda1",
+        "passed": true,
+        "path": "main/configs/base_exp12.yaml",
+        "sha256": "9662ecf7376a25f13690a528d8ec3b1f41a35b40430b04decb583ed9f5d54649"
+      },
+      {
+        "commit": "f597ee9898e4d401912092c336c3e5330cf2fda1",
+        "passed": true,
+        "path": "main/experiments/exp12/__init__.py",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "commit": "f597ee9898e4d401912092c336c3e5330cf2fda1",
+        "passed": true,
+        "path": "main/experiments/exp12/diagnostics.py",
+        "sha256": "efcbf1f67aa1db78c95eab55605c4faa26024e05d0e62a229ae8ea096581f47f"
+      },
+      {
+        "commit": "f597ee9898e4d401912092c336c3e5330cf2fda1",
+        "passed": true,
+        "path": "main/experiments/exp12/envs.py",
+        "sha256": "856a6982591855c009e6b4117b30d7f54f17039606802d42ca31b2c3cf823594"
+      },
+      {
+        "commit": "f597ee9898e4d401912092c336c3e5330cf2fda1",
+        "passed": true,
+        "path": "main/experiments/exp12/exp2_ledger.py",
+        "sha256": "214d4dae360318b2828d5448595b47b4a877da100f90b4efe723a9887145c0b7"
+      },
+      {
+        "commit": "f597ee9898e4d401912092c336c3e5330cf2fda1",
+        "passed": true,
+        "path": "main/experiments/exp12/fork.py",
+        "sha256": "72c73032720f54883d12a74ee33ec405ac7e2af2b80184410d126935c9b34e35"
+      },
+      {
+        "commit": "f597ee9898e4d401912092c336c3e5330cf2fda1",
+        "passed": true,
+        "path": "main/experiments/exp12/injection.py",
+        "sha256": "188de46db8b77c3e3cb20782cf4287c7fd543ffda757b65dc13c4465aa04c855"
+      },
+      {
+        "commit": "f597ee9898e4d401912092c336c3e5330cf2fda1",
+        "passed": true,
+        "path": "main/experiments/exp12/ledger.py",
+        "sha256": "6cfb50f754d28ffab7df6be5f47fd3be2732bfcf468deeb039201801c299a6fc"
+      },
+      {
+        "commit": "f597ee9898e4d401912092c336c3e5330cf2fda1",
+        "passed": true,
+        "path": "main/experiments/exp12/m_selection.py",
+        "sha256": "6a201bbeccda0684ee2047ffb7915876383c3200a216020282c04b987e7ea601"
+      },
+      {
+        "commit": "f597ee9898e4d401912092c336c3e5330cf2fda1",
+        "passed": true,
+        "path": "main/experiments/exp12/precision.py",
+        "sha256": "5c945bb1c8838870673072bb11aabab1ab8d2a33785ce570e039737122b951c8"
+      },
+      {
+        "commit": "f597ee9898e4d401912092c336c3e5330cf2fda1",
+        "passed": true,
+        "path": "main/experiments/exp12/probe.py",
+        "sha256": "a9ef945e194e6b2c6789834e80d78aa1f67c0c0aeba2c327b42bddd432393250"
+      },
+      {
+        "commit": "f597ee9898e4d401912092c336c3e5330cf2fda1",
+        "passed": true,
+        "path": "main/experiments/exp12/run_probes.py",
+        "sha256": "03ff2c2b45dca81c585475e3653147dc02a0cd7770a8186b2e20cd92684e7bb8"
+      },
+      {
+        "commit": "f597ee9898e4d401912092c336c3e5330cf2fda1",
+        "passed": true,
+        "path": "main/experiments/exp12/runtime_trace.py",
+        "sha256": "9d1a70a8b0389559a745e408921c5ff760596dbd67179286f787cf47dc583894"
+      },
+      {
+        "commit": "f597ee9898e4d401912092c336c3e5330cf2fda1",
+        "passed": true,
+        "path": "main/experiments/exp12/state.py",
+        "sha256": "c81dd7361e99b62ea40fd16d9037e9954d1008955d540a651a97c07cccd19cfc"
+      },
+      {
+        "commit": "f597ee9898e4d401912092c336c3e5330cf2fda1",
+        "passed": true,
+        "path": "main/experiments/exp12/trainer.py",
+        "sha256": "3a2109b375627b80732c87c21248ffedb8058891360ef82279c640c3429f284e"
+      },
+      {
+        "commit": "f597ee9898e4d401912092c336c3e5330cf2fda1",
+        "passed": true,
+        "path": "main/experiments/exp12/trigger.py",
+        "sha256": "a1ca86de3c078293dbdfb57bb46502baa1b4e99a3d3413f0743363f735d055be"
+      },
+      {
+        "commit": "f597ee9898e4d401912092c336c3e5330cf2fda1",
+        "passed": true,
+        "path": "main/experiments/exp12/twin.py",
+        "sha256": "92fe427382203eb4e21142d87fb8a6a422ab8712950a06efae015610881884f4"
+      },
+      {
+        "commit": "f597ee9898e4d401912092c336c3e5330cf2fda1",
+        "passed": true,
+        "path": "main/scale_rl/agents/sac/__init__.py",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "commit": "f597ee9898e4d401912092c336c3e5330cf2fda1",
+        "passed": true,
+        "path": "main/scale_rl/agents/sac/sac_agent.py",
+        "sha256": "b1df406731b8db48a14f1e38e0e5709139c350c5649a826dbf79f7f56a95747c"
+      },
+      {
+        "commit": "f597ee9898e4d401912092c336c3e5330cf2fda1",
+        "passed": true,
+        "path": "main/scale_rl/agents/sac/sac_network.py",
+        "sha256": "0c9318286397874d207fc9f64ee4215508352eba0b2c611ebe443d33ccf05232"
+      },
+      {
+        "commit": "f597ee9898e4d401912092c336c3e5330cf2fda1",
+        "passed": true,
+        "path": "main/scale_rl/agents/sac/sac_update.py",
+        "sha256": "6245dba06c7623b09003d9a03418a1b8d60694092833639ce063b8452974dbd8"
+      },
+      {
+        "commit": "f597ee9898e4d401912092c336c3e5330cf2fda1",
+        "passed": true,
+        "path": "main/scale_rl/common/logger.py",
+        "sha256": "401633984e2f6c80a8f7c0269909c706ab24aacb485d16cd43a50931d3e4f83a"
+      },
+      {
+        "commit": "f597ee9898e4d401912092c336c3e5330cf2fda1",
+        "passed": true,
+        "path": "main/scale_rl/networks/trainer.py",
+        "sha256": "6161830e674d0104e32e62178593221f1c581d7803c94d1cb7997ea49117ce3a"
+      },
+      {
+        "commit": "f597ee9898e4d401912092c336c3e5330cf2fda1",
+        "passed": true,
+        "path": "main/scripts/exp96_campaign.py",
+        "sha256": "e1dfb36d211b417a1c5acf8ccf2b06960652b3a1f4451f87405c4c8255784998"
+      },
+      {
+        "commit": "f597ee9898e4d401912092c336c3e5330cf2fda1",
+        "passed": true,
+        "path": "main/tests/test_exp96_campaign.py",
+        "sha256": "cf1b61ab2b3fa98e423cb28a599ae7886b4e9c4aa49844934f77fd346be74fa1"
+      },
+      {
+        "commit": "f597ee9898e4d401912092c336c3e5330cf2fda1",
+        "passed": true,
+        "path": "main/tests/test_run_metadata.py",
+        "sha256": "12bf50f91b62d9a75035a2bb5fdb7bf66937a6a7317a4ae7873e49e5430d30ea"
+      },
+      {
+        "commit": "f597ee9898e4d401912092c336c3e5330cf2fda1",
+        "passed": true,
+        "path": "main/utils/run_metadata.py",
+        "sha256": "1ae022275a1280ad24031c9630742131d859c1c1a5fd34b438e437225a882e47"
+      },
+      {
+        "commit": "f8619dd5f494399d9febc79fc9092010234c714d",
+        "passed": true,
+        "path": "main/configs/base_exp12.yaml",
+        "sha256": "9662ecf7376a25f13690a528d8ec3b1f41a35b40430b04decb583ed9f5d54649"
+      },
+      {
+        "commit": "f8619dd5f494399d9febc79fc9092010234c714d",
+        "passed": true,
+        "path": "main/experiments/exp12/__init__.py",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "commit": "f8619dd5f494399d9febc79fc9092010234c714d",
+        "passed": true,
+        "path": "main/experiments/exp12/diagnostics.py",
+        "sha256": "efcbf1f67aa1db78c95eab55605c4faa26024e05d0e62a229ae8ea096581f47f"
+      },
+      {
+        "commit": "f8619dd5f494399d9febc79fc9092010234c714d",
+        "passed": true,
+        "path": "main/experiments/exp12/envs.py",
+        "sha256": "856a6982591855c009e6b4117b30d7f54f17039606802d42ca31b2c3cf823594"
+      },
+      {
+        "commit": "f8619dd5f494399d9febc79fc9092010234c714d",
+        "passed": true,
+        "path": "main/experiments/exp12/exp2_ledger.py",
+        "sha256": "214d4dae360318b2828d5448595b47b4a877da100f90b4efe723a9887145c0b7"
+      },
+      {
+        "commit": "f8619dd5f494399d9febc79fc9092010234c714d",
+        "passed": true,
+        "path": "main/experiments/exp12/fork.py",
+        "sha256": "72c73032720f54883d12a74ee33ec405ac7e2af2b80184410d126935c9b34e35"
+      },
+      {
+        "commit": "f8619dd5f494399d9febc79fc9092010234c714d",
+        "passed": true,
+        "path": "main/experiments/exp12/injection.py",
+        "sha256": "188de46db8b77c3e3cb20782cf4287c7fd543ffda757b65dc13c4465aa04c855"
+      },
+      {
+        "commit": "f8619dd5f494399d9febc79fc9092010234c714d",
+        "passed": true,
+        "path": "main/experiments/exp12/ledger.py",
+        "sha256": "0858510a82a411d6878b347c785d410d1c7212102b0e9c6305c724d2bc90fc5f"
+      },
+      {
+        "commit": "f8619dd5f494399d9febc79fc9092010234c714d",
+        "passed": true,
+        "path": "main/experiments/exp12/m_selection.py",
+        "sha256": "6a201bbeccda0684ee2047ffb7915876383c3200a216020282c04b987e7ea601"
+      },
+      {
+        "commit": "f8619dd5f494399d9febc79fc9092010234c714d",
+        "passed": true,
+        "path": "main/experiments/exp12/precision.py",
+        "sha256": "5c945bb1c8838870673072bb11aabab1ab8d2a33785ce570e039737122b951c8"
+      },
+      {
+        "commit": "f8619dd5f494399d9febc79fc9092010234c714d",
+        "passed": true,
+        "path": "main/experiments/exp12/probe.py",
+        "sha256": "8a7237ebc27394cc3f6271e9c63160afee703620d1adbda4c290eab7fe584698"
+      },
+      {
+        "commit": "f8619dd5f494399d9febc79fc9092010234c714d",
+        "passed": true,
+        "path": "main/experiments/exp12/run_probes.py",
+        "sha256": "82119768d02a97e80e03a3c626a2e85dfb2fdd430ecd43ed9d950d090d49f036"
+      },
+      {
+        "commit": "f8619dd5f494399d9febc79fc9092010234c714d",
+        "passed": true,
+        "path": "main/experiments/exp12/runtime_trace.py",
+        "sha256": "9d1a70a8b0389559a745e408921c5ff760596dbd67179286f787cf47dc583894"
+      },
+      {
+        "commit": "f8619dd5f494399d9febc79fc9092010234c714d",
+        "passed": true,
+        "path": "main/experiments/exp12/state.py",
+        "sha256": "c81dd7361e99b62ea40fd16d9037e9954d1008955d540a651a97c07cccd19cfc"
+      },
+      {
+        "commit": "f8619dd5f494399d9febc79fc9092010234c714d",
+        "passed": true,
+        "path": "main/experiments/exp12/trainer.py",
+        "sha256": "3a2109b375627b80732c87c21248ffedb8058891360ef82279c640c3429f284e"
+      },
+      {
+        "commit": "f8619dd5f494399d9febc79fc9092010234c714d",
+        "passed": true,
+        "path": "main/experiments/exp12/trigger.py",
+        "sha256": "ebdbd282f9baa276b64fe18b98b63f605106c60665407e6cd511bfca5715cc4c"
+      },
+      {
+        "commit": "f8619dd5f494399d9febc79fc9092010234c714d",
+        "passed": true,
+        "path": "main/experiments/exp12/twin.py",
+        "sha256": "92fe427382203eb4e21142d87fb8a6a422ab8712950a06efae015610881884f4"
+      },
+      {
+        "commit": "f8619dd5f494399d9febc79fc9092010234c714d",
+        "passed": true,
+        "path": "main/scale_rl/agents/sac/__init__.py",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "commit": "f8619dd5f494399d9febc79fc9092010234c714d",
+        "passed": true,
+        "path": "main/scale_rl/agents/sac/sac_agent.py",
+        "sha256": "b1df406731b8db48a14f1e38e0e5709139c350c5649a826dbf79f7f56a95747c"
+      },
+      {
+        "commit": "f8619dd5f494399d9febc79fc9092010234c714d",
+        "passed": true,
+        "path": "main/scale_rl/agents/sac/sac_network.py",
+        "sha256": "0c9318286397874d207fc9f64ee4215508352eba0b2c611ebe443d33ccf05232"
+      },
+      {
+        "commit": "f8619dd5f494399d9febc79fc9092010234c714d",
+        "passed": true,
+        "path": "main/scale_rl/agents/sac/sac_update.py",
+        "sha256": "6245dba06c7623b09003d9a03418a1b8d60694092833639ce063b8452974dbd8"
+      },
+      {
+        "commit": "f8619dd5f494399d9febc79fc9092010234c714d",
+        "passed": true,
+        "path": "main/scale_rl/common/logger.py",
+        "sha256": "401633984e2f6c80a8f7c0269909c706ab24aacb485d16cd43a50931d3e4f83a"
+      },
+      {
+        "commit": "f8619dd5f494399d9febc79fc9092010234c714d",
+        "passed": true,
+        "path": "main/scale_rl/networks/trainer.py",
+        "sha256": "6161830e674d0104e32e62178593221f1c581d7803c94d1cb7997ea49117ce3a"
+      },
+      {
+        "commit": "f8619dd5f494399d9febc79fc9092010234c714d",
+        "passed": true,
+        "path": "main/tests/test_run_metadata.py",
+        "sha256": "12bf50f91b62d9a75035a2bb5fdb7bf66937a6a7317a4ae7873e49e5430d30ea"
+      },
+      {
+        "commit": "f8619dd5f494399d9febc79fc9092010234c714d",
+        "passed": true,
+        "path": "main/utils/run_metadata.py",
+        "sha256": "1ae022275a1280ad24031c9630742131d859c1c1a5fd34b438e437225a882e47"
+      }
+    ],
+    "states": {
+      "crashed": 8,
+      "finished": 95
+    }
+  },
+  "source_artifact_directory": "/workspace/artifacts/forensic-probe-audit-20261024",
+  "static_checks": {
+    "black": "25.1.0; 8 files checked",
+    "compileall": "passed",
+    "diff_whitespace": "checked excluding unified patch files whose blank context lines are significant",
+    "pyflakes": "3.4.0; added Python files clean"
+  },
+  "statistics": {
+    "first_metric_is_post_warmup": false,
+    "late_metric_rows_with_less_than_eight_seeds": [
+      {
+        "architecture": "D4W1536",
+        "effective_seed_n": 7,
+        "environment": "dog-run",
+        "metric": "train/critic_DR0.1",
+        "nominal_seed_records": 8,
+        "window": "late_observed"
+      },
+      {
+        "architecture": "D4W1536",
+        "effective_seed_n": 7,
+        "environment": "dog-run",
+        "metric": "train/critic_DR0.2",
+        "nominal_seed_records": 8,
+        "window": "late_observed"
+      },
+      {
+        "architecture": "D4W1536",
+        "effective_seed_n": 7,
+        "environment": "dog-run",
+        "metric": "train/critic_fnorm",
+        "nominal_seed_records": 8,
+        "window": "late_observed"
+      },
+      {
+        "architecture": "D4W1536",
+        "effective_seed_n": 7,
+        "environment": "dog-run",
+        "metric": "train/critic_gnorm",
+        "nominal_seed_records": 8,
+        "window": "late_observed"
+      },
+      {
+        "architecture": "D4W1536",
+        "effective_seed_n": 7,
+        "environment": "dog-run",
+        "metric": "train/critic_loss",
+        "nominal_seed_records": 8,
+        "window": "late_observed"
+      },
+      {
+        "architecture": "D4W1536",
+        "effective_seed_n": 7,
+        "environment": "dog-run",
+        "metric": "train/critic_srank",
+        "nominal_seed_records": 8,
+        "window": "late_observed"
+      },
+      {
+        "architecture": "D4W1536",
+        "effective_seed_n": 7,
+        "environment": "dog-run",
+        "metric": "train/critic_wnorm",
+        "nominal_seed_records": 8,
+        "window": "late_observed"
+      },
+      {
+        "architecture": "D4W1536",
+        "effective_seed_n": 7,
+        "environment": "dog-run",
+        "metric": "train/q1_mean",
+        "nominal_seed_records": 8,
+        "window": "late_observed"
+      },
+      {
+        "architecture": "D4W1536",
+        "effective_seed_n": 7,
+        "environment": "dog-run",
+        "metric": "train/td_error_var",
+        "nominal_seed_records": 8,
+        "window": "late_observed"
+      },
+      {
+        "architecture": "D4W1536",
+        "effective_seed_n": 7,
+        "environment": "myo-key-turn",
+        "metric": "train/critic_DR0.1",
+        "nominal_seed_records": 8,
+        "window": "late_observed"
+      },
+      {
+        "architecture": "D4W1536",
+        "effective_seed_n": 7,
+        "environment": "myo-key-turn",
+        "metric": "train/critic_DR0.2",
+        "nominal_seed_records": 8,
+        "window": "late_observed"
+      },
+      {
+        "architecture": "D4W1536",
+        "effective_seed_n": 7,
+        "environment": "myo-key-turn",
+        "metric": "train/critic_fnorm",
+        "nominal_seed_records": 8,
+        "window": "late_observed"
+      },
+      {
+        "architecture": "D4W1536",
+        "effective_seed_n": 7,
+        "environment": "myo-key-turn",
+        "metric": "train/critic_gnorm",
+        "nominal_seed_records": 8,
+        "window": "late_observed"
+      },
+      {
+        "architecture": "D4W1536",
+        "effective_seed_n": 7,
+        "environment": "myo-key-turn",
+        "metric": "train/critic_loss",
+        "nominal_seed_records": 8,
+        "window": "late_observed"
+      },
+      {
+        "architecture": "D4W1536",
+        "effective_seed_n": 7,
+        "environment": "myo-key-turn",
+        "metric": "train/critic_srank",
+        "nominal_seed_records": 8,
+        "window": "late_observed"
+      },
+      {
+        "architecture": "D4W1536",
+        "effective_seed_n": 7,
+        "environment": "myo-key-turn",
+        "metric": "train/critic_wnorm",
+        "nominal_seed_records": 8,
+        "window": "late_observed"
+      },
+      {
+        "architecture": "D4W1536",
+        "effective_seed_n": 7,
+        "environment": "myo-key-turn",
+        "metric": "train/q1_mean",
+        "nominal_seed_records": 8,
+        "window": "late_observed"
+      },
+      {
+        "architecture": "D4W1536",
+        "effective_seed_n": 7,
+        "environment": "myo-key-turn",
+        "metric": "train/td_error_var",
+        "nominal_seed_records": 8,
+        "window": "late_observed"
+      }
+    ],
+    "metric_windows": {
+      "checks": 3456,
+      "failures": [],
+      "max_error": 0
+    },
+    "operational": {
+      "checks": 9476,
+      "failures": [],
+      "max_error": 7.105427357601002e-15
+    },
+    "seed_aggregate": {
+      "checks": 1188,
+      "failures": [],
+      "max_error": 1.1368683772161603e-13
+    }
+  },
+  "tested_production_source": "f8ad82f064547c76e12539804c98be75b32656d8"
+}
