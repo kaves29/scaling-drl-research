@@ -1,0 +1,412 @@
+{
+  "analysis_receipt": {
+    "availability": {
+      "normalizer_input_teacher_state_fields": [],
+      "probe_history_fields": {
+        "probe/check_index": 96,
+        "probe/ci_high": 96,
+        "probe/ci_low": 96,
+        "probe/env_step": 96,
+        "probe/interaction_step": 96,
+        "probe/loss_iqm": 96,
+        "probe/loss_r0": 96,
+        "probe/loss_r1": 96,
+        "probe/loss_r2": 96,
+        "probe/loss_r3": 96,
+        "probe/loss_r4": 96,
+        "probe/loss_r5": 96,
+        "probe/loss_r6": 96,
+        "probe/loss_r7": 96,
+        "probe/loss_r8": 96,
+        "probe/loss_r9": 96,
+        "probe/score_current_r0": 96,
+        "probe/score_current_r1": 96,
+        "probe/score_current_r2": 96,
+        "probe/score_current_r3": 96,
+        "probe/score_current_r4": 96,
+        "probe/score_current_r5": 96,
+        "probe/score_current_r6": 96,
+        "probe/score_current_r7": 96,
+        "probe/score_current_r8": 96,
+        "probe/score_current_r9": 96,
+        "probe/score_fresh_iqm": 96,
+        "probe/score_fresh_r0": 96,
+        "probe/score_fresh_r1": 96,
+        "probe/score_fresh_r2": 96,
+        "probe/score_fresh_r3": 96,
+        "probe/score_fresh_r4": 96,
+        "probe/score_fresh_r5": 96,
+        "probe/score_fresh_r6": 96,
+        "probe/score_fresh_r7": 96,
+        "probe/score_fresh_r8": 96,
+        "probe/score_fresh_r9": 96,
+        "probe/triggered": 96
+      },
+      "unresolved_manifest_references": [
+        {
+          "body_available": false,
+          "cohort": "exp96",
+          "id": "46znu9zr",
+          "interpretation": "unresolved listed placeholder; not proof of available checkpoint contents",
+          "listed_bytes": 0,
+          "listed_md5": null,
+          "listed_reference": "artifact/4131068796/wandb_manifest.json"
+        },
+        {
+          "body_available": false,
+          "cohort": "exp96",
+          "id": "6apfwv2e",
+          "interpretation": "unresolved listed placeholder; not proof of available checkpoint contents",
+          "listed_bytes": 0,
+          "listed_md5": null,
+          "listed_reference": "artifact/4131021716/wandb_manifest.json"
+        },
+        {
+          "body_available": false,
+          "cohort": "exp96",
+          "id": "6dwfq82o",
+          "interpretation": "unresolved listed placeholder; not proof of available checkpoint contents",
+          "listed_bytes": 0,
+          "listed_md5": null,
+          "listed_reference": "artifact/4131068307/wandb_manifest.json"
+        },
+        {
+          "body_available": false,
+          "cohort": "exp96",
+          "id": "7blwjacl",
+          "interpretation": "unresolved listed placeholder; not proof of available checkpoint contents",
+          "listed_bytes": 0,
+          "listed_md5": null,
+          "listed_reference": "artifact/4131068985/wandb_manifest.json"
+        },
+        {
+          "body_available": false,
+          "cohort": "exp96",
+          "id": "7yxtlkdl",
+          "interpretation": "unresolved listed placeholder; not proof of available checkpoint contents",
+          "listed_bytes": 0,
+          "listed_md5": null,
+          "listed_reference": "artifact/4131021880/wandb_manifest.json"
+        },
+        {
+          "body_available": false,
+          "cohort": "exp96",
+          "id": "dt1jcy1i",
+          "interpretation": "unresolved listed placeholder; not proof of available checkpoint contents",
+          "listed_bytes": 0,
+          "listed_md5": null,
+          "listed_reference": "artifact/4131021584/wandb_manifest.json"
+        },
+        {
+          "body_available": false,
+          "cohort": "pilot",
+          "id": "ecls9oz9",
+          "interpretation": "unresolved listed placeholder; not proof of available checkpoint contents",
+          "listed_bytes": 0,
+          "listed_md5": null,
+          "listed_reference": "artifact/3986704961/wandb_manifest.json"
+        },
+        {
+          "body_available": false,
+          "cohort": "pilot",
+          "id": "eoja0jna",
+          "interpretation": "unresolved listed placeholder; not proof of available checkpoint contents",
+          "listed_bytes": 0,
+          "listed_md5": null,
+          "listed_reference": "artifact/3986704969/wandb_manifest.json"
+        },
+        {
+          "body_available": false,
+          "cohort": "pilot",
+          "id": "es456sr1",
+          "interpretation": "unresolved listed placeholder; not proof of available checkpoint contents",
+          "listed_bytes": 0,
+          "listed_md5": null,
+          "listed_reference": "artifact/3986705449/wandb_manifest.json"
+        },
+        {
+          "body_available": false,
+          "cohort": "exp96",
+          "id": "fxb32tqc",
+          "interpretation": "unresolved listed placeholder; not proof of available checkpoint contents",
+          "listed_bytes": 0,
+          "listed_md5": null,
+          "listed_reference": "artifact/4131068787/wandb_manifest.json"
+        },
+        {
+          "body_available": false,
+          "cohort": "pilot",
+          "id": "hy3xeazk",
+          "interpretation": "unresolved listed placeholder; not proof of available checkpoint contents",
+          "listed_bytes": 0,
+          "listed_md5": null,
+          "listed_reference": "artifact/3986705240/wandb_manifest.json"
+        },
+        {
+          "body_available": false,
+          "cohort": "exp96",
+          "id": "imgo2az5",
+          "interpretation": "unresolved listed placeholder; not proof of available checkpoint contents",
+          "listed_bytes": 0,
+          "listed_md5": null,
+          "listed_reference": "artifact/4131021681/wandb_manifest.json"
+        },
+        {
+          "body_available": false,
+          "cohort": "pilot",
+          "id": "iwapnp9m",
+          "interpretation": "unresolved listed placeholder; not proof of available checkpoint contents",
+          "listed_bytes": 0,
+          "listed_md5": null,
+          "listed_reference": "artifact/3986704968/wandb_manifest.json"
+        },
+        {
+          "body_available": false,
+          "cohort": "exp96",
+          "id": "kqkedgtk",
+          "interpretation": "unresolved listed placeholder; not proof of available checkpoint contents",
+          "listed_bytes": 0,
+          "listed_md5": null,
+          "listed_reference": "artifact/4131086135/wandb_manifest.json"
+        },
+        {
+          "body_available": false,
+          "cohort": "exp96",
+          "id": "q0859o4f",
+          "interpretation": "unresolved listed placeholder; not proof of available checkpoint contents",
+          "listed_bytes": 0,
+          "listed_md5": null,
+          "listed_reference": "artifact/4131021588/wandb_manifest.json"
+        },
+        {
+          "body_available": false,
+          "cohort": "pilot",
+          "id": "xcyqf9a1",
+          "interpretation": "unresolved listed placeholder; not proof of available checkpoint contents",
+          "listed_bytes": 0,
+          "listed_md5": null,
+          "listed_reference": "artifact/3986704958/wandb_manifest.json"
+        },
+        {
+          "body_available": false,
+          "cohort": "exp96",
+          "id": "xdlcj5d9",
+          "interpretation": "unresolved listed placeholder; not proof of available checkpoint contents",
+          "listed_bytes": 0,
+          "listed_md5": null,
+          "listed_reference": "artifact/4131068981/wandb_manifest.json"
+        },
+        {
+          "body_available": false,
+          "cohort": "pilot",
+          "id": "xthjkzd5",
+          "interpretation": "unresolved listed placeholder; not proof of available checkpoint contents",
+          "listed_bytes": 0,
+          "listed_md5": null,
+          "listed_reference": "artifact/3986704963/wandb_manifest.json"
+        },
+        {
+          "body_available": false,
+          "cohort": "exp96",
+          "id": "z30a504l",
+          "interpretation": "unresolved listed placeholder; not proof of available checkpoint contents",
+          "listed_bytes": 0,
+          "listed_md5": null,
+          "listed_reference": "artifact/4116968517/wandb_manifest.json"
+        }
+      ],
+      "wandb_file_inventory": {
+        "artifact/3986704958/wandb_manifest.json": 1,
+        "artifact/3986704961/wandb_manifest.json": 1,
+        "artifact/3986704963/wandb_manifest.json": 1,
+        "artifact/3986704968/wandb_manifest.json": 1,
+        "artifact/3986704969/wandb_manifest.json": 1,
+        "artifact/3986705240/wandb_manifest.json": 1,
+        "artifact/3986705449/wandb_manifest.json": 1,
+        "artifact/4116968517/wandb_manifest.json": 1,
+        "artifact/4131021584/wandb_manifest.json": 1,
+        "artifact/4131021588/wandb_manifest.json": 1,
+        "artifact/4131021681/wandb_manifest.json": 1,
+        "artifact/4131021716/wandb_manifest.json": 1,
+        "artifact/4131021880/wandb_manifest.json": 1,
+        "artifact/4131068307/wandb_manifest.json": 1,
+        "artifact/4131068787/wandb_manifest.json": 1,
+        "artifact/4131068796/wandb_manifest.json": 1,
+        "artifact/4131068981/wandb_manifest.json": 1,
+        "artifact/4131068985/wandb_manifest.json": 1,
+        "artifact/4131086135/wandb_manifest.json": 1,
+        "config.yaml": 95,
+        "output.log": 95,
+        "requirements.txt": 103,
+        "wandb-metadata.json": 103,
+        "wandb-summary.json": 95
+      }
+    },
+    "campaign_parent_runs": 96,
+    "causal_status": "b/MSE drift not identified from scores alone; one original endpoint has components; no original DMC curves/parameters/inputs available",
+    "components_missing_rounds": 48330,
+    "components_observed_rounds": 10,
+    "constant_fresh_mse_algebraic_witnesses_feasible": 960,
+    "fresh_declines_common35": 96,
+    "gpu_jobs": 0,
+    "input_source": "f597ee9898e4d401912092c336c3e5330cf2fda1",
+    "max_all96_common_check": 39,
+    "monotone_fresh_declines_common35": 0,
+    "negative_fresh_slopes_common35": 93,
+    "new_fits": 0,
+    "original_archive": {
+      "arrays": {
+        "current_b": {
+          "dtype": "float32",
+          "shape": [
+            10
+          ]
+        },
+        "current_final_loss": {
+          "dtype": "float32",
+          "shape": [
+            10
+          ]
+        },
+        "current_losses": {
+          "dtype": "float32",
+          "shape": [
+            10,
+            2000
+          ]
+        },
+        "current_offset": {
+          "dtype": "float32",
+          "shape": [
+            10
+          ]
+        },
+        "current_score": {
+          "dtype": "float32",
+          "shape": [
+            10
+          ]
+        },
+        "fresh_b": {
+          "dtype": "float32",
+          "shape": [
+            10
+          ]
+        },
+        "fresh_final_loss": {
+          "dtype": "float32",
+          "shape": [
+            10
+          ]
+        },
+        "fresh_losses": {
+          "dtype": "float32",
+          "shape": [
+            10,
+            2000
+          ]
+        },
+        "fresh_offset": {
+          "dtype": "float32",
+          "shape": [
+            10
+          ]
+        },
+        "fresh_score": {
+          "dtype": "float32",
+          "shape": [
+            10
+          ]
+        }
+      },
+      "path": "/workspace/artifacts/forensic-probe-audit-20261024/inputs/echocritic-comprehensive-20261024/echocritic-comprehensive-20261024/raw_archived/D2W512_myo-pen-twirl_seed5_check50.npz",
+      "run_id": "63b389qb",
+      "sha256": "66a223890220be7aa9d022e9cdfbcd90909d6580132e20315492a0ff307839ca"
+    },
+    "pilot_records_excluded": 7,
+    "pilot_source": "f8619dd5f494399d9febc79fc9092010234c714d",
+    "plan_sha256": "2fdb4a5aef3ef24ef86ab17b379e978300423e2ab10df5a3234ef02217b8f6a1",
+    "probe_points": 4834,
+    "raw_manifest_files_verified": 697,
+    "rl_training": 0,
+    "round_records": 48340,
+    "rows_written": {
+      "ALGEBRAIC_WITNESSES_NOT_OBSERVED": 34560,
+      "archived_curve_checkpoints": 100,
+      "archived_curve_summaries": 20,
+      "archived_endpoint_anchor_bounds": 10,
+      "archived_precision_bounds": 20,
+      "candidate_factor_accounting": 1537,
+      "condition_intervals": 8568,
+      "condition_trend_intervals": 72,
+      "domain_intervals": 585,
+      "domain_seed_contrasts": 4680,
+      "identification_witness_summary": 960,
+      "probe_points": 4834,
+      "round_components": 48340,
+      "seed_trends": 96,
+      "source_predicted_sampling_NOT_OBSERVED": 4834,
+      "stage_adjusted_associations": 576,
+      "unresolved_wandb_manifest_references": 19,
+      "workspace_artifact_inventory": 206
+    },
+    "run_records": 103,
+    "source_iqm_checks": 4834,
+    "source_iqm_failures": [],
+    "supplied_analysis_comparisons": 52214,
+    "supplied_source_blobs_verified": 52,
+    "witness_trajectories_checked": 960
+  },
+  "artifact_search": {
+    "candidate_files": 206,
+    "container_inventory_sha256": "74af8374428f1402299c73550d985cd8cbd0bebd75d1e00fa5fbc1f6cc259d2c",
+    "containers_members_listed": 9,
+    "remote_Delta_or_WandB_inventory": false
+  },
+  "base_commit": "1d849c3b52f1b6bdc2514f8972a2388021b929c7",
+  "branch": "codex/probe-difficulty-accounting",
+  "code_and_plan_sha256": {
+    "main/audits/probe_difficulty/__init__.py": "ed9fe6491c2b5eb02c78cfc874176c086adf8bce2d3404f2b7fb202c66a93e2a",
+    "main/audits/probe_difficulty/accounting.py": "69ea98b73310805279162b8c2343cc4450f49cfda6421b9f30b55edd32f7f486",
+    "main/audits/probe_difficulty/analysis_plan.json": "2fdb4a5aef3ef24ef86ab17b379e978300423e2ab10df5a3234ef02217b8f6a1",
+    "main/audits/probe_difficulty/figures.py": "20e1e96397a63af5c9700503605a743101781cfd342e8fd77c354513baed1cae",
+    "main/tests/test_probe_difficulty_accounting.py": "7e644ec6914838c72758a5e26e7c4187f02bccd5555deedd3f2bd378ab9a5c2d"
+  },
+  "inputs": {
+    "comprehensive_zip_sha256": "f7337130705a59622e1b639449e0dad452317fa2a45b479760a92aa3d9b12a44",
+    "metric_zip_sha256": "f5b11ca7223dcb43f4cb6aa469aa9e4e03e52dfdb1d2aa06085b98dfce282505"
+  },
+  "limits": [
+    "Only one original parent/check has component and minibatch-curve arrays.",
+    "No original DMC curves, replay pools, RMS states, teacher arrays or initial pool predictions.",
+    "Algebraic witnesses are not observed components or certified realizations.",
+    "Nineteen listed W&B manifest bodies unavailable; remote retention not verified.",
+    "Exploratory unblinded analysis; seed-label bootstrap, not round resampling."
+  ],
+  "scope": {
+    "gpu_jobs": 0,
+    "historical_metrics_changed": false,
+    "model_forwards": 0,
+    "new_fits": 0,
+    "production_code_changed": false,
+    "rl_training": 0
+  },
+  "validation": {
+    "black": "4 files unchanged; check passed",
+    "broad_training_fit_suites": "not run: new fits/training prohibited",
+    "command": "python -m pytest -q tests/test_probe_difficulty_accounting.py",
+    "compileall": "passed",
+    "figure_inputs_byte_identical_to_final_analysis": [
+      "probe_points.csv",
+      "condition_intervals.csv",
+      "domain_seed_contrasts.csv"
+    ],
+    "git_diff_check": "passed",
+    "log_sha256": {
+      "analysis-qualified.log": "485c3f17b3d6d3b7a088fcace12e407f745670fbb14bd2eaab223c1c55aa5604",
+      "unit-qualified.log": "633e94b1f5f31868282c3747277fb33b0560f329488e867ba094a51daf3f39df"
+    },
+    "pyflakes": "passed",
+    "pytest": "10 passed in 1.24s"
+  }
+}

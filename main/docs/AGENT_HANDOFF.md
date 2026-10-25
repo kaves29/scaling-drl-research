@@ -1,5 +1,27 @@
 # Current agent handoff
 
+## Retained-data probe difficulty accounting (24 October 2026)
+
+[Draft PR15](https://github.com/kaves29/scaling-drl-research/pull/15), tested
+implementation `26299ae`. Analysis-only branch
+`codex/probe-difficulty-accounting`, based on PR14
+`1d849c3b52f1b6bdc2514f8972a2388021b929c7`. See
+[report](probe_difficulty_accounting.md) and
+[validation receipt](../audits/probe_difficulty/validation_receipt.json).
+All103 records inspected;96 canonical parents,4,834 checks and48,340 rounds.
+697 raw hashes,52 source snapshots,52,214 supplied-value comparisons and
+4,834 source IQMs pass;10 deterministic CPU accounting tests pass.
+
+Only one original parent/check has b/MSE/curves. Fresh-score drift cannot be
+assigned to target variance versus fresh fitting error; algebraic witnesses
+are explicitly not measured components. The contemporary paired Myo–DMC
+contrast survives eight-seed comparisons at common checkpoints. One pen-small
+case establishes large initial minibatch Q deviations from its stored offset,
+but original DMC curves, inputs/RMS/teachers and initial pool predictions are
+missing. Nineteen listed W&B manifest bodies remain unavailable; no remote
+absence claim. No production changes, model forwards, fits, training, GPUs,
+scientific-setting changes or merges. Published after validation.
+
 ## Automatic W&B critic diagnostic transport (24 October 2026)
 
 PR14 follow-up on `codex/reference-critic-diagnostics-20261024`. Once the
