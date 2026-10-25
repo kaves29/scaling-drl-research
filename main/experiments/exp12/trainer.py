@@ -214,12 +214,15 @@ class Exp12Trainer:
                 self.metrics_rows.append(snapshot)
                 observer = getattr(self, "critic_measurements", None)
                 if observer is not None:
-                    observer.record(
+                    critic_record = observer.record(
                         self._sac_agent.critic,
                         metrics_batch,
                         interaction_step=self.interaction_step,
                         optimizer_step=self.update_step,
                         legacy_metrics=snapshot,
+                    )
+                    self.logger.update_critic_diagnostics(
+                        critic_record, observer.output, step=env_step
                     )
                 training_state(self, snapshot)
                 self.logger.log_metric(step=env_step)

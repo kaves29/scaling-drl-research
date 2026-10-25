@@ -159,8 +159,10 @@ its existing `agent.get_metrics` (which preprocesses it in place), then supplies
 those same preprocessed observations/actions to the optional observer. No extra
 buffer sample, training key, NumPy/Python random draw or normalizer update occurs.
 Historical logging reset, training schedule, evaluation, fitting and checkpoints
-retain their calculations/order. Sidecars do not add W&B log calls or change
-historical metric keys/configuration fingerprints.
+retain their calculations/order. New scalars merge into the existing W&B history
+row at its raw-environment step; there is no extra `wandb.log` call or historical
+metric/configuration rewrite. Each measured checkpoint additionally queues a
+W&B mask artifact version.
 
 `current_replay` reflects current visitation and normalization. Optional
 `frozen_preprocessed` copies fixed already-normalized observations/actions and
@@ -190,6 +192,46 @@ A new process/observer session starts a new persistence series. Outputs are
 partitioned by run-path hash and OS-generated UUID, not training RNG. Saved
 masks allow explicit later comparisons across sessions; no continuity across
 resume is silently inferred. Changed layer populations/shapes are rejected.
+
+## Automatic W&B logging
+
+Once diagnostics are enabled, `WandbTrainerLogger.update_critic_diagnostics`
+automatically merges every computed `critic_diag/v1/...` scalar into the same
+`wandb.log(..., step=env_step)` call as the existing training metrics. Values,
+including undefined/null overlap ratios, are preserved. The keys become available
+in W&B history and metric plots without per-metric registration or manual upload.
+The additional `critic_diag/v1/interaction_step`, `/optimizer_step` and
+`/raw_environment_step` counters make the units explicit. The default plot axis
+is the same raw-environment step used by existing training metrics.
+
+Skipped optional observations produce no extra scalar payload or artifact; the
+logger's existing reset prevents repeating previous values. Historical keys
+cannot be overwritten by the versioned payload. This does not turn on disabled
+diagnostics or additional SVDs; only enabled/computed measurements are sent.
+
+Each observation queues an artifact named `critic-diagnostics-<wandb-run-id>`,
+type `critic-diagnostics`, with `latest` and `interaction-<step>` aliases. Versions
+contain the mask NPZ and JSON receipt, plus session metadata/frozen inputs when
+present. Mask SHA256 is verified before publication. Files are exclusive,
+immutable sidecars and are added with the SDK's immutable-file policy to avoid
+redundant staging copies; keep them until W&B finishes syncing. New versions
+carry input hashes and interaction/optimizer/raw-environment counters. Artifact
+submission uses the active run and does not wait for remote completion.
+
+Online W&B queues uploads automatically. Offline W&B retains history/artifacts
+locally for later synchronization; disabled W&B retains the original local
+sidecars and makes no artifact submission. Artifact versions add client hashing,
+metadata and upload/storage cost at the selected diagnostic cadence; use `EVERY`
+to control observation frequency. No historical campaign data is backfilled.
+
+Follow-up validation: **28 CPU tests passed in9.67s**, including the original22
+and six W&B transport checks. The real SDK offline test reads its binary history
+back and verifies one row, exact new/historical values and step, null preservation,
+artifact manifest contents, and unchanged NumPy/Python RNG. Tests also cover
+cadence skips, disabled mode, checksum and namespace guards, and real trainer
+logging-block wiring. This validates SDK integration, not an authenticated live
+dashboard or an uploaded production run. No training, probe fits or GPUs ran.
+See [the W&B integration receipt](critic_diagnostics_wandb_validation.json).
 
 ## Opt-in use and cost
 

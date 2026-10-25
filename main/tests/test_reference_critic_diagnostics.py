@@ -547,6 +547,9 @@ class LoggingIntegrationTest(unittest.TestCase):
             )
             if enabled:
                 observer.record.assert_called_once()
+                logger.update_critic_diagnostics.assert_called_once_with(
+                    observer.record.return_value, observer.output, step=4000
+                )
                 self.assertIs(observer.record.call_args.args[1], batch)
                 np.testing.assert_array_equal(
                     observer.record.call_args.args[1]["observation"],
