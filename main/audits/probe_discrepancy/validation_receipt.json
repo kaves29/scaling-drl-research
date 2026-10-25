@@ -1,0 +1,83 @@
+{
+  "analysis": {
+    "archive_max_paired_float32_vs_real_mse_delta": 7.897615432739258e-07,
+    "available_original_check_files": 1,
+    "canonical_parents": 96,
+    "controlled_routing": {
+      "2000_index_rows": true,
+      "distinct_parameter_routing": true,
+      "one_normalization": true,
+      "one_teacher_per_pair": true,
+      "parameters_unchanged": true,
+      "rms_and_training_rng_unchanged": true,
+      "same_array_objects_within_pair": true,
+      "scope": "original control flow with fake fitter/teacher; not a numerical fit or original runtime certification"
+    },
+    "excluded_pilots": 7,
+    "gpu_jobs": 0,
+    "model_forwards": 0,
+    "new_fits": 0,
+    "paired_checks": 4738,
+    "pilot_approved": false,
+    "pilot_manifest_sha256": "40c7432d92db11dea54b86da63e8ee92c6c6a87cb98cb4688c545fa561bd0693",
+    "pilot_runs": 14,
+    "remote_storage_inventory_completed": false,
+    "source": "f597ee9898e4d401912092c336c3e5330cf2fda1",
+    "source_guards": 9,
+    "targeted_missing_check_files": 48
+  },
+  "artifact_scope": {
+    "accessible_candidate_files": 207,
+    "containers": 10,
+    "independent_original_check_files": 1,
+    "no_remote_absence_claim": true,
+    "remote_inventory_completed": false,
+    "targeted_remote_check_files": 48
+  },
+  "base_commit": "822c2e5aae1aa99b970fdce8e0b4bff94e7d4724",
+  "branch": "codex/source-bound-discrepancy-pilot",
+  "causal_diagnosis": "unidentified; paired sign contrast confirmed",
+  "code_and_design_sha256": {
+    "main/audits/probe_discrepancy/__init__.py": "ceca817e562a9662d0366c2ecd23ee09e0ae0c470e0085a1d98ef93188ce0dbe",
+    "main/audits/probe_discrepancy/factor_evidence_ledger.csv": "91a75fd3510d28c397226d65da4898fa0b994506fdbf06f7ab8456525037099f",
+    "main/audits/probe_discrepancy/inventory.py": "483457e14dbb687b409f478e1e88eaacd2b1c25860d8baff14a233e486e60d6d",
+    "main/audits/probe_discrepancy/investigate.py": "6af11f0bde640025229d7896831d3e9442bc250cc83368aa481a7c9ff24f601c",
+    "main/audits/probe_discrepancy/pilot_manifest.DRAFT.json": "40c7432d92db11dea54b86da63e8ee92c6c6a87cb98cb4688c545fa561bd0693",
+    "main/audits/probe_discrepancy/source_checks.py": "c7a8ae6d669c8ca76a81e4c505956e0a252da7beb5353b0fecf02f6e4718f1ec",
+    "main/tests/test_probe_discrepancy.py": "8d4681a200d1c544a14e9f658b2fb7d1bf847643b72733d445ecd5ba86f6f0f0"
+  },
+  "evidence_sha256": {
+    "/workspace/artifacts/probe-difficulty-accounting/probe-difficulty-evidence.tar.gz": "82c0d5dd91da0880c59bea8088586c6ca7c6a8cc84f3741d0d8bf1799b712b83",
+    "/workspace/artifacts/source-bound-discrepancy-pilot/access_attempts.json": "cf848caed5f55d109fb881e9685ac99e1f34235adfaf5f9dc77ba99f40d93927",
+    "/workspace/artifacts/source-bound-discrepancy-pilot/analysis-final.log": "cf53db373c5ad3ca364fc8d61e20e502a380f78b3a2a5e443a35dbb8a728176c",
+    "/workspace/artifacts/source-bound-discrepancy-pilot/local_inventory.json": "f2b966fa0400f36f7575c3519d486f1cd9d1ffb4f92007f2161566c258ad9467",
+    "/workspace/artifacts/source-bound-discrepancy-pilot/unit-final.log": "815f9eb8af741929dcd22eabb80e5d6fc5b8619eb07600c96e23960dfb6cb7ea"
+  },
+  "immutable_inputs": {
+    "comprehensive_zip": "f7337130705a59622e1b639449e0dad452317fa2a45b479760a92aa3d9b12a44",
+    "metric_zip": "f5b11ca7223dcb43f4cb6aa469aa9e4e03e52dfdb1d2aa06085b98dfce282505",
+    "original_campaign": "f597ee9898e4d401912092c336c3e5330cf2fda1",
+    "original_npz": "66a223890220be7aa9d022e9cdfbcd90909d6580132e20315492a0ff307839ca"
+  },
+  "launch_status": {
+    "diagnostic_adapter_implemented": false,
+    "diagnostic_implementation_source": null,
+    "gpu_or_slurm_submissions": 0,
+    "pilot_approved": false,
+    "pilot_executable": false,
+    "prior_resource_budget_transferred": false
+  },
+  "production_code_changed": false,
+  "validation": {
+    "black": "5 files unchanged; check passed",
+    "broad_training_or_mutation_fit_suites": "not executed: prohibited fits/training",
+    "compileall": "passed",
+    "diff_check": "passed",
+    "new_tests": 12,
+    "original_model_forward_or_fit_tests": "not executed",
+    "prior_accounting_tests": 10,
+    "pyflakes": "passed",
+    "pytest": "22 passed, 14 deprecation warnings in 1.98s",
+    "source_guard_mutations": 6
+  }
+}

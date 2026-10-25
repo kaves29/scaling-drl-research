@@ -1,5 +1,26 @@
 # Current agent handoff
 
+## Source-bound paired discrepancy and pilot design (24 October 2026)
+
+Task branch `codex/source-bound-discrepancy-pilot`, based on PR15
+`822c2e5aae1aa99b970fdce8e0b4bff94e7d4724`. See
+[diagnosis and launch gates](source_bound_probe_discrepancy.md) and
+[14-run non-executable draft](../audits/probe_discrepancy/pilot_manifest.DRAFT.json).
+At check35, all32 medium/large DMC parents beat fresh, all32 medium/large Myo
+parents lose. Shared b cancels; mechanism remains unidentified. Only one original
+component/curve NPZ is accessible. Recovery inventories48 early/late targets,
+207 accessible candidate files/10 containers; Delta TCP proxy refused and W&B
+HTTPS proxy403 prevent live remote inventory. No remote-absence claim.
+
+22 CPU tests pass, including six source guard mutations and ten prior accounting
+tests; nine source guards and original-NPZ arithmetic pass. New original-source
+routing controls use stand-ins and perform no numerical fits or model forwards.
+No production fixes justified, training, GPUs/Slurm, historical changes or merge.
+Pilot adapter is not implemented/frozen/qualified; original full recipe stays
+unchanged. Selected W&B runtime sum206.882h is only a planning proxy; resources,
+source/runtime/equivalence/restoration, owner approvals and actual launch remain
+blocked. No prior2/4h budget transfers and no main experiment is queued.
+
 ## Retained-data probe difficulty accounting (24 October 2026)
 
 [Draft PR15](https://github.com/kaves29/scaling-drl-research/pull/15), tested
