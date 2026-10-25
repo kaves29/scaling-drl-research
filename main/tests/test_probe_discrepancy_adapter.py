@@ -1,13 +1,15 @@
 """Focused CPU equivalence for the observational pilot probe path."""
 
 from dataclasses import dataclass
+import json
+from pathlib import Path
 
 import jax
 import jax.numpy as jnp
 import numpy as np
 import optax
 
-from audits.probe_discrepancy.adapter import Capture, fit_values, teacher_values
+from audits.probe_discrepancy.adapter import Capture, expected_config, fit_values, teacher_values
 from experiments.exp12 import probe
 
 
@@ -87,3 +89,10 @@ def test_selected_round_writes_literal_targets_and_full_pool_errors(tmp_path):
         mse = data["fresh_full_pool_mse_0_100_500_1000_2000"]
         np.testing.assert_allclose(mse, np.mean((q - target) ** 2, axis=1))
         np.testing.assert_array_equal(data["fresh_losses_preupdate"], result["fresh"]["losses"][0])
+
+
+def test_all_five_scientific_configs_match_pinned_source(tmp_path):
+    manifest = json.loads((Path(__file__).parents[1] / "audits/probe_discrepancy"
+                           / "pilot_manifest.DRAFT.json").read_text())
+    for row in manifest["runs"]:
+        expected_config(row, tmp_path / row["pilot_id"], "echocritic-diagnostic-pilot")

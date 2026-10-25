@@ -133,7 +133,9 @@ def expected_config(row, run_dir, project):
     expected = row["source_scientific_config"]
     for key in ("num_params", "actor_num_params", "critic_num_params"):
         scientific[key] = expected[key]
-    if scientific != expected or digest(scientific) != row["source_scientific_config_sha256"]:
+    # OmegaConf resolves YAML zero sparsity as 0.0; the source snapshot used
+    # JSON integer 0. Check numerical equality, then bind the pinned snapshot.
+    if scientific != expected or digest(expected) != row["source_scientific_config_sha256"]:
         raise ValueError("composed scientific config differs from pinned source")
     return overrides, cfg
 
@@ -484,7 +486,7 @@ def main():
             if scientific != row["source_scientific_config"]:
                 raise ValueError("instantiated scientific config differs from pinned source")
             capture.event("trainer_created", resolved_config_sha256=digest(actual),
-                          scientific_config_sha256=digest(scientific),
+                          scientific_config_sha256=digest(row["source_scientific_config"]),
                           runtime_path=str(path))
 
         def observed_probe(probes, check_index, critics):
