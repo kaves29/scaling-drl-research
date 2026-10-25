@@ -198,146 +198,253 @@ all required tests. Changing target scale, offset, fitting length, normalization
 LR/weight decay, clipping or statistical thresholds would be a methodological
 change, not a justified correction on this evidence.
 
-## Fourteen-run pilot design — unapproved, not executable
+## Revised ten-run simultaneous pilot — blocked, not executable
 
-The reviewable [manifest](../audits/probe_discrepancy/pilot_manifest.DRAFT.json)
-preserves original source/configuration settings, hashes every full resolved
-historical config and identifies exact historical parents. Eight large runs
-(two seeds/task), four medium (one/task) and two small contrasts total14.
-“Exceptional” means magnitude at35, not an invented opposite-sign case.
+This supersedes the14-run serial draft. **Exactly ten pilot executions**, five
+concurrent processes on allocated GPU0 and five on allocated GPU1; one barrier
+release, no waves, replacements, retries or completion-driven admission.
+Both GPUs carry the same two-large/two-medium/one-small condition mixture.
+The [v2 manifest](../audits/probe_discrepancy/pilot_manifest.DRAFT.json) keeps
+`launch_approved=false`, `executable=false`, `packing_qualified=false`, with
+no diagnostic implementation SHA or output root assigned.
 
-|Pilot|Environment|Critic|Seed|Selection|Original run ID|
+### Allocation and interpretation
+
+|Pair|Task|Critic|Seed on both GPUs|Historical parent|GPU0 / GPU1 execution|
 |---|---|---|---:|---|---|
-|P01|dog-run|D2W512|5|typical|7ic002ar|
-|P02|dog-run|D4W1024|2|typical|2j9z776f|
-|P03|dog-run|D4W1536|3|typical|htg273zh|
-|P04|dog-run|D4W1536|6|exceptional|q0859o4f|
-|P05|humanoid-run|D4W1024|5|typical|chhgyiuq|
-|P06|humanoid-run|D4W1536|1|typical|jiotx3f8|
-|P07|humanoid-run|D4W1536|4|exceptional|vi8gd0nw|
-|P08|myo-key-turn|D4W1024|5|typical|zlwpdeln|
-|P09|myo-key-turn|D4W1536|2|typical|deaf606s|
-|P10|myo-key-turn|D4W1536|3|exceptional|gxta0ldp|
-|P11|myo-pen-twirl|D2W512|7|typical|515e9nqz|
-|P12|myo-pen-twirl|D4W1024|6|typical|w5gyiy2y|
-|P13|myo-pen-twirl|D4W1536|5|typical|14fmtkz6|
-|P14|myo-pen-twirl|D4W1536|7|exceptional|6apfwv2e|
+|C01|dog-run|D4W1536|3|htg273zh|C01G0 / C01G1|
+|C02|humanoid-run|D4W1024|5|chhgyiuq|C02G0 / C02G1|
+|C03|myo-key-turn|D4W1536|2|deaf606s|C03G0 / C03G1|
+|C04|myo-pen-twirl|D4W1024|6|w5gyiy2y|C04G0 / C04G1|
+|C05|myo-pen-twirl|D2W512|5|63b389qb|C05G0 / C05G1|
 
-All are source-bound **replications of selected existing seeds**, not14 new
-independent confirmatory observations. Medium/small cells have one seed each;
-they are diagnostic contrasts, not powered architecture estimates. Historical
-run_role/config flags do not confer confirmatory status on this new pilot.
-Original versus “corrected” arms are not invented because no correction exists.
+Each row executes **once on each GPU with identical scientific configuration
+and seed**. All ten output/checkpoint directories, process logs, completion
+receipts and W&B IDs are distinct. Pairing balances every selected environment,
+architecture, seed and condition exactly across devices. It deliberately
+purchases device/process replication rather than ten independent seed draws:
+there are five distinct scientific configurations, not ten independent seeds.
+Same nominal seed alone does not guarantee identical realised Myo trajectories;
+original simulator/RNG capture and qualification remain necessary. Differences
+between device replicas are not automatically hardware causal effects.
 
-The training source is f597ee9; the diagnostic adapter source is deliberately
-null until implemented, reviewed and frozen. This task prepares the specification,
-not an unqualified runner. A recording build is a different executable revision
-and cannot borrow old-SHA GPU qualification. No commands/queue/submission are
-embedded. Original result/W&B roots are excluded; the new root is unassigned.
+The large dog/key pair contrasts domains at D4W1536; medium humanoid/pen does
+so at D4W1024. Pen medium/small tests a size contrast in the task with highly
+variable deficits. The small pen/seed5 counterpart anchors the one original
+NPZ whose arrays bind to historical W&B. All four tasks and three sizes are
+represented. The other four seeds retain the earlier median-based selections;
+this is outcome-selected diagnostic replication. There is one unique seed per
+cell, incomplete task×architecture coverage, and no within-cell independent-seed
+uncertainty estimate. Task and size differences cannot be fully disentangled.
 
-### Endpoints and required retained evidence
+These runs can locate when the paired error sign emerges, inspect actual
+normalization/teacher/residual/optimizer-routing evidence and detect mismatched
+identities or numerical artifacts. They can refute simple starting-state or
+endpoint-catch-up accounts in these cells. They **cannot** prove a general
+DMC-versus-Myo effect, prove a plasticity hypothesis, assign a causal fraction
+from observational correlations, or guarantee a fix. GPU replication is not an
+additional scientific baseline. No corrected arm exists because no explanatory
+defect has been established; no main experiment follows automatically.
 
-Preserve500,000 nominal interactions, action_repeat2/1M raw steps, original
-rewards/discounts/normalization, all50 ten-round scheduled checks, initial
-warmup anchor, continuous2,000 AdamW updates, target formula and original
-natural-fork untreated continuation. Do not shorten training/probes for cost or
-force a trigger. Capture selected full evidence at checks0/5/35/50 and the
-actual terminal check if an extension follows; do not interrupt the schedule.
-Check0 has fresh only.
+### Scientific invariants and exact retained evidence
 
-- Every check: original NPZ/CSV round b, final MSE, scores, offsets and pre-update
-  minibatch curves; run/check/round IDs, source/runtime/config hashes and typed
-  counters. Preserve original values and pair arithmetic independently.
-- Selected checks: original raw replay indices/pool/actions, normalized pool,
-  RMS count/mean/variance, training/fresh parameter hashes and trees, complete
-  training checkpoint including optimizer/RNG/counters/simulator state.
-- Per selected round: actual teacher parameters/key, teacher output, scaled
-  phase, sine base, literal per-critic targets and minibatch-index sequence;
-  loss/target dtype, nonfinite counts and value/distribution summaries.
-- Pool forward predictions and MSE at0/100/500/1000/2000 for both critics;
-  centered initial variance, covariance with base and residual distribution.
-  Save observed Q/target vectors; do not infer them from minibatches or add
-  updates. Keep raw fitting curves separate. No intermediate parameter-tree
-  dump is required if exact observed vectors and their step/identity binding
-  are retained.
+Every execution preserves its hash-bound original resolved scientific config:
+500,000 nominal interactions/1M raw steps, original natural-fork untreated
+extension, all50 checks plus initial anchor, ten rounds, pool25,600, batch256,
+continuous2,000-step AdamW1e-4/.01 fitting, original teacher architecture/keys,
+`sin(100000*f)`, TF32/non-matmul-float32 rules, rewards/discounts, replay/RMS,
+statistics and thresholds. The five original scientific config hashes are
+pinned in `source_config_bindings.json`. No concurrency-dependent science setting
+or shorter endpoint is used to make packing fit.
 
-Additional forwards/capture can change compilation/runtime even with no intended
-parameter change. A future adapter must use existing values where possible,
-never resample/reinitialize to obtain them, and demonstrate diagnostics-on/off
-parameter, optimizer, outputs and RNG equivalence under **unchanged existing
-criteria**. It must not count an extra pre/post diagnostic as an optimizer step.
-The original GPU segmented-equivalence failure is unresolved and must not be
-waived or hidden by this instrumentation. No such fit or GPU gate runs here.
+**Identical target clarification:** original fresh/current fits share exact
+inputs, teacher, sine base and minibatch sequence; each retains its own mean
+prediction offset. Their literal targets therefore differ by the intended
+constant. Preserve and hash **both** arrays, shared base and both offsets;
+verify the shared base/input hashes. Calling those two literal arrays identical
+would be incorrect; replacing own offsets with a shared offset would change the
+method. The pilot makes neither change. Any newly requested genuinely identical
+literal targets would require separate scientific review.
 
-### Discrimination rules decided before these new runs
+For every run, retain without smoothing/overwriting:
 
-- **Starting-residual explanation:** supports the simple version if Myo's
-  trained disadvantage is already present in initial same-pool errors/centered
-  residuals and tracks its final disadvantage within selected seeds; weakens it
-  if initial errors are comparable or DMC starts worse but finishes better.
-  Covariance versus variance is measured separately. Association alone is not
-  a causal fraction of final error.
-- **Endpoint catch-up:** supports it where trained DMC starts worse, loses at
-  early same-pool endpoints, then reaches/eclipses fresh at2,000. Reject this
-  trajectory description where DMC starts better or never catches up. A
-  longer-fit experiment is not part of this plan.
-- **Changing task:** separate Δb and Δfresh MSE within each recorded seed/check.
-  Describe input diversity/RMS/teacher distribution changes against those
-  components. This distinguishes variance-driven score drift from fitting-error
-  drift without claiming that observational co-movement identifies its cause.
-- **Runtime defect:** require an actual same-round identity, normalization,
-  key, dtype, arithmetic or state mismatch against the source/retained arrays,
-  then reproduce independently. A common offset or fixed-pool alternative is
-  not silently introduced. Actual target-addition bounds versus measured gaps
-  test direct roundoff; accumulated-path/sine effects require separate evidence.
-- **Mixed/null result:** preserve it. If the14 runs do not discriminate, report
-  the remaining ambiguity. No automatic larger campaign, retuned optimizer or
-  “corrected DMC” acceptance requirement follows. Causal interventions would
-  need a separately approved design.
+- **Every scheduled check/round:** original NPZ/CSV b, initial/final scores as
+  actually measured, fresh/current final pool MSE, own offsets, paired float32
+  operands/IQM and2,000 pre-update minibatch losses. Keep fresh-only check0
+  distinct. Missing/invalid values are explicit, never zero-filled.
+- **Checks0/5/35/50 and actual extension terminal check, all rounds:** exact raw
+  replay indices, replay size/capacity/counters and raw observation/action pool;
+  normalized pool, RMS count/mean/variance/epsilon and scales; teacher parameters,
+  seed/fold-in keys, pre-scale outputs, phase, sine base and literal targets;
+  dtype/shape/byte-order-aware hashes and source/run/check/round lineage. Preserve
+  raw arrays and value ranges/nonfinite/duplicate counts, not only summaries.
+- **Matched state/learning dynamics:** fresh/current initial trees/hashes,
+  own-offset full-pool initial Q/variance/residual/covariance, full-pool Q/MSE at
+  0/100/500/1000/2000; existing minibatch curves remain separately labeled.
+  Keep complete training checkpoint/optimizer state, replay, simulator state,
+  all RNG states/counters, checkpoint pointer/hash and full config/executable/
+  baseline source/runtime hashes. Never regenerate targets/indices to record them.
+- **Telemetry:** allocation node/physical GPU UUID/Slurm/cgroup/CPU affinity;
+  per-process RSS and CPU/I/O counters; GPU VRAM/utilization/compute-process
+  mapping; free host/cgroup/storage headroom; node-wide disk counters labeled
+  as shared; cold compilation, steady SAC throughput, pool/teacher/fit/full-pool
+  diagnostic/checkpoint I/O timing and byte counts; ready/release/exec timestamps.
+  Source-bound adapter events must distinguish compile time from steady work.
+- **Identity/failure:** unique canonical per-run directory plus deployment
+  namespace/W&B ID/project, source-scientific and actual-deployment config hashes.
+  Preserve all failed/partial outputs, compiler/process logs and receipts.
+  No deletion, replacement slot, automatic restart or extra pilot attempt.
 
-### Resource estimate, stopping rules and exact launch gates
+The retention adapter is **not implemented/reviewed/qualified** by this revision.
+It must record existing values without training RNG consumption or state changes.
+Extra forwards/capture can alter compilation/runtime; existing diagnostics-on/off
+and continuous/segmented criteria remain unchanged. No numerical threshold is
+relaxed. The outstanding A100 equivalence issue remains a launch gate.
 
-Selected W&B `_runtime` values sum to206.882 hours. These are process-runtime
-metadata, sometimes from incomplete/crashed parents, not allocated physical
-GPU-hours or a same-source isolated profile. As a conservative serial one-GPU
-planning range propose207–414 GPU-hours, **unmeasured and not authorized**.
-One40GB A100 process at a time,16 CPUs/64GiB host RAM, no packing; propose
-200–500GiB durable storage pending actual state dimensions/retention profiling.
-Large critics have≈75.7M weights (~.28GiB per float32 tree); teacher trees,
-full training/optimizer/replay states and multiple checks dominate storage.
-These estimates include contingency, not a qualified per-run walltime or charge.
-The count is small but the unchanged recipe is not a cheap pilot. Prioritize
-original artifact recovery before spending this budget; no historical2/4-hour
-engineering budget transfers to it.
+### Mechanism discrimination, without altering the hypothesis
 
-Remain blocked until all the following are reviewed for the **same final SHA**:
+Starting-state support requires the trained Myo disadvantage to be present in
+same-pool initial residuals and to track final gaps; comparable initial errors or
+DMC starting worse then winning weaken that account. Measure centered variance
+and prediction–base covariance separately; mean Q cannot replace them.
 
-1. Supported read-only Delta/W&B route; actual source/artifact/runtime inventory.
-2. Owner approval of this14-run scientific manifest, exploratory selection,
-   observational endpoints, full source settings and remaining uncertainty.
-3. Implement/review/freeze the diagnostic adapter and a fresh, clean source
-   checkout. Bind training baseline plus adapter commit, full configs, new
-   output/project identities and immutable queue hash. Never relabel f597 as
-   the new executable SHA or reuse an old campaign root.
-4. Focused CPU tests plus required simulator/checkpoint/optimizer/RNG restoration
-   and diagnostics-on/off checks; reconcile PR12/PR14 changes explicitly rather
-   than silently integrating unrelated fixes. CPU passes do not qualify GPU.
-5. Same-source/runtime/model CUDA startup, original-vs-recording forward/update
-   and continuous/segmented equivalence with existing tolerances; resolve the
-   outstanding A100 failure. Preserve TF32/x64 rules and pinned software identity.
-6. Source-bound unchanged campaign smoke/resource gates, live Slurm availability,
-   account/quota, I/O/storage capacity, one-GPU resource profile, absolute budget
-   and allocation caps. The full96-parent campaign gate cannot be repurposed as
-   approval for a14-parent plan; retain or explicitly review the separate route.
-7. Explicit owner launch authorization and genuine source-bound scientific/
-   allocation approvals. None is supplied or synthesized here. Exp2 injection,
-   main experiment launch and PR merges remain unauthorized.
+Endpoint catch-up requires actually measured early same-pool trained losses
+above fresh, then convergence/overtaking by2,000. If DMC starts better, that
+specific catch-up account is refuted. Do not add fitting steps or substitute
+minibatch points. Decompose fresh-score drift into observed Δb and ΔMSE_f;
+relate these descriptively to measured replay/RMS/teacher changes. Runtime-defect
+claims still require a reproducible source/runtime mismatch, correct direction/
+magnitude and an independent check. Mixed or null results are valid outcomes.
 
-On invalid/nonfinite data, identity/parameter/optimizer/RNG mismatch, corrupted
-checkpoint, duplicate run, exceeded resource cap or any failed gate: preserve
-artifacts and mark the attempt failed/incomplete, with no automatic retry or
-new allocation. A scientific null or opposite sign is a result, not a failure.
-Stop after the14 approved attempts/endpoints and review; never autoqueue main.
+### Actual Delta status and resource feasibility
+
+**Five-process-per-GPU qualification is unavailable.** This Cloud task has no
+Delta mount, VPN, TCP destination grant or configured remote credential. The
+read-only inspection captures absent `sinfo`, `scontrol` and `nvidia-smi` binaries
+here; these are Cloud observations, not Delta measurements. Earlier TCP proxy
+connection refusal/W&B proxy403 remain access evidence, not evidence that Delta
+storage or GPUs are unavailable. No live node, scheduler, CPU/RAM, VRAM, disk
+load or exact-source compilation/throughput profile has been obtained.
+
+The existing `exp96_campaign.py`/`sbatch_exp96_allocation.sh` route is a one-GPU,
+96-parent, completion-driven worker. Its packing estimates/old profiles do not
+qualify this ten-run simultaneous layout. It is not reused or silently modified.
+
+The **exact candidate request**, conditional on measured feasibility, is one
+`gpuA100x4` node, account `biqc-delta-gpu`, two A100-SXM4-40GB GPUs, one Slurm
+controller task,32 CPUs,128GiB host RAM and48h. Within that reservation, ten
+children receive three disjoint CPU IDs each and the controller two; each GPU
+hosts the same five-condition mix. Actual CPU topology/affinity, memory cgroup,
+GPU UUIDs and scheduler limits must match the qualification receipt. If that
+reservation is not available or sufficient, this request remains blocked.
+
+Historical selected W&B runtime values, counted once for each of ten executions,
+sum to134.313h. They are process-runtime proxies, not allocation/GPU usage.
+Neither division by five nor simple multiplication of a single-run profile
+establishes packed runtime. A48h two-GPU cap reserves96 physical GPU-hours;
+completion within it is **unproven**. Storage200–500GiB remains a planning range.
+Two large≈75.7M-weight critics plus two medium and a small per GPU can have
+substantial simultaneous teacher/optimizer/compilation peaks; five fits must be
+measured, not assumed from parameter bytes or disabled JAX preallocation.
+
+Representative qualification must use the final clean executable source,
+adapter, full unchanged configs, exact five-process mixture **on both GPUs at
+once**, same runtime/driver/device model, binding/allocator/CPU policy and
+telemetry. Retain traces covering all ten live processes, cold compilation,
+steady SAC updates, a full scheduled ten-round paired2,000-step probe and
+checkpoint/storage overlap, plus projection of all unchanged endpoints/extensions
+with reviewed headroom. Per-process serial runs, a one-process smoke, a five-run
+wave followed by another wave, synthetic receipts or a different source do not
+qualify it. CPU mocks test orchestration only. No qualification job is submitted
+here; any future qualification workload/budget needs separate review.
+
+There is **no currently qualified executable alternative** for the unimplemented
+adapter. The closest exact-count alternative if packing fails would be two GPUs
+with lower concurrency and waves after separate qualification; it violates this
+request and is **not** an allowed fallback. If simultaneous ten-run launch is
+non-negotiable, propose a separately reviewed larger-memory/more-GPU allocation
+supported by actual Delta inventory and requalify it. That changes the requested
+layout and needs approval. The controller never makes either substitution.
+
+### Reviewed launch path, command and fail-closed preflight
+
+The new `scripts/sbatch_echocritic_diagnostic_pilot.sh` starts one Slurm step
+exposing **both** allocated devices to `audits.probe_discrepancy.launch`.
+The controller preserves the two inherited `CUDA_VISIBLE_DEVICES` tokens;
+each child receives the appropriate physical token **before JAX import**.
+Each child sees local GPU0, while the manifest's GPU0/GPU1 refer to the two
+allocation slots. Never assume they are physical node indices0/1. UUID, model,
+CPU affinity, host-memory allocation/cgroup and runtime checks fail closed.
+
+All ten children are spawned once and report ready before a common GO file.
+They must all be alive at release. Release-to-exec skew is recorded and bounded
+by a reviewed operational limit; this is not a requirement that heterogeneous
+runs execute training steps in lockstep. Each PID then execs only the reviewed
+adapter. No dispatcher replenishes a free slot. The child bootstrap initializes
+and verifies JAX, then execs the adapter; that extra startup/context lifecycle
+is part of the source/configuration requiring packing qualification.
+
+The controller monitors GPU/host/cgroup/storage headroom and allocation time.
+On failed readiness, child failure, resource/gate mismatch or timeout it stops
+remaining children, retains all partial evidence and writes failed/partial
+receipts. Process exit0 alone is insufficient: distinct source/plan/config-bound
+adapter completion receipts must also attest full endpoints and diagnostics.
+Even engineering completion is not scientific certification. Fast transient
+memory peaks can occur between telemetry samples; representative peak profiling
+is still required. Adapter signal handling/checkpoint durability need review.
+
+Preflight requires source/manifest/plan hashes, clean matching checkout, reviewed
+implemented adapter, pinned Python/JAX/jaxlib/Optax/CUDA/driver, exact allocation,
+new root and globally unused W&B identities. Ten independent gate receipts with
+hash-checked underlying evidence are mandatory: adapter review, scientific
+review, CPU restoration/equivalence, CUDA smoke, simultaneous five/five profile,
+storage profile, fresh live Delta layout, W&B identities, allocation review and
+owner launch. The profile must fit measured VRAM/host RAM and projected full
+endpoints within reviewed caps. Expired layout evidence, wrong mixture/source,
+missing raw receipts or still-closed manifest flags block command generation.
+
+The [review checklist](diagnostic_pilot_10_review_checklist.md) lists the exact
+remaining gates. `launch_approval.template.json` contains no approvals. Only
+readiness flags/status may be sealed after qualification; `plan_hash` binds every
+other plan field, including configurations, layout, executable SHA, root and
+runtime policy. Approval additionally binds the complete sealed manifest bytes.
+Changing any substantive field requires new matching receipts. Do not edit flags
+by hand to bypass gates or reuse old source smoke/allocation approvals.
+
+From the reviewed checkout's `main/`, the supported interface is:
+
+```bash
+python -m audits.probe_discrepancy.launch preflight \
+  --manifest "$SEALED_EXTERNAL_MANIFEST" --approval "$REVIEWED_EXTERNAL_APPROVAL" \
+  --checkout "$FROZEN_CHECKOUT"
+python -m audits.probe_discrepancy.launch command \
+  --manifest "$SEALED_EXTERNAL_MANIFEST" --approval "$REVIEWED_EXTERNAL_APPROVAL" \
+  --checkout "$FROZEN_CHECKOUT"
+```
+
+These document future agent-operated execution, not commands for the owner to
+run. There is no submit subcommand and this task executes no `sbatch`. The
+`command` action prints a fully quoted exact command **only after preflight**.
+Its conditional shape (placeholders are not an authorized runnable command) is:
+
+```bash
+sbatch --parsable --account=biqc-delta-gpu --partition=gpuA100x4 \
+  --nodelist=<source-qualified-node> --nodes=1 --ntasks=1 --gres=gpu:2 \
+  --cpus-per-task=32 --mem=128G --time=2880 \
+  --job-name=echocritic-diagnostic-10 --chdir=<frozen-checkout>/main \
+  --output=<new-root>/slurm-%j.out --error=<new-root>/slurm-%j.err \
+  <frozen-checkout>/main/scripts/sbatch_echocritic_diagnostic_pilot.sh \
+  <qualified-python> <sealed-manifest> <reviewed-approval> <manifest-sha256> <approval-sha256>
+```
+
+Actual node/UUID/Python/root values cannot be filled honestly before live
+qualification and approvals. Current preflight returns BLOCKED/nonzero and
+prints no sbatch command. A direct manual `sbatch` bypass could consume an
+allocation before startup rejection; use only the gated command route. At
+startup the wrapper/controller repeat all gates and verify submitted file
+hashes before any child can start, preventing a changed-file launch. No old
+2/4h engineering budget or96-parent approval transfers to this pilot. No Slurm
+job, merge or main experiment launch is authorized by this revision.
 
 ## Validation and reproducibility
 
@@ -345,11 +452,12 @@ Scripts live in `main/audits/probe_discrepancy`; the
 [README](../audits/probe_discrepancy/README.md) gives reproduction commands,
 not a request for owner execution. Evidence lives outside Git at
 `/workspace/artifacts/source-bound-discrepancy-pilot/`. The tracked receipt binds
-source/code/inputs, manifest, access log and checksums. Only audit scripts,
-synthetic CPU tests, a non-executable design and documentation change.
+source/code/inputs, manifest, access log and checksums. Only audit/launch-control scripts, synthetic CPU tests, a blocked design and
+documentation change. The adapter and actual Delta qualification remain absent.
 
-Validation:22 CPU tests pass (12 new source/design checks including six guard
-mutations, plus10 PR15 accounting tests). Fourteen Matplotlib/Pyparsing API
+Validation:72 CPU tests pass, including six source guard mutations,
+ten prior accounting tests, gate rejection checks and a mocked all-ten barrier/
+five-five dispatch. Fourteen Matplotlib/Pyparsing API
 deprecation warnings are reported; no test fails/skips. Nine source guards,
 controlled source routing and actual NPZ pairing pass. Existing raw reader
 rechecks697 hashes and all4,834 IQMs. Black/Pyflakes/compileall/diff checks pass.

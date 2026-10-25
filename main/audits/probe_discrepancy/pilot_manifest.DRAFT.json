@@ -1,348 +1,82 @@
 {
-  "count": 14,
+  "allocation_proposal": {
+    "account": "biqc-delta-gpu",
+    "cpus": 32,
+    "gpu_model": "NVIDIA A100-SXM4-40GB",
+    "gpus": 2,
+    "host_memory_GiB": 128,
+    "nodes": 1,
+    "ntasks": 1,
+    "partition": "gpuA100x4",
+    "wall_minutes": 2880
+  },
+  "count": 10,
   "diagnostic_implementation_source": null,
-  "diagnostic_status": "retention specification only; adapter not implemented or qualified by this task",
+  "diagnostic_status": "adapter not implemented/reviewed/qualified",
   "executable": false,
-  "gpu_model_proposal": "NVIDIA A100-SXM4-40GB; owner must verify original hardware and approve one common model",
   "launch_approved": false,
-  "matmul_precision": "tensorfloat32; no x64/bfloat16/fp16 changes",
+  "matmul_precision": "tensorfloat32; unchanged source rule",
   "new_campaign_root": null,
+  "process_environment": {
+    "JAX_ENABLE_X64": "false",
+    "JAX_PLATFORMS": "cuda,cpu",
+    "MKL_NUM_THREADS": "1",
+    "OMP_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1",
+    "XLA_PYTHON_CLIENT_PREALLOCATE": "false"
+  },
   "resource_estimate": {
-    "basis": "sum selected W&B runtime values as serial one-GPU planning proxy; factor2 contingency is unmeasured, not allocation accounting",
-    "cpu_per_process_proposed": 16,
-    "host_ram_GiB_per_process_proposed": 64,
-    "max_gpus_proposed": 1,
-    "one_process_per_gpu": true,
-    "packing": false,
-    "planning_range_gpu_hours_NOT_AUTHORIZED": [
-      206.88157333633222,
-      413.76314667266445
-    ],
-    "stop_before_launch_until_profiles_quota_storage_reviewed": true,
+    "controller_cpus_proposed": 2,
+    "cpus_per_child_proposed": 3,
+    "feasibility": "unknown; do not divide historical runtimes by five or assume 48h completion",
+    "packing_qualified": false,
+    "packing_requested": true,
+    "reserved_gpu_hours_at_proposed_wall_cap_NOT_AUTHORIZED": 96,
     "storage_estimate_GiB_NOT_AUTHORIZED": [
       200,
       500
     ],
-    "sum_historical_runtime_hours_NOT_ALLOCATION_HOURS": 206.88157333633222
+    "sum_historical_runtime_hours_NOT_ALLOCATION_HOURS": 134.31333333333333,
+    "throughput_VRAM_storage_actual_measurements": null
+  },
+  "retention_contract": {
+    "all_checks": [
+      "original round b/MSE/scores/offsets",
+      "2000 pre-update minibatch losses",
+      "source/config/checkpoint/run identity hashes"
+    ],
+    "failure_policy": "retain partial/failed outputs, no deletion, replacement or automatic retry",
+    "pairing": "same raw/normalized inputs, teacher/base and minibatch stream; original own offsets retained",
+    "selected_checks": [
+      "raw replay indices/pool/actions and hashes",
+      "RMS state and normalized inputs",
+      "teacher tree/keys/phase/base and literal own-offset targets",
+      "fresh/current initial trees, Q/centered residual/covariance",
+      "full-pool Q and MSE at 0/100/500/1000/2000, separate from minibatches",
+      "optimizer/training RNG/probe RNG/evaluation RNG provenance"
+    ],
+    "telemetry": [
+      "per-process RSS/CPU",
+      "GPU UUID and VRAM/utilization",
+      "compile and steady-state timing",
+      "pool/fit/checkpoint durations and bytes",
+      "shared filesystem I/O/free space",
+      "barrier/exec timing"
+    ]
   },
   "runs": [
     {
-      "architecture": "D2W512",
-      "arm": "original protocol with proposed observation-only retention",
-      "control_extension": "preserve source natural-fork untreated continuation; max nominal/fork+125000, not artificially truncated",
-      "environment": "dog-run",
-      "historical_runtime_seconds_PROXY_NOT_GPU_USAGE": 19902,
-      "nominal_endpoint_interactions": 500000,
-      "original_run_id": "7ic002ar",
-      "pilot_id": "P01",
-      "retained_checks": [
-        0,
-        5,
-        35,
-        50
-      ],
-      "seed": 5,
-      "selection": "typical",
-      "source_resolved_config_sha256": "32d4aa78cb81d3a235bf469def15219575a128f7d1bc1d869b01387c09d02da3",
-      "source_scientific_config": {
-        "action_repeat": 2,
-        "actor_grad_cosine_every": 30,
-        "actor_hidden_dim": 128,
-        "actor_num_blocks": 1,
-        "actor_num_params": "170.70K",
-        "actor_sparsity": 0,
-        "agent": {
-          "actor_block_type": "residual",
-          "actor_hidden_dim": 128,
-          "actor_learning_rate": 0.0001,
-          "actor_num_blocks": 1,
-          "actor_sparsity": 0,
-          "actor_weight_decay": 0.01,
-          "agent_type": "sac",
-          "critic_block_type": "residual",
-          "critic_hidden_dim": 512,
-          "critic_learning_rate": 0.0001,
-          "critic_num_blocks": 2,
-          "critic_sparsity": 0,
-          "critic_use_cdq": false,
-          "critic_weight_decay": 0.01,
-          "gamma": 0.99,
-          "max_episode_steps": 1000,
-          "mixed_precision": false,
-          "n_step": 1,
-          "normalize_observation": true,
-          "num_train_envs": 1,
-          "seed": 5,
-          "target_tau": 0.005,
-          "temp_initial_value": 0.01,
-          "temp_learning_rate": 0.0001,
-          "temp_target_entropy": null,
-          "temp_target_entropy_coef": -0.5,
-          "temp_weight_decay": 0
-        },
-        "buffer": {
-          "add_batch_size": 1,
-          "buffer_class_type": "numpy",
-          "buffer_type": "uniform",
-          "gamma": 0.99,
-          "max_length": 1000000,
-          "min_length": 5000,
-          "n_step": 1,
-          "sample_batch_size": 256
-        },
-        "checks": {
-          "check1_tolerance_eps": 64
-        },
-        "critic_hidden_dim": 512,
-        "critic_num_blocks": 2,
-        "critic_num_params": "4.34M",
-        "critic_sparsity": 0,
-        "diagnostics": {
-          "enabled": true,
-          "kl_reference_size": 256,
-          "saturation_threshold": 0.99
-        },
-        "eff_episode_len": 500,
-        "env": {
-          "action_repeat": 2,
-          "env_name": "dog-run",
-          "env_type": "dmc",
-          "episodic": false,
-          "max_episode_steps": 1000,
-          "no_termination": false,
-          "num_env_steps": 1000000,
-          "num_eval_envs": 1,
-          "num_train_envs": 1,
-          "rescale_action": true,
-          "reward_scale": 1,
-          "seed": 5
-        },
-        "env_name": "dog-run",
-        "evaluation_per_interaction_step": 50000,
-        "exp_name": "exp12",
-        "fork": {
-          "architectures": [
-            "D4W1024",
-            "D4W1536"
-          ],
-          "arm": null,
-          "enabled": true,
-          "eval_episodes": 10,
-          "eval_every_fraction": 0.01,
-          "horizon_fraction": 0.25,
-          "identity_snapshot_steps": null,
-          "max_total_fraction": 1.2,
-          "source": null
-        },
-        "gamma": 0.99,
-        "injection": {
-          "m": null
-        },
-        "logging_per_interaction_step": 2000,
-        "n_step": 1,
-        "num_env_steps": 1000000,
-        "num_eval_episodes": 5,
-        "num_interaction_steps": 500000,
-        "num_params": "4.51M",
-        "num_record_episodes": 0,
-        "num_train_envs": 1,
-        "positive_control": {
-          "architecture": "D4W1536",
-          "env_name": "dog-run",
-          "noise_threshold": 0.1,
-          "similar_within": 0.1
-        },
-        "probe": {
-          "batch_size": 256,
-          "checks": 50,
-          "enabled": true,
-          "eval_chunk": 2560,
-          "pool_size": 25600,
-          "rounds": 10,
-          "steps": 2000,
-          "target_scale": 100000
-        },
-        "recording_per_interaction_step": 500000,
-        "run_role": "confirmatory",
-        "seed": 5,
-        "testing": {
-          "force_trigger_check": null,
-          "stop_after_identity_snapshot": false
-        },
-        "trigger": {
-          "confidence": 0.95,
-          "consecutive_checks": 2,
-          "eligible_fraction": 0.95,
-          "null_threshold": 0,
-          "resamples": 10000
-        },
-        "updates_per_interaction_step": 2
-      },
-      "training_source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
-    },
-    {
-      "architecture": "D4W1024",
-      "arm": "original protocol with proposed observation-only retention",
-      "control_extension": "preserve source natural-fork untreated continuation; max nominal/fork+125000, not artificially truncated",
-      "environment": "dog-run",
-      "historical_runtime_seconds_PROXY_NOT_GPU_USAGE": 47912,
-      "nominal_endpoint_interactions": 500000,
-      "original_run_id": "2j9z776f",
-      "pilot_id": "P02",
-      "retained_checks": [
-        0,
-        5,
-        35,
-        50
-      ],
-      "seed": 2,
-      "selection": "typical",
-      "source_resolved_config_sha256": "d66b5cd49b4bc4fb7ee75a34819bd3854bfef10924d391a518c75ab018bd3cf7",
-      "source_scientific_config": {
-        "action_repeat": 2,
-        "actor_grad_cosine_every": 30,
-        "actor_hidden_dim": 128,
-        "actor_num_blocks": 1,
-        "actor_num_params": "170.70K",
-        "actor_sparsity": 0,
-        "agent": {
-          "actor_block_type": "residual",
-          "actor_hidden_dim": 128,
-          "actor_learning_rate": 0.0001,
-          "actor_num_blocks": 1,
-          "actor_sparsity": 0,
-          "actor_weight_decay": 0.01,
-          "agent_type": "sac",
-          "critic_block_type": "residual",
-          "critic_hidden_dim": 1024,
-          "critic_learning_rate": 0.0001,
-          "critic_num_blocks": 4,
-          "critic_sparsity": 0,
-          "critic_use_cdq": false,
-          "critic_weight_decay": 0.01,
-          "gamma": 0.99,
-          "max_episode_steps": 1000,
-          "mixed_precision": false,
-          "n_step": 1,
-          "normalize_observation": true,
-          "num_train_envs": 1,
-          "seed": 2,
-          "target_tau": 0.005,
-          "temp_initial_value": 0.01,
-          "temp_learning_rate": 0.0001,
-          "temp_target_entropy": null,
-          "temp_target_entropy_coef": -0.5,
-          "temp_weight_decay": 0
-        },
-        "buffer": {
-          "add_batch_size": 1,
-          "buffer_class_type": "numpy",
-          "buffer_type": "uniform",
-          "gamma": 0.99,
-          "max_length": 1000000,
-          "min_length": 5000,
-          "n_step": 1,
-          "sample_batch_size": 256
-        },
-        "checks": {
-          "check1_tolerance_eps": 64
-        },
-        "critic_hidden_dim": 1024,
-        "critic_num_blocks": 4,
-        "critic_num_params": "33.85M",
-        "critic_sparsity": 0,
-        "diagnostics": {
-          "enabled": true,
-          "kl_reference_size": 256,
-          "saturation_threshold": 0.99
-        },
-        "eff_episode_len": 500,
-        "env": {
-          "action_repeat": 2,
-          "env_name": "dog-run",
-          "env_type": "dmc",
-          "episodic": false,
-          "max_episode_steps": 1000,
-          "no_termination": false,
-          "num_env_steps": 1000000,
-          "num_eval_envs": 1,
-          "num_train_envs": 1,
-          "rescale_action": true,
-          "reward_scale": 1,
-          "seed": 2
-        },
-        "env_name": "dog-run",
-        "evaluation_per_interaction_step": 50000,
-        "exp_name": "exp12",
-        "fork": {
-          "architectures": [
-            "D4W1024",
-            "D4W1536"
-          ],
-          "arm": null,
-          "enabled": true,
-          "eval_episodes": 10,
-          "eval_every_fraction": 0.01,
-          "horizon_fraction": 0.25,
-          "identity_snapshot_steps": null,
-          "max_total_fraction": 1.2,
-          "source": null
-        },
-        "gamma": 0.99,
-        "injection": {
-          "m": null
-        },
-        "logging_per_interaction_step": 2000,
-        "n_step": 1,
-        "num_env_steps": 1000000,
-        "num_eval_episodes": 5,
-        "num_interaction_steps": 500000,
-        "num_params": "34.03M",
-        "num_record_episodes": 0,
-        "num_train_envs": 1,
-        "positive_control": {
-          "architecture": "D4W1536",
-          "env_name": "dog-run",
-          "noise_threshold": 0.1,
-          "similar_within": 0.1
-        },
-        "probe": {
-          "batch_size": 256,
-          "checks": 50,
-          "enabled": true,
-          "eval_chunk": 2560,
-          "pool_size": 25600,
-          "rounds": 10,
-          "steps": 2000,
-          "target_scale": 100000
-        },
-        "recording_per_interaction_step": 500000,
-        "run_role": "confirmatory",
-        "seed": 2,
-        "testing": {
-          "force_trigger_check": null,
-          "stop_after_identity_snapshot": false
-        },
-        "trigger": {
-          "confidence": 0.95,
-          "consecutive_checks": 2,
-          "eligible_fraction": 0.95,
-          "null_threshold": 0,
-          "resamples": 10000
-        },
-        "updates_per_interaction_step": 2
-      },
-      "training_source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
-    },
-    {
       "architecture": "D4W1536",
-      "arm": "original protocol with proposed observation-only retention",
-      "control_extension": "preserve source natural-fork untreated continuation; max nominal/fork+125000, not artificially truncated",
+      "arm": "unchanged original protocol with proposed observational retention",
+      "control_extension": "preserve original natural-fork untreated extension",
       "environment": "dog-run",
+      "gpu": 0,
       "historical_runtime_seconds_PROXY_NOT_GPU_USAGE": 67427,
       "nominal_endpoint_interactions": 500000,
       "original_run_id": "htg273zh",
-      "pilot_id": "P03",
+      "output_relative": "runs/C01G0",
+      "pair_id": "C01",
+      "pilot_id": "C01G0",
       "retained_checks": [
         0,
         5,
@@ -350,7 +84,7 @@
         50
       ],
       "seed": 3,
-      "selection": "typical",
+      "selection": "same historical seed replicated on both GPUs; small anchor has original archived NPZ",
       "source_resolved_config_sha256": "88e5597dc2fd37d71dd8dd03db1bb9de76c93a6cbc9b22d2b34383c6c1d1ebb9",
       "source_scientific_config": {
         "action_repeat": 2,
@@ -486,26 +220,32 @@
         },
         "updates_per_interaction_step": 2
       },
-      "training_source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+      "source_scientific_config_sha256": "7bf157ae74e5a34b649b9d94c2ef5c241a9c00aed640ecab657ab95ccd5f3f0e",
+      "training_source": "f597ee9898e4d401912092c336c3e5330cf2fda1",
+      "wandb_group": "discrepancy-10-simultaneous-v2",
+      "wandb_id": "echocritic-c01g0"
     },
     {
       "architecture": "D4W1536",
-      "arm": "original protocol with proposed observation-only retention",
-      "control_extension": "preserve source natural-fork untreated continuation; max nominal/fork+125000, not artificially truncated",
+      "arm": "unchanged original protocol with proposed observational retention",
+      "control_extension": "preserve original natural-fork untreated extension",
       "environment": "dog-run",
-      "historical_runtime_seconds_PROXY_NOT_GPU_USAGE": 68036,
+      "gpu": 1,
+      "historical_runtime_seconds_PROXY_NOT_GPU_USAGE": 67427,
       "nominal_endpoint_interactions": 500000,
-      "original_run_id": "q0859o4f",
-      "pilot_id": "P04",
+      "original_run_id": "htg273zh",
+      "output_relative": "runs/C01G1",
+      "pair_id": "C01",
+      "pilot_id": "C01G1",
       "retained_checks": [
         0,
         5,
         35,
         50
       ],
-      "seed": 6,
-      "selection": "exceptional",
-      "source_resolved_config_sha256": "1b14477c97662c99762b7ffcd6307146177e9e71fbb0098ca1eb6cd17ca64449",
+      "seed": 3,
+      "selection": "same historical seed replicated on both GPUs; small anchor has original archived NPZ",
+      "source_resolved_config_sha256": "88e5597dc2fd37d71dd8dd03db1bb9de76c93a6cbc9b22d2b34383c6c1d1ebb9",
       "source_scientific_config": {
         "action_repeat": 2,
         "actor_grad_cosine_every": 30,
@@ -534,7 +274,7 @@
           "n_step": 1,
           "normalize_observation": true,
           "num_train_envs": 1,
-          "seed": 6,
+          "seed": 3,
           "target_tau": 0.005,
           "temp_initial_value": 0.01,
           "temp_learning_rate": 0.0001,
@@ -577,7 +317,7 @@
           "num_train_envs": 1,
           "rescale_action": true,
           "reward_scale": 1,
-          "seed": 6
+          "seed": 3
         },
         "env_name": "dog-run",
         "evaluation_per_interaction_step": 50000,
@@ -626,7 +366,7 @@
         },
         "recording_per_interaction_step": 500000,
         "run_role": "confirmatory",
-        "seed": 6,
+        "seed": 3,
         "testing": {
           "force_trigger_check": null,
           "stop_after_identity_snapshot": false
@@ -640,17 +380,23 @@
         },
         "updates_per_interaction_step": 2
       },
-      "training_source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+      "source_scientific_config_sha256": "7bf157ae74e5a34b649b9d94c2ef5c241a9c00aed640ecab657ab95ccd5f3f0e",
+      "training_source": "f597ee9898e4d401912092c336c3e5330cf2fda1",
+      "wandb_group": "discrepancy-10-simultaneous-v2",
+      "wandb_id": "echocritic-c01g1"
     },
     {
       "architecture": "D4W1024",
-      "arm": "original protocol with proposed observation-only retention",
-      "control_extension": "preserve source natural-fork untreated continuation; max nominal/fork+125000, not artificially truncated",
+      "arm": "unchanged original protocol with proposed observational retention",
+      "control_extension": "preserve original natural-fork untreated extension",
       "environment": "humanoid-run",
+      "gpu": 0,
       "historical_runtime_seconds_PROXY_NOT_GPU_USAGE": 48089,
       "nominal_endpoint_interactions": 500000,
       "original_run_id": "chhgyiuq",
-      "pilot_id": "P05",
+      "output_relative": "runs/C02G0",
+      "pair_id": "C02",
+      "pilot_id": "C02G0",
       "retained_checks": [
         0,
         5,
@@ -658,7 +404,7 @@
         50
       ],
       "seed": 5,
-      "selection": "typical",
+      "selection": "same historical seed replicated on both GPUs; small anchor has original archived NPZ",
       "source_resolved_config_sha256": "c90101895721875a01c7d784bd214ba7807b6636c5caebe91ff8db2aff053e54",
       "source_scientific_config": {
         "action_repeat": 2,
@@ -794,325 +540,23 @@
         },
         "updates_per_interaction_step": 2
       },
-      "training_source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
-    },
-    {
-      "architecture": "D4W1536",
-      "arm": "original protocol with proposed observation-only retention",
-      "control_extension": "preserve source natural-fork untreated continuation; max nominal/fork+125000, not artificially truncated",
-      "environment": "humanoid-run",
-      "historical_runtime_seconds_PROXY_NOT_GPU_USAGE": 65515,
-      "nominal_endpoint_interactions": 500000,
-      "original_run_id": "jiotx3f8",
-      "pilot_id": "P06",
-      "retained_checks": [
-        0,
-        5,
-        35,
-        50
-      ],
-      "seed": 1,
-      "selection": "typical",
-      "source_resolved_config_sha256": "db43c5f13a738a22e40546b2e72b47ad4a891f1ecf2b2a68419bd42b9a80a03c",
-      "source_scientific_config": {
-        "action_repeat": 2,
-        "actor_grad_cosine_every": 30,
-        "actor_hidden_dim": 128,
-        "actor_num_blocks": 1,
-        "actor_num_params": "146.35K",
-        "actor_sparsity": 0,
-        "agent": {
-          "actor_block_type": "residual",
-          "actor_hidden_dim": 128,
-          "actor_learning_rate": 0.0001,
-          "actor_num_blocks": 1,
-          "actor_sparsity": 0,
-          "actor_weight_decay": 0.01,
-          "agent_type": "sac",
-          "critic_block_type": "residual",
-          "critic_hidden_dim": 1536,
-          "critic_learning_rate": 0.0001,
-          "critic_num_blocks": 4,
-          "critic_sparsity": 0,
-          "critic_use_cdq": false,
-          "critic_weight_decay": 0.01,
-          "gamma": 0.99,
-          "max_episode_steps": 1000,
-          "mixed_precision": false,
-          "n_step": 1,
-          "normalize_observation": true,
-          "num_train_envs": 1,
-          "seed": 1,
-          "target_tau": 0.005,
-          "temp_initial_value": 0.01,
-          "temp_learning_rate": 0.0001,
-          "temp_target_entropy": null,
-          "temp_target_entropy_coef": -0.5,
-          "temp_weight_decay": 0
-        },
-        "buffer": {
-          "add_batch_size": 1,
-          "buffer_class_type": "numpy",
-          "buffer_type": "uniform",
-          "gamma": 0.99,
-          "max_length": 1000000,
-          "min_length": 5000,
-          "n_step": 1,
-          "sample_batch_size": 256
-        },
-        "checks": {
-          "check1_tolerance_eps": 64
-        },
-        "critic_hidden_dim": 1536,
-        "critic_num_blocks": 4,
-        "critic_num_params": "75.68M",
-        "critic_sparsity": 0,
-        "diagnostics": {
-          "enabled": true,
-          "kl_reference_size": 256,
-          "saturation_threshold": 0.99
-        },
-        "eff_episode_len": 500,
-        "env": {
-          "action_repeat": 2,
-          "env_name": "humanoid-run",
-          "env_type": "dmc",
-          "episodic": false,
-          "max_episode_steps": 1000,
-          "no_termination": false,
-          "num_env_steps": 1000000,
-          "num_eval_envs": 1,
-          "num_train_envs": 1,
-          "rescale_action": true,
-          "reward_scale": 1,
-          "seed": 1
-        },
-        "env_name": "humanoid-run",
-        "evaluation_per_interaction_step": 50000,
-        "exp_name": "exp12",
-        "fork": {
-          "architectures": [
-            "D4W1024",
-            "D4W1536"
-          ],
-          "arm": null,
-          "enabled": true,
-          "eval_episodes": 10,
-          "eval_every_fraction": 0.01,
-          "horizon_fraction": 0.25,
-          "identity_snapshot_steps": null,
-          "max_total_fraction": 1.2,
-          "source": null
-        },
-        "gamma": 0.99,
-        "injection": {
-          "m": null
-        },
-        "logging_per_interaction_step": 2000,
-        "n_step": 1,
-        "num_env_steps": 1000000,
-        "num_eval_episodes": 5,
-        "num_interaction_steps": 500000,
-        "num_params": "75.83M",
-        "num_record_episodes": 0,
-        "num_train_envs": 1,
-        "positive_control": {
-          "architecture": "D4W1536",
-          "env_name": "dog-run",
-          "noise_threshold": 0.1,
-          "similar_within": 0.1
-        },
-        "probe": {
-          "batch_size": 256,
-          "checks": 50,
-          "enabled": true,
-          "eval_chunk": 2560,
-          "pool_size": 25600,
-          "rounds": 10,
-          "steps": 2000,
-          "target_scale": 100000
-        },
-        "recording_per_interaction_step": 500000,
-        "run_role": "confirmatory",
-        "seed": 1,
-        "testing": {
-          "force_trigger_check": null,
-          "stop_after_identity_snapshot": false
-        },
-        "trigger": {
-          "confidence": 0.95,
-          "consecutive_checks": 2,
-          "eligible_fraction": 0.95,
-          "null_threshold": 0,
-          "resamples": 10000
-        },
-        "updates_per_interaction_step": 2
-      },
-      "training_source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
-    },
-    {
-      "architecture": "D4W1536",
-      "arm": "original protocol with proposed observation-only retention",
-      "control_extension": "preserve source natural-fork untreated continuation; max nominal/fork+125000, not artificially truncated",
-      "environment": "humanoid-run",
-      "historical_runtime_seconds_PROXY_NOT_GPU_USAGE": 66423,
-      "nominal_endpoint_interactions": 500000,
-      "original_run_id": "vi8gd0nw",
-      "pilot_id": "P07",
-      "retained_checks": [
-        0,
-        5,
-        35,
-        50
-      ],
-      "seed": 4,
-      "selection": "exceptional",
-      "source_resolved_config_sha256": "e53d3afac16b7726f085a92bec28fe6542cfafb4119d9e34a4baa0d122bbc507",
-      "source_scientific_config": {
-        "action_repeat": 2,
-        "actor_grad_cosine_every": 30,
-        "actor_hidden_dim": 128,
-        "actor_num_blocks": 1,
-        "actor_num_params": "146.35K",
-        "actor_sparsity": 0,
-        "agent": {
-          "actor_block_type": "residual",
-          "actor_hidden_dim": 128,
-          "actor_learning_rate": 0.0001,
-          "actor_num_blocks": 1,
-          "actor_sparsity": 0,
-          "actor_weight_decay": 0.01,
-          "agent_type": "sac",
-          "critic_block_type": "residual",
-          "critic_hidden_dim": 1536,
-          "critic_learning_rate": 0.0001,
-          "critic_num_blocks": 4,
-          "critic_sparsity": 0,
-          "critic_use_cdq": false,
-          "critic_weight_decay": 0.01,
-          "gamma": 0.99,
-          "max_episode_steps": 1000,
-          "mixed_precision": false,
-          "n_step": 1,
-          "normalize_observation": true,
-          "num_train_envs": 1,
-          "seed": 4,
-          "target_tau": 0.005,
-          "temp_initial_value": 0.01,
-          "temp_learning_rate": 0.0001,
-          "temp_target_entropy": null,
-          "temp_target_entropy_coef": -0.5,
-          "temp_weight_decay": 0
-        },
-        "buffer": {
-          "add_batch_size": 1,
-          "buffer_class_type": "numpy",
-          "buffer_type": "uniform",
-          "gamma": 0.99,
-          "max_length": 1000000,
-          "min_length": 5000,
-          "n_step": 1,
-          "sample_batch_size": 256
-        },
-        "checks": {
-          "check1_tolerance_eps": 64
-        },
-        "critic_hidden_dim": 1536,
-        "critic_num_blocks": 4,
-        "critic_num_params": "75.68M",
-        "critic_sparsity": 0,
-        "diagnostics": {
-          "enabled": true,
-          "kl_reference_size": 256,
-          "saturation_threshold": 0.99
-        },
-        "eff_episode_len": 500,
-        "env": {
-          "action_repeat": 2,
-          "env_name": "humanoid-run",
-          "env_type": "dmc",
-          "episodic": false,
-          "max_episode_steps": 1000,
-          "no_termination": false,
-          "num_env_steps": 1000000,
-          "num_eval_envs": 1,
-          "num_train_envs": 1,
-          "rescale_action": true,
-          "reward_scale": 1,
-          "seed": 4
-        },
-        "env_name": "humanoid-run",
-        "evaluation_per_interaction_step": 50000,
-        "exp_name": "exp12",
-        "fork": {
-          "architectures": [
-            "D4W1024",
-            "D4W1536"
-          ],
-          "arm": null,
-          "enabled": true,
-          "eval_episodes": 10,
-          "eval_every_fraction": 0.01,
-          "horizon_fraction": 0.25,
-          "identity_snapshot_steps": null,
-          "max_total_fraction": 1.2,
-          "source": null
-        },
-        "gamma": 0.99,
-        "injection": {
-          "m": null
-        },
-        "logging_per_interaction_step": 2000,
-        "n_step": 1,
-        "num_env_steps": 1000000,
-        "num_eval_episodes": 5,
-        "num_interaction_steps": 500000,
-        "num_params": "75.83M",
-        "num_record_episodes": 0,
-        "num_train_envs": 1,
-        "positive_control": {
-          "architecture": "D4W1536",
-          "env_name": "dog-run",
-          "noise_threshold": 0.1,
-          "similar_within": 0.1
-        },
-        "probe": {
-          "batch_size": 256,
-          "checks": 50,
-          "enabled": true,
-          "eval_chunk": 2560,
-          "pool_size": 25600,
-          "rounds": 10,
-          "steps": 2000,
-          "target_scale": 100000
-        },
-        "recording_per_interaction_step": 500000,
-        "run_role": "confirmatory",
-        "seed": 4,
-        "testing": {
-          "force_trigger_check": null,
-          "stop_after_identity_snapshot": false
-        },
-        "trigger": {
-          "confidence": 0.95,
-          "consecutive_checks": 2,
-          "eligible_fraction": 0.95,
-          "null_threshold": 0,
-          "resamples": 10000
-        },
-        "updates_per_interaction_step": 2
-      },
-      "training_source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+      "source_scientific_config_sha256": "fb09116e0dda791be2de3891b127920da939fdf0deb5d4183061d4d685b7b5df",
+      "training_source": "f597ee9898e4d401912092c336c3e5330cf2fda1",
+      "wandb_group": "discrepancy-10-simultaneous-v2",
+      "wandb_id": "echocritic-c02g0"
     },
     {
       "architecture": "D4W1024",
-      "arm": "original protocol with proposed observation-only retention",
-      "control_extension": "preserve source natural-fork untreated continuation; max nominal/fork+125000, not artificially truncated",
-      "environment": "myo-key-turn",
-      "historical_runtime_seconds_PROXY_NOT_GPU_USAGE": 48453,
+      "arm": "unchanged original protocol with proposed observational retention",
+      "control_extension": "preserve original natural-fork untreated extension",
+      "environment": "humanoid-run",
+      "gpu": 1,
+      "historical_runtime_seconds_PROXY_NOT_GPU_USAGE": 48089,
       "nominal_endpoint_interactions": 500000,
-      "original_run_id": "zlwpdeln",
-      "pilot_id": "P08",
+      "original_run_id": "chhgyiuq",
+      "output_relative": "runs/C02G1",
+      "pair_id": "C02",
+      "pilot_id": "C02G1",
       "retained_checks": [
         0,
         5,
@@ -1120,14 +564,14 @@
         50
       ],
       "seed": 5,
-      "selection": "typical",
-      "source_resolved_config_sha256": "82b8abb99a7937254afc1cb8dd6fadcc6939e33309f104bd2d1dc0ea2519353e",
+      "selection": "same historical seed replicated on both GPUs; small anchor has original archived NPZ",
+      "source_resolved_config_sha256": "c90101895721875a01c7d784bd214ba7807b6636c5caebe91ff8db2aff053e54",
       "source_scientific_config": {
         "action_repeat": 2,
         "actor_grad_cosine_every": 30,
         "actor_hidden_dim": 128,
         "actor_num_blocks": 1,
-        "actor_num_params": "154.32K",
+        "actor_num_params": "146.35K",
         "actor_sparsity": 0,
         "agent": {
           "actor_block_type": "residual",
@@ -1144,8 +588,8 @@
           "critic_sparsity": 0,
           "critic_use_cdq": false,
           "critic_weight_decay": 0.01,
-          "gamma": 0.95,
-          "max_episode_steps": 100,
+          "gamma": 0.99,
+          "max_episode_steps": 1000,
           "mixed_precision": false,
           "n_step": 1,
           "normalize_observation": true,
@@ -1162,7 +606,7 @@
           "add_batch_size": 1,
           "buffer_class_type": "numpy",
           "buffer_type": "uniform",
-          "gamma": 0.95,
+          "gamma": 0.99,
           "max_length": 1000000,
           "min_length": 5000,
           "n_step": 1,
@@ -1173,20 +617,20 @@
         },
         "critic_hidden_dim": 1024,
         "critic_num_blocks": 4,
-        "critic_num_params": "33.72M",
+        "critic_num_params": "33.68M",
         "critic_sparsity": 0,
         "diagnostics": {
           "enabled": true,
           "kl_reference_size": 256,
           "saturation_threshold": 0.99
         },
-        "eff_episode_len": 50,
+        "eff_episode_len": 500,
         "env": {
           "action_repeat": 2,
-          "env_name": "myo-key-turn",
-          "env_type": "myosuite",
+          "env_name": "humanoid-run",
+          "env_type": "dmc",
           "episodic": false,
-          "max_episode_steps": 100,
+          "max_episode_steps": 1000,
           "no_termination": false,
           "num_env_steps": 1000000,
           "num_eval_envs": 1,
@@ -1195,7 +639,7 @@
           "reward_scale": 1,
           "seed": 5
         },
-        "env_name": "myo-key-turn",
+        "env_name": "humanoid-run",
         "evaluation_per_interaction_step": 50000,
         "exp_name": "exp12",
         "fork": {
@@ -1212,7 +656,7 @@
           "max_total_fraction": 1.2,
           "source": null
         },
-        "gamma": 0.95,
+        "gamma": 0.99,
         "injection": {
           "m": null
         },
@@ -1221,7 +665,7 @@
         "num_env_steps": 1000000,
         "num_eval_episodes": 5,
         "num_interaction_steps": 500000,
-        "num_params": "33.88M",
+        "num_params": "33.82M",
         "num_record_episodes": 0,
         "num_train_envs": 1,
         "positive_control": {
@@ -1256,17 +700,23 @@
         },
         "updates_per_interaction_step": 2
       },
-      "training_source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+      "source_scientific_config_sha256": "fb09116e0dda791be2de3891b127920da939fdf0deb5d4183061d4d685b7b5df",
+      "training_source": "f597ee9898e4d401912092c336c3e5330cf2fda1",
+      "wandb_group": "discrepancy-10-simultaneous-v2",
+      "wandb_id": "echocritic-c02g1"
     },
     {
       "architecture": "D4W1536",
-      "arm": "original protocol with proposed observation-only retention",
-      "control_extension": "preserve source natural-fork untreated continuation; max nominal/fork+125000, not artificially truncated",
+      "arm": "unchanged original protocol with proposed observational retention",
+      "control_extension": "preserve original natural-fork untreated extension",
       "environment": "myo-key-turn",
+      "gpu": 0,
       "historical_runtime_seconds_PROXY_NOT_GPU_USAGE": 68350,
       "nominal_endpoint_interactions": 500000,
       "original_run_id": "deaf606s",
-      "pilot_id": "P09",
+      "output_relative": "runs/C03G0",
+      "pair_id": "C03",
+      "pilot_id": "C03G0",
       "retained_checks": [
         0,
         5,
@@ -1274,7 +724,7 @@
         50
       ],
       "seed": 2,
-      "selection": "typical",
+      "selection": "same historical seed replicated on both GPUs; small anchor has original archived NPZ",
       "source_resolved_config_sha256": "8ed9919c3e6b7e90e54bf8e65cb7b6b443c9bbf5a0e76d46063588b3638a5c3b",
       "source_scientific_config": {
         "action_repeat": 2,
@@ -1410,26 +860,32 @@
         },
         "updates_per_interaction_step": 2
       },
-      "training_source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+      "source_scientific_config_sha256": "13b411be41f12f3be423e4e3cd26cd3fbc44d0555b0cbf561da2ef4b3d299b24",
+      "training_source": "f597ee9898e4d401912092c336c3e5330cf2fda1",
+      "wandb_group": "discrepancy-10-simultaneous-v2",
+      "wandb_id": "echocritic-c03g0"
     },
     {
       "architecture": "D4W1536",
-      "arm": "original protocol with proposed observation-only retention",
-      "control_extension": "preserve source natural-fork untreated continuation; max nominal/fork+125000, not artificially truncated",
+      "arm": "unchanged original protocol with proposed observational retention",
+      "control_extension": "preserve original natural-fork untreated extension",
       "environment": "myo-key-turn",
-      "historical_runtime_seconds_PROXY_NOT_GPU_USAGE": 67143,
+      "gpu": 1,
+      "historical_runtime_seconds_PROXY_NOT_GPU_USAGE": 68350,
       "nominal_endpoint_interactions": 500000,
-      "original_run_id": "gxta0ldp",
-      "pilot_id": "P10",
+      "original_run_id": "deaf606s",
+      "output_relative": "runs/C03G1",
+      "pair_id": "C03",
+      "pilot_id": "C03G1",
       "retained_checks": [
         0,
         5,
         35,
         50
       ],
-      "seed": 3,
-      "selection": "exceptional",
-      "source_resolved_config_sha256": "d0bfce3a11b3cea8739a013157a7f0a798f87e8294a8bc52c8bffe0f2c2462f3",
+      "seed": 2,
+      "selection": "same historical seed replicated on both GPUs; small anchor has original archived NPZ",
+      "source_resolved_config_sha256": "8ed9919c3e6b7e90e54bf8e65cb7b6b443c9bbf5a0e76d46063588b3638a5c3b",
       "source_scientific_config": {
         "action_repeat": 2,
         "actor_grad_cosine_every": 30,
@@ -1458,7 +914,7 @@
           "n_step": 1,
           "normalize_observation": true,
           "num_train_envs": 1,
-          "seed": 3,
+          "seed": 2,
           "target_tau": 0.005,
           "temp_initial_value": 0.01,
           "temp_learning_rate": 0.0001,
@@ -1501,7 +957,7 @@
           "num_train_envs": 1,
           "rescale_action": true,
           "reward_scale": 1,
-          "seed": 3
+          "seed": 2
         },
         "env_name": "myo-key-turn",
         "evaluation_per_interaction_step": 50000,
@@ -1550,7 +1006,7 @@
         },
         "recording_per_interaction_step": 500000,
         "run_role": "confirmatory",
-        "seed": 3,
+        "seed": 2,
         "testing": {
           "force_trigger_check": null,
           "stop_after_identity_snapshot": false
@@ -1564,171 +1020,23 @@
         },
         "updates_per_interaction_step": 2
       },
-      "training_source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
-    },
-    {
-      "architecture": "D2W512",
-      "arm": "original protocol with proposed observation-only retention",
-      "control_extension": "preserve source natural-fork untreated continuation; max nominal/fork+125000, not artificially truncated",
-      "environment": "myo-pen-twirl",
-      "historical_runtime_seconds_PROXY_NOT_GPU_USAGE": 11305,
-      "nominal_endpoint_interactions": 500000,
-      "original_run_id": "515e9nqz",
-      "pilot_id": "P11",
-      "retained_checks": [
-        0,
-        5,
-        35,
-        50
-      ],
-      "seed": 7,
-      "selection": "typical",
-      "source_resolved_config_sha256": "9b0557813af0c1c6937602568470917da122e31c53f068422a34663de808ffa8",
-      "source_scientific_config": {
-        "action_repeat": 2,
-        "actor_grad_cosine_every": 30,
-        "actor_hidden_dim": 128,
-        "actor_num_blocks": 1,
-        "actor_num_params": "153.04K",
-        "actor_sparsity": 0,
-        "agent": {
-          "actor_block_type": "residual",
-          "actor_hidden_dim": 128,
-          "actor_learning_rate": 0.0001,
-          "actor_num_blocks": 1,
-          "actor_sparsity": 0,
-          "actor_weight_decay": 0.01,
-          "agent_type": "sac",
-          "critic_block_type": "residual",
-          "critic_hidden_dim": 512,
-          "critic_learning_rate": 0.0001,
-          "critic_num_blocks": 2,
-          "critic_sparsity": 0,
-          "critic_use_cdq": false,
-          "critic_weight_decay": 0.01,
-          "gamma": 0.95,
-          "max_episode_steps": 100,
-          "mixed_precision": false,
-          "n_step": 1,
-          "normalize_observation": true,
-          "num_train_envs": 1,
-          "seed": 7,
-          "target_tau": 0.005,
-          "temp_initial_value": 0.01,
-          "temp_learning_rate": 0.0001,
-          "temp_target_entropy": null,
-          "temp_target_entropy_coef": -0.5,
-          "temp_weight_decay": 0
-        },
-        "buffer": {
-          "add_batch_size": 1,
-          "buffer_class_type": "numpy",
-          "buffer_type": "uniform",
-          "gamma": 0.95,
-          "max_length": 1000000,
-          "min_length": 5000,
-          "n_step": 1,
-          "sample_batch_size": 256
-        },
-        "checks": {
-          "check1_tolerance_eps": 64
-        },
-        "critic_hidden_dim": 512,
-        "critic_num_blocks": 2,
-        "critic_num_params": "4.27M",
-        "critic_sparsity": 0,
-        "diagnostics": {
-          "enabled": true,
-          "kl_reference_size": 256,
-          "saturation_threshold": 0.99
-        },
-        "eff_episode_len": 50,
-        "env": {
-          "action_repeat": 2,
-          "env_name": "myo-pen-twirl",
-          "env_type": "myosuite",
-          "episodic": false,
-          "max_episode_steps": 100,
-          "no_termination": false,
-          "num_env_steps": 1000000,
-          "num_eval_envs": 1,
-          "num_train_envs": 1,
-          "rescale_action": true,
-          "reward_scale": 1,
-          "seed": 7
-        },
-        "env_name": "myo-pen-twirl",
-        "evaluation_per_interaction_step": 50000,
-        "exp_name": "exp12",
-        "fork": {
-          "architectures": [
-            "D4W1024",
-            "D4W1536"
-          ],
-          "arm": null,
-          "enabled": true,
-          "eval_episodes": 10,
-          "eval_every_fraction": 0.01,
-          "horizon_fraction": 0.25,
-          "identity_snapshot_steps": null,
-          "max_total_fraction": 1.2,
-          "source": null
-        },
-        "gamma": 0.95,
-        "injection": {
-          "m": null
-        },
-        "logging_per_interaction_step": 2000,
-        "n_step": 1,
-        "num_env_steps": 1000000,
-        "num_eval_episodes": 5,
-        "num_interaction_steps": 500000,
-        "num_params": "4.42M",
-        "num_record_episodes": 0,
-        "num_train_envs": 1,
-        "positive_control": {
-          "architecture": "D4W1536",
-          "env_name": "dog-run",
-          "noise_threshold": 0.1,
-          "similar_within": 0.1
-        },
-        "probe": {
-          "batch_size": 256,
-          "checks": 50,
-          "enabled": true,
-          "eval_chunk": 2560,
-          "pool_size": 25600,
-          "rounds": 10,
-          "steps": 2000,
-          "target_scale": 100000
-        },
-        "recording_per_interaction_step": 500000,
-        "run_role": "confirmatory",
-        "seed": 7,
-        "testing": {
-          "force_trigger_check": null,
-          "stop_after_identity_snapshot": false
-        },
-        "trigger": {
-          "confidence": 0.95,
-          "consecutive_checks": 2,
-          "eligible_fraction": 0.95,
-          "null_threshold": 0,
-          "resamples": 10000
-        },
-        "updates_per_interaction_step": 2
-      },
-      "training_source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+      "source_scientific_config_sha256": "13b411be41f12f3be423e4e3cd26cd3fbc44d0555b0cbf561da2ef4b3d299b24",
+      "training_source": "f597ee9898e4d401912092c336c3e5330cf2fda1",
+      "wandb_group": "discrepancy-10-simultaneous-v2",
+      "wandb_id": "echocritic-c03g1"
     },
     {
       "architecture": "D4W1024",
-      "arm": "original protocol with proposed observation-only retention",
-      "control_extension": "preserve source natural-fork untreated continuation; max nominal/fork+125000, not artificially truncated",
+      "arm": "unchanged original protocol with proposed observational retention",
+      "control_extension": "preserve original natural-fork untreated extension",
       "environment": "myo-pen-twirl",
+      "gpu": 0,
       "historical_runtime_seconds_PROXY_NOT_GPU_USAGE": 38786,
       "nominal_endpoint_interactions": 500000,
       "original_run_id": "w5gyiy2y",
-      "pilot_id": "P12",
+      "output_relative": "runs/C04G0",
+      "pair_id": "C04",
+      "pilot_id": "C04G0",
       "retained_checks": [
         0,
         5,
@@ -1736,7 +1044,7 @@
         50
       ],
       "seed": 6,
-      "selection": "typical",
+      "selection": "same historical seed replicated on both GPUs; small anchor has original archived NPZ",
       "source_resolved_config_sha256": "367f8c9ad3cc1a363396ec0596ed3e5bcd1bdd2c6b22ed5e6c9243bca0d7afbb",
       "source_scientific_config": {
         "action_repeat": 2,
@@ -1872,26 +1180,32 @@
         },
         "updates_per_interaction_step": 2
       },
-      "training_source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+      "source_scientific_config_sha256": "d4198b5b3e2513eb66bc8b36fd324a011ad166480a4288cf40c3ff3f52f15486",
+      "training_source": "f597ee9898e4d401912092c336c3e5330cf2fda1",
+      "wandb_group": "discrepancy-10-simultaneous-v2",
+      "wandb_id": "echocritic-c04g0"
     },
     {
-      "architecture": "D4W1536",
-      "arm": "original protocol with proposed observation-only retention",
-      "control_extension": "preserve source natural-fork untreated continuation; max nominal/fork+125000, not artificially truncated",
+      "architecture": "D4W1024",
+      "arm": "unchanged original protocol with proposed observational retention",
+      "control_extension": "preserve original natural-fork untreated extension",
       "environment": "myo-pen-twirl",
-      "historical_runtime_seconds_PROXY_NOT_GPU_USAGE": 66529,
+      "gpu": 1,
+      "historical_runtime_seconds_PROXY_NOT_GPU_USAGE": 38786,
       "nominal_endpoint_interactions": 500000,
-      "original_run_id": "14fmtkz6",
-      "pilot_id": "P13",
+      "original_run_id": "w5gyiy2y",
+      "output_relative": "runs/C04G1",
+      "pair_id": "C04",
+      "pilot_id": "C04G1",
       "retained_checks": [
         0,
         5,
         35,
         50
       ],
-      "seed": 5,
-      "selection": "typical",
-      "source_resolved_config_sha256": "dc975ff5d3d5dc3b37e4c5070951561929e8da2e616b7edb3c9510f31ed14265",
+      "seed": 6,
+      "selection": "same historical seed replicated on both GPUs; small anchor has original archived NPZ",
+      "source_resolved_config_sha256": "367f8c9ad3cc1a363396ec0596ed3e5bcd1bdd2c6b22ed5e6c9243bca0d7afbb",
       "source_scientific_config": {
         "action_repeat": 2,
         "actor_grad_cosine_every": 30,
@@ -1908,9 +1222,169 @@
           "actor_weight_decay": 0.01,
           "agent_type": "sac",
           "critic_block_type": "residual",
-          "critic_hidden_dim": 1536,
+          "critic_hidden_dim": 1024,
           "critic_learning_rate": 0.0001,
           "critic_num_blocks": 4,
+          "critic_sparsity": 0,
+          "critic_use_cdq": false,
+          "critic_weight_decay": 0.01,
+          "gamma": 0.95,
+          "max_episode_steps": 100,
+          "mixed_precision": false,
+          "n_step": 1,
+          "normalize_observation": true,
+          "num_train_envs": 1,
+          "seed": 6,
+          "target_tau": 0.005,
+          "temp_initial_value": 0.01,
+          "temp_learning_rate": 0.0001,
+          "temp_target_entropy": null,
+          "temp_target_entropy_coef": -0.5,
+          "temp_weight_decay": 0
+        },
+        "buffer": {
+          "add_batch_size": 1,
+          "buffer_class_type": "numpy",
+          "buffer_type": "uniform",
+          "gamma": 0.95,
+          "max_length": 1000000,
+          "min_length": 5000,
+          "n_step": 1,
+          "sample_batch_size": 256
+        },
+        "checks": {
+          "check1_tolerance_eps": 64
+        },
+        "critic_hidden_dim": 1024,
+        "critic_num_blocks": 4,
+        "critic_num_params": "33.71M",
+        "critic_sparsity": 0,
+        "diagnostics": {
+          "enabled": true,
+          "kl_reference_size": 256,
+          "saturation_threshold": 0.99
+        },
+        "eff_episode_len": 50,
+        "env": {
+          "action_repeat": 2,
+          "env_name": "myo-pen-twirl",
+          "env_type": "myosuite",
+          "episodic": false,
+          "max_episode_steps": 100,
+          "no_termination": false,
+          "num_env_steps": 1000000,
+          "num_eval_envs": 1,
+          "num_train_envs": 1,
+          "rescale_action": true,
+          "reward_scale": 1,
+          "seed": 6
+        },
+        "env_name": "myo-pen-twirl",
+        "evaluation_per_interaction_step": 50000,
+        "exp_name": "exp12",
+        "fork": {
+          "architectures": [
+            "D4W1024",
+            "D4W1536"
+          ],
+          "arm": null,
+          "enabled": true,
+          "eval_episodes": 10,
+          "eval_every_fraction": 0.01,
+          "horizon_fraction": 0.25,
+          "identity_snapshot_steps": null,
+          "max_total_fraction": 1.2,
+          "source": null
+        },
+        "gamma": 0.95,
+        "injection": {
+          "m": null
+        },
+        "logging_per_interaction_step": 2000,
+        "n_step": 1,
+        "num_env_steps": 1000000,
+        "num_eval_episodes": 5,
+        "num_interaction_steps": 500000,
+        "num_params": "33.87M",
+        "num_record_episodes": 0,
+        "num_train_envs": 1,
+        "positive_control": {
+          "architecture": "D4W1536",
+          "env_name": "dog-run",
+          "noise_threshold": 0.1,
+          "similar_within": 0.1
+        },
+        "probe": {
+          "batch_size": 256,
+          "checks": 50,
+          "enabled": true,
+          "eval_chunk": 2560,
+          "pool_size": 25600,
+          "rounds": 10,
+          "steps": 2000,
+          "target_scale": 100000
+        },
+        "recording_per_interaction_step": 500000,
+        "run_role": "confirmatory",
+        "seed": 6,
+        "testing": {
+          "force_trigger_check": null,
+          "stop_after_identity_snapshot": false
+        },
+        "trigger": {
+          "confidence": 0.95,
+          "consecutive_checks": 2,
+          "eligible_fraction": 0.95,
+          "null_threshold": 0,
+          "resamples": 10000
+        },
+        "updates_per_interaction_step": 2
+      },
+      "source_scientific_config_sha256": "d4198b5b3e2513eb66bc8b36fd324a011ad166480a4288cf40c3ff3f52f15486",
+      "training_source": "f597ee9898e4d401912092c336c3e5330cf2fda1",
+      "wandb_group": "discrepancy-10-simultaneous-v2",
+      "wandb_id": "echocritic-c04g1"
+    },
+    {
+      "architecture": "D2W512",
+      "arm": "unchanged original protocol with proposed observational retention",
+      "control_extension": "preserve original natural-fork untreated extension",
+      "environment": "myo-pen-twirl",
+      "gpu": 0,
+      "historical_runtime_seconds_PROXY_NOT_GPU_USAGE": 19112,
+      "nominal_endpoint_interactions": 500000,
+      "original_run_id": "63b389qb",
+      "output_relative": "runs/C05G0",
+      "pair_id": "C05",
+      "pilot_id": "C05G0",
+      "retained_checks": [
+        0,
+        5,
+        35,
+        50
+      ],
+      "seed": 5,
+      "selection": "same historical seed replicated on both GPUs; small anchor has original archived NPZ",
+      "source_resolved_config_sha256": "b7ef6084fadb2c80e36cd573eb517d9a916530ac9232d9baed584c11f7c67aab",
+      "source_scientific_config": {
+        "action_repeat": 2,
+        "actor_grad_cosine_every": 30,
+        "actor_hidden_dim": 128,
+        "actor_num_blocks": 1,
+        "actor_num_params": "153.04K",
+        "actor_sparsity": 0,
+        "agent": {
+          "actor_block_type": "residual",
+          "actor_hidden_dim": 128,
+          "actor_learning_rate": 0.0001,
+          "actor_num_blocks": 1,
+          "actor_sparsity": 0,
+          "actor_weight_decay": 0.01,
+          "agent_type": "sac",
+          "critic_block_type": "residual",
+          "critic_hidden_dim": 512,
+          "critic_learning_rate": 0.0001,
+          "critic_num_blocks": 2,
           "critic_sparsity": 0,
           "critic_use_cdq": false,
           "critic_weight_decay": 0.01,
@@ -1941,9 +1415,9 @@
         "checks": {
           "check1_tolerance_eps": 64
         },
-        "critic_hidden_dim": 1536,
-        "critic_num_blocks": 4,
-        "critic_num_params": "75.73M",
+        "critic_hidden_dim": 512,
+        "critic_num_blocks": 2,
+        "critic_num_params": "4.27M",
         "critic_sparsity": 0,
         "diagnostics": {
           "enabled": true,
@@ -1991,7 +1465,7 @@
         "num_env_steps": 1000000,
         "num_eval_episodes": 5,
         "num_interaction_steps": 500000,
-        "num_params": "75.89M",
+        "num_params": "4.42M",
         "num_record_episodes": 0,
         "num_train_envs": 1,
         "positive_control": {
@@ -2026,26 +1500,32 @@
         },
         "updates_per_interaction_step": 2
       },
-      "training_source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+      "source_scientific_config_sha256": "65c05cf4b2512b8aced9a8b005ae8fa49f14cd85388414e9c14dd970c7b5aada",
+      "training_source": "f597ee9898e4d401912092c336c3e5330cf2fda1",
+      "wandb_group": "discrepancy-10-simultaneous-v2",
+      "wandb_id": "echocritic-c05g0"
     },
     {
-      "architecture": "D4W1536",
-      "arm": "original protocol with proposed observation-only retention",
-      "control_extension": "preserve source natural-fork untreated continuation; max nominal/fork+125000, not artificially truncated",
+      "architecture": "D2W512",
+      "arm": "unchanged original protocol with proposed observational retention",
+      "control_extension": "preserve original natural-fork untreated extension",
       "environment": "myo-pen-twirl",
-      "historical_runtime_seconds_PROXY_NOT_GPU_USAGE": 60903.664010796,
+      "gpu": 1,
+      "historical_runtime_seconds_PROXY_NOT_GPU_USAGE": 19112,
       "nominal_endpoint_interactions": 500000,
-      "original_run_id": "6apfwv2e",
-      "pilot_id": "P14",
+      "original_run_id": "63b389qb",
+      "output_relative": "runs/C05G1",
+      "pair_id": "C05",
+      "pilot_id": "C05G1",
       "retained_checks": [
         0,
         5,
         35,
         50
       ],
-      "seed": 7,
-      "selection": "exceptional",
-      "source_resolved_config_sha256": "6a1775bc6a400e3571dadafb82360584618ba7d1a30542e8ee63985921a4b906",
+      "seed": 5,
+      "selection": "same historical seed replicated on both GPUs; small anchor has original archived NPZ",
+      "source_resolved_config_sha256": "b7ef6084fadb2c80e36cd573eb517d9a916530ac9232d9baed584c11f7c67aab",
       "source_scientific_config": {
         "action_repeat": 2,
         "actor_grad_cosine_every": 30,
@@ -2062,9 +1542,9 @@
           "actor_weight_decay": 0.01,
           "agent_type": "sac",
           "critic_block_type": "residual",
-          "critic_hidden_dim": 1536,
+          "critic_hidden_dim": 512,
           "critic_learning_rate": 0.0001,
-          "critic_num_blocks": 4,
+          "critic_num_blocks": 2,
           "critic_sparsity": 0,
           "critic_use_cdq": false,
           "critic_weight_decay": 0.01,
@@ -2074,7 +1554,7 @@
           "n_step": 1,
           "normalize_observation": true,
           "num_train_envs": 1,
-          "seed": 7,
+          "seed": 5,
           "target_tau": 0.005,
           "temp_initial_value": 0.01,
           "temp_learning_rate": 0.0001,
@@ -2095,9 +1575,9 @@
         "checks": {
           "check1_tolerance_eps": 64
         },
-        "critic_hidden_dim": 1536,
-        "critic_num_blocks": 4,
-        "critic_num_params": "75.73M",
+        "critic_hidden_dim": 512,
+        "critic_num_blocks": 2,
+        "critic_num_params": "4.27M",
         "critic_sparsity": 0,
         "diagnostics": {
           "enabled": true,
@@ -2117,7 +1597,7 @@
           "num_train_envs": 1,
           "rescale_action": true,
           "reward_scale": 1,
-          "seed": 7
+          "seed": 5
         },
         "env_name": "myo-pen-twirl",
         "evaluation_per_interaction_step": 50000,
@@ -2145,7 +1625,7 @@
         "num_env_steps": 1000000,
         "num_eval_episodes": 5,
         "num_interaction_steps": 500000,
-        "num_params": "75.89M",
+        "num_params": "4.42M",
         "num_record_episodes": 0,
         "num_train_envs": 1,
         "positive_control": {
@@ -2166,7 +1646,7 @@
         },
         "recording_per_interaction_step": 500000,
         "run_role": "confirmatory",
-        "seed": 7,
+        "seed": 5,
         "testing": {
           "force_trigger_check": null,
           "stop_after_identity_snapshot": false
@@ -2180,10 +1660,24 @@
         },
         "updates_per_interaction_step": 2
       },
-      "training_source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+      "source_scientific_config_sha256": "65c05cf4b2512b8aced9a8b005ae8fa49f14cd85388414e9c14dd970c7b5aada",
+      "training_source": "f597ee9898e4d401912092c336c3e5330cf2fda1",
+      "wandb_group": "discrepancy-10-simultaneous-v2",
+      "wandb_id": "echocritic-c05g1"
     }
   ],
-  "schema": "echocritic-discrepancy-pilot-design-v1",
-  "selection_warning": "outcome-selected replication of known typical/exceptional seeds, not independent confirmatory evidence or unbiased environment sample",
+  "schedule": {
+    "automatic_retries": false,
+    "barrier": "all ten children ready before any adapter is released",
+    "mode": "simultaneous",
+    "processes_per_gpu": [
+      5,
+      5
+    ],
+    "replacement_runs": false,
+    "waves": 1
+  },
+  "schema": "echocritic-discrepancy-pilot-design-v2",
+  "selection_warning": "ten executions, five outcome-selected scientific seed/configurations; matched GPU replicas are not independent seed evidence",
   "training_source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
 }

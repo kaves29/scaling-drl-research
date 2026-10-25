@@ -13,7 +13,6 @@ from audits.probe_discrepancy.source_checks import (
     original_source,
     structural_checks,
 )
-from audits.echocritic_forensic.evidence import CAMPAIGN
 
 
 @pytest.fixture(scope="module")
@@ -85,41 +84,17 @@ def test_retrieval_selection_deterministic_and_distinct():
 
 
 def test_pilot_validation_refuses_authorization_and_setting_changes():
-    runs = []
-    for arch, count in [("D4W1536", 8), ("D4W1024", 4), ("D2W512", 2)]:
-        for _ in range(count):
-            runs.append(
-                {
-                    "original_run_id": str(len(runs)),
-                    "architecture": arch,
-                    "training_source": CAMPAIGN,
-                    "source_scientific_config": {
-                        "probe": {
-                            "steps": 2000,
-                            "rounds": 10,
-                            "checks": 50,
-                            "pool_size": 25600,
-                        },
-                        "num_interaction_steps": 500000,
-                        "agent": {
-                            "critic_learning_rate": 1e-4,
-                            "critic_weight_decay": 0.01,
-                        },
-                    },
-                }
-            )
-    manifest = {
-        "launch_approved": False,
-        "executable": False,
-        "new_campaign_root": None,
-        "runs": runs,
-    }
+    import json
+    from pathlib import Path
+
+    manifest = json.loads(
+        (
+            Path(__file__).parents[1]
+            / "audits/probe_discrepancy/pilot_manifest.DRAFT.json"
+        ).read_text()
+    )
     validate_pilot(manifest)
-    for field, value in [
-        ("launch_approved", True),
-        ("executable", True),
-        ("new_campaign_root", "/old/results"),
-    ]:
+    for field, value in [("launch_approved", True), ("executable", True)]:
         bad = deepcopy(manifest)
         bad[field] = value
         with pytest.raises(ValueError):

@@ -156,56 +156,47 @@ def retrieval_inventory(records, groups, package):
     return rows, selected
 
 
+# Each scientific condition is replicated unchanged on both allocated GPUs.
+PILOT_CELLS = (
+    ("dog-run", "D4W1536"),
+    ("humanoid-run", "D4W1024"),
+    ("myo-key-turn", "D4W1536"),
+    ("myo-pen-twirl", "D4W1024"),
+    ("myo-pen-twirl", "D2W512"),
+)
+
+
 def validate_pilot(manifest):
-    runs = manifest["runs"]
-    if manifest["launch_approved"] or manifest["executable"] or len(runs) != 14:
-        raise ValueError(
-            "manifest must remain an unapproved non-executable 14-run design"
-        )
-    if len({r["original_run_id"] for r in runs}) != 14:
-        raise ValueError("duplicate original run identity")
-    if manifest["new_campaign_root"] is not None:
-        raise ValueError("owner has not reviewed a new output root")
-    counts = defaultdict(int)
-    for row in runs:
-        cfg = row["source_scientific_config"]
-        if (
-            cfg["probe"]["steps"],
-            cfg["probe"]["rounds"],
-            cfg["probe"]["checks"],
-            cfg["probe"]["pool_size"],
-        ) != (2000, 10, 50, 25600):
-            raise ValueError("historical probe settings changed")
-        if cfg["num_interaction_steps"] != 500000 or row["training_source"] != CAMPAIGN:
-            raise ValueError("historical source/budget changed")
-        if (
-            cfg["agent"]["critic_learning_rate"] != 1e-4
-            or cfg["agent"]["critic_weight_decay"] != 0.01
-        ):
-            raise ValueError("optimizer changed")
-        counts[row["architecture"]] += 1
-    if dict(counts) != {"D4W1536": 8, "D4W1024": 4, "D2W512": 2}:
-        raise ValueError("wrong pilot coverage")
+    from audits.probe_discrepancy.plan import validate_design
+
+    validate_design(manifest)
+    if manifest["launch_approved"] or manifest["executable"]:
+        raise ValueError("generator produces an unapproved draft only")
 
 
 def pilot_design(selected, records):
     lookup = {r["id"]: r for r in records}
     chosen = [
-        r
-        for r in selected
-        if r["architecture"] == "D4W1536"
-        or (r["architecture"] == "D4W1024" and r["selection"] == "typical")
-        or (
-            r["architecture"] == "D2W512"
+        next(
+            r
+            for r in selected
+            if (r["environment"], r["architecture"]) == cell
             and r["selection"] == "typical"
-            and r["environment"] in ("dog-run", "myo-pen-twirl")
         )
+        for cell in PILOT_CELLS
     ]
+    # Retain the one directly auditable original NPZ case as the small anchor.
+    chosen[-1] = next(
+        r
+        for r in records
+        if r["cohort"] == "exp96"
+        and r["environment"] == "myo-pen-twirl"
+        and r["architecture"] == "D2W512"
+        and r["seed"] == 5
+    )
     runs = []
     for i, row in enumerate(chosen, 1):
         run = lookup[row["id"]]
-        # Full source config remains separately hash-bound. These fields preserve
-        # scientific settings without embedding the original writable output root.
         cfg = run["config"]
         scientific = {
             k: v
@@ -213,51 +204,116 @@ def pilot_design(selected, records):
             if k not in ("results_root", "project_name", "server")
         }
         encoded = json.dumps(cfg, sort_keys=True, separators=(",", ":")).encode()
-        runs.append(
-            {
-                "pilot_id": f"P{i:02d}",
-                "environment": row["environment"],
-                "architecture": row["architecture"],
-                "seed": row["seed"],
-                "selection": row["selection"],
-                "original_run_id": row["id"],
-                "training_source": CAMPAIGN,
-                "source_resolved_config_sha256": hashlib.sha256(encoded).hexdigest(),
-                "source_scientific_config": scientific,
-                "arm": "original protocol with proposed observation-only retention",
-                "historical_runtime_seconds_PROXY_NOT_GPU_USAGE": run["meta"][
-                    "summary"
-                ].get("_runtime"),
-                "nominal_endpoint_interactions": 500000,
-                "control_extension": "preserve source natural-fork untreated continuation; max nominal/fork+125000, not artificially truncated",
-                "retained_checks": [0, 5, 35, 50],
-            }
-        )
-    runtimes = [r["historical_runtime_seconds_PROXY_NOT_GPU_USAGE"] for r in runs]
-    hours = sum(v for v in runtimes if v is not None) / 3600
+        for gpu in (0, 1):
+            runs.append(
+                {
+                    "pilot_id": f"C{i:02d}G{gpu}",
+                    "pair_id": f"C{i:02d}",
+                    "gpu": gpu,
+                    "environment": row["environment"],
+                    "architecture": row["architecture"],
+                    "seed": row["seed"],
+                    "selection": "same historical seed replicated on both GPUs; small anchor has original archived NPZ",
+                    "original_run_id": row["id"],
+                    "training_source": CAMPAIGN,
+                    "source_resolved_config_sha256": hashlib.sha256(
+                        encoded
+                    ).hexdigest(),
+                    "source_scientific_config_sha256": hashlib.sha256(
+                        json.dumps(
+                            scientific, sort_keys=True, separators=(",", ":")
+                        ).encode()
+                    ).hexdigest(),
+                    "source_scientific_config": scientific,
+                    "arm": "unchanged original protocol with proposed observational retention",
+                    "historical_runtime_seconds_PROXY_NOT_GPU_USAGE": run["meta"][
+                        "summary"
+                    ].get("_runtime"),
+                    "nominal_endpoint_interactions": 500000,
+                    "control_extension": "preserve original natural-fork untreated extension",
+                    "retained_checks": [0, 5, 35, 50],
+                    "output_relative": f"runs/C{i:02d}G{gpu}",
+                    "wandb_id": f"echocritic-c{i:02d}g{gpu}",
+                    "wandb_group": "discrepancy-10-simultaneous-v2",
+                }
+            )
+    hours = (
+        sum(r["historical_runtime_seconds_PROXY_NOT_GPU_USAGE"] or 0 for r in runs)
+        / 3600
+    )
     manifest = {
-        "schema": "echocritic-discrepancy-pilot-design-v1",
+        "schema": "echocritic-discrepancy-pilot-design-v2",
         "launch_approved": False,
         "executable": False,
         "new_campaign_root": None,
-        "count": 14,
+        "count": 10,
         "training_source": CAMPAIGN,
         "diagnostic_implementation_source": None,
-        "diagnostic_status": "retention specification only; adapter not implemented or qualified by this task",
-        "selection_warning": "outcome-selected replication of known typical/exceptional seeds, not independent confirmatory evidence or unbiased environment sample",
-        "gpu_model_proposal": "NVIDIA A100-SXM4-40GB; owner must verify original hardware and approve one common model",
-        "matmul_precision": "tensorfloat32; no x64/bfloat16/fp16 changes",
+        "diagnostic_status": "adapter not implemented/reviewed/qualified",
+        "selection_warning": "ten executions, five outcome-selected scientific seed/configurations; matched GPU replicas are not independent seed evidence",
+        "schedule": {
+            "mode": "simultaneous",
+            "processes_per_gpu": [5, 5],
+            "waves": 1,
+            "replacement_runs": False,
+            "automatic_retries": False,
+            "barrier": "all ten children ready before any adapter is released",
+        },
+        "allocation_proposal": {
+            "account": "biqc-delta-gpu",
+            "partition": "gpuA100x4",
+            "nodes": 1,
+            "gpus": 2,
+            "ntasks": 1,
+            "cpus": 32,
+            "host_memory_GiB": 128,
+            "wall_minutes": 2880,
+            "gpu_model": "NVIDIA A100-SXM4-40GB",
+        },
+        "process_environment": {
+            "XLA_PYTHON_CLIENT_PREALLOCATE": "false",
+            "JAX_PLATFORMS": "cuda,cpu",
+            "JAX_ENABLE_X64": "false",
+            "OMP_NUM_THREADS": "1",
+            "MKL_NUM_THREADS": "1",
+            "OPENBLAS_NUM_THREADS": "1",
+        },
+        "matmul_precision": "tensorfloat32; unchanged source rule",
+        "retention_contract": {
+            "all_checks": [
+                "original round b/MSE/scores/offsets",
+                "2000 pre-update minibatch losses",
+                "source/config/checkpoint/run identity hashes",
+            ],
+            "selected_checks": [
+                "raw replay indices/pool/actions and hashes",
+                "RMS state and normalized inputs",
+                "teacher tree/keys/phase/base and literal own-offset targets",
+                "fresh/current initial trees, Q/centered residual/covariance",
+                "full-pool Q and MSE at 0/100/500/1000/2000, separate from minibatches",
+                "optimizer/training RNG/probe RNG/evaluation RNG provenance",
+            ],
+            "telemetry": [
+                "per-process RSS/CPU",
+                "GPU UUID and VRAM/utilization",
+                "compile and steady-state timing",
+                "pool/fit/checkpoint durations and bytes",
+                "shared filesystem I/O/free space",
+                "barrier/exec timing",
+            ],
+            "pairing": "same raw/normalized inputs, teacher/base and minibatch stream; original own offsets retained",
+            "failure_policy": "retain partial/failed outputs, no deletion, replacement or automatic retry",
+        },
         "resource_estimate": {
-            "one_process_per_gpu": True,
-            "packing": False,
-            "cpu_per_process_proposed": 16,
-            "host_ram_GiB_per_process_proposed": 64,
-            "max_gpus_proposed": 1,
+            "packing_requested": True,
+            "packing_qualified": False,
             "sum_historical_runtime_hours_NOT_ALLOCATION_HOURS": hours,
-            "planning_range_gpu_hours_NOT_AUTHORIZED": [hours, 2 * hours],
-            "basis": "sum selected W&B runtime values as serial one-GPU planning proxy; factor2 contingency is unmeasured, not allocation accounting",
+            "reserved_gpu_hours_at_proposed_wall_cap_NOT_AUTHORIZED": 96,
+            "cpus_per_child_proposed": 3,
+            "controller_cpus_proposed": 2,
             "storage_estimate_GiB_NOT_AUTHORIZED": [200, 500],
-            "stop_before_launch_until_profiles_quota_storage_reviewed": True,
+            "throughput_VRAM_storage_actual_measurements": None,
+            "feasibility": "unknown; do not divide historical runtimes by five or assume 48h completion",
         },
         "runs": runs,
     }

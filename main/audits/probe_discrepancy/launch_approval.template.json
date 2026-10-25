@@ -1,0 +1,91 @@
+{
+  "approved": false,
+  "decision_reference": null,
+  "expected_commit": null,
+  "manifest_sha256": null,
+  "plan_sha256": null,
+  "source_files": {},
+  "adapter": {
+    "entrypoint": null,
+    "sha256": null,
+    "protocol": "echocritic-observation-only-v1"
+  },
+  "runtime": {
+    "python": null,
+    "versions": {
+      "python": null,
+      "jax": null,
+      "jaxlib": null,
+      "optax": null,
+      "cuda": null,
+      "driver": null
+    }
+  },
+  "allocation": {
+    "account": "biqc-delta-gpu",
+    "cpus": 32,
+    "gpu_model": "NVIDIA A100-SXM4-40GB",
+    "gpus": 2,
+    "host_memory_GiB": 128,
+    "nodes": 1,
+    "ntasks": 1,
+    "partition": "gpuA100x4",
+    "wall_minutes": 2880
+  },
+  "node_name": null,
+  "new_campaign_root": null,
+  "wandb_namespace": null,
+  "wandb_project": null,
+  "limits": {
+    "gpu_headroom_MiB": null,
+    "host_headroom_GiB": null,
+    "storage_headroom_GiB": null,
+    "barrier_timeout_seconds": null,
+    "max_exec_skew_seconds": null,
+    "stop_margin_seconds": null,
+    "telemetry_interval_seconds": null,
+    "idle_gpu_memory_limit_MiB": null
+  },
+  "gates": {
+    "adapter_review": {
+      "path": null,
+      "sha256": null
+    },
+    "scientific_review": {
+      "path": null,
+      "sha256": null
+    },
+    "cpu_restoration_equivalence": {
+      "path": null,
+      "sha256": null
+    },
+    "cuda_smoke": {
+      "path": null,
+      "sha256": null
+    },
+    "five_process_per_gpu": {
+      "path": null,
+      "sha256": null
+    },
+    "storage_profile": {
+      "path": null,
+      "sha256": null
+    },
+    "live_delta_layout": {
+      "path": null,
+      "sha256": null
+    },
+    "wandb_identities": {
+      "path": null,
+      "sha256": null
+    },
+    "allocation_review": {
+      "path": null,
+      "sha256": null
+    },
+    "owner_launch": {
+      "path": null,
+      "sha256": null
+    }
+  }
+}
