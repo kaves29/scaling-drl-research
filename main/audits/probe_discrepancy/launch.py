@@ -69,7 +69,12 @@ def bound_evidence(binding):
 
 
 def preflight(manifest_path, approval_path, checkout, *, check_git=True):
-    """Validate approvals/evidence before command printing and again in allocation."""
+    """Validate source/plan and owner authorization before launch or in allocation.
+
+    The owner may explicitly authorize an unqualified pilot. That path records
+    the omitted hardware-evidence gates and still enforces design, source,
+    runtime, allocation cap, identities, binding and failure-preservation.
+    """
     m, a, checkout = read(manifest_path), read(approval_path), Path(checkout).resolve()
     validate_design(m)
     source = a.get("expected_commit", "")
@@ -81,19 +86,22 @@ def preflight(manifest_path, approval_path, checkout, *, check_git=True):
         m["diagnostic_implementation_source"] == source,
         "diagnostic adapter/source is not frozen",
     )
+    unqualified = a.get("unqualified_owner_authorization")
     require(
-        a.get("approved") is True and a.get("decision_reference"),
-        "explicit owner approval required",
+        a.get("approved") is True and a.get("decision_reference")
+        or (isinstance(unqualified, dict)
+            and unqualified.get("authorized") is True
+            and unqualified.get("scope") == "exact-ten-run-pilot-without-Delta-qualification"),
+        "explicit owner authorization required",
     )
-    require(
-        a.get("manifest_sha256") == sha(manifest_path), "approval/manifest mismatch"
-    )
-    require(a.get("plan_sha256") == plan_hash(m), "approval/scientific-plan mismatch")
-    for path in SOURCE_FILES:
-        require(
-            a.get("source_files", {}).get(path) == sha(checkout / path),
-            "launcher source hash mismatch",
-        )
+    if a.get("approved") is True:
+        require(a.get("manifest_sha256") == sha(manifest_path), "approval/manifest mismatch")
+        require(a.get("plan_sha256") == plan_hash(m), "approval/scientific-plan mismatch")
+        for path in SOURCE_FILES:
+            require(
+                a.get("source_files", {}).get(path) == sha(checkout / path),
+                "launcher source hash mismatch",
+            )
     if check_git:
         require(
             subprocess.check_output(
@@ -141,15 +149,14 @@ def preflight(manifest_path, approval_path, checkout, *, check_git=True):
         and Path(runtime["python"]).is_file(),
         "pinned Python executable required",
     )
-    require(
-        set(runtime.get("versions", {}))
-        >= {"python", "jax", "jaxlib", "optax", "cuda", "driver"},
-        "runtime fingerprint incomplete",
-    )
+    if not unqualified:
+        require(
+            set(runtime.get("versions", {}))
+            >= {"python", "jax", "jaxlib", "optax", "cuda", "driver"},
+            "runtime fingerprint incomplete",
+        )
     allocation = m["allocation_proposal"]
-    require(
-        a.get("allocation") == allocation, "allocation differs from reviewed manifest"
-    )
+    require(a.get("allocation") == allocation, "allocation differs from launch configuration")
     require(
         (allocation["nodes"], allocation["gpus"], allocation["ntasks"]) == (1, 2, 1),
         "one-node two-GPU controller layout required",
@@ -164,13 +171,11 @@ def preflight(manifest_path, approval_path, checkout, *, check_git=True):
     require(
         allocation["cpus"] >= 32, "thirty child CPUs plus controller headroom required"
     )
-    for value in (
-        allocation["account"],
-        allocation["partition"],
-        a.get("node_name", ""),
-        a.get("wandb_namespace", ""),
-        a.get("wandb_project", ""),
-    ):
+    identities = [allocation["account"], allocation["partition"],
+                  a.get("wandb_namespace"), a.get("wandb_project")]
+    if a.get("node_name"):
+        identities.append(a["node_name"])
+    for value in identities:
         require(
             bool(re.fullmatch(r"[A-Za-z0-9_.-]+", value)),
             "safe node/account/project/namespace identity required",
@@ -204,120 +209,114 @@ def preflight(manifest_path, approval_path, checkout, *, check_git=True):
         "stop margin consumes allocation",
     )
     gates = {}
-    for name in GATES:
-        require(name in a.get("gates", {}), "missing gate: " + name)
-        r = bound_evidence(a["gates"][name])
+    if unqualified:
         require(
-            r.get("verdict") == "PASS" and r.get("decision_reference"),
-            "gate not reviewed PASS: " + name,
+            unqualified.get("maximum_gpu_hours") == 10
+            and allocation["wall_minutes"] <= 300,
+            "unqualified launch exceeds owner's ten GPU-hour cap",
         )
-        require(
-            r.get("expected_commit") == source and r.get("plan_sha256") == plan_hash(m),
-            "stale source/plan gate: " + name,
-        )
-        require(
-            r.get("runtime") == runtime and r.get("allocation") == allocation,
-            "runtime/layout gate mismatch: " + name,
-        )
-        require(r.get("raw_evidence"), "gate lacks underlying evidence: " + name)
-        for item in r["raw_evidence"]:
+    else:
+        for name in GATES:
+            require(name in a.get("gates", {}), "missing gate: " + name)
+            r = bound_evidence(a["gates"][name])
             require(
-                Path(item["path"]).is_absolute()
-                and sha(item["path"]) == item["sha256"],
-                "changed underlying evidence: " + name,
+                r.get("verdict") == "PASS" and r.get("decision_reference"),
+                "gate not reviewed PASS: " + name,
             )
-        gates[name] = r
-    packing = gates["five_process_per_gpu"]
-    require(
-        packing.get("simultaneous_all_ten") is True
-        and packing.get("max_concurrent_processes_per_gpu") == [5, 5]
-        and packing.get("waves") == 1,
-        "representative simultaneous five/five qualification missing",
-    )
-    require(
-        packing.get("run_config_hashes")
-        == sorted(r["source_scientific_config_sha256"] for r in m["runs"]),
-        "packing qualified a different mixture/configuration",
-    )
-    for phase in (
-        "cold_compile",
-        "steady_training",
-        "paired_full_probe",
-        "checkpoint_io",
-        "binding_verified",
-        "on_off_equivalence",
-    ):
-        require(packing.get(phase) is True, "packing phase not qualified: " + phase)
-    require(packing.get("node_name") == a["node_name"], "different qualification node")
-    uuids = packing.get("gpu_uuids", [])
-    require(
-        len(uuids) == len(set(uuids)) == 2
-        and all(str(x).startswith("GPU-") for x in uuids),
-        "qualified physical GPU identities required",
-    )
-    for key in ("peak_gpu_memory_MiB", "gpu_total_memory_MiB"):
+            require(
+                r.get("expected_commit") == source and r.get("plan_sha256") == plan_hash(m),
+                "stale source/plan gate: " + name,
+            )
+            require(
+                r.get("runtime") == runtime and r.get("allocation") == allocation,
+                "runtime/layout gate mismatch: " + name,
+            )
+            require(r.get("raw_evidence"), "gate lacks underlying evidence: " + name)
+            for item in r["raw_evidence"]:
+                require(
+                    Path(item["path"]).is_absolute()
+                    and sha(item["path"]) == item["sha256"],
+                    "changed underlying evidence: " + name,
+                )
+            gates[name] = r
+        packing = gates["five_process_per_gpu"]
         require(
-            len(packing.get(key, [])) == 2 and all(positive(v) for v in packing[key]),
-            "missing measured VRAM envelope",
+            packing.get("simultaneous_all_ten") is True
+            and packing.get("max_concurrent_processes_per_gpu") == [5, 5]
+            and packing.get("waves") == 1,
+            "representative simultaneous five/five qualification missing",
         )
-    require(
-        all(
-            used + limits["gpu_headroom_MiB"] < total
-            for used, total in zip(
-                packing["peak_gpu_memory_MiB"], packing["gpu_total_memory_MiB"]
+        require(
+            packing.get("run_config_hashes")
+            == sorted(r["source_scientific_config_sha256"] for r in m["runs"]),
+            "packing qualified a different mixture/configuration",
+        )
+        for phase in (
+            "cold_compile", "steady_training", "paired_full_probe", "checkpoint_io",
+            "binding_verified", "on_off_equivalence",
+        ):
+            require(packing.get(phase) is True, "packing phase not qualified: " + phase)
+        require(packing.get("node_name") == a["node_name"], "different qualification node")
+        uuids = packing.get("gpu_uuids", [])
+        require(
+            len(uuids) == len(set(uuids)) == 2
+            and all(str(x).startswith("GPU-") for x in uuids),
+            "qualified physical GPU identities required",
+        )
+        for key in ("peak_gpu_memory_MiB", "gpu_total_memory_MiB"):
+            require(
+                len(packing.get(key, [])) == 2 and all(positive(v) for v in packing[key]),
+                "missing measured VRAM envelope",
             )
-        ),
-        "five-process VRAM envelope fails",
-    )
-    require(
-        positive(packing.get("peak_host_memory_GiB"))
-        and packing["peak_host_memory_GiB"] + limits["host_headroom_GiB"]
-        < allocation["host_memory_GiB"],
-        "host RAM envelope fails",
-    )
-    require(
-        positive(packing.get("projected_endpoint_seconds"))
-        and packing["projected_endpoint_seconds"] + limits["stop_margin_seconds"]
-        < allocation["wall_minutes"] * 60,
-        "projected full endpoints do not fit walltime",
-    )
-    require(
-        positive(packing.get("minimum_interactions_per_second"))
-        and positive(packing.get("paired_probe_seconds"))
-        and positive(packing.get("cold_compile_seconds")),
-        "compile/steady-state throughput absent",
-    )
-    live = gates["live_delta_layout"]
-    expiry = dt.datetime.fromisoformat(live["valid_until_utc"].replace("Z", "+00:00"))
-    require(
-        expiry > dt.datetime.now(dt.timezone.utc)
-        and live.get("node_name") == a["node_name"],
-        "live Delta layout evidence expired/mismatched",
-    )
-    require(
-        live.get("scheduler_layout_verified") is True
-        and live.get("cpu_memory_cgroup_verified") is True
-        and live.get("storage_verified") is True,
-        "actual Delta layout/resources unverified",
-    )
-    require(
-        m["launch_approved"] is True
-        and m["executable"] is True
-        and m["resource_estimate"]["packing_qualified"] is True,
-        "draft flags remain closed; no command or launch",
-    )
+        require(
+            all(used + limits["gpu_headroom_MiB"] < total for used, total in zip(
+                packing["peak_gpu_memory_MiB"], packing["gpu_total_memory_MiB"])),
+            "five-process VRAM envelope fails",
+        )
+        require(
+            positive(packing.get("peak_host_memory_GiB"))
+            and packing["peak_host_memory_GiB"] + limits["host_headroom_GiB"]
+            < allocation["host_memory_GiB"],
+            "host RAM envelope fails",
+        )
+        require(
+            positive(packing.get("projected_endpoint_seconds"))
+            and packing["projected_endpoint_seconds"] + limits["stop_margin_seconds"]
+            < allocation["wall_minutes"] * 60,
+            "projected full endpoints do not fit walltime",
+        )
+        require(
+            positive(packing.get("minimum_interactions_per_second"))
+            and positive(packing.get("paired_probe_seconds"))
+            and positive(packing.get("cold_compile_seconds")),
+            "compile/steady-state throughput absent",
+        )
+        live = gates["live_delta_layout"]
+        expiry = dt.datetime.fromisoformat(live["valid_until_utc"].replace("Z", "+00:00"))
+        require(expiry > dt.datetime.now(dt.timezone.utc)
+                and live.get("node_name") == a["node_name"],
+                "live Delta layout evidence expired/mismatched")
+        require(live.get("scheduler_layout_verified") is True
+                and live.get("cpu_memory_cgroup_verified") is True
+                and live.get("storage_verified") is True,
+                "actual Delta layout/resources unverified")
+        require(
+            m["launch_approved"] is True
+            and m["executable"] is True
+            and m["resource_estimate"]["packing_qualified"] is True,
+            "draft flags remain closed; no command or launch",
+        )
     return m, a, gates
 
 
 def sbatch_argv(manifest, approval, checkout):
     m, a, _ = preflight(manifest, approval, checkout)
     r = m["allocation_proposal"]
-    return [
+    argv = [
         "sbatch",
         "--parsable",
         f"--account={r['account']}",
         f"--partition={r['partition']}",
-        f"--nodelist={a['node_name']}",
         "--nodes=1",
         "--ntasks=1",
         "--gres=gpu:2",
@@ -335,6 +334,9 @@ def sbatch_argv(manifest, approval, checkout):
         sha(manifest),
         sha(approval),
     ]
+    if a.get("node_name"):
+        argv.insert(4, f"--nodelist={a['node_name']}")
+    return argv
 
 
 def capture(command):
@@ -456,16 +458,18 @@ def child(args):
         "JAX GPU model mismatch",
     )
     versions = a["runtime"]["versions"]
-    require(platform.python_version() == versions["python"], "Python runtime changed")
+    if versions.get("python"):
+        require(platform.python_version() == versions["python"], "Python runtime changed")
     for package in ("jax", "jaxlib", "optax"):
         require(
             importlib.metadata.version(package) == versions[package],
             package + " runtime changed",
         )
-    require(
-        jax.devices("gpu")[0].client.platform_version == versions["cuda"],
-        "CUDA backend changed",
-    )
+    if versions.get("cuda"):
+        require(
+            jax.devices("gpu")[0].client.platform_version == versions["cuda"],
+            "CUDA backend changed",
+        )
     driver = capture(
         [
             "nvidia-smi",
@@ -475,11 +479,9 @@ def child(args):
             "--format=csv,noheader",
         ]
     )
-    require(
-        driver.get("returncode") == 0
-        and driver["stdout"].strip() == versions["driver"],
-        "GPU driver changed",
-    )
+    require(driver.get("returncode") == 0, "cannot read allocated GPU driver")
+    if versions.get("driver"):
+        require(driver["stdout"].strip() == versions["driver"], "GPU driver changed")
     barrier = Path(args.barrier)
     atomic(
         barrier / f"{args.run_id}.ready.json",
@@ -578,7 +580,8 @@ def worker(args):
         os.environ.get("SLURM_JOB_ID") and os.environ.get("SLURM_JOB_NUM_NODES") == "1",
         "must run inside one-node Slurm allocation",
     )
-    require(os.environ.get("SLURMD_NODENAME") == a["node_name"], "wrong allocated node")
+    if a.get("node_name"):
+        require(os.environ.get("SLURMD_NODENAME") == a["node_name"], "wrong allocated node")
     require(
         int(os.environ.get("SLURM_CPUS_PER_TASK", "0"))
         >= m["allocation_proposal"]["cpus"],
@@ -591,18 +594,23 @@ def worker(args):
     )
     tokens = allocated_tokens(os.environ)
     gpus = [gpu_info(t) for t in tokens]
-    require(
-        [g["uuid"] for g in gpus] == gates["five_process_per_gpu"]["gpu_uuids"],
-        "allocated GPU identities/order differ from qualification",
-    )
+    if gates:
+        require(
+            [g["uuid"] for g in gpus] == gates["five_process_per_gpu"]["gpu_uuids"],
+            "allocated GPU identities/order differ from qualification",
+        )
+    else:
+        require(Counter(row["gpu"] for row in m["runs"]) == {0: 5, 1: 5},
+                "unqualified pilot still requires the exact five/five layout")
     require(
         all(g["name"] == m["allocation_proposal"]["gpu_model"] for g in gpus),
         "wrong GPU model",
     )
-    require(
-        all(g["used_MiB"] < a["limits"]["idle_gpu_memory_limit_MiB"] for g in gpus),
-        "unexpected pre-existing GPU memory use",
-    )
+    if a["limits"].get("idle_gpu_memory_limit_MiB"):
+        require(
+            all(g["used_MiB"] < a["limits"]["idle_gpu_memory_limit_MiB"] for g in gpus),
+            "unexpected pre-existing GPU memory use",
+        )
     cg = cgroup_memory()
     require(
         cg["limit_bytes"] >= m["allocation_proposal"]["host_memory_GiB"] * 1024**3,
@@ -610,10 +618,11 @@ def worker(args):
     )
     cpus = sorted(os.sched_getaffinity(0))
     require(len(cpus) >= 32, "insufficient actual CPU affinity")
-    require(
-        cpus == gates["five_process_per_gpu"].get("cpu_affinity"),
-        "CPU placement differs from qualification",
-    )
+    if gates:
+        require(
+            cpus == gates["five_process_per_gpu"].get("cpu_affinity"),
+            "CPU placement differs from qualification",
+        )
     root = Path(m["new_campaign_root"])
     require(
         root.exists()
@@ -627,6 +636,8 @@ def worker(args):
         root / "pilot_started.json",
         {
             "source": a["expected_commit"],
+            "unqualified_owner_authorization": a.get("unqualified_owner_authorization"),
+            "omitted_gates": list(GATES) if not gates else [],
             "manifest_sha256": sha(args.manifest),
             "approval_sha256": sha(args.approval),
             "slurm_job_id": os.environ["SLURM_JOB_ID"],
