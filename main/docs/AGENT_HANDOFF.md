@@ -1,5 +1,28 @@
 # Current agent handoff
 
+## Reference-backed critic diagnostics v1 (24 October 2026)
+
+New branch `codex/reference-critic-diagnostics-20261024`, based on audit PR13
+`5179c43b4a45f6d9032a385adbf72713e2456373`. Historical metric calculations/keys,
+optimizer, architecture parameters, probe, schedules and RNG streams preserved.
+Opt-in sidecars add actual post-ReLU and separate affine dormancy, per-layer
+and two named aggregates, saved per-unit masks/new transition diagnostics,
+conventional stable rank and reference-code entropy/threshold ranks. Current
+preprocessed replay inputs are reused; optional immutable frozen inputs are
+separate. Rank SVDs are independently optional. Raw per-layer gradient-array
+adapter is explicit about ownership/timing; original global norm is aliased.
+
+Authors' code pinned and inspected: SparseNetwork4DRL613a2b9,
+Dopamine/ReDo5873f54, loss-of-plasticitya6b7958. Shared scaling dormancy/rank
+semantics are inherited, not a newly established EchoCritic bug. Paper sites
+returned403; paper-to-code agreement remains unverified. Validation:22 tiny
+CPU tests passed; no-training methodology reference195 commands/39 configs/
+130 eligibility candidates. No RL training, scientific probe fits, GPU jobs or
+merges. Single plain SACCritic supported; twin/injected adapters and GPU
+qualification remain outstanding. Historical scalar data cannot reconstruct
+new activation/rank/persistence measurements. See
+[reference comparison and usage](reference_critic_diagnostics.md).
+
 ## Diagnostic/probe disagreement follow-up (24 October 2026)
 
 Continuing draft PR13 on its existing branch. Read-only code/artifact review
