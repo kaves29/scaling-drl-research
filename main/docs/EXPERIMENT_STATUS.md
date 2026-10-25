@@ -3,6 +3,8 @@
 ## Ten-run simultaneous diagnostic pilot revision (25 October 2026)
 
 Updates [PR16](https://github.com/kaves29/scaling-drl-research/pull/16) in place.
+Tested implementation `9efae21`; resolve the live PR head for documentation
+followups.
 Exactly ten executions: five matched condition/seed pairs, one of each on GPU0
 and GPU1, five processes/device, one all-ten barrier, no waves/replacement/retry.
 All four tasks and three sizes represented; five unique scientific configs,
