@@ -2,7 +2,9 @@
 
 ## Source-bound paired discrepancy and pilot design (24 October 2026)
 
-Task branch `codex/source-bound-discrepancy-pilot`, based on PR15
+[Draft PR16](https://github.com/kaves29/scaling-drl-research/pull/16), tested
+implementation `13948eb`. Task branch
+`codex/source-bound-discrepancy-pilot`, based on PR15
 `822c2e5aae1aa99b970fdce8e0b4bff94e7d4724`. See
 [diagnosis and launch gates](source_bound_probe_discrepancy.md) and
 [14-run non-executable draft](../audits/probe_discrepancy/pilot_manifest.DRAFT.json).
