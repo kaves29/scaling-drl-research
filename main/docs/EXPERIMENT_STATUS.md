@@ -2,7 +2,9 @@
 
 ## Reference-backed critic diagnostics v1 (24 October 2026)
 
-New branch `codex/reference-critic-diagnostics-20261024`, based on audit PR13
+[Draft PR14](https://github.com/kaves29/scaling-drl-research/pull/14); tested
+implementation `f08c5b189e2b53d36b22d06cf165b8ede1f77e15`. New branch
+`codex/reference-critic-diagnostics-20261024`, based on audit PR13
 `5179c43b4a45f6d9032a385adbf72713e2456373`. Historical metric calculations/keys,
 optimizer, architecture parameters, probe, schedules and RNG streams preserved.
 Opt-in sidecars add actual post-ReLU and separate affine dormancy, per-layer

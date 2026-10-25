@@ -4,6 +4,10 @@
 `5179c43b4a45f6d9032a385adbf72713e2456373`. Original campaign source:
 `f597ee9898e4d401912092c336c3e5330cf2fda1`.
 
+[Draft PR14](https://github.com/kaves29/scaling-drl-research/pull/14).
+Tested implementation: `f08c5b189e2b53d36b22d06cf165b8ede1f77e15`.
+Resolve the live PR head for documentation-only follow-ups.
+
 ## Findings and attribution
 
 **EchoCritic shares the scaling implementation's dormancy and rank definitions.**
