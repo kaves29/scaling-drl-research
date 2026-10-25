@@ -2,7 +2,9 @@
 
 ## Retained-data probe difficulty accounting (24 October 2026)
 
-Analysis-only branch `codex/probe-difficulty-accounting`, based on PR14
+[Draft PR15](https://github.com/kaves29/scaling-drl-research/pull/15), tested
+implementation `26299ae`. Analysis-only branch
+`codex/probe-difficulty-accounting`, based on PR14
 `1d849c3b52f1b6bdc2514f8972a2388021b929c7`. See
 [report](probe_difficulty_accounting.md) and
 [validation receipt](../audits/probe_difficulty/validation_receipt.json).
@@ -18,7 +20,7 @@ case establishes large initial minibatch Q deviations from its stored offset,
 but original DMC curves, inputs/RMS/teachers and initial pool predictions are
 missing. Nineteen listed W&B manifest bodies remain unavailable; no remote
 absence claim. No production changes, model forwards, fits, training, GPUs,
-scientific-setting changes or merges. PR publication follows validation.
+scientific-setting changes or merges. Published after validation.
 
 ## Automatic W&B critic diagnostic transport (24 October 2026)
 
