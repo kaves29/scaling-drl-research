@@ -1,0 +1,46 @@
+{
+  "attribution": "Original source excerpts for CPU reference equivalence tests; ReDo Copyright 2023 ReDo authors, Apache-2.0. Other licenses copied alongside; no training/recycling implementation executed.",
+  "commits": {
+    "dopamine": "5873f5494ee0c2d7c016d0ab2ad530354fec59d0",
+    "lop": "a6b79580d85f3025bdb601566d3627c5f489f13b",
+    "scaling": "613a2b9e5e51fafa56d66699e5e2e87d999a8905"
+  },
+  "functions": [
+    {
+      "repository": "dopamine",
+      "file": "dopamine/labs/redo/weight_recyclers.py",
+      "line": 303,
+      "name": "estimate_neuron_score",
+      "source": "def estimate_neuron_score(self, activation, is_cbp=False):\n    \"\"\"Calculates neuron score based on absolute value of activation.\n\n    The score of feature map is the normalized average score over\n    the spatial dimension.\n\n    Args:\n      activation: intermediate activation of each layer\n      is_cbp: if true, subtracts the mean and skips normalization.\n\n    Returns:\n      element_score: score of each element in feature map in the spatial dim.\n      neuron_score: score of feature map\n    \"\"\"\n    reduce_axes = list(range(activation.ndim - 1))\n    if self.sub_mean_score or is_cbp:\n      activation = activation - jnp.mean(activation, axis=reduce_axes)\n\n    score = jnp.mean(jnp.abs(activation), axis=reduce_axes)\n    if not is_cbp:\n      # Normalize so that all scores sum to one.\n      score /= jnp.mean(score) + 1e-9\n\n    return score",
+      "file_sha256": "bfdc8820852b8c46d3ef63ea59bef342bca737739779160c0ff37ddfc7457b23"
+    },
+    {
+      "repository": "lop",
+      "file": "lop/utils/miscellaneous.py",
+      "line": 165,
+      "name": "compute_effective_rank",
+      "source": "def compute_effective_rank(sv: torch.Tensor):\n    \"\"\"\n    Computes the effective rank as defined in this paper: https://ieeexplore.ieee.org/document/7098875/\n    When computing the shannon entropy, 0 * log 0 is defined as 0\n    :param sv: (float torch Tensor) an array of singular values\n    :return: (float torch Tensor) the effective rank\n    \"\"\"\n    norm_sv = sv / torch.sum(torch.abs(sv))\n    entropy = torch.tensor(0.0, dtype=torch.float32, device=sv.device)\n    for p in norm_sv:\n        if p > 0.0:\n            entropy -= p * torch.log(p)\n\n    effective_rank = torch.tensor(np.e) ** entropy\n    return effective_rank.to(torch.float32)",
+      "file_sha256": "f2c4144c3a0354a98ebc4098fcc1a9e120941fcc1193dc42a91c951b848c4567"
+    },
+    {
+      "repository": "lop",
+      "file": "lop/utils/miscellaneous.py",
+      "line": 182,
+      "name": "compute_approximate_rank",
+      "source": "def compute_approximate_rank(sv: torch.Tensor, prop=0.99):\n    \"\"\"\n    Computes the approximate rank as defined in this paper: https://arxiv.org/pdf/1909.12255.pdf\n    :param sv: (float np array) an array of singular values\n    :param prop: (float) proportion of the variance captured by the approximate rank\n    :return: (torch int 32) approximate rank\n    \"\"\"\n    sqrd_sv = sv ** 2\n    normed_sqrd_sv = torch.flip(torch.sort(sqrd_sv / torch.sum(sqrd_sv))[0], dims=(0,))   # descending order\n    cumulative_ns_sv_sum = 0.0\n    approximate_rank = 0\n    while cumulative_ns_sv_sum < prop:\n        cumulative_ns_sv_sum += normed_sqrd_sv[approximate_rank]\n        approximate_rank += 1\n    return torch.tensor(approximate_rank, dtype=torch.int32)",
+      "file_sha256": "f2c4144c3a0354a98ebc4098fcc1a9e120941fcc1193dc42a91c951b848c4567"
+    },
+    {
+      "repository": "lop",
+      "file": "lop/utils/miscellaneous.py",
+      "line": 199,
+      "name": "compute_abs_approximate_rank",
+      "source": "def compute_abs_approximate_rank(sv: torch.Tensor, prop=0.99):\n    \"\"\"\n    Computes the approximate rank as defined in this paper, just that we won't be squaring the singular values\n    https://arxiv.org/pdf/1909.12255.pdf\n    :param sv: (float np array) an array of singular values\n    :param prop: (float) proportion of the variance captured by the approximate rank\n    :return: (torch int 32) approximate rank\n    \"\"\"\n    sqrd_sv = sv\n    normed_sqrd_sv = torch.flip(torch.sort(sqrd_sv / torch.sum(sqrd_sv))[0], dims=(0,))   # descending order\n    cumulative_ns_sv_sum = 0.0\n    approximate_rank = 0\n    while cumulative_ns_sv_sum < prop:\n        cumulative_ns_sv_sum += normed_sqrd_sv[approximate_rank]\n        approximate_rank += 1\n    return torch.tensor(approximate_rank, dtype=torch.int32)",
+      "file_sha256": "f2c4144c3a0354a98ebc4098fcc1a9e120941fcc1193dc42a91c951b848c4567"
+    }
+  ],
+  "scaling_formula_ast_sha256": {
+    "get_dormant_ratio": "91f22f37fdbd24b9cccd325da719ec008f9ed8d0927054fc3337e0f91de633d2",
+    "get_srank": "66fcfe9a74367e7dc933adb26db6d9d6ac5ea4330d1a7beb18b90fb26466c401"
+  }
+}

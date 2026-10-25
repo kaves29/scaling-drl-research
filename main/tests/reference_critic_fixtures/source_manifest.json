@@ -1,0 +1,39 @@
+{
+  "dopamine": {
+    "commit": "5873f5494ee0c2d7c016d0ab2ad530354fec59d0",
+    "files": {
+      "dopamine/labs/redo/networks.py": "c9c3f669a540380eccc344639b5cb71d1e1570fa9dae839e234d29d011c55a51",
+      "dopamine/labs/redo/recycled_dqn_agents.py": "71c3c6683083ebb2f71acee10162d71f02fdd2e6e39732e627ea3bc661085eeb",
+      "dopamine/labs/redo/tfagents/sac_train_eval.py": "d992d7d4c7d41359a3df926ed788156774467df82c870fb220b41fcfe0609a77",
+      "dopamine/labs/redo/weight_recyclers.py": "bfdc8820852b8c46d3ef63ea59bef342bca737739779160c0ff37ddfc7457b23"
+    }
+  },
+  "lop": {
+    "commit": "a6b79580d85f3025bdb601566d3627c5f489f13b",
+    "files": {
+      "lop/algos/rl/ppo.py": "eefb4b90344f1e0cffafbdf1534b1641afe1323dcab730408cf55e2fec9c1971",
+      "lop/nets/deep_ffnn.py": "c7eb0db507254a4fa21130d2d8a87df6c97256bdfa40a23fdb699b5ae2765658",
+      "lop/permuted_mnist/online_expr.py": "c55f04567e4f94356f9f90e1bbd2ff90e8f61f48b7fcece4fcba8e21de9414fa",
+      "lop/permuted_mnist/plots/bp_metrics.py": "f6e107b44d50fb9633077c799f1a25c4cf8d627dde7c210aba2af860cdb45bc0",
+      "lop/rl/run_ppo.py": "2c33403f6bf95a81a901ca427137af1270b7dd6141855e5e3fb6093c7074bf7e",
+      "lop/utils/miscellaneous.py": "f2c4144c3a0354a98ebc4098fcc1a9e120941fcc1193dc42a91c951b848c4567"
+    }
+  },
+  "paper_access": {
+    "arxiv_2506.17204": "HTTP 403",
+    "nature_s41586-024-07711-7": "HTTP 403",
+    "paper_code_equivalence": "unverified; code semantics and call sites verified separately",
+    "pmlr_sokar23a": "HTTP 403"
+  },
+  "scaling": {
+    "commit": "613a2b9e5e51fafa56d66699e5e2e87d999a8905",
+    "files": {
+      "configs/buffer/numpy_uniform.yaml": "90df22fdf04529556e9265889116b9359588b0d2770b491c5deb07ae11064bca",
+      "run.py": "a22b554651e9608fd576388230bc9602aa839f3db778f18ec0f88c4692a68a06",
+      "scale_rl/agents/sac/sac_update.py": "87deefe18d748e13dad064edb96a30954921abdef3da0619993cd9b4f4f95a73",
+      "scale_rl/networks/layers.py": "df92a2d9c26c1bd34d611f96f5c52c496c7e182d188a383ab26360306106fa44",
+      "scale_rl/networks/metrics.py": "c85c498f9335799da43c23b9d25cf94ebd3f490d24f354b8ae5585d53982e0c6",
+      "scale_rl/networks/trainer.py": "4e1741316de0e24028fad0590ee7c0ed99e02772dcfedb359a31bc7c8f763973"
+    }
+  }
+}

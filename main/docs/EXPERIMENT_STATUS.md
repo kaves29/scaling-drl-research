@@ -1,5 +1,46 @@
 # Experiment status by source
 
+## Automatic W&B critic diagnostic transport (24 October 2026)
+
+PR14 follow-up on `codex/reference-critic-diagnostics-20261024`. Once the
+observer is enabled, versioned scalars now enter the existing W&B history row
+at the original raw-environment step. Each measured observation queues a per-run
+mask/receipt artifact, including frozen inputs/session metadata when present.
+No extra `wandb.log` call, replay sampling, model operation or RNG draw is added.
+Skipped observations do not repeat old values; disabled W&B keeps local files,
+and offline W&B spools locally. Diagnostics/SVDs remain opt-in.
+
+Validation:28 CPU tests passed, including22 original diagnostics tests and six
+transport checks with real W&B offline SDK/history read-back and artifact
+manifest verification. No authenticated live run, training, probe fit, GPU job
+or merge. See [documentation](reference_critic_diagnostics.md) and
+[transport receipt](critic_diagnostics_wandb_validation.json).
+
+## Reference-backed critic diagnostics v1 (24 October 2026)
+
+[Draft PR14](https://github.com/kaves29/scaling-drl-research/pull/14); tested
+implementation `f08c5b189e2b53d36b22d06cf165b8ede1f77e15`. New branch
+`codex/reference-critic-diagnostics-20261024`, based on audit PR13
+`5179c43b4a45f6d9032a385adbf72713e2456373`. Historical metric calculations/keys,
+optimizer, architecture parameters, probe, schedules and RNG streams preserved.
+Opt-in sidecars add actual post-ReLU and separate affine dormancy, per-layer
+and two named aggregates, saved per-unit masks/new transition diagnostics,
+conventional stable rank and reference-code entropy/threshold ranks. Current
+preprocessed replay inputs are reused; optional immutable frozen inputs are
+separate. Rank SVDs are independently optional. Raw per-layer gradient-array
+adapter is explicit about ownership/timing; original global norm is aliased.
+
+Authors' code pinned and inspected: SparseNetwork4DRL613a2b9,
+Dopamine/ReDo5873f54, loss-of-plasticitya6b7958. Shared scaling dormancy/rank
+semantics are inherited, not a newly established EchoCritic bug. Paper sites
+returned403; paper-to-code agreement remains unverified. Validation:22 tiny
+CPU tests passed; no-training methodology reference195 commands/39 configs/
+130 eligibility candidates. No RL training, scientific probe fits, GPU jobs or
+merges. Single plain SACCritic supported; twin/injected adapters and GPU
+qualification remain outstanding. Historical scalar data cannot reconstruct
+new activation/rank/persistence measurements. See
+[reference comparison and usage](reference_critic_diagnostics.md).
+
 ## Diagnostic/probe disagreement follow-up (24 October 2026)
 
 Continuing draft PR13 on its existing branch. Read-only code/artifact review

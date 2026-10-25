@@ -1,0 +1,40 @@
+{
+  "base": "e637e01c6334073816805eea06413df608d43caf",
+  "checks": [
+    "same existing history row/step",
+    "historical values preserved",
+    "new scalar/null values preserved",
+    "explicit interaction/optimizer/raw-environment counters",
+    "artifact masks/receipt/session/frozen input manifest",
+    "no stale repetition on skipped observation",
+    "disabled W&B does not submit artifacts",
+    "corrupt masks and historical namespace collision rejected",
+    "NumPy/Python RNG unchanged"
+  ],
+  "diagnostics_and_additional_svd_default": "remain opt-in",
+  "gpu_jobs": 0,
+  "scientific_probe_fits": 0,
+  "source_sha256": {
+    "main/experiments/exp12/trainer.py": "dc22f2b18f379ae50f675160e0c779dfcdaf5662daad316f7f8fd6ebcce8cc6b",
+    "main/scale_rl/common/logger.py": "d1152d394b9c6fdd42c89ef29271f3f22a7ced18492c28c477d0383924bc1fcd",
+    "main/scale_rl/diagnostics/wandb_logging.py": "a5575961548621ff553e05c1e8a6d3a7c9cf4c42373c7cb2d7ca0ae50e895d23",
+    "main/tests/test_critic_diagnostics_wandb.py": "e4f466fc2ba1c7b1ecc45144674ca9f1f74baf89085326e7fd763537377a6dc8",
+    "main/tests/test_reference_critic_diagnostics.py": "60182af7f7d6ae9343455dfaea19ca2a2c6112223691a4f6a5c2af8a304be630"
+  },
+  "static_checks": [
+    "Black scoped Python",
+    "Pyflakes scoped Python",
+    "compileall changed Python",
+    "git diff --check"
+  ],
+  "tests": {
+    "existing_diagnostic_tests": 22,
+    "failed": 0,
+    "log": "/workspace/artifacts/critic-diagnostics-wandb-20261024/pytest-v2.log",
+    "new_transport_tests": 6,
+    "passed": 28,
+    "seconds": 9.67
+  },
+  "training_runs": 0,
+  "wandb_qualification": "real SDK offline run, history protobuf readback, artifact manifest; no authenticated online/dashboard verification"
+}
