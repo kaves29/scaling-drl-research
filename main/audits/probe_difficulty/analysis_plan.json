@@ -1,0 +1,22 @@
+{
+  "status": "Exploratory analysis plan fixed before this script's trend/decomposition computations; not preregistered or blinded to earlier reports",
+  "source": "f597ee9898e4d401912092c336c3e5330cf2fda1",
+  "cohort": "96 canonical conditions only; pilot pairs inventoried but never independent seeds",
+  "difficulty_observables": ["fresh final full-pool MSE", "fresh MSE/b when b>1e-12", "initial/intermediate full-pool MSE if actually retained", "target variance/distribution if retained"],
+  "score_observables_not_equivalent_to_difficulty": ["fresh score", "trained score", "source IQM of FP32 paired scores", "initial-reference marginal-IQM gap"],
+  "primary_common_checkpoint": 35,
+  "secondary_common_horizon": "maximum observed check at which all96 canonical runs are present; descriptive, not selected by effect size",
+  "trend_window": "checks0..35; paired/trained trends start at check1; full observed coverage additionally retained",
+  "monotonicity": "fraction and count of signed adjacent changes, reversals, OLS slopes and fraction below initial; no significance claim from endpoints",
+  "uncertainty": "pointwise95% percentile bootstrap,10000 resamples of training seed labels; ten rounds are never seed replicates",
+  "bootstrap_seed": 20261024,
+  "domain_comparison": "equal-task DMC(dog,humanoid) versus Myo(key,pen), within each architecture/seed/check;8 seed-label clusters; two tasks per domain are not population-level environment replication",
+  "score_decomposition": "arithmetic round means for exact additive score-operand changes; retain source IQMs separately; do not assume IQM additivity",
+  "component_bounds": "ideal-arithmetic b in[0,1] from sine range and nonnegative full-pool MSE; record FP32 qualification",
+  "near_zero_variance": "b<=1e-12 gives undefined ratio(null plus flag), never an epsilon in the denominator",
+  "identification_witnesses": "for common-window run/round trajectories, constant-b=.75 and feasible constant-fresh-MSE alternatives; algebraic feasibility only, not observed or certified teacher/optimization histories",
+  "associations": "within-run Spearman and quadratic-time-residual Spearman on observed common-window points; metric as-of lag<=2000 interactions; actor returns only at exact coincident evaluations; no causal interpretation or repeated-point p-values",
+  "curve_inspection": "pre-update changing-minibatch losses at0,100,500,1000; full-pool final at2000; never relabel the former as pool losses",
+  "precision": "compute target-addition ULP bounds at actual retained offsets; no synthetic extreme values as campaign explanation; fixed-prediction bounds do not bound optimizer-trajectory effects",
+  "prohibited": ["GPU work", "RL training", "new probe fits", "production changes", "historical data rewrites", "invented checkpoints, targets or normalizer states"]
+}
