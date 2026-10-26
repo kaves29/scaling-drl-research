@@ -1,0 +1,349 @@
+{
+  "schema": "sequential-random-target-alternative-v1",
+  "approved": false,
+  "executable": false,
+  "submitted": false,
+  "base_commit": "57d2beb78be7cf0e1145f4a9479082a07924cd16",
+  "diagnostic": "NEW sequential extension inspired by Lyle2023; not paper-validated or a replacement for approved probe",
+  "runs": [
+    {
+      "environment": "dog-run",
+      "architecture": "D2W512",
+      "seed": 1,
+      "bank_id": "dog-run/seed_1",
+      "bank_producer": true,
+      "output_identity": "dog-run/D2W512/seed_1"
+    },
+    {
+      "environment": "dog-run",
+      "architecture": "D2W512",
+      "seed": 2,
+      "bank_id": "dog-run/seed_2",
+      "bank_producer": true,
+      "output_identity": "dog-run/D2W512/seed_2"
+    },
+    {
+      "environment": "dog-run",
+      "architecture": "D2W512",
+      "seed": 3,
+      "bank_id": "dog-run/seed_3",
+      "bank_producer": true,
+      "output_identity": "dog-run/D2W512/seed_3"
+    },
+    {
+      "environment": "dog-run",
+      "architecture": "D2W512",
+      "seed": 4,
+      "bank_id": "dog-run/seed_4",
+      "bank_producer": true,
+      "output_identity": "dog-run/D2W512/seed_4"
+    },
+    {
+      "environment": "dog-run",
+      "architecture": "D2W512",
+      "seed": 5,
+      "bank_id": "dog-run/seed_5",
+      "bank_producer": true,
+      "output_identity": "dog-run/D2W512/seed_5"
+    },
+    {
+      "environment": "dog-run",
+      "architecture": "D4W1024",
+      "seed": 1,
+      "bank_id": "dog-run/seed_1",
+      "bank_producer": false,
+      "output_identity": "dog-run/D4W1024/seed_1"
+    },
+    {
+      "environment": "dog-run",
+      "architecture": "D4W1024",
+      "seed": 2,
+      "bank_id": "dog-run/seed_2",
+      "bank_producer": false,
+      "output_identity": "dog-run/D4W1024/seed_2"
+    },
+    {
+      "environment": "dog-run",
+      "architecture": "D4W1024",
+      "seed": 3,
+      "bank_id": "dog-run/seed_3",
+      "bank_producer": false,
+      "output_identity": "dog-run/D4W1024/seed_3"
+    },
+    {
+      "environment": "dog-run",
+      "architecture": "D4W1024",
+      "seed": 4,
+      "bank_id": "dog-run/seed_4",
+      "bank_producer": false,
+      "output_identity": "dog-run/D4W1024/seed_4"
+    },
+    {
+      "environment": "dog-run",
+      "architecture": "D4W1024",
+      "seed": 5,
+      "bank_id": "dog-run/seed_5",
+      "bank_producer": false,
+      "output_identity": "dog-run/D4W1024/seed_5"
+    },
+    {
+      "environment": "dog-run",
+      "architecture": "D4W1536",
+      "seed": 1,
+      "bank_id": "dog-run/seed_1",
+      "bank_producer": false,
+      "output_identity": "dog-run/D4W1536/seed_1"
+    },
+    {
+      "environment": "dog-run",
+      "architecture": "D4W1536",
+      "seed": 2,
+      "bank_id": "dog-run/seed_2",
+      "bank_producer": false,
+      "output_identity": "dog-run/D4W1536/seed_2"
+    },
+    {
+      "environment": "dog-run",
+      "architecture": "D4W1536",
+      "seed": 3,
+      "bank_id": "dog-run/seed_3",
+      "bank_producer": false,
+      "output_identity": "dog-run/D4W1536/seed_3"
+    },
+    {
+      "environment": "dog-run",
+      "architecture": "D4W1536",
+      "seed": 4,
+      "bank_id": "dog-run/seed_4",
+      "bank_producer": false,
+      "output_identity": "dog-run/D4W1536/seed_4"
+    },
+    {
+      "environment": "dog-run",
+      "architecture": "D4W1536",
+      "seed": 5,
+      "bank_id": "dog-run/seed_5",
+      "bank_producer": false,
+      "output_identity": "dog-run/D4W1536/seed_5"
+    },
+    {
+      "environment": "myo-pen-twirl",
+      "architecture": "D2W512",
+      "seed": 1,
+      "bank_id": "myo-pen-twirl/seed_1",
+      "bank_producer": true,
+      "output_identity": "myo-pen-twirl/D2W512/seed_1"
+    },
+    {
+      "environment": "myo-pen-twirl",
+      "architecture": "D2W512",
+      "seed": 2,
+      "bank_id": "myo-pen-twirl/seed_2",
+      "bank_producer": true,
+      "output_identity": "myo-pen-twirl/D2W512/seed_2"
+    },
+    {
+      "environment": "myo-pen-twirl",
+      "architecture": "D2W512",
+      "seed": 3,
+      "bank_id": "myo-pen-twirl/seed_3",
+      "bank_producer": true,
+      "output_identity": "myo-pen-twirl/D2W512/seed_3"
+    },
+    {
+      "environment": "myo-pen-twirl",
+      "architecture": "D2W512",
+      "seed": 4,
+      "bank_id": "myo-pen-twirl/seed_4",
+      "bank_producer": true,
+      "output_identity": "myo-pen-twirl/D2W512/seed_4"
+    },
+    {
+      "environment": "myo-pen-twirl",
+      "architecture": "D2W512",
+      "seed": 5,
+      "bank_id": "myo-pen-twirl/seed_5",
+      "bank_producer": true,
+      "output_identity": "myo-pen-twirl/D2W512/seed_5"
+    },
+    {
+      "environment": "myo-pen-twirl",
+      "architecture": "D4W1024",
+      "seed": 1,
+      "bank_id": "myo-pen-twirl/seed_1",
+      "bank_producer": false,
+      "output_identity": "myo-pen-twirl/D4W1024/seed_1"
+    },
+    {
+      "environment": "myo-pen-twirl",
+      "architecture": "D4W1024",
+      "seed": 2,
+      "bank_id": "myo-pen-twirl/seed_2",
+      "bank_producer": false,
+      "output_identity": "myo-pen-twirl/D4W1024/seed_2"
+    },
+    {
+      "environment": "myo-pen-twirl",
+      "architecture": "D4W1024",
+      "seed": 3,
+      "bank_id": "myo-pen-twirl/seed_3",
+      "bank_producer": false,
+      "output_identity": "myo-pen-twirl/D4W1024/seed_3"
+    },
+    {
+      "environment": "myo-pen-twirl",
+      "architecture": "D4W1024",
+      "seed": 4,
+      "bank_id": "myo-pen-twirl/seed_4",
+      "bank_producer": false,
+      "output_identity": "myo-pen-twirl/D4W1024/seed_4"
+    },
+    {
+      "environment": "myo-pen-twirl",
+      "architecture": "D4W1024",
+      "seed": 5,
+      "bank_id": "myo-pen-twirl/seed_5",
+      "bank_producer": false,
+      "output_identity": "myo-pen-twirl/D4W1024/seed_5"
+    },
+    {
+      "environment": "myo-pen-twirl",
+      "architecture": "D4W1536",
+      "seed": 1,
+      "bank_id": "myo-pen-twirl/seed_1",
+      "bank_producer": false,
+      "output_identity": "myo-pen-twirl/D4W1536/seed_1"
+    },
+    {
+      "environment": "myo-pen-twirl",
+      "architecture": "D4W1536",
+      "seed": 2,
+      "bank_id": "myo-pen-twirl/seed_2",
+      "bank_producer": false,
+      "output_identity": "myo-pen-twirl/D4W1536/seed_2"
+    },
+    {
+      "environment": "myo-pen-twirl",
+      "architecture": "D4W1536",
+      "seed": 3,
+      "bank_id": "myo-pen-twirl/seed_3",
+      "bank_producer": false,
+      "output_identity": "myo-pen-twirl/D4W1536/seed_3"
+    },
+    {
+      "environment": "myo-pen-twirl",
+      "architecture": "D4W1536",
+      "seed": 4,
+      "bank_id": "myo-pen-twirl/seed_4",
+      "bank_producer": false,
+      "output_identity": "myo-pen-twirl/D4W1536/seed_4"
+    },
+    {
+      "environment": "myo-pen-twirl",
+      "architecture": "D4W1536",
+      "seed": 5,
+      "bank_id": "myo-pen-twirl/seed_5",
+      "bank_producer": false,
+      "output_identity": "myo-pen-twirl/D4W1536/seed_5"
+    }
+  ],
+  "parent_count": 30,
+  "independent_seeds_per_environment_architecture": 5,
+  "K": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8
+  ],
+  "arms": [
+    "A-trained-sequence",
+    "B-fresh-sequence",
+    "C-fresh-current-target"
+  ],
+  "steps_per_target": 2000,
+  "additional_updates_per_checkpoint": 48000,
+  "capture_initial_at_interaction": 5000,
+  "evaluation_checkpoints": [
+    50000,
+    100000,
+    150000,
+    200000,
+    250000,
+    300000,
+    350000,
+    400000,
+    450000,
+    500000
+  ],
+  "nominal_observations_per_parent": 11,
+  "additional_updates_per_parent_nominal": 528000,
+  "additional_updates_grid_nominal": 15840000,
+  "natural_control_extension": "if preserved original run extends, continue at original evaluation schedule; additional cost beyond nominal",
+  "teacher": {
+    "architecture_proposed": "D2W512",
+    "fixed_across_learners": true,
+    "target_scale": 100000,
+    "source_family": "random teacher sine",
+    "decision": "proposal, owner must freeze fixed teacher config"
+  },
+  "bank": {
+    "pool_size_proposed": 25600,
+    "sampling": "designated D2 producer at replay warmup, without using training RNG",
+    "sharing": "one immutable bank per environment/seed across all three learner architectures",
+    "rms": "producer initial RMS frozen in bank; no current-RMS probing"
+  },
+  "methodology_decisions_pending": [
+    "Confirm dog-run remains eligible; no claim about which DMC task was removed from main grid",
+    "Approve proposed dog-run and myo-pen-twirl task selection",
+    "Freeze fixed teacher architecture/config and bank-producer convention",
+    "Approve initial/evaluation cadence and any extended-run policy",
+    "Review alternative-run hook integration, runtime precision, storage and resource caps"
+  ],
+  "resources": {
+    "gpu_hours": null,
+    "walltime": null,
+    "CPU_small_network_verification_only": true,
+    "rough_storage_GiB": [
+      800,
+      2000
+    ],
+    "basis": "full A/B phase states retained at11 nominal observations; large learner~75.7M weights gives~50GiB per large parent in model states alone",
+    "qualification": "not measured, not approved"
+  },
+  "five_job_smoke": {
+    "parent_count": 5,
+    "scope": "smoke only; cannot balance three sizes by two tasks or estimate five independent seeds/cell",
+    "cells_proposed": [
+      {
+        "environment": "dog-run",
+        "architecture": "D2W512",
+        "seed": 0
+      },
+      {
+        "environment": "dog-run",
+        "architecture": "D4W1024",
+        "seed": 0
+      },
+      {
+        "environment": "dog-run",
+        "architecture": "D4W1536",
+        "seed": 0
+      },
+      {
+        "environment": "myo-pen-twirl",
+        "architecture": "D2W512",
+        "seed": 0
+      },
+      {
+        "environment": "myo-pen-twirl",
+        "architecture": "D4W1536",
+        "seed": 0
+      }
+    ],
+    "seed0": "development proposal, outside proposed scientific seeds1\u20135; owner review required"
+  }
+}

@@ -1,5 +1,28 @@
 # Experiment status by source
 
+## Opt-in sequential alternative diagnostic (26 October 2026)
+
+Independent branch `codex/sequential-alternative-probe`, based on pilot
+`57d2beb78be7cf0e1145f4a9479082a07924cd16`. Existing training/probe/config code
+and active Kaggle execution are untouched. New8-task sequential A/B/C diagnostic
+uses one environment/seed fixed pool/teacher bank, frozen architecture-specific
+fresh-derived offset, fresh AdamW state per target and2,000 updates/phase.
+It is a new extension inspired by Lyle2023, not paper-validated methodology.
+
+49 CPU tests pass (32 alternative,17 existing regressions); tiny real residual
+SAC critics and a standalone synthetic CPU example cover all K=1..8, immutable
+sharing, carry/reset identities, original-disabled outputs and verified phase
+resume. Full CPU logs/arrays are outside Git under
+`/workspace/artifacts/sequential-alternative-probe/`; receipt under
+`main/diagnostics/sequential_validation_receipt.json`.
+
+See [contract and usage](sequential_alternative_probe.md). Instance-local hooks
+are explicit opt-in; no automatic entrypoint/approved manifest change. Draft
+30-parent pilot (two proposed tasks ×three sizes ×five seeds) and separate
+five-job smoke are unapproved/non-executable. Task eligibility/removal, fixed
+teacher choice, bank producer, cadence, storage/runtime and qualification need
+owner review. No GPU work, RL training, job submission/cancellation or merge.
+
 ## Ten-run simultaneous diagnostic pilot revision (25 October 2026)
 
 Updates [PR16](https://github.com/kaves29/scaling-drl-research/pull/16) in place.
