@@ -282,7 +282,7 @@
   "nominal_observations_per_parent": 11,
   "additional_updates_per_parent_nominal": 528000,
   "additional_updates_grid_nominal": 15840000,
-  "natural_control_extension": "if preserved original run extends, continue at original evaluation schedule; additional cost beyond nominal",
+  "natural_control_extension": "Unsupported by the alternative-only runner; any extension requires a separate owner decision",
   "teacher": {
     "architecture_proposed": "D2W512",
     "fixed_across_learners": true,
@@ -344,6 +344,15 @@
         "seed": 0
       }
     ],
-    "seed0": "development proposal, outside proposed scientific seeds1\u20135; owner review required"
-  }
+    "seed0": "development proposal, outside proposed scientific seeds1\u20135; owner review required",
+    "purpose": "Engineering smoke test only; not a balanced scaling experiment or scientific qualification"
+  },
+  "runner": {
+    "module": "diagnostics.sequential_runner",
+    "mode": "alternative_only",
+    "approved_independent_probe_constructed": false,
+    "source_base_integration_approved": false,
+    "campaign_launch_authorized": false
+  },
+  "proposal_status": "All existing environment/seed/teacher/cadence/resource entries remain unapproved proposals; no new scientific choice adopted by review revision"
 }

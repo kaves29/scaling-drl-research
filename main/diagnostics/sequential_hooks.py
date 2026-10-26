@@ -1,4 +1,4 @@
-"""Explicit instance-local opt-in hook; no registration or production edits."""
+"""Observer and legacy combined hooks; dedicated pilots use sequential_runner."""
 
 from pathlib import Path
 
@@ -168,7 +168,7 @@ class Observer:
 
 
 class Hooks:
-    """Use only in a dedicated alternative run, after trainer/probes construction.
+    """Legacy combined-diagnostic API, not the alternative-only pilot runner.
 
     Disabled context does not inspect/patch either object. Enabled attaches to
     this trainer/probe instance only, preserving original methods and outputs.

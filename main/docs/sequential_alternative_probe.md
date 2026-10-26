@@ -67,47 +67,80 @@ parameters/key bank, target hashes/shapes/dtypes and fresh state are persisted.
 Full-pool final source MSE uses JAX; host arithmetic on stored predictions is
 also retained for inspection and may differ by reduction roundoff.
 
-## API and optional integration
+## Dedicated alternative-only runner
 
-`diagnostics.sequential_probe` is standalone. `evaluate(enabled=False)` returns
-before file/model/RNG work. `diagnostics.sequential_hooks.Hooks` is an explicitly
-installed **instance-local** context: disabled does not inspect/patch the trainer;
-enabled preserves original fresh-capture/evaluation return values and invokes
-this alternative afterward. Original probes still run normally. It does not
-patch classes globally or mutate live SAC/target parameters, optimizers, replay,
-training RNG, counters or RMS. Only private functional model copies are fitted.
-Only ordinary single dense Flax SAC critics are supported by the live observer;
-twin/sparse/injected paths and other mutable-network-state families are not
-qualified. No existing entrypoint imports these modules automatically.
+Use `diagnostics.sequential_runner.run(args, alternative)` for this dedicated
+opt-in pilot. With no alternative or `enabled=false`, it delegates the original
+args object directly to `experiments.exp1.run`: the original `RunProbes` path is
+unchanged. With the alternative enabled, it constructs the real `Exp12Trainer`
+directly and **never constructs or executes `RunProbes`**, regardless of the
+unchanged `cfg.probe.enabled` value. Ordinary SAC updates, replay sampling,
+normalization, actor/environment evaluation and training logging still use the
+existing trainer. There is no global method patch or approved entrypoint edit.
+The previous `Hooks` context is retained only for API compatibility; it runs
+both diagnostics and is **not** the dedicated pilot integration.
 
-Explicit dedicated-run integration (not a launch command):
+The runner requires an explicitly reviewed request JSON, not the unapproved
+pilot manifest. From `main/`, the entry point is:
 
-```python
-from diagnostics.sequential_hooks import Hooks, Observer
-
-observer = Observer(
-    enabled=True, bank=shared_environment_seed_bank,
-    reference=architecture_run_reference, output=checkpoint_output_root,
-    teacher=fixed_teacher_definition, teacher_architecture=fixed_teacher_label,
-    architecture=learner_architecture_label, environment=cfg.env_name,
-    seed=int(cfg.seed), source=clean_source_sha,
-    bank_producer=is_designated_initial_pool_producer,
-)
-# Construct the existing trainer and RunProbes by the existing runner first.
-# Enter before original warmup/fresh capture and original trainer.train call.
-with Hooks(trainer, probes, observer):
-    # Existing runner drives original callbacks and configured evaluations.
-    existing_run_loop()
+```bash
+python -m diagnostics.sequential_runner --request /absolute/reviewed-request.json
 ```
 
-This pseudocode explains the lifecycle; no executable RL launcher is added.
-A non-producer fails closed if the bank is absent. Do not wait inside a scheduled
-job or create a different bank to bypass it. On a restored SAC run, restore the
-original training state and exact fresh initialization first, then call
-`observer.restore(trainer, saved_fresh)` before installing hooks. Calling
-`initialize` after SAC updates is refused. Caller integration must supply the
-actual saved fresh tree, not a newly seeded approximation. Production trainer/
-simulator restore qualification remains separate from these CPU hook tests.
+This documents invocation; no campaign, GPU execution or launch is authorized
+by this implementation. The JSON has `args` and `alternative` objects:
+
+- `args`: existing `config_path`, `config_name`, `overrides`, absolute
+  `checkpoint_dir`, positive `checkpoint_interval`, `checkpoint_start_frac`.
+- `alternative`: `enabled=true`; absolute `bank`, `reference`, `output` paths;
+  `environment`, `seed`, actual `architecture` label, frozen `source` identity;
+  `bank_producer` boolean; explicit `teacher_architecture` label; and a `teacher`
+  object containing `block_type`, `num_blocks`, `hidden_dim`, `dtype=float32`.
+  There is no default teacher, environment, seed allocation or pilot cadence.
+
+The configuration must explicitly disable `fork.enabled`: this alternative has
+no approved-probe trigger, injected arm or automatic natural-control extension.
+It rejects twin/sparse/mixed-precision critics, multiple training environments,
+and update ratios below one, rather than changing them. Configured probe
+steps must remain 2,000. Normal SAC evaluation cadence drives the later
+alternative checkpoints; the initial observation occurs at replay warmup,
+immediately before the first replay sampling/SAC update. The saved critic is an
+exact functional copy of the current parameters, not a separately seeded model.
+
+One checkpoint is saved at startup and at the last complete step before warmup
+capture, in addition to configured periodic/evaluation checkpoints. There is no
+per-step checkpointing throughout warmup. A capture interruption restores that
+complete boundary and deterministically replays the last warmup transition.
+Later evaluation checkpoints are saved **before** the alternative runs. Restore
+rechecks the pending checkpoint before advancing training. Completed phase
+triplets are reused without refits; an unfinished triplet can be recomputed.
+The runner emits a separate `ALTERNATIVE_DONE.json`, not the approved experiment
+ledger or `DONE` marker. W&B failure status is retained on exceptions.
+
+The non-producer fails closed if the designated shared bank is absent. Do not
+substitute a separately collected pool. The runner verifies source/configuration,
+module hashes, backend/precision, reference and checkpoint identities on resume.
+`Observer` remains a lower-level API; `evaluate(enabled=False)` returns before
+file/model/RNG work. Only private functional model copies are fitted.
+
+## Backend and precision contract
+
+Inputs, teacher/learner parameter leaves, model computation, target arrays and
+model outputs must be finite float32. Unsupported float16, bfloat16, float64 or
+integer inputs/parameters fail before silent JAX narrowing or fitting. The
+network must produce one scalar per pair; mutable extra model collections,
+twin/injected/sparse architectures are outside this runner's supported contract.
+RMS statistics retain their source precision and normalization formula; only
+the resulting input pool is float32, as in the approved source.
+
+The identity records Python, JAX/JAXLIB, Flax, Optax, NumPy and Orbax versions;
+backend and platform version, device kind, x64, matmul precision, PRNG
+implementation, dtype promotion, and XLA/TF32 override flags. x64 must be off;
+bfloat16 matmul precision is rejected. CPU and GPU are recognized backends,
+but **only CPU is verified**. A CPU bank cannot silently become a GPU bank;
+backend/precision changes require a separately reviewed package and qualification.
+Dtype validation can synchronize/copy large parameter trees to the host; these
+optional checks and all fitting/storage costs require resource qualification.
 
 Bank/reference creation refuse existing paths. Evaluation resume binds the
 checkpoint and starting-state hashes, bank/reference hashes, settings, module
@@ -127,6 +160,8 @@ Run from `main/` in the repository's existing pinned CPU environment:
 ```bash
 JAX_PLATFORMS=cpu CUDA_VISIBLE_DEVICES='' python -m pytest -q \
   tests/test_sequential_probe.py \
+  tests/test_sequential_runner.py \
+  tests/test_sequential_mutations.py \
   tests/test_method_c_ten_reference.py \
   tests/test_probe_discrepancy_adapter.py \
   tests/test_forensic_probe_audit.py
@@ -148,9 +183,12 @@ source score signs/baseline; no input/RMS/parameter/global-RNG mutation; corrupt
 partial resume; disabled hooks and original probe outputs; actual tiny residual
 SAC networks through8 phases and milestone-prefix equivalence. No GPU, full-
 size training or scientific qualification is claimed. No threshold is loosened.
-Final result:49 passed,0 failed,0 skipped;14 pre-existing Matplotlib/Pyparsing
-deprecation warnings. This includes32 new alternative tests and17 existing
-regressions. Exact commands/hashes are in the validation receipt and external logs.
+The original publication recorded49 passing tests. The review revision adds
+real trainer lifecycle/isolation/restore checks, precision rejection and six
+in-memory break/restore cases. The current validation receipt records final
+counts, exact commands, source hashes, warnings and external artifact hashes.
+Tiny CPU SAC updates in lifecycle tests are engineering validation, not a
+campaign, learning result, full-size simulator qualification or GPU test.
 
 ## Draft pilot: counts, cost and remaining decisions
 
@@ -177,9 +215,9 @@ selection are proposals needing approval, not existing experiment authority.
 Capture initial warmup at5,000 interactions and evaluate at50k,100k,...,500k,
 matching the nominal SAC evaluation cadence:11 observations/parent. Each costs
 3 arms ×8 tasks ×2,000 =48,000 extra probe updates;528,000/parent and15,840,000
-for30 parents, **in addition to** existing approved probes/training. Any natural
-control extension adds observations at the original cadence, not a truncated
-horizon. Five-job smoke at the same full cadence would add2,640,000 updates;
+for30 parents, **in addition to SAC training only**. The dedicated run does not
+execute the approved independent probe. Automatic fork/control extensions are
+unsupported; any extended horizon requires an explicit owner decision. Five-job smoke at the same full cadence would add2,640,000 updates;
 a shorter engineering schedule needs its own explicit plan/approval.
 
 GPU-hours/walltime cannot be derived from these counts without profiles. Retaining
@@ -198,3 +236,30 @@ The pilot can describe sequence-history contrasts and task-order variability;
 it cannot prove a general DMC/Myo mechanism or validate an intervention merely
 because it yields expected plasticity loss. No Delta/Kaggle job was queued,
 launched, cancelled, resumed or changed as part of this implementation.
+
+## Source base and unresolved integration
+
+PR17 remains stacked on PR16 `57d2beb78be7cf0e1145f4a9479082a07924cd16`.
+The live shared `main` observed during review was
+`087feab341b9be1f377697668f2d1c750ec0467f`, also the merge base. The
+AGENTS instruction identifies `main` as the shared target after owner review;
+it does not approve adopting every intervening draft dependency. No restack,
+force push or merge was performed. See [dependency bindings](../diagnostics/sequential_base_dependencies.json) for
+file hashes, importing paths and the commits that last changed them.
+
+The numerical core imports `_mean_prediction`, `_chunked` and
+`critic_optimizer` from `experiments/exp12/probe.py` (last changed by
+`5fe2ff65ae96cf900b23bf9810f79464730def9d`). The runner uses `Exp12Trainer`
+(last changed by `1d849c3b52f1b6bdc2514f8972a2388021b929c7`) and config
+composition in `exp1.py` (`20d8c6b47cf9ec5e62f1d35190ea48b5fe115a5b`), plus
+their instrumentation/diagnostic imports. The critic calls layers changed by
+`f08c5b189e2b53d36b22d06cf165b8ede1f77e15`. These runtime files are inherited
+from earlier engineering PRs, not new edits here. The listed helpers also exist
+on main; existence is not evidence that all current behavior is equivalent.
+
+No alternative module imports PR16's `audits/probe_discrepancy` adapter,
+manifest, launcher or Slurm scripts. PR16-specific pilot changes are therefore
+not a direct runtime dependency of the alternative. Removing the inherited
+stack still requires an approved integration target and independently validated
+dependency versions. That integration remains blocked rather than guessing a
+base or silently bringing unrelated draft work into main.

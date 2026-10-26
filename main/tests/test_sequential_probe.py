@@ -652,3 +652,161 @@ def test_observer_restore_fails_before_model_work_on_wrong_config(
     trainer = N(cfg=cfg)
     with pytest.raises(ValueError, match="resume"):
         observer.restore(trainer, fresh)
+
+
+def test_resume_refuses_changed_backend_without_model_execution(package, tmp_path):
+    out = tmp_path / "out"
+    run(package, out)
+    with patch.object(
+        s.jax, "default_backend", return_value="changed-backend"
+    ), patch.object(s, "_fit_literal", side_effect=AssertionError("no model work")):
+        with pytest.raises(ValueError, match="resume"):
+            run(package, out)
+
+
+@pytest.mark.parametrize("dtype", [np.float16, np.float64, np.int32, jnp.bfloat16])
+def test_precision_rejects_parameter_dtype_before_fit(package, tmp_path, dtype):
+    bank, ref, net, fresh, *_ = package
+    unsupported = jax.tree_util.tree_map(lambda x: np.asarray(x).astype(dtype), fresh)
+    with patch.object(s, "_fit_literal", side_effect=AssertionError("must not fit")):
+        with pytest.raises(ValueError, match="float32"):
+            s.evaluate(
+                enabled=True,
+                bank=bank,
+                reference=ref,
+                network=net,
+                current=unsupported,
+                fresh=fresh,
+                checkpoint=0,
+                settings=s.Settings(batch_size=2, chunk=2),
+                output=tmp_path / "rejected",
+            )
+    assert not (tmp_path / "rejected").exists()
+
+
+@pytest.mark.parametrize("dtype", [np.float16, np.float64, np.int32])
+def test_precision_rejects_raw_input_narrowing(package, tmp_path, dtype):
+    _, _, _, _, obs, act, *_ = package
+    with pytest.raises(ValueError, match="float32"):
+        s.create_bank(
+            tmp_path / "bad_bank",
+            observations=obs.astype(dtype),
+            actions=act,
+            num_filled=4,
+            warmup=4,
+            rms=None,
+            environment="synthetic",
+            seed=3,
+            teacher=Tiny(),
+            teacher_architecture="fixed-tiny2",
+            pool_size=4,
+            source="fixture",
+        )
+    assert not (tmp_path / "bad_bank").exists()
+
+
+def test_precision_contract_records_supported_cpu_and_rejects_x64(package):
+    _, _, net, fresh, obs, act, *_ = package
+    contract = s.precision_contract(net, fresh, obs, act)
+    assert contract["backend"] == "cpu"
+    assert contract["input_parameter_compute_dtype"] == "float32"
+    assert contract["runtime_versions"]["jax"] == "0.4.34"
+    assert not contract["jax_enable_x64"] and not contract["GPU_qualified"]
+    with jax.experimental.enable_x64():
+        with pytest.raises(ValueError, match="precision"):
+            s.precision_contract(net, fresh, obs, act)
+
+
+def test_precision_rejects_declared_network_dtype(package):
+    class Half(nn.Module):
+        dtype: object = np.float16
+
+        def __call__(self, observations, actions):
+            return observations[:, :1]
+
+    with pytest.raises(ValueError, match="network computation dtype"):
+        s.precision_contract(Half())
+
+
+def test_phase_receipt_exposes_offset_and_parameter_carry(package, tmp_path):
+    out = tmp_path / "explicit"
+    run(package, out)
+    with np.load(package[1] / "targets.npz") as targets:
+        offset = float(targets["offset"])
+    for k in range(1, 9):
+        phase = out / f"phase_{k:02d}"
+        rec = s.verify(phase)
+        assert rec["summary"]["frozen_fresh_offset"] == offset
+        assert rec["initial_parameter_hashes"]["C"] == s.tree_hash(package[3])
+        if k == 1:
+            assert rec["initial_parameter_hashes"]["B"] == s.tree_hash(package[3])
+        else:
+            previous = s.verify(out / f"phase_{k-1:02d}")
+            for arm in "AB":
+                assert (
+                    rec["initial_parameter_hashes"][arm]
+                    == previous["final_parameter_hashes"][arm]
+                )
+
+
+@pytest.mark.parametrize(
+    "field",
+    [
+        "target_sha256",
+        "indices_sha256",
+        "optimizer_initializations",
+        "initial_parameter_hashes",
+        "final_parameter_hashes",
+    ],
+)
+def test_resume_rejects_mutated_phase_metadata_before_fit(package, tmp_path, field):
+    out = tmp_path / "metadata"
+    run(package, out)
+    path = out / "phase_01" / "receipt.json"
+    rec = s.load_json(path)
+    if field == "optimizer_initializations":
+        rec[field]["A"] = 0
+    elif field.endswith("parameter_hashes"):
+        rec[field]["A"] = "0" * 64
+    else:
+        rec[field] = "0" * 64
+    s.write_json(path, rec)
+    with patch.object(s, "_fit_literal", side_effect=AssertionError("no fit")):
+        with pytest.raises(ValueError, match="phase"):
+            run(package, out)
+
+
+def test_precision_rejects_bfloat16_matmul_and_nonfinite_parameters(package):
+    with jax.default_matmul_precision("bfloat16"):
+        with pytest.raises(ValueError, match="matmul precision"):
+            s.precision_contract()
+    bad = jax.tree_util.tree_map(
+        lambda x: np.full(x.shape, np.nan, np.float32), package[3]
+    )
+    with pytest.raises(ValueError, match="finite float32"):
+        s.precision_contract(package[2], bad)
+
+
+def test_bank_validates_only_filled_replay_not_unused_capacity(package, tmp_path):
+    _, _, _, _, obs, act, *_ = package
+    padded_obs = np.concatenate([obs, np.full_like(obs, np.nan)])
+    padded_act = np.concatenate([act, np.full_like(act, np.nan)])
+    path = tmp_path / "filled_only"
+    s.create_bank(
+        path,
+        observations=padded_obs,
+        actions=padded_act,
+        num_filled=4,
+        warmup=4,
+        rms=None,
+        environment="synthetic",
+        seed=3,
+        teacher=Tiny(),
+        teacher_architecture="fixed-tiny2",
+        pool_size=4,
+        source="fixture",
+    )
+    assert s.verify(path)["num_filled"] == 4
+    with np.load(path / "bank.npz") as data:
+        assert np.isfinite(data["raw_observations"]).all()
+    assert np.isnan(padded_obs[4:]).all() and np.isnan(padded_act[4:]).all()

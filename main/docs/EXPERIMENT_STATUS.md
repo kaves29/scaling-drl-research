@@ -1,27 +1,29 @@
 # Experiment status by source
 
-## Opt-in sequential alternative diagnostic (26 October 2026)
+## PR17 alternative-only runner review (26 October 2026)
 
-Independent branch `codex/sequential-alternative-probe`, based on pilot
-`57d2beb78be7cf0e1145f4a9479082a07924cd16`. Existing training/probe/config code
-and active Kaggle execution are untouched. New8-task sequential A/B/C diagnostic
-uses one environment/seed fixed pool/teacher bank, frozen architecture-specific
-fresh-derived offset, fresh AdamW state per target and2,000 updates/phase.
-It is a new extension inspired by Lyle2023, not paper-validated methodology.
+Continuing [PR17](https://github.com/kaves29/scaling-drl-research/pull/17) on
+`codex/sequential-alternative-probe`, retaining PR16 base
+`57d2beb78be7cf0e1145f4a9479082a07924cd16`. Shared main observed at
+`087feab341b9be1f377697668f2d1c750ec0467f`; unmerged dependency approval is
+unresolved, so no restack/force push/merge. Runtime dependency bindings are in
+`main/diagnostics/sequential_base_dependencies.json`.
 
-49 CPU tests pass (32 alternative,17 existing regressions); tiny real residual
-SAC critics and a standalone synthetic CPU example cover all K=1..8, immutable
-sharing, carry/reset identities, original-disabled outputs and verified phase
-resume. Full CPU logs/arrays are outside Git under
-`/workspace/artifacts/sequential-alternative-probe/`; receipt under
-`main/diagnostics/sequential_validation_receipt.json`.
+The dedicated `diagnostics.sequential_runner` never constructs RunProbes when
+enabled, and delegates the unchanged default path when disabled. It uses the
+real trainer's pre-update fresh capture, ordinary SAC/actor evaluations and
+complete-state save/restore, with verified phase-level resume. Backend/precision
+and dtype contracts fail closed; target/index/parameter/reset receipts are
+explicit. Approved probe, main configurations and active pilot remain unchanged.
 
-See [contract and usage](sequential_alternative_probe.md). Instance-local hooks
-are explicit opt-in; no automatic entrypoint/approved manifest change. Draft
-30-parent pilot (two proposed tasks ×three sizes ×five seeds) and separate
-five-job smoke are unapproved/non-executable. Task eligibility/removal, fixed
-teacher choice, bank producer, cadence, storage/runtime and qualification need
-owner review. No GPU work, RL training, job submission/cancellation or merge.
+Pre-freeze focused CPU validation:68 passed,0 failed/skipped,2 Orbax restore
+warnings. Final frozen validation includes the last filled-replay guard/test,
+existing regressions, original mutation suite and the real-critic CPU example;
+see the current validation receipt for final status. All SAC updates are tiny
+CPU engineering checks, not campaign runs or scientific/GPU qualification.
+The draft five-job engineering smoke and30-parent proposal remain unapproved,
+non-executable, with all scientific task/teacher/seed/cadence/resource choices
+pending owner decisions. No GPU/Slurm launch or merge.
 
 ## Ten-run simultaneous diagnostic pilot revision (25 October 2026)
 

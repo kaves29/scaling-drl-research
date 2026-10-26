@@ -12,6 +12,7 @@ import importlib.metadata
 import hashlib
 import json
 import os
+import platform
 from pathlib import Path
 import uuid
 
@@ -23,6 +24,84 @@ import numpy as np
 from experiments.exp12.probe import _mean_prediction, critic_optimizer
 
 STREAM = 0x53514551
+
+
+def precision_contract(network=None, params=None, observations=None, actions=None):
+    """Fail closed before JAX can silently narrow unsupported inputs/weights."""
+    backend = jax.default_backend()
+    if backend not in ("cpu", "gpu") or jax.config.jax_enable_x64:
+        raise ValueError(
+            "unsupported backend/precision for creation or resume: requires CPU or GPU, x64 off"
+        )
+    if jax.config.jax_default_matmul_precision not in (
+        None,
+        "default",
+        "high",
+        "highest",
+        "float32",
+        "tensorfloat32",
+    ):
+        raise ValueError("unsupported matmul precision")
+    if network is not None and np.dtype(
+        getattr(network, "dtype", np.float32)
+    ) != np.dtype("float32"):
+        raise ValueError("network computation dtype must be float32")
+    arrays = {}
+    if observations is not None:
+        arrays["observations"] = observations
+    if actions is not None:
+        arrays["actions"] = actions
+    if params is not None:
+        leaves = jax.tree_util.tree_leaves(params)
+        if not leaves:
+            raise ValueError("empty parameter tree")
+        arrays.update({f"parameter_{i}": x for i, x in enumerate(leaves)})
+    for name, value in arrays.items():
+        value = np.asarray(value)
+        if value.dtype != np.float32 or not np.isfinite(value).all():
+            raise ValueError(f"{name} requires finite float32 values")
+    if observations is not None and actions is not None:
+        if (
+            observations.ndim != 2
+            or actions.ndim != 2
+            or len(observations) != len(actions)
+            or not len(observations)
+        ):
+            raise ValueError("matching nonempty rank-two inputs required")
+        if params is not None:
+            shape = jax.eval_shape(
+                lambda p, o, a: network.apply({"params": p}, o, a),
+                params,
+                jax.ShapeDtypeStruct(observations.shape, np.float32),
+                jax.ShapeDtypeStruct(actions.shape, np.float32),
+            )
+            if shape.dtype != np.float32 or shape.shape not in (
+                (len(observations),),
+                (len(observations), 1),
+            ):
+                raise ValueError("network must return one float32 scalar per input")
+    return {
+        "backend": backend,
+        "jax_enable_x64": bool(jax.config.jax_enable_x64),
+        "matmul_precision": str(jax.config.jax_default_matmul_precision),
+        "prng_impl": str(jax.config.jax_default_prng_impl),
+        "dtype_promotion": str(jax.config.jax_numpy_dtype_promotion),
+        "devices": [
+            list(x)
+            for x in sorted({(d.platform, d.device_kind) for d in jax.devices()})
+        ],
+        "input_parameter_compute_dtype": "float32",
+        "python": platform.python_version(),
+        "backend_platform_version": jax.extend.backend.get_backend().platform_version,
+        "runtime_flags": {
+            k: os.environ.get(k) for k in ("XLA_FLAGS", "NVIDIA_TF32_OVERRIDE")
+        },
+        "runtime_versions": {
+            k: importlib.metadata.version(k)
+            for k in ("jax", "jaxlib", "flax", "optax", "numpy", "orbax-checkpoint")
+        },
+        "GPU_qualified": False,
+    }
 
 
 def digest(data):
@@ -152,6 +231,11 @@ def create_bank(
         or pool_size <= 0
     ):
         raise ValueError("invalid warmup/replay size")
+    execution = precision_contract(
+        teacher,
+        observations=np.asarray(observations)[:num_filled],
+        actions=np.asarray(actions)[:num_filled],
+    )
     if (
         not environment
         or not source
@@ -203,6 +287,8 @@ def create_bank(
     ]
     base = np.stack([np.asarray(item[0]) for item in evaluated])
     teachers = [item[1] for item in evaluated]
+    for parameters in teachers:
+        precision_contract(teacher, parameters, obs, act)
     if base.shape != (8, pool_size) or not np.isfinite(base).all():
         raise ValueError("invalid teacher bank")
 
@@ -228,6 +314,7 @@ def create_bank(
                 "environment": environment,
                 "seed": seed,
                 "source": source,
+                "execution": execution,
                 "teacher_architecture": teacher_architecture,
                 "teacher_eval_chunk": teacher_chunk,
                 "teacher_definition": repr(teacher),
@@ -258,6 +345,7 @@ def create_reference(path, bank, network, fresh, *, architecture, sac_updates):
     verify(bank)
     with np.load(Path(bank) / "bank.npz", allow_pickle=False) as data:
         obs, act, base = data["observations"], data["actions"], data["base"]
+    execution = precision_contract(network, fresh, obs, act)
     offset = _mean_prediction(
         network, fresh, jnp.asarray(obs), jnp.asarray(act), len(obs)
     )
@@ -284,6 +372,7 @@ def create_reference(path, bank, network, fresh, *, architecture, sac_updates):
                 "bank_hash": digest((Path(bank) / "receipt.json").read_bytes()),
                 "literal_target_hashes": [array_hash(t) for t in targets],
                 "sac_updates": 0,
+                "execution": execution,
             },
         )
 
@@ -327,9 +416,17 @@ def evaluate(
     if digest((Path(bank) / "receipt.json").read_bytes()) != ref["bank_hash"]:
         raise ValueError("fixed bank changed")
     with np.load(Path(bank) / "bank.npz", allow_pickle=False) as d:
-        obs, act = jnp.asarray(d["observations"]), jnp.asarray(d["actions"])
+        raw_obs, raw_act = d["observations"], d["actions"]
+    execution = precision_contract(network, current, raw_obs, raw_act)
+    precision_contract(network, fresh, raw_obs, raw_act)
+    if execution != ref["execution"] or execution != verify(bank)["execution"]:
+        raise ValueError("resume bank/reference backend or precision mismatch")
+    obs, act = jnp.asarray(raw_obs), jnp.asarray(raw_act)
     with np.load(Path(reference) / "targets.npz", allow_pickle=False) as d:
         targets, variances = d["targets"], d["variances"]
+        offset = float(d["offset"])
+    if targets.dtype != np.float32 or variances.dtype != np.float32:
+        raise ValueError("stored targets/variances require float32")
     if [array_hash(t) for t in targets] != ref["literal_target_hashes"]:
         raise ValueError("literal targets changed")
     settings.validate(len(obs))
@@ -341,6 +438,7 @@ def evaluate(
             for k in ("jax", "jaxlib", "flax", "optax", "numpy")
         },
         "matmul_precision": str(jax.config.jax_default_matmul_precision),
+        "execution": execution,
         "settings": asdict(settings),
         "current_hash": tree_hash(current),
         "reference_hash": digest((Path(reference) / "receipt.json").read_bytes()),
@@ -362,25 +460,45 @@ def evaluate(
     summaries = []
     for k in range(8):
         phase = output / f"phase_{k+1:02d}"
+        idx = jnp.asarray(
+            np.random.default_rng([bank_seed, STREAM, k]).integers(
+                0, len(obs), (settings.steps, settings.batch_size)
+            ),
+            jnp.int32,
+        )
         if phase.exists():
             rec = verify(phase)
             if rec["summary"]["K"] != k + 1 or rec["updates_per_arm"] != settings.steps:
                 raise ValueError("phase sequence/update metadata mismatch")
+            if (
+                rec["target_sha256"] != array_hash(targets[k])
+                or rec["indices_sha256"] != array_hash(idx)
+                or rec["optimizer_initializations"] != {a: 1 for a in "ABC"}
+                or rec["milestones"] != [0, 100, 500, 1000, 2000]
+            ):
+                raise ValueError("phase target/index/optimizer contract mismatch")
+            for arm in "ABC":
+                initial = fresh if arm == "C" else state[arm]
+                if rec["initial_parameter_hashes"][arm] != tree_hash(initial):
+                    raise ValueError("phase continuation parameter mismatch")
+                with np.load(phase / f"{arm}.npz", allow_pickle=False) as arrays:
+                    if (
+                        array_hash(arrays["targets"]) != array_hash(targets[k])
+                        or array_hash(arrays["indices"]) != array_hash(idx)
+                        or arrays["losses"].shape != (settings.steps,)
+                    ):
+                        raise ValueError("phase arm arrays mismatch")
             for arm in ("A", "B"):
                 state[arm] = serialization.from_bytes(
                     state[arm], (phase / f"{arm}.msgpack").read_bytes()
                 )
+                if tree_hash(state[arm]) != rec["final_parameter_hashes"][arm]:
+                    raise ValueError("restored phase parameter mismatch")
             summaries.append(rec["summary"])
             continue
         pending_record = {"K": k + 1}
         try:
             # Same phase-specific stream in A/B/C and at all checkpoints.
-            idx = jnp.asarray(
-                np.random.default_rng([bank_seed, STREAM, k]).integers(
-                    0, len(obs), (settings.steps, settings.batch_size)
-                ),
-                jnp.int32,
-            )
             target = jnp.asarray(targets[k])
             results, fitted = {}, {}
             for arm in ("A", "B", "C"):
@@ -407,6 +525,7 @@ def evaluate(
                 fitted[arm], results[arm] = parameters, arrays
             summary = {
                 "K": k + 1,
+                "frozen_fresh_offset": offset,
                 "variance": float(variances[k]),
                 "final_mse": {a: float(v["final_mse"]) for a, v in results.items()},
             }
@@ -426,6 +545,15 @@ def evaluate(
                         "optimizer_initializations": {a: 1 for a in results},
                         "updates_per_arm": settings.steps,
                         "milestones": [0, 100, 500, 1000, 2000],
+                        "target_sha256": array_hash(target),
+                        "indices_sha256": array_hash(idx),
+                        "initial_parameter_hashes": {
+                            a: tree_hash(fresh if a == "C" else state[a])
+                            for a in results
+                        },
+                        "final_parameter_hashes": {
+                            a: tree_hash(fitted[a]) for a in results
+                        },
                     },
                 )
 
