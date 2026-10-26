@@ -1,0 +1,423 @@
+{
+  "status": "CLEAN_CANDIDATE_CPU_VERIFIED_PR17_UNCHANGED",
+  "approved_integration": {
+    "ref": "integration/exp12",
+    "SHA": "844e3c0cc24998b25c3d1e667bcbfe056b1b336c",
+    "reviewed_executable_checkpoint": "78d04d167a5f65c35f6905cb261876bfe709d85a",
+    "head_vs_reviewed_checkpoint": "handoff/status docs only",
+    "approval_scope": "shared engineering development; not GPU or campaign approval"
+  },
+  "existing_PR17": {
+    "head": "a6958337f411c30f6ebe1a1b3d5c5a0403287780",
+    "base_ref": "codex/source-bound-discrepancy-pilot",
+    "base_SHA": "57d2beb78be7cf0e1145f4a9479082a07924cd16",
+    "modified_by_this_audit": false,
+    "safe_base_only_retarget": false
+  },
+  "clean_candidate": {
+    "branch": "codex/pr17-integration-readiness-20261026",
+    "tested_implementation_SHA": "00ed566e4c7f00c784b61d98afc9768e89906665",
+    "parent_SHA": "844e3c0cc24998b25c3d1e667bcbfe056b1b336c",
+    "new_Python_files": 8,
+    "baseline_files_modified_at_tested_commit": 0,
+    "runtime_python_changes_from_PR17": 0,
+    "test_only_port": "base_exp12_ten -> base_exp12; no numeric overrides/assertions changed",
+    "file_hashes": {
+      "main/diagnostics/__init__.py": "f9f28ad5082773b349fa03db74b265eff6d2e624b80ac9c35fa74b8bb786d2aa",
+      "main/diagnostics/sequential_hooks.py": "519cbd48602971829dffd7116f19be7e91a6dab75405d566841b9a6ea9f57b9f",
+      "main/diagnostics/sequential_probe.py": "e1d0996f701e5a2de443e85203aa254c6ce8c3cec0853c66b9a7e7a5819f2343",
+      "main/diagnostics/sequential_runner.py": "73c6ba89c0be19fd534bed3dabb41a104fc4cfff67a81df8a01dde6767e6f2db",
+      "main/scripts/sequential_probe_cpu_example.py": "6f7426a35f60d3cdc0ce417a84aa8bc6091ae551b82286c014d51bd87adfb939",
+      "main/tests/test_sequential_mutations.py": "dbd2b90778c15d68c11749a5a4144e48d44223f214ca23c031ece3ee2c677e19",
+      "main/tests/test_sequential_probe.py": "076e1c15ddb61208b17ff7e139335cb93b358d235907a299dcaaf1b95730b1ca",
+      "main/tests/test_sequential_runner.py": "0375d44386b279a8ce4d1966ac3e85fca4c592109a9224795cfe0bd87e2d2e0d"
+    }
+  },
+  "dependency_assessment": "19 differing imported Python files, including package initializers, plus two config bindings; later deltas unnecessary for standalone alternative. Conditional later-feature/durability/evaluation behavior differences disclosed in report.",
+  "validation": {
+    "regressions": {
+      "passed": 115,
+      "failed": 0,
+      "skipped": 0,
+      "warnings": 227,
+      "pytest_seconds": 305.87,
+      "scope": "69 alternative cases plus46 source-resident applicable regressions; not the prior141-case recipe"
+    },
+    "mutations": {
+      "mutations-1": {
+        "detected_and_restored": 74,
+        "unexpected_failures": 0
+      },
+      "mutations-2": {
+        "detected_and_restored": 74,
+        "unexpected_failures": 0
+      }
+    },
+    "simulator_restoration": {
+      "passed": 65,
+      "failed": 0,
+      "unavailable": 0
+    },
+    "real_critic_example": {
+      "status": "PASS",
+      "phase_receipts_verified": 16,
+      "arm_archives_verified": 48,
+      "A_equals_B_at_initial": true,
+      "B_equals_C_at_K1": true,
+      "B_C_invariant_across_synthetic_checkpoints": true,
+      "targets_indices_and_carry_hashes_verified": true,
+      "source_JAX_vs_host_numpy_max_abs_final_MSE_difference": 1.7763568394002505e-15,
+      "phase_receipts": [
+        {
+          "checkpoint": 0,
+          "K": 1,
+          "receipt_sha256": "ce8a99387a9d3eb0e3dc3fc5e9d00c61a8cbb4f6729062ca7bee3eac265a259d"
+        },
+        {
+          "checkpoint": 0,
+          "K": 2,
+          "receipt_sha256": "3c6e74118d9d42b0db4c7c9aedd14ab6bcb8d9a481f2e399b2fdf7a1d07f2a5a"
+        },
+        {
+          "checkpoint": 0,
+          "K": 3,
+          "receipt_sha256": "a00518e3b8aa650b13f28f438bbdacd44400175a02b02ba2d29ebef03ac864ad"
+        },
+        {
+          "checkpoint": 0,
+          "K": 4,
+          "receipt_sha256": "637bf275820ebc15b121177b8ad89c1b2bd91bcdc960b125082c36a556490415"
+        },
+        {
+          "checkpoint": 0,
+          "K": 5,
+          "receipt_sha256": "5855a68d270347078d19bfccd98823869d814259c25063555803a1fd777e3725"
+        },
+        {
+          "checkpoint": 0,
+          "K": 6,
+          "receipt_sha256": "8e4e495ffae6ccdfa91dda24c60644c92286f44b7fb3b0608c9c69140cf17f48"
+        },
+        {
+          "checkpoint": 0,
+          "K": 7,
+          "receipt_sha256": "03bad8d8593d271e7f51fbae2ed0c2bb7cbe9fec828fd332231b265665fcac13"
+        },
+        {
+          "checkpoint": 0,
+          "K": 8,
+          "receipt_sha256": "832e29a600ae33d733e0e18acf826d795bc6478bbed7593da6051454607b4120"
+        },
+        {
+          "checkpoint": 1,
+          "K": 1,
+          "receipt_sha256": "5d0677dc79fe5c121a17342688a718bcf318873bc38891bf2714abb6cb6c0d50"
+        },
+        {
+          "checkpoint": 1,
+          "K": 2,
+          "receipt_sha256": "9d48dc5ad3ac649436b5b6f890f3976412e915407c086bdcc2e181aac527a346"
+        },
+        {
+          "checkpoint": 1,
+          "K": 3,
+          "receipt_sha256": "867f2e7da5271e11c7c135d542ae15dc10fe1170ac2f2194ddb22f1211bafe0c"
+        },
+        {
+          "checkpoint": 1,
+          "K": 4,
+          "receipt_sha256": "0c9c80c014ae3fa0bd73b9f0e7ff03c1a4e980d46f8f74365426504f70efd79a"
+        },
+        {
+          "checkpoint": 1,
+          "K": 5,
+          "receipt_sha256": "254ace53b8706b46ac448efa97e84b00c1e2aec0c1ce6fae6443b27f4c8d38dc"
+        },
+        {
+          "checkpoint": 1,
+          "K": 6,
+          "receipt_sha256": "4b67c44b208b78440701774d5a3b2b76e43d4f61cd2251eefd86cc306fc5ffd6"
+        },
+        {
+          "checkpoint": 1,
+          "K": 7,
+          "receipt_sha256": "3f147d6d1b4dae66495bac98e80f4d544ca93d28650d7afd0c8f612fee708388"
+        },
+        {
+          "checkpoint": 1,
+          "K": 8,
+          "receipt_sha256": "c87576a256ea0803bcad7a5b77ace863170e61940b61dd67ae6cdc92f9e6333d"
+        }
+      ],
+      "historical_campaign_evidence": false,
+      "additional_fits_executed": 0
+    },
+    "static_checks": {
+      "black": "PASS",
+      "pyflakes": "PASS",
+      "compileall": "PASS",
+      "diff_check": "PASS"
+    }
+  },
+  "exact_commands": [
+    [
+      "regressions",
+      [
+        "/workspace/venvs/scaling-drl-hb/bin/python",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_sequential_probe.py",
+        "tests/test_sequential_runner.py",
+        "tests/test_sequential_mutations.py",
+        "tests/test_exp12_methodology_corrections.py",
+        "tests/test_exp12_metric_checkpoint_contract.py",
+        "tests/test_exp12_twin_reporting.py",
+        "tests/test_exp12_probe.py",
+        "tests/test_exp12_diagnostics.py",
+        "--basetemp",
+        "/workspace/artifacts/pr17-integration-readiness-20261026/pytest",
+        "--junitxml=/workspace/artifacts/pr17-integration-readiness-20261026/regressions.xml"
+      ]
+    ],
+    [
+      "mutations-1",
+      [
+        "/workspace/venvs/scaling-drl-hb/bin/python",
+        "-B",
+        "-u",
+        "-m",
+        "tests.exp12_break_checks"
+      ]
+    ],
+    [
+      "mutations-2",
+      [
+        "/workspace/venvs/scaling-drl-hb/bin/python",
+        "-B",
+        "-u",
+        "-m",
+        "tests.exp12_break_checks"
+      ]
+    ],
+    [
+      "simulator-restoration",
+      [
+        "/workspace/venvs/scaling-drl-hb/bin/python",
+        "-B",
+        "scripts/check_exp12_cpu_environments.py"
+      ]
+    ],
+    [
+      "real-critic-example",
+      [
+        "/workspace/venvs/scaling-drl-hb/bin/python",
+        "-B",
+        "scripts/sequential_probe_cpu_example.py",
+        "--out",
+        "/workspace/artifacts/pr17-integration-readiness-20261026/real-critic-example"
+      ]
+    ],
+    [
+      "black",
+      [
+        "/workspace/venvs/forensic-style/bin/black",
+        "--check",
+        "diagnostics/__init__.py",
+        "diagnostics/sequential_probe.py",
+        "diagnostics/sequential_hooks.py",
+        "diagnostics/sequential_runner.py",
+        "tests/test_sequential_probe.py",
+        "tests/test_sequential_runner.py",
+        "tests/test_sequential_mutations.py",
+        "scripts/sequential_probe_cpu_example.py"
+      ]
+    ],
+    [
+      "pyflakes",
+      [
+        "/workspace/venvs/forensic-style/bin/pyflakes",
+        "diagnostics/__init__.py",
+        "diagnostics/sequential_probe.py",
+        "diagnostics/sequential_hooks.py",
+        "diagnostics/sequential_runner.py",
+        "tests/test_sequential_probe.py",
+        "tests/test_sequential_runner.py",
+        "tests/test_sequential_mutations.py",
+        "scripts/sequential_probe_cpu_example.py"
+      ]
+    ],
+    [
+      "compileall",
+      [
+        "/workspace/venvs/scaling-drl-hb/bin/python",
+        "-m",
+        "compileall",
+        "-q",
+        "/workspace/pr17-integration-readiness/main/diagnostics/__init__.py",
+        "/workspace/pr17-integration-readiness/main/diagnostics/sequential_probe.py",
+        "/workspace/pr17-integration-readiness/main/diagnostics/sequential_hooks.py",
+        "/workspace/pr17-integration-readiness/main/diagnostics/sequential_runner.py",
+        "/workspace/pr17-integration-readiness/main/tests/test_sequential_probe.py",
+        "/workspace/pr17-integration-readiness/main/tests/test_sequential_runner.py",
+        "/workspace/pr17-integration-readiness/main/tests/test_sequential_mutations.py",
+        "/workspace/pr17-integration-readiness/main/scripts/sequential_probe_cpu_example.py"
+      ]
+    ],
+    [
+      "diff-check",
+      [
+        "git",
+        "diff",
+        "--check"
+      ]
+    ],
+    [
+      "independent_example_reload",
+      [
+        "env",
+        "JAX_PLATFORMS=cpu",
+        "CUDA_VISIBLE_DEVICES=",
+        "MUJOCO_GL=disable",
+        "/workspace/venvs/scaling-drl-hb/bin/python",
+        "/workspace/artifacts/pr17-integration-readiness-20261026/verify_example.py"
+      ]
+    ]
+  ],
+  "execution_environment": {
+    "JAX_PLATFORMS": "cpu",
+    "JAX_PLATFORM_NAME": "cpu",
+    "CUDA_VISIBLE_DEVICES": "",
+    "MUJOCO_GL": "egl",
+    "PYOPENGL_PLATFORM": "egl",
+    "EGL_PLATFORM": "surfaceless",
+    "EXP12_JAX_CACHE_DIR": "off",
+    "WANDB_MODE": "disabled",
+    "OMP_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1",
+    "MKL_NUM_THREADS": "1"
+  },
+  "cwd": "/workspace/pr17-integration-readiness/main",
+  "stage_results": [
+    {
+      "name": "regressions",
+      "exit_code": 0,
+      "seconds": 313.5178861618042,
+      "log": "/workspace/artifacts/pr17-integration-readiness-20261026/regressions.log",
+      "sha256": "68d1813d2903f4cbe9ce4fb2b4390c8ac797228f77f9051c350fc71886f4b12b"
+    },
+    {
+      "name": "mutations-1",
+      "exit_code": 0,
+      "seconds": 387.3175413608551,
+      "log": "/workspace/artifacts/pr17-integration-readiness-20261026/mutations-1.log",
+      "sha256": "aa78193118f63c2d0f77cadc848875d9f3fa084959186f7b3b361b802b053936"
+    },
+    {
+      "name": "mutations-2",
+      "exit_code": 0,
+      "seconds": 393.76446890830994,
+      "log": "/workspace/artifacts/pr17-integration-readiness-20261026/mutations-2.log",
+      "sha256": "5c5bd95d6530bd5bdad3609637525433ecf1ae1756938fccea83c0bf36463098"
+    },
+    {
+      "name": "simulator-restoration",
+      "exit_code": 0,
+      "seconds": 28.568235874176025,
+      "log": "/workspace/artifacts/pr17-integration-readiness-20261026/simulator-restoration.log",
+      "sha256": "d6866f78c024cd33aa7f462d808c096a732c1d6edd283b6a0604b3ce660b295f"
+    },
+    {
+      "name": "real-critic-example",
+      "exit_code": 0,
+      "seconds": 7.224398851394653,
+      "log": "/workspace/artifacts/pr17-integration-readiness-20261026/real-critic-example.log",
+      "sha256": "ab78e2920ad092d58e5b94370ff0579d9017e7359aa26baaf8e9cea7070ed61f"
+    },
+    {
+      "name": "black",
+      "exit_code": 0,
+      "seconds": 0.29929256439208984,
+      "log": "/workspace/artifacts/pr17-integration-readiness-20261026/black.log",
+      "sha256": "6a479b5c82191f225899d5e11b6acd828479dbe0a41fbaea811c4de9326eb022"
+    },
+    {
+      "name": "pyflakes",
+      "exit_code": 0,
+      "seconds": 0.1618027687072754,
+      "log": "/workspace/artifacts/pr17-integration-readiness-20261026/pyflakes.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "compileall",
+      "exit_code": 0,
+      "seconds": 0.04152631759643555,
+      "log": "/workspace/artifacts/pr17-integration-readiness-20261026/compileall.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "diff-check",
+      "exit_code": 0,
+      "seconds": 0.002583742141723633,
+      "log": "/workspace/artifacts/pr17-integration-readiness-20261026/diff-check.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "not_transferred_tests": [
+    "test_method_c_ten_reference",
+    "test_probe_discrepancy_adapter",
+    "test_forensic_probe_audit",
+    "test_campaign_instrumentation",
+    "test_exp12_method_c",
+    "test_exp12_review_fixes"
+  ],
+  "not_transferred_tests_note": "45 cases absent from approved integration; not imported, disabled or reported passing. Approved probe/diagnostic regressions replace them in adapted source-specific recipe.",
+  "restrictions": {
+    "GPU_execution": 0,
+    "Slurm_submission": 0,
+    "campaign_launch": 0,
+    "PR17_edit": 0,
+    "merge": 0,
+    "force_push": 0,
+    "tiny_CPU_SAC_updates": "authorized engineering lifecycle fixtures only"
+  },
+  "remaining_limits": [
+    "No full-size/GPU or scientific qualification",
+    "No host-power-loss training-checkpoint durability claim",
+    "Later optional provenance/critic metrics/evaluation corrections require separate approval if desired",
+    "No actual PR17 retarget or replacement PR; source/head workflow decision remains",
+    "Five-job smoke remains unapproved, engineering-only and unbalanced"
+  ],
+  "evidence_hashes": {
+    "REPORT.md": "ab33753ab6b05b788d6fc0fd815bcae0ccf5891d573bfb342c282a553f973e62",
+    "approved_AGENTS.md": "9c761928f38e514ed5ace6f3aef7805b6f1741d3e3a0002852097475fa947781",
+    "approved_HANDOFF.md": "7451cfec646452e85cfc7da199ba3065ed222f9460013400cf68edf1ab78aadc",
+    "approved_STATUS.md": "941c41d637f4da03af46f390f0d484d6515fc83451f91addb17a0cbe478fea15",
+    "black.log": "6a479b5c82191f225899d5e11b6acd828479dbe0a41fbaea811c4de9326eb022",
+    "candidate_files.txt": "525b1767b3154615e2ddc6490509176e3f3106b87878343e3170aa9b1ad82b03",
+    "clean_candidate.patch": "2933820b6bb65bee21ee1b24e480ca8b85a89dd15a565bcb0e9e6eba0c74e217",
+    "compileall.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "complete_dependency_audit.py": "660819e568ac02d2734a55f1dc4745a14da519b6721450b9624e26fdc84aaa1f",
+    "dependency_audit.json": "6bb13189982493a4171b2611f390d2f1808f4e3af51b02bb7faf7b7e3919fbf6",
+    "diff-check.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "example-verification.log": "cbc83bc3fec28c8d1f9ceff1c1f6358758e1a4c3bf011a5a085a41f8a86818b5",
+    "example_verification.json": "1885cad715653702fde4a54cfa08b89beb7ab67d807d50ab2119c6346d609b91",
+    "execution_receipt.json": "ce05766bab563eb6dc95db9bab454f91848c37a99ab7c228bcea72095b078ecc",
+    "finalize_audit.py": "a8c064294f657e4243acc47665c02674bc15bc30014510f061aabf8ec64b9178",
+    "import_paths.json": "d988d90e332d120f66eb0c62bfdbb30d092c5bbe9ef5d7ee2ea0a9e93e88ad8e",
+    "live_integration.json": "04e8517cffec7e4e9a4d27bb2e83207601450ecf858aa519c3d1e441d39e22d7",
+    "live_main.json": "20eca9eb046a107476661075782c105dbed3ee20f118cba0e246f223e74f4cb4",
+    "live_pr17.json": "858b759696d56a3aab09e6cbdc7f9adec6e06c18d317e4c2a26f67401aa4c3af",
+    "live_refs.txt": "4c29b83b8c563b1c081bf54d61bebd378d0ec049fd93e761883dc76203ab3624",
+    "mutations-1.log": "aa78193118f63c2d0f77cadc848875d9f3fa084959186f7b3b361b802b053936",
+    "mutations-2.log": "5c5bd95d6530bd5bdad3609637525433ecf1ae1756938fccea83c0bf36463098",
+    "pyflakes.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "real-critic-example.log": "ab78e2920ad092d58e5b94370ff0579d9017e7359aa26baaf8e9cea7070ed61f",
+    "regressions.log": "68d1813d2903f4cbe9ce4fb2b4390c8ac797228f77f9051c350fc71886f4b12b",
+    "regressions.xml": "93031289aad7e323feddbda46d98b8599b75efc1aa6c1a667d2a8345fddf1e84",
+    "run_validation.py": "7f2d8f64f4c842b3aa536064c919f1defb138b90f58f1e5926e55bed4c0035de",
+    "simulator-restoration.log": "d6866f78c024cd33aa7f462d808c096a732c1d6edd283b6a0604b3ce660b295f",
+    "verify_example.py": "e16b37845a75312d0ee0b309a35bc5d78501337f0865cf741f2ea059a161e847",
+    "write_report.py": "78f0838e907704dfc982d780bfbab051db06b5e57ae548c4ee28104d5cbd9990"
+  }
+}

@@ -1,0 +1,328 @@
+{
+  "schema": "approved-integration-audit-proposal-v1",
+  "approved_integration_ref": "integration/exp12",
+  "approved_integration_SHA": "844e3c0cc24998b25c3d1e667bcbfe056b1b336c",
+  "proposal_runtime_commit": "00ed566e4c7f00c784b61d98afc9768e89906665",
+  "audit_of_existing_PR17": "a6958337f411c30f6ebe1a1b3d5c5a0403287780",
+  "existing_PR17_changed": false,
+  "approved_for_launch": false,
+  "scope": "Clean-source proposal; original PR17 binding remains untouched. Full closure/decisions in dated external audit.",
+  "numerical_helpers": [
+    {
+      "symbol": "_mean_prediction",
+      "AST_identical": true,
+      "approved_lines": [
+        68,
+        69
+      ],
+      "PR_lines": [
+        73,
+        74
+      ]
+    },
+    {
+      "symbol": "_chunked",
+      "AST_identical": true,
+      "approved_lines": [
+        51,
+        57
+      ],
+      "PR_lines": [
+        56,
+        62
+      ]
+    },
+    {
+      "symbol": "critic_optimizer",
+      "AST_identical": true,
+      "approved_lines": [
+        199,
+        201
+      ],
+      "PR_lines": [
+        212,
+        214
+      ]
+    },
+    {
+      "symbol": "_fit",
+      "AST_identical": true,
+      "approved_lines": [
+        73,
+        95
+      ],
+      "PR_lines": [
+        78,
+        100
+      ]
+    },
+    {
+      "symbol": "_base_targets",
+      "AST_identical": true,
+      "approved_lines": [
+        61,
+        64
+      ],
+      "PR_lines": [
+        66,
+        69
+      ]
+    }
+  ],
+  "original_binding_report_issue": {
+    "declared_target": "main",
+    "declared_SHA": "087feab341b9be1f377697668f2d1c750ec0467f",
+    "actual_approved_integration": "integration/exp12",
+    "actual_SHA": "844e3c0cc24998b25c3d1e667bcbfe056b1b336c",
+    "original_PR_file_changed": false
+  },
+  "PR17_differing_imports_and_decisions": [
+    {
+      "module": "analysis.campaign",
+      "path": "main/analysis/campaign/__init__.py",
+      "approved_present": false,
+      "approved_sha256": null,
+      "PR_sha256": "10528d79af0761acf18c454c3ae968c95d74b504a0555e628a99405a48e5c5d0",
+      "current_delta_required_for_alternative": false,
+      "reason": "Package initialization for later campaign instrumentation; no required alternative API.",
+      "last_change": "54aeca0921e78d60b334016dbb9390819506367e",
+      "PR_citation": "https://github.com/kaves29/scaling-drl-research/blob/a6958337f411c30f6ebe1a1b3d5c5a0403287780/main/analysis/campaign/__init__.py",
+      "approved_citation": null
+    },
+    {
+      "module": "analysis.campaign.ingest",
+      "path": "main/analysis/campaign/ingest.py",
+      "approved_present": false,
+      "approved_sha256": null,
+      "PR_sha256": "e98a7ffa3706870ea3c9cbd46d70b02aeb0ebbb029d832556f3173178aa56d47",
+      "current_delta_required_for_alternative": false,
+      "reason": "Only reached through later provenance instrumentation; alternative uses its own identity/receipts and no campaign ingestion.",
+      "last_change": "54aeca0921e78d60b334016dbb9390819506367e",
+      "PR_citation": "https://github.com/kaves29/scaling-drl-research/blob/a6958337f411c30f6ebe1a1b3d5c5a0403287780/main/analysis/campaign/ingest.py",
+      "approved_citation": null
+    },
+    {
+      "module": "analysis.campaign.provenance",
+      "path": "main/analysis/campaign/provenance.py",
+      "approved_present": false,
+      "approved_sha256": null,
+      "PR_sha256": "af7eca66169b0da7f2eb77eb2445edf715c56fbfa25d2803cc5f37b3f40a7b94",
+      "current_delta_required_for_alternative": false,
+      "reason": "DiagnosticSession is only a later instrumentation dependency; not required for alternative-owned bank/reference/phase provenance.",
+      "last_change": "20d8c6b47cf9ec5e62f1d35190ea48b5fe115a5b",
+      "PR_citation": "https://github.com/kaves29/scaling-drl-research/blob/a6958337f411c30f6ebe1a1b3d5c5a0403287780/main/analysis/campaign/provenance.py",
+      "approved_citation": null
+    },
+    {
+      "module": "experiments.exp1",
+      "path": "main/experiments/exp1.py",
+      "approved_present": true,
+      "approved_sha256": "da14855fc74369dbe4ef120945fac2dbff10a14b343f85c1687282bbb5b9c8f8",
+      "PR_sha256": "c0c4f2797c8dba489450df8bd6cf71e35235f7e32c4f29767fe6bddd1e7a570d",
+      "current_delta_required_for_alternative": false,
+      "reason": "compose_config exists unchanged on approved integration; default delegation should retain approved run. Later decorator, stale-fresh cleanup, round metadata and fork extension are unnecessary for the alternative-only route.",
+      "last_change": "20d8c6b47cf9ec5e62f1d35190ea48b5fe115a5b",
+      "PR_citation": "https://github.com/kaves29/scaling-drl-research/blob/a6958337f411c30f6ebe1a1b3d5c5a0403287780/main/experiments/exp1.py",
+      "approved_citation": "https://github.com/kaves29/scaling-drl-research/blob/844e3c0cc24998b25c3d1e667bcbfe056b1b336c/main/experiments/exp1.py"
+    },
+    {
+      "module": "experiments.exp12.diagnostics",
+      "path": "main/experiments/exp12/diagnostics.py",
+      "approved_present": true,
+      "approved_sha256": "a2dedae03c8b1f53fc29e7cfb7e269ceb1e2940cc3232aa44f417d3e9ba1ae10",
+      "PR_sha256": "efcbf1f67aa1db78c95eab55605c4faa26024e05d0e62a229ae8ea096581f47f",
+      "current_delta_required_for_alternative": false,
+      "reason": "Later recording-on/off compilation policy is not used by alternative code. Approved ActorDiagnostics and DiagnosticPendingUpdateMetrics interfaces suffice; candidate comparisons use the approved behavior.",
+      "last_change": "12839f656e53b00a3327384f2cb4fc1be47e73fe",
+      "PR_citation": "https://github.com/kaves29/scaling-drl-research/blob/a6958337f411c30f6ebe1a1b3d5c5a0403287780/main/experiments/exp12/diagnostics.py",
+      "approved_citation": "https://github.com/kaves29/scaling-drl-research/blob/844e3c0cc24998b25c3d1e667bcbfe056b1b336c/main/experiments/exp12/diagnostics.py"
+    },
+    {
+      "module": "experiments.exp12.fork",
+      "path": "main/experiments/exp12/fork.py",
+      "approved_present": true,
+      "approved_sha256": "d9ad8a716bf6678df125a614726a54a884fac1cb4f47d4fb67acef01c4270e7f",
+      "PR_sha256": "72c73032720f54883d12a74ee33ec405ac7e2af2b80184410d126935c9b34e35",
+      "current_delta_required_for_alternative": false,
+      "reason": "Later atomic save_npz is fork/default-route infrastructure. Alternative rejects forks and commits its own phase files; approved default route remains untouched.",
+      "last_change": "d65f9bb798f5c5c74b1857a6329669e068ddf517",
+      "PR_citation": "https://github.com/kaves29/scaling-drl-research/blob/a6958337f411c30f6ebe1a1b3d5c5a0403287780/main/experiments/exp12/fork.py",
+      "approved_citation": "https://github.com/kaves29/scaling-drl-research/blob/844e3c0cc24998b25c3d1e667bcbfe056b1b336c/main/experiments/exp12/fork.py"
+    },
+    {
+      "module": "experiments.exp12.instrumentation",
+      "path": "main/experiments/exp12/instrumentation.py",
+      "approved_present": false,
+      "approved_sha256": null,
+      "PR_sha256": "ecbcdc225f28ae61947a18ea0aa8354e5563cd38337c841520e8cec32e78776e",
+      "current_delta_required_for_alternative": false,
+      "reason": "Later opt-in lifecycle recorder is not invoked by alternative-owned modules. Approved exp1/trainer versions do not import it.",
+      "last_change": "f8ad82f064547c76e12539804c98be75b32656d8",
+      "PR_citation": "https://github.com/kaves29/scaling-drl-research/blob/a6958337f411c30f6ebe1a1b3d5c5a0403287780/main/experiments/exp12/instrumentation.py",
+      "approved_citation": null
+    },
+    {
+      "module": "experiments.exp12.ledger",
+      "path": "main/experiments/exp12/ledger.py",
+      "approved_present": true,
+      "approved_sha256": "0858510a82a411d6878b347c785d410d1c7212102b0e9c6305c724d2bc90fc5f",
+      "PR_sha256": "6cfb50f754d28ffab7df6be5f47fd3be2732bfcf468deeb039201801c299a6fc",
+      "current_delta_required_for_alternative": false,
+      "reason": "Later ten-round ledger/schema behavior is unused: alternative emits its own JSON/NPZ and no original-probe ledger.",
+      "last_change": "5fe2ff65ae96cf900b23bf9810f79464730def9d",
+      "PR_citation": "https://github.com/kaves29/scaling-drl-research/blob/a6958337f411c30f6ebe1a1b3d5c5a0403287780/main/experiments/exp12/ledger.py",
+      "approved_citation": "https://github.com/kaves29/scaling-drl-research/blob/844e3c0cc24998b25c3d1e667bcbfe056b1b336c/main/experiments/exp12/ledger.py"
+    },
+    {
+      "module": "experiments.exp12.probe",
+      "path": "main/experiments/exp12/probe.py",
+      "approved_present": true,
+      "approved_sha256": "01e3fa9f460a6132894e25aad8c61a76121db202bd46849acb9a057f40e496d9",
+      "PR_sha256": "a9ef945e194e6b2c6789834e80d78aa1f67c0c0aeba2c327b42bddd432393250",
+      "current_delta_required_for_alternative": false,
+      "reason": "Imported _mean_prediction, _chunked and critic_optimizer are AST-identical. _fit and _base_targets used by regressions are also identical. Later IQM and two-part index generation are not called by the alternative.",
+      "last_change": "5fe2ff65ae96cf900b23bf9810f79464730def9d",
+      "PR_citation": "https://github.com/kaves29/scaling-drl-research/blob/a6958337f411c30f6ebe1a1b3d5c5a0403287780/main/experiments/exp12/probe.py",
+      "approved_citation": "https://github.com/kaves29/scaling-drl-research/blob/844e3c0cc24998b25c3d1e667bcbfe056b1b336c/main/experiments/exp12/probe.py"
+    },
+    {
+      "module": "experiments.exp12.run_probes",
+      "path": "main/experiments/exp12/run_probes.py",
+      "approved_present": true,
+      "approved_sha256": "82119768d02a97e80e03a3c626a2e85dfb2fdd430ecd43ed9d950d090d49f036",
+      "PR_sha256": "03ff2c2b45dca81c585475e3653147dc02a0cd7770a8186b2e20cd92684e7bb8",
+      "current_delta_required_for_alternative": false,
+      "reason": "Alternative-only runner never constructs it. Later ten-round W&B transport is unnecessary; disabled/default path retains approved RunProbes.",
+      "last_change": "5fe2ff65ae96cf900b23bf9810f79464730def9d",
+      "PR_citation": "https://github.com/kaves29/scaling-drl-research/blob/a6958337f411c30f6ebe1a1b3d5c5a0403287780/main/experiments/exp12/run_probes.py",
+      "approved_citation": "https://github.com/kaves29/scaling-drl-research/blob/844e3c0cc24998b25c3d1e667bcbfe056b1b336c/main/experiments/exp12/run_probes.py"
+    },
+    {
+      "module": "experiments.exp12.state",
+      "path": "main/experiments/exp12/state.py",
+      "approved_present": true,
+      "approved_sha256": "81913bcad9502250294f211a3703a87947b69b433c20090c20f1d617791585da",
+      "PR_sha256": "c81dd7361e99b62ea40fd16d9037e9954d1008955d540a651a97c07cccd19cfc",
+      "current_delta_required_for_alternative": false,
+      "reason": "latest_state_dir/save/restore APIs already exist. Later fsync strengthens host-crash durability, not logical process-interruption state restoration. Do not transfer a stronger power-loss guarantee to the candidate without approving that fix.",
+      "last_change": "d65f9bb798f5c5c74b1857a6329669e068ddf517",
+      "PR_citation": "https://github.com/kaves29/scaling-drl-research/blob/a6958337f411c30f6ebe1a1b3d5c5a0403287780/main/experiments/exp12/state.py",
+      "approved_citation": "https://github.com/kaves29/scaling-drl-research/blob/844e3c0cc24998b25c3d1e667bcbfe056b1b336c/main/experiments/exp12/state.py"
+    },
+    {
+      "module": "experiments.exp12.trainer",
+      "path": "main/experiments/exp12/trainer.py",
+      "approved_present": true,
+      "approved_sha256": "3a2109b375627b80732c87c21248ffedb8058891360ef82279c640c3429f284e",
+      "PR_sha256": "dc22f2b18f379ae50f675160e0c779dfcdaf5662daad316f7f8fd6ebcce8cc6b",
+      "current_delta_required_for_alternative": false,
+      "reason": "All used start/train/before_first_update/save/restore/_sac_agent interfaces exist. Later success attribution and optional instrumentation/critic metrics are not required by the alternative. Clean candidate deliberately retains approved evaluation behavior.",
+      "last_change": "1d849c3b52f1b6bdc2514f8972a2388021b929c7",
+      "PR_citation": "https://github.com/kaves29/scaling-drl-research/blob/a6958337f411c30f6ebe1a1b3d5c5a0403287780/main/experiments/exp12/trainer.py",
+      "approved_citation": "https://github.com/kaves29/scaling-drl-research/blob/844e3c0cc24998b25c3d1e667bcbfe056b1b336c/main/experiments/exp12/trainer.py"
+    },
+    {
+      "module": "experiments.exp12.trigger",
+      "path": "main/experiments/exp12/trigger.py",
+      "approved_present": true,
+      "approved_sha256": "ebdbd282f9baa276b64fe18b98b63f605106c60665407e6cd511bfca5715cc4c",
+      "PR_sha256": "a1ca86de3c078293dbdfb57bb46502baa1b4e99a3d3413f0743363f735d055be",
+      "current_delta_required_for_alternative": false,
+      "reason": "Later ten-round fractional-IQM bootstrap is unused by alternative: no trigger or K aggregation; forks are rejected.",
+      "last_change": "5fe2ff65ae96cf900b23bf9810f79464730def9d",
+      "PR_citation": "https://github.com/kaves29/scaling-drl-research/blob/a6958337f411c30f6ebe1a1b3d5c5a0403287780/main/experiments/exp12/trigger.py",
+      "approved_citation": "https://github.com/kaves29/scaling-drl-research/blob/844e3c0cc24998b25c3d1e667bcbfe056b1b336c/main/experiments/exp12/trigger.py"
+    },
+    {
+      "module": "experiments.exp2_arm",
+      "path": "main/experiments/exp2_arm.py",
+      "approved_present": true,
+      "approved_sha256": "318383c33a73fa85932bab0435550ab214cf58131406a89c2563aa2ac23059e2",
+      "PR_sha256": "ffad3662954446c4d53f0be090141cd7aefc849e4100ae36f6c6d01066f63033",
+      "current_delta_required_for_alternative": false,
+      "reason": "Only conditional/default experimental paths; alternative does not execute an Exp2 arm. Later instrumentation is unnecessary.",
+      "last_change": "20d8c6b47cf9ec5e62f1d35190ea48b5fe115a5b",
+      "PR_citation": "https://github.com/kaves29/scaling-drl-research/blob/a6958337f411c30f6ebe1a1b3d5c5a0403287780/main/experiments/exp2_arm.py",
+      "approved_citation": "https://github.com/kaves29/scaling-drl-research/blob/844e3c0cc24998b25c3d1e667bcbfe056b1b336c/main/experiments/exp2_arm.py"
+    },
+    {
+      "module": "scale_rl.common.logger",
+      "path": "main/scale_rl/common/logger.py",
+      "approved_present": true,
+      "approved_sha256": "401633984e2f6c80a8f7c0269909c706ab24aacb485d16cd43a50931d3e4f83a",
+      "PR_sha256": "d1152d394b9c6fdd42c89ef29271f3f22a7ced18492c28c477d0383924bc1fcd",
+      "current_delta_required_for_alternative": false,
+      "reason": "Existing ordinary logger and get_architecture_id suffice. Later update_critic_diagnostics is called only by later optional observer code, not the alternative.",
+      "last_change": "1d849c3b52f1b6bdc2514f8972a2388021b929c7",
+      "PR_citation": "https://github.com/kaves29/scaling-drl-research/blob/a6958337f411c30f6ebe1a1b3d5c5a0403287780/main/scale_rl/common/logger.py",
+      "approved_citation": "https://github.com/kaves29/scaling-drl-research/blob/844e3c0cc24998b25c3d1e667bcbfe056b1b336c/main/scale_rl/common/logger.py"
+    },
+    {
+      "module": "scale_rl.diagnostics",
+      "path": "main/scale_rl/diagnostics/__init__.py",
+      "approved_present": false,
+      "approved_sha256": null,
+      "PR_sha256": "8e995df48974f655a4dd64a941477e33539d5edfb561717d49a1a559b40c3664",
+      "current_delta_required_for_alternative": false,
+      "reason": "Initialization for the later optional critic-measurement package; not needed on approved trainer.",
+      "last_change": "f08c5b189e2b53d36b22d06cf165b8ede1f77e15",
+      "PR_citation": "https://github.com/kaves29/scaling-drl-research/blob/a6958337f411c30f6ebe1a1b3d5c5a0403287780/main/scale_rl/diagnostics/__init__.py",
+      "approved_citation": null
+    },
+    {
+      "module": "scale_rl.diagnostics.critic_metrics",
+      "path": "main/scale_rl/diagnostics/critic_metrics.py",
+      "approved_present": false,
+      "approved_sha256": null,
+      "PR_sha256": "9e72ba361ecfe3192c85d25cc032bc0c66020a637ee3f94397fd34a83a352e0d",
+      "current_delta_required_for_alternative": false,
+      "reason": "Later opt-in reference critic measurements are not used by the alternative fitter; approved trainer has no import. Retaining them would separately require their integration approval.",
+      "last_change": "f08c5b189e2b53d36b22d06cf165b8ede1f77e15",
+      "PR_citation": "https://github.com/kaves29/scaling-drl-research/blob/a6958337f411c30f6ebe1a1b3d5c5a0403287780/main/scale_rl/diagnostics/critic_metrics.py",
+      "approved_citation": null
+    },
+    {
+      "module": "scale_rl.diagnostics.wandb_logging",
+      "path": "main/scale_rl/diagnostics/wandb_logging.py",
+      "approved_present": false,
+      "approved_sha256": null,
+      "PR_sha256": "a5575961548621ff553e05c1e8a6d3a7c9cf4c42373c7cb2d7ca0ae50e895d23",
+      "current_delta_required_for_alternative": false,
+      "reason": "Later critic-measurement transport is unnecessary; alternative arrays are local and ordinary approved SAC logging suffices.",
+      "last_change": "1d849c3b52f1b6bdc2514f8972a2388021b929c7",
+      "PR_citation": "https://github.com/kaves29/scaling-drl-research/blob/a6958337f411c30f6ebe1a1b3d5c5a0403287780/main/scale_rl/diagnostics/wandb_logging.py",
+      "approved_citation": null
+    },
+    {
+      "module": "scale_rl.networks.layers",
+      "path": "main/scale_rl/networks/layers.py",
+      "approved_present": true,
+      "approved_sha256": "df92a2d9c26c1bd34d611f96f5c52c496c7e182d188a383ab26360306106fa44",
+      "PR_sha256": "2878bb8b5c35027ae1b027efeaedcf376cd190986e01722d85e79842c4f769c4",
+      "current_delta_required_for_alternative": false,
+      "reason": "Only added sow calls differ. Alternative requests params/Q, not the critic_diagnostics_v1 mutable collection; no arithmetic or parameter routing requires the added capture sites.",
+      "last_change": "f08c5b189e2b53d36b22d06cf165b8ede1f77e15",
+      "PR_citation": "https://github.com/kaves29/scaling-drl-research/blob/a6958337f411c30f6ebe1a1b3d5c5a0403287780/main/scale_rl/networks/layers.py",
+      "approved_citation": "https://github.com/kaves29/scaling-drl-research/blob/844e3c0cc24998b25c3d1e667bcbfe056b1b336c/main/scale_rl/networks/layers.py"
+    }
+  ],
+  "configuration_differences": [
+    {
+      "path": "main/configs/base_exp12.yaml",
+      "current_delta_required": false,
+      "reason": "Approved default is 1000 probe steps and earlier project name. Alternative requires explicit probe.steps=2000 in its dedicated request; original probe is not run. Do not change the approved config file."
+    },
+    {
+      "path": "main/configs/base_exp12_ten.yaml",
+      "current_delta_required": false,
+      "reason": "Absent from approved integration; only the PR17 lifecycle test fixture depends on its name. Clean candidate switches that new fixture to approved base_exp12, keeping all explicit numeric overrides. No ten-round config is imported."
+    }
+  ],
+  "unchanged_existing_bindings": [
+    "main/experiments/exp12/envs.py",
+    "main/experiments/exp12/precision.py",
+    "main/scale_rl/agents/sac/sac_agent.py",
+    "main/scale_rl/agents/sac/sac_update.py",
+    "main/scale_rl/agents/sac/sac_network.py"
+  ]
+}

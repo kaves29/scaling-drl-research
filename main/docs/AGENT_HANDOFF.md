@@ -1,5 +1,32 @@
 # Shared agent handoff
 
+## PR17 clean-source readiness proposal (26 October 2026)
+
+Audit of PR17 head `a6958337f411c30f6ebe1a1b3d5c5a0403287780` against approved
+integration/exp12 `844e3c0cc24998b25c3d1e667bcbfe056b1b336c`. PR17 is unchanged;
+its previous main-based binding report is not an integration readiness receipt.
+A base-only retarget exposes269 changed files and must not be done.
+
+Clean proposal branch `codex/pr17-integration-readiness-20261026`, tested source
+`00ed566e4c7f00c784b61d98afc9768e89906665`, adds only eight PR17-owned Python
+files. One new-test config name uses approved base_exp12; all numeric overrides
+remain unchanged. No baseline executable/configuration/instruction file changes.
+115 CPU regressions pass (0 failures/skips,227 warnings); full74-case mutations
+pass twice;65 simulator restoration cells, tiny real-critic example, independent
+16-phase/48-archive reload and static checks pass. Later proposal documentation
+commits do not change tested Python bytes. See [audit](pr17_integration_readiness.md)
+and `main/diagnostics/sequential_integration_readiness_receipt.json`.
+
+Nineteen later imported-file changes are unnecessary for the standalone
+alternative. Optional later provenance/critic transport, corrected success
+attribution and stronger host-crash durability are not silently imported or
+claimed. Exact commands and full evidence are outside Git at
+`/workspace/artifacts/pr17-integration-readiness-20261026/`.
+Five-job smoke remains an unapproved engineering proposal: dog-run all three
+sizes plus pen-twirl small/large, seed0 only; missing pen-medium and replication.
+No GPU/campaign launch, actual PR retarget, replacement PR, merge or force push.
+The approved integration source above has not been advanced by this proposal.
+
 Branch: `integration/exp12`. This file establishes the shared protocol; it does
 not authorize scientific changes, main merges or Delta submissions.
 
