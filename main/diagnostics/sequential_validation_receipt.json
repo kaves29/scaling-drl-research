@@ -1,18 +1,440 @@
 {
-  "status": "review implementation frozen; final validation pending",
+  "schema": "sequential-alternative-review-v2",
+  "status": "CPU_VERIFIED_NOT_GPU_OR_SCIENTIFIC_QUALIFICATION",
+  "branch": "codex/sequential-alternative-probe",
+  "PR": "https://github.com/kaves29/scaling-drl-research/pull/17",
   "base_commit": "57d2beb78be7cf0e1145f4a9479082a07924cd16",
+  "tested_implementation_commit": "545008f4b447bebd6c9b1b9291548b7cfdb751fd",
   "previous_published_implementation": "cfb701dfd0bcb3215a8dd6cab68712a8c49ee8de",
-  "prior_publication_receipt": "sequential_validation_receipt.v1.json",
-  "focused_pre_freeze": {
-    "passed": 68,
-    "failed": 0,
-    "skipped": 0,
-    "warnings": 2,
-    "seconds": 82.08,
-    "log": "/workspace/artifacts/sequential-alternative-probe/review-focused-v5.log",
-    "note": "one filled-replay validation guard/test added after this run; final frozen run required"
+  "final_commit_location": "Resolve PR head; final receipt/handoff commits contain no runtime-code changes",
+  "source_integration": {
+    "shared_main_observed": "087feab341b9be1f377697668f2d1c750ec0467f",
+    "restacked": false,
+    "blocker": "Unmerged runtime dependency stack has no verified owner approval for integration onto main",
+    "PR16_runtime_dependency": false,
+    "PR16_adapter_regression_included": true,
+    "bindings": "main/diagnostics/sequential_base_dependencies.json"
   },
-  "GPU_qualified": false,
-  "pilot_approved": false,
-  "pilot_executable": false
+  "code_plan_sha256": {
+    "main/configs/alternative_diagnostics/sequential_pilot.DRAFT.json": "3c370cd3892bfcaf195cb83e4587d47dc9be67595dc8e380b3c61f2e0d2ed7d7",
+    "main/diagnostics/__init__.py": "f9f28ad5082773b349fa03db74b265eff6d2e624b80ac9c35fa74b8bb786d2aa",
+    "main/diagnostics/sequential_base_dependencies.json": "67e13166ac7cad546c033b2f5a365f284b3694a50517826dc651e38baf5bb673",
+    "main/diagnostics/sequential_hooks.py": "519cbd48602971829dffd7116f19be7e91a6dab75405d566841b9a6ea9f57b9f",
+    "main/diagnostics/sequential_probe.py": "e1d0996f701e5a2de443e85203aa254c6ce8c3cec0853c66b9a7e7a5819f2343",
+    "main/diagnostics/sequential_runner.py": "73c6ba89c0be19fd534bed3dabb41a104fc4cfff67a81df8a01dde6767e6f2db",
+    "main/scripts/sequential_probe_cpu_example.py": "6f7426a35f60d3cdc0ce417a84aa8bc6091ae551b82286c014d51bd87adfb939",
+    "main/tests/test_sequential_mutations.py": "dbd2b90778c15d68c11749a5a4144e48d44223f214ca23c031ece3ee2c677e19",
+    "main/tests/test_sequential_probe.py": "076e1c15ddb61208b17ff7e139335cb93b358d235907a299dcaaf1b95730b1ca",
+    "main/tests/test_sequential_runner.py": "a37416e09cfae832596dd527a6ada726e2bdd182295eb60aaa861b3ad87ca3fd"
+  },
+  "unchanged_default_source_sha256": {
+    "main/configs/base_exp12_ten.yaml": "0ca2efb2fdaa2b250ec0109c18ce20b4d66a0cd6345824bc2890c02ba9082934",
+    "main/experiments/exp1.py": "c0c4f2797c8dba489450df8bd6cf71e35235f7e32c4f29767fe6bddd1e7a570d",
+    "main/experiments/exp12/probe.py": "a9ef945e194e6b2c6789834e80d78aa1f67c0c0aeba2c327b42bddd432393250",
+    "main/experiments/exp12/run_probes.py": "03ff2c2b45dca81c585475e3653147dc02a0cd7770a8186b2e20cd92684e7bb8",
+    "main/experiments/exp12/trainer.py": "dc22f2b18f379ae50f675160e0c779dfcdaf5662daad316f7f8fd6ebcce8cc6b",
+    "main/scale_rl/agents/sac/sac_agent.py": "b1df406731b8db48a14f1e38e0e5709139c350c5649a826dbf79f7f56a95747c",
+    "main/scale_rl/agents/sac/sac_update.py": "6245dba06c7623b09003d9a03418a1b8d60694092833639ce063b8452974dbd8"
+  },
+  "validation": {
+    "regressions": {
+      "passed": 141,
+      "failed": 0,
+      "skipped": 0,
+      "warnings": 231,
+      "pytest_seconds": 259.17,
+      "cases_per_module": {
+        "test_sequential_probe": 50,
+        "test_sequential_runner": 13,
+        "test_sequential_mutations": 6,
+        "test_method_c_ten_reference": 5,
+        "test_probe_discrepancy_adapter": 3,
+        "test_forensic_probe_audit": 9,
+        "test_campaign_instrumentation": 13,
+        "test_exp12_methodology_corrections": 22,
+        "test_exp12_method_c": 3,
+        "test_exp12_metric_checkpoint_contract": 3,
+        "test_exp12_review_fixes": 12,
+        "test_exp12_twin_reporting": 2
+      },
+      "warnings_detail": "Matplotlib/Pyparsing deprecations and Orbax restore-sharding warnings; full warnings retained in log. Additional cache/fontconfig diagnostics appear in stage logs."
+    },
+    "existing_mutation_suites": {
+      "mutations-1": {
+        "detected_and_restored": 74,
+        "unexpected_failures": 0,
+        "sha256": "ef40a62296161056a3f1cf60dfeb886f1d13c54cc3f1f169f2440045ac31f23e"
+      },
+      "mutations-2": {
+        "detected_and_restored": 74,
+        "unexpected_failures": 0,
+        "sha256": "8265a792f4af4baafcece96bb3d209cbfcb56f97178f674c1dddb951396f3eb3"
+      }
+    },
+    "alternative_mutation_cases": 6,
+    "simulator_restoration": {
+      "passed": 65,
+      "failed": 0,
+      "unavailable": 0,
+      "scope": "13 tasks x 5 seeds; exact next transition and action-space RNG restoration, no policy training"
+    },
+    "tiny_real_critic_example": {
+      "status": "PASS",
+      "phase_receipts_verified": 16,
+      "arm_archives_verified": 48,
+      "A_equals_B_at_initial": true,
+      "B_equals_C_at_K1": true,
+      "B_C_invariant_across_synthetic_checkpoints": true,
+      "targets_indices_and_carry_hashes_verified": true,
+      "source_JAX_vs_host_numpy_max_abs_final_MSE_difference": 1.7763568394002505e-15,
+      "phase_receipts": [
+        {
+          "checkpoint": 0,
+          "K": 1,
+          "receipt_sha256": "ce8a99387a9d3eb0e3dc3fc5e9d00c61a8cbb4f6729062ca7bee3eac265a259d"
+        },
+        {
+          "checkpoint": 0,
+          "K": 2,
+          "receipt_sha256": "3c6e74118d9d42b0db4c7c9aedd14ab6bcb8d9a481f2e399b2fdf7a1d07f2a5a"
+        },
+        {
+          "checkpoint": 0,
+          "K": 3,
+          "receipt_sha256": "a00518e3b8aa650b13f28f438bbdacd44400175a02b02ba2d29ebef03ac864ad"
+        },
+        {
+          "checkpoint": 0,
+          "K": 4,
+          "receipt_sha256": "637bf275820ebc15b121177b8ad89c1b2bd91bcdc960b125082c36a556490415"
+        },
+        {
+          "checkpoint": 0,
+          "K": 5,
+          "receipt_sha256": "5855a68d270347078d19bfccd98823869d814259c25063555803a1fd777e3725"
+        },
+        {
+          "checkpoint": 0,
+          "K": 6,
+          "receipt_sha256": "8e4e495ffae6ccdfa91dda24c60644c92286f44b7fb3b0608c9c69140cf17f48"
+        },
+        {
+          "checkpoint": 0,
+          "K": 7,
+          "receipt_sha256": "03bad8d8593d271e7f51fbae2ed0c2bb7cbe9fec828fd332231b265665fcac13"
+        },
+        {
+          "checkpoint": 0,
+          "K": 8,
+          "receipt_sha256": "832e29a600ae33d733e0e18acf826d795bc6478bbed7593da6051454607b4120"
+        },
+        {
+          "checkpoint": 1,
+          "K": 1,
+          "receipt_sha256": "5d0677dc79fe5c121a17342688a718bcf318873bc38891bf2714abb6cb6c0d50"
+        },
+        {
+          "checkpoint": 1,
+          "K": 2,
+          "receipt_sha256": "9d48dc5ad3ac649436b5b6f890f3976412e915407c086bdcc2e181aac527a346"
+        },
+        {
+          "checkpoint": 1,
+          "K": 3,
+          "receipt_sha256": "867f2e7da5271e11c7c135d542ae15dc10fe1170ac2f2194ddb22f1211bafe0c"
+        },
+        {
+          "checkpoint": 1,
+          "K": 4,
+          "receipt_sha256": "0c9c80c014ae3fa0bd73b9f0e7ff03c1a4e980d46f8f74365426504f70efd79a"
+        },
+        {
+          "checkpoint": 1,
+          "K": 5,
+          "receipt_sha256": "254ace53b8706b46ac448efa97e84b00c1e2aec0c1ce6fae6443b27f4c8d38dc"
+        },
+        {
+          "checkpoint": 1,
+          "K": 6,
+          "receipt_sha256": "4b67c44b208b78440701774d5a3b2b76e43d4f61cd2251eefd86cc306fc5ffd6"
+        },
+        {
+          "checkpoint": 1,
+          "K": 7,
+          "receipt_sha256": "3f147d6d1b4dae66495bac98e80f4d544ca93d28650d7afd0c8f612fee708388"
+        },
+        {
+          "checkpoint": 1,
+          "K": 8,
+          "receipt_sha256": "c87576a256ea0803bcad7a5b77ace863170e61940b61dd67ae6cdc92f9e6333d"
+        }
+      ],
+      "historical_campaign_evidence": false,
+      "additional_fits_executed": 0
+    },
+    "static_checks": {
+      "black": "PASS",
+      "pyflakes": "PASS",
+      "compileall": "PASS",
+      "diff-check": "PASS"
+    },
+    "source_code_changed_after_tested_commit": false
+  },
+  "commands": [
+    [
+      "regressions",
+      [
+        "/workspace/venvs/scaling-drl-hb/bin/python",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_sequential_probe.py",
+        "tests/test_sequential_runner.py",
+        "tests/test_sequential_mutations.py",
+        "tests/test_method_c_ten_reference.py",
+        "tests/test_probe_discrepancy_adapter.py",
+        "tests/test_forensic_probe_audit.py",
+        "tests/test_campaign_instrumentation.py",
+        "tests/test_exp12_methodology_corrections.py",
+        "tests/test_exp12_method_c.py",
+        "tests/test_exp12_metric_checkpoint_contract.py",
+        "tests/test_exp12_review_fixes.py",
+        "tests/test_exp12_twin_reporting.py",
+        "--basetemp",
+        "/workspace/artifacts/sequential-review-20261026-545008f/pytest",
+        "--junitxml=/workspace/artifacts/sequential-review-20261026-545008f/regressions.xml"
+      ]
+    ],
+    [
+      "mutations-1",
+      [
+        "/workspace/venvs/scaling-drl-hb/bin/python",
+        "-B",
+        "-u",
+        "-m",
+        "tests.exp12_break_checks"
+      ]
+    ],
+    [
+      "mutations-2",
+      [
+        "/workspace/venvs/scaling-drl-hb/bin/python",
+        "-B",
+        "-u",
+        "-m",
+        "tests.exp12_break_checks"
+      ]
+    ],
+    [
+      "simulator-restoration",
+      [
+        "/workspace/venvs/scaling-drl-hb/bin/python",
+        "-B",
+        "scripts/check_exp12_cpu_environments.py"
+      ]
+    ],
+    [
+      "real-critic-example",
+      [
+        "/workspace/venvs/scaling-drl-hb/bin/python",
+        "-B",
+        "scripts/sequential_probe_cpu_example.py",
+        "--out",
+        "/workspace/artifacts/sequential-review-20261026-545008f/real-critic-example"
+      ]
+    ],
+    [
+      "black",
+      [
+        "/workspace/venvs/forensic-style/bin/black",
+        "--check",
+        "diagnostics/__init__.py",
+        "diagnostics/sequential_probe.py",
+        "diagnostics/sequential_hooks.py",
+        "diagnostics/sequential_runner.py",
+        "tests/test_sequential_probe.py",
+        "tests/test_sequential_runner.py",
+        "tests/test_sequential_mutations.py",
+        "scripts/sequential_probe_cpu_example.py"
+      ]
+    ],
+    [
+      "pyflakes",
+      [
+        "/workspace/venvs/forensic-style/bin/pyflakes",
+        "diagnostics/__init__.py",
+        "diagnostics/sequential_probe.py",
+        "diagnostics/sequential_hooks.py",
+        "diagnostics/sequential_runner.py",
+        "tests/test_sequential_probe.py",
+        "tests/test_sequential_runner.py",
+        "tests/test_sequential_mutations.py",
+        "scripts/sequential_probe_cpu_example.py"
+      ]
+    ],
+    [
+      "compileall",
+      [
+        "/workspace/venvs/scaling-drl-hb/bin/python",
+        "-m",
+        "compileall",
+        "-q",
+        "/workspace/sequential-review-validation/main/diagnostics/__init__.py",
+        "/workspace/sequential-review-validation/main/diagnostics/sequential_probe.py",
+        "/workspace/sequential-review-validation/main/diagnostics/sequential_hooks.py",
+        "/workspace/sequential-review-validation/main/diagnostics/sequential_runner.py",
+        "/workspace/sequential-review-validation/main/tests/test_sequential_probe.py",
+        "/workspace/sequential-review-validation/main/tests/test_sequential_runner.py",
+        "/workspace/sequential-review-validation/main/tests/test_sequential_mutations.py",
+        "/workspace/sequential-review-validation/main/scripts/sequential_probe_cpu_example.py"
+      ]
+    ],
+    [
+      "diff-check",
+      [
+        "git",
+        "diff",
+        "--check"
+      ]
+    ],
+    [
+      "example-independent-verification",
+      [
+        "env",
+        "JAX_PLATFORMS=cpu",
+        "CUDA_VISIBLE_DEVICES=",
+        "/workspace/venvs/scaling-drl-hb/bin/python",
+        "/workspace/artifacts/sequential-review-20261026-545008f/verify_example.py"
+      ]
+    ]
+  ],
+  "cwd": "/workspace/sequential-review-validation/main",
+  "environment": {
+    "JAX_PLATFORMS": "cpu",
+    "JAX_PLATFORM_NAME": "cpu",
+    "CUDA_VISIBLE_DEVICES": "",
+    "MUJOCO_GL": "egl",
+    "PYOPENGL_PLATFORM": "egl",
+    "EGL_PLATFORM": "surfaceless",
+    "EXP12_JAX_CACHE_DIR": "off",
+    "WANDB_MODE": "disabled",
+    "OMP_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1",
+    "MKL_NUM_THREADS": "1"
+  },
+  "stage_results": [
+    {
+      "name": "regressions",
+      "exit_code": 0,
+      "seconds": 266.11880564689636,
+      "log": "/workspace/artifacts/sequential-review-20261026-545008f/regressions.log",
+      "sha256": "49c3e9d197f1ac480c2caa4c51f8d8019058a4d422873b479969c20c022771b0"
+    },
+    {
+      "name": "mutations-1",
+      "exit_code": 0,
+      "seconds": 440.5532078742981,
+      "log": "/workspace/artifacts/sequential-review-20261026-545008f/mutations-1.log",
+      "sha256": "ef40a62296161056a3f1cf60dfeb886f1d13c54cc3f1f169f2440045ac31f23e"
+    },
+    {
+      "name": "mutations-2",
+      "exit_code": 0,
+      "seconds": 416.63667941093445,
+      "log": "/workspace/artifacts/sequential-review-20261026-545008f/mutations-2.log",
+      "sha256": "8265a792f4af4baafcece96bb3d209cbfcb56f97178f674c1dddb951396f3eb3"
+    },
+    {
+      "name": "simulator-restoration",
+      "exit_code": 0,
+      "seconds": 29.95675015449524,
+      "log": "/workspace/artifacts/sequential-review-20261026-545008f/simulator-restoration.log",
+      "sha256": "d6866f78c024cd33aa7f462d808c096a732c1d6edd283b6a0604b3ce660b295f"
+    },
+    {
+      "name": "real-critic-example",
+      "exit_code": 0,
+      "seconds": 8.311392068862915,
+      "log": "/workspace/artifacts/sequential-review-20261026-545008f/real-critic-example.log",
+      "sha256": "551d7ded7669c7920b67a88c47c79d5cdfe27240a7b789c57f9492db03cf151b"
+    },
+    {
+      "name": "black",
+      "exit_code": 0,
+      "seconds": 0.2870326042175293,
+      "log": "/workspace/artifacts/sequential-review-20261026-545008f/black.log",
+      "sha256": "6a479b5c82191f225899d5e11b6acd828479dbe0a41fbaea811c4de9326eb022"
+    },
+    {
+      "name": "pyflakes",
+      "exit_code": 0,
+      "seconds": 0.16593217849731445,
+      "log": "/workspace/artifacts/sequential-review-20261026-545008f/pyflakes.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "compileall",
+      "exit_code": 0,
+      "seconds": 0.05710315704345703,
+      "log": "/workspace/artifacts/sequential-review-20261026-545008f/compileall.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "diff-check",
+      "exit_code": 0,
+      "seconds": 0.004406452178955078,
+      "log": "/workspace/artifacts/sequential-review-20261026-545008f/diff-check.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "evidence_sha256": {
+    "/workspace/artifacts/sequential-review-20261026-545008f/black.log": "6a479b5c82191f225899d5e11b6acd828479dbe0a41fbaea811c4de9326eb022",
+    "/workspace/artifacts/sequential-review-20261026-545008f/compileall.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/workspace/artifacts/sequential-review-20261026-545008f/diff-check.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/workspace/artifacts/sequential-review-20261026-545008f/example-verification.log": "ddc57b4734cdd4d5840baf62ef7adc45d2f11af454c7931414f4c8d41b7e4164",
+    "/workspace/artifacts/sequential-review-20261026-545008f/example_verification.json": "1885cad715653702fde4a54cfa08b89beb7ab67d807d50ab2119c6346d609b91",
+    "/workspace/artifacts/sequential-review-20261026-545008f/execution_receipt.json": "c71e5e1f3298581ae7659d002577617f787934c5e0ca9967007dae8a12b77c62",
+    "/workspace/artifacts/sequential-review-20261026-545008f/finalize_receipt.py": "eebb7138cc6d7533a99411982c21f99aaeb7a090dbb16da0ed829db4c7fe477d",
+    "/workspace/artifacts/sequential-review-20261026-545008f/mutations-1.log": "ef40a62296161056a3f1cf60dfeb886f1d13c54cc3f1f169f2440045ac31f23e",
+    "/workspace/artifacts/sequential-review-20261026-545008f/mutations-2.log": "8265a792f4af4baafcece96bb3d209cbfcb56f97178f674c1dddb951396f3eb3",
+    "/workspace/artifacts/sequential-review-20261026-545008f/pyflakes.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/workspace/artifacts/sequential-review-20261026-545008f/real-critic-example.log": "551d7ded7669c7920b67a88c47c79d5cdfe27240a7b789c57f9492db03cf151b",
+    "/workspace/artifacts/sequential-review-20261026-545008f/regressions.log": "49c3e9d197f1ac480c2caa4c51f8d8019058a4d422873b479969c20c022771b0",
+    "/workspace/artifacts/sequential-review-20261026-545008f/regressions.xml": "9c76c81c19f09505af7c969023c75dd21fd6037b0c31e8d7315d6330c15bc680",
+    "/workspace/artifacts/sequential-review-20261026-545008f/run_validation.py": "9bd8ec775ea24c3468de26deddf2ab60c5e7a71e83bd87038e3733b9405558d8",
+    "/workspace/artifacts/sequential-review-20261026-545008f/simulator-restoration.log": "d6866f78c024cd33aa7f462d808c096a732c1d6edd283b6a0604b3ce660b295f",
+    "/workspace/artifacts/sequential-review-20261026-545008f/verify_example.py": "f37d41c9d011b4c8cf79f39b32554747e8f2a70b58d93d912ad2b74f7e318e0e"
+  },
+  "restrictions": {
+    "GPU_execution": 0,
+    "Slurm_submission": 0,
+    "campaign_training": 0,
+    "tiny_CPU_SAC_updates": "Authorized deterministic lifecycle fixtures only",
+    "active_run_changes": false,
+    "main_experiment_or_approved_probe_changes": false,
+    "merges_or_force_pushes": 0
+  },
+  "pilot": {
+    "approved": false,
+    "executable": false,
+    "submitted": false,
+    "proposed_parents": 30,
+    "five_job_smoke": "engineering only, not balanced scaling evidence",
+    "existing_environment_seed_teacher_cadence_resource_proposals_changed": false
+  },
+  "remaining_qualification": [
+    "Approved integration base/dependency versions before restacking",
+    "Owner decisions on environment eligibility, seed allocation, teacher, bank producer, cadence and resources",
+    "GPU/full-size numerical, memory, storage and throughput qualification",
+    "Full-budget training and long-horizon simulator restore remain unqualified; selected CPU regressions are not the entire repository suite",
+    "Alternative arrays/trajectories are local output artifacts; ordinary SAC W&B logging remains unchanged"
+  ],
+  "prior_receipt": "sequential_validation_receipt.v1.json",
+  "development_attempts": "Pre-freeze logs retained separately: wrong working-directory invocations, error-message matcher and fake-W&B cleanup fixture were corrected; no test disabled and no numerical threshold changed. Frozen validation passes all stages.",
+  "evidence_bundle": {
+    "path": "/workspace/artifacts/sequential-review-20261026-545008f/sequential-review-CPU-evidence.tar.gz",
+    "sha256": "e90a5b3471a689ebd7e91d6537b6b7189eded0e81368203817aee84dba43960c",
+    "bytes": 407730,
+    "scope": "Stage logs/XML/receipts/scripts and synthetic real-critic example; full pytest states retained separately in external pytest directory"
+  }
 }

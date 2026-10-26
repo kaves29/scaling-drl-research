@@ -12,14 +12,19 @@ unresolved, so no restack/force push/merge. Runtime dependency bindings are in
 The dedicated `diagnostics.sequential_runner` never constructs RunProbes when
 enabled, and delegates the unchanged default path when disabled. It uses the
 real trainer's pre-update fresh capture, ordinary SAC/actor evaluations and
-complete-state save/restore, with verified phase-level resume. Backend/precision
+complete-state save/restore, with verified phase-level resume. Alternative arrays
+are local output artifacts; ordinary SAC W&B logging is preserved. Backend/precision
 and dtype contracts fail closed; target/index/parameter/reset receipts are
 explicit. Approved probe, main configurations and active pilot remain unchanged.
 
-Pre-freeze focused CPU validation:68 passed,0 failed/skipped,2 Orbax restore
-warnings. Final frozen validation includes the last filled-replay guard/test,
-existing regressions, original mutation suite and the real-critic CPU example;
-see the current validation receipt for final status. All SAC updates are tiny
+Published implementation `545008f4b447bebd6c9b1b9291548b7cfdb751fd` is verified:
+141 CPU tests pass,0 failures/skips,231 warnings (69 alternative cases plus72
+existing regressions). Existing74-case mutation suite passes twice, all65
+simulator restoration cells pass, and the tiny real-critic example plus independent
+16-phase/48-archive reload pass. Black/Pyflakes/compileall/diff checks pass.
+Receipt: `main/diagnostics/sequential_validation_receipt.json`; logs and arrays:
+`/workspace/artifacts/sequential-review-20261026-545008f/`. Final receipt/handoff
+commits contain documentation/receipts only; resolve live PR head for final SHA. All SAC updates are tiny
 CPU engineering checks, not campaign runs or scientific/GPU qualification.
 The draft five-job engineering smoke and30-parent proposal remain unapproved,
 non-executable, with all scientific task/teacher/seed/cadence/resource choices

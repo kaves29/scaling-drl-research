@@ -19,9 +19,8 @@ The same phase-specific indices and literal target arrays enter all three arms.
 A matched environment/seed block has **one** immutable, deterministic eight-
 teacher bank and fixed initial raw/preprocessed replay pool/RMS. A designated
 producer samples it at warmup using a dedicated stream; other learner sizes
-must load it, not independently regenerate pools. This resolves the possible
-Myo same-seed trajectory mismatch without pretending independently collected
-pools are equal. The producer convention is explicit and needs pilot approval.
+must load it, not independently regenerate pools. This guarantees identical inputs even if independently collected same-seed
+Myo rollouts differ; it does not establish a historical mismatch or cause. The producer convention is explicit and needs pilot approval.
 Teacher architecture is caller-specified and frozen independently of learner
 size; the proposed fixed teacher is D2W512. Teacher keys include environment,
 seed and target index, not learner architecture/checkpoint. Independent run
@@ -91,7 +90,9 @@ This documents invocation; no campaign, GPU execution or launch is authorized
 by this implementation. The JSON has `args` and `alternative` objects:
 
 - `args`: existing `config_path`, `config_name`, `overrides`, absolute
-  `checkpoint_dir`, positive `checkpoint_interval`, `checkpoint_start_frac`.
+  `checkpoint_dir` and positive `checkpoint_interval`. The alternative uses
+  recovery/evaluation/interval checkpoints; default-entrypoint extras such as
+  `checkpoint_start_frac` do not control these recovery saves.
 - `alternative`: `enabled=true`; absolute `bank`, `reference`, `output` paths;
   `environment`, `seed`, actual `architecture` label, frozen `source` identity;
   `bank_producer` boolean; explicit `teacher_architecture` label; and a `teacher`
@@ -183,10 +184,28 @@ source score signs/baseline; no input/RMS/parameter/global-RNG mutation; corrupt
 partial resume; disabled hooks and original probe outputs; actual tiny residual
 SAC networks through8 phases and milestone-prefix equivalence. No GPU, full-
 size training or scientific qualification is claimed. No threshold is loosened.
-The original publication recorded49 passing tests. The review revision adds
-real trainer lifecycle/isolation/restore checks, precision rejection and six
-in-memory break/restore cases. The current validation receipt records final
-counts, exact commands, source hashes, warnings and external artifact hashes.
+Frozen implementation `545008f4b447bebd6c9b1b9291548b7cfdb751fd` passes
+**141 CPU tests,0 failures/skips,231 warnings**:50 alternative-core cases,13
+runner lifecycle/rejection cases,6 alternative break/restore cases and72 existing
+regressions. The complete existing74-case mutation suite passes twice with
+every mutant detected and every restoration passing. All65 simulator restoration
+cells pass (13 tasks ×five seeds), verifying exact next transition and action
+RNG. Black, Pyflakes, compileall and diff checks pass.
+
+The real-critic example completes two synthetic checkpoints; independent reload
+verifies16 phase receipts and48 arm archives, initial A=B, K1 B=C, bitwise B/C
+invariance across those checkpoints, target/index hashes and parameter carry.
+No additional fit runs during independent verification. The maximum observed
+JAX-versus-host final-MSE reduction difference is1.7763568394002505e-15; it is
+reported, not used to invent or relax a tolerance.
+
+Warnings are Matplotlib/Pyparsing deprecations and Orbax sharding restoration
+notices; stage logs also retain cache/fontconfig diagnostics. The independent
+read-only reload emitted one GLFW missing-DISPLAY warning; it did no rendering
+or model execution. The receipt preserves exact commands, source/base hashes,
+module counts and artifact checksums. Other repository modules were not all
+rerun: these are the applicable selected regressions plus the complete mutation
+suite, not a claim of entire-repository or full-budget qualification.
 Tiny CPU SAC updates in lifecycle tests are engineering validation, not a
 campaign, learning result, full-size simulator qualification or GPU test.
 
@@ -263,3 +282,28 @@ not a direct runtime dependency of the alternative. Removing the inherited
 stack still requires an approved integration target and independently validated
 dependency versions. That integration remains blocked rather than guessing a
 base or silently bringing unrelated draft work into main.
+
+## Review verification summary
+
+The actual tiny lifecycle uses hopper-hop, one residual block/width4, warmup2,
+8 interaction steps,14 SAC updates and ordinary evaluations at0/4/8. Alternative
+observations occur at2 before any SAC update, then4 and8. These are explicit CPU
+fixture settings, not proposed campaign choices. A disabled-probe baseline and
+the alternative finish with bit-exact complete state: parameters, target/actor/
+temperature and optimizer state, replay and replay metadata, normalizer, counters,
+NumPy/Python/JAX RNGs and simulator state. The existing comparison excludes W&B
+run ID, which is an operational identity, not learning state.
+
+Deliberate interruptions at the initial observation and a later evaluation
+restore from training boundaries1 and4 respectively. Both preserve committed
+phase1 bytes/mtime and finish with exactly72 successful fits plus one failed
+attempt; committed phases are not fitted again. Default runner construction
+still reaches RunProbes; enabled alternative construction forbids it even when
+the inherited `probe.enabled` configuration is true.
+
+Alternative arrays and trajectories are written to the configured local output
+paths. This runner does not automatically publish them to W&B; ordinary SAC W&B
+logging remains unchanged. Artifact archival/transport and full-scale resources
+require review before a campaign. The selected regression suite also runs the
+PR16 diagnostic-adapter tests as adjacent regressions; those files are validation
+dependencies, not imports of this alternative's runtime.
