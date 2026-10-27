@@ -163,3 +163,65 @@ def test_pending_review_plan_refuses_before_model_or_job_execution(tmp_path):
     assert result.returncode == 2
     assert "BLOCKED" in result.stderr
     assert list(tmp_path.iterdir()) == []
+
+
+def test_real_consumer_reuses_producer_bank_and_resumes_without_state_changes(tmp_path):
+    """Tiny hopper lifecycle; not execution of the five full-size smoke cells."""
+    from contextlib import ExitStack
+    from unittest.mock import patch
+
+    from diagnostics import sequential_runner as runner
+    from experiments import exp1
+    from experiments.exp12.state import latest_state_dir, state_differences
+    from tests.exp12_helpers import patch_wandb
+    from tests.test_sequential_runner import request
+
+    producer_args, producer = request(tmp_path / "producer")
+    args, consumer = request(tmp_path / "consumer", ["critic_hidden_dim=8"])
+    baseline_args, _ = request(tmp_path / "baseline", ["critic_hidden_dim=8"])
+    consumer.update(architecture="D1W8", bank=producer["bank"], bank_producer=False)
+    with ExitStack() as stack:
+        for patcher in patch_wandb():
+            stack.callback(patcher.stop)
+        stack.enter_context(patch("wandb.finish"))
+        exp1.run(baseline_args)
+        stack.enter_context(
+            patch.object(exp1, "RunProbes", side_effect=AssertionError("no RunProbes"))
+        )
+        runner.run(producer_args, producer)
+        bank_files = list(Path(producer["bank"]).iterdir())
+        before = {p.name: (p.read_bytes(), p.stat().st_mtime_ns) for p in bank_files}
+        original = probe._fit_literal
+        calls = []
+
+        def interrupted(*a, **kw):
+            calls.append(1)
+            if len(calls) == 4:
+                raise RuntimeError("consumer phase interruption")
+            return original(*a, **kw)
+
+        with patch.object(probe, "_fit_literal", side_effect=interrupted):
+            with pytest.raises(RuntimeError, match="consumer phase interruption"):
+                runner.run(args, consumer)
+            phase = Path(consumer["output"]) / "checkpoint_000000002/phase_01"
+            committed = {
+                p.name: (p.read_bytes(), p.stat().st_mtime_ns) for p in phase.iterdir()
+            }
+            runner.run(args, consumer)
+        assert len(calls) == 73
+        assert committed == {
+            p.name: (p.read_bytes(), p.stat().st_mtime_ns) for p in phase.iterdir()
+        }
+        assert before == {
+            p.name: (p.read_bytes(), p.stat().st_mtime_ns) for p in bank_files
+        }
+        assert (
+            state_differences(
+                latest_state_dir(Path(args["checkpoint_dir"]) / "state"),
+                latest_state_dir(Path(baseline_args["checkpoint_dir"]) / "state"),
+            )
+            == []
+        )
+        assert probe.verify(consumer["reference"])["bank_hash"] == probe.digest(
+            Path(producer["bank"], "receipt.json").read_bytes()
+        )
