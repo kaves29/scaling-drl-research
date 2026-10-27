@@ -592,6 +592,33 @@ def worker(args):
         >= m["allocation_proposal"]["host_memory_GiB"] * 1024,
         "wrong host-memory allocation",
     )
+    root = Path(m["new_campaign_root"])
+    require(root.is_dir(), "pilot output root missing")
+    atomic(
+        root / "startup_gpu_evidence.json",
+        {
+            "slurm_job_id": os.environ["SLURM_JOB_ID"],
+            "slurm_node": os.environ.get("SLURMD_NODENAME"),
+            "environment": {
+                name: os.environ.get(name)
+                for name in (
+                    "CUDA_VISIBLE_DEVICES",
+                    "CUDA_DEVICE_ORDER",
+                    "SLURM_JOB_GPUS",
+                    "SLURM_STEP_GPUS",
+                    "SLURM_GPUS_ON_NODE",
+                    "SLURM_STEP_GRES",
+                )
+            },
+            "nvidia_inventory": capture(
+                [
+                    "nvidia-smi",
+                    "--query-gpu=index,uuid,name,memory.total",
+                    "--format=csv,noheader,nounits",
+                ]
+            ),
+        },
+    )
     tokens = allocated_tokens(os.environ)
     gpus = [gpu_info(t) for t in tokens]
     if gates:
@@ -623,7 +650,6 @@ def worker(args):
             cpus == gates["five_process_per_gpu"].get("cpu_affinity"),
             "CPU placement differs from qualification",
         )
-    root = Path(m["new_campaign_root"])
     require(
         root.exists()
         and not (root / "pilot_started.json").exists()
