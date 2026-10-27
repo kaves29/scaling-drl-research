@@ -9,7 +9,7 @@ fi
 # sbatch --chdir binds this to the reviewed checkout/main.
 test -f audits/probe_discrepancy/launch.py
 exec srun --ntasks=1 --cpus-per-task="$SLURM_CPUS_PER_TASK" \
-  --gpus-per-task=2 --gpu-bind=none \
+  --gpus-per-task=2 --gpu-bind=per_task:2 \
   "$1" -m audits.probe_discrepancy.launch worker \
   --checkout "$(git rev-parse --show-toplevel)" \
   --manifest "$2" --approval "$3" --manifest-sha "$4" --approval-sha "$5"
