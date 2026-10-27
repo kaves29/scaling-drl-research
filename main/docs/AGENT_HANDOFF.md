@@ -1,5 +1,20 @@
 # Shared agent handoff
 
+## Clean alternative-only successor review (27 October 2026)
+
+Separate successor starts from tested00ed566 on approved integration844e3c0;
+PR17 and its base remain unchanged. The readiness branch46ad72e adds only
+documentation after00ed566; no candidate runtime change was imported.
+See [five-job review packet](sequential_smoke_review.md) and review-only JSON.
+The eight alternative candidate files remain byte-identical. Added staging gate
+requires both complete D2W512 producers and verified immutable bank receipts
+before consumers request GPUs; it never submits or authorizes a job.
+All smoke flags remain approved=false, executable=false, submitted=false.
+Missing Myo D4W1024, pending teacher/eligibility/cadence/resources/transport and
+GPU qualification make this NO-GO. Fresh exact-source CPU evidence is external
+at /workspace/artifacts/alternative-review-20261027/ and summarized in the
+successor draft PR. No 10-run pilot change or inferred live status.
+
 Branch: `integration/exp12`. This file establishes the shared protocol; it does
 not authorize scientific changes, main merges or Delta submissions.
 
