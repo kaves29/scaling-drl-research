@@ -1,5 +1,52 @@
 # Current agent handoff
 
+## Ten-run simultaneous diagnostic pilot revision (25 October 2026)
+
+Updates [PR16](https://github.com/kaves29/scaling-drl-research/pull/16) in place.
+Tested implementation `9efae21`; resolve the live PR head for documentation
+followups.
+Exactly ten executions: five matched condition/seed pairs, one of each on GPU0
+and GPU1, five processes/device, one all-ten barrier, no waves/replacement/retry.
+All four tasks and three sizes represented; five unique scientific configs,
+not ten independent seeds. Pen-small/seed5 anchors the original NPZ case.
+
+New manifest v2, source config bindings, guarded launcher/sbatch wrapper and
+[review checklist](diagnostic_pilot_10_review_checklist.md) preserve the original
+science/fit procedure. Original own-offset literal targets intentionally differ
+by a constant; shared inputs/base/indices remain paired and both arrays/hashes
+must be retained. See [updated report](source_bound_probe_discrepancy.md).
+
+72 CPU tests pass, including synthetic gate rejection and all-ten barrier tests;
+no actual GPU/Delta qualification is implied. Proposal: one gpuA100x4 node,
+two40GB A100s, one task,32CPUs/128GiB/48h; measured packing feasibility unknown.
+Cloud has no Delta access/Slurm/GPU tools. Adapter is unimplemented/unreviewed;
+source freeze, smoke, representative five/five profiling and owner/allocation
+gates remain blocked. Draft launch_approved/executable/packing_qualified=false.
+No Slurm submission, training, probe fit, scientific change or merge occurred.
+
+## Source-bound paired discrepancy and pilot design (24 October 2026)
+
+[Draft PR16](https://github.com/kaves29/scaling-drl-research/pull/16), tested
+implementation `13948eb`. Task branch
+`codex/source-bound-discrepancy-pilot`, based on PR15
+`822c2e5aae1aa99b970fdce8e0b4bff94e7d4724`. See
+[diagnosis and launch gates](source_bound_probe_discrepancy.md) and
+[previous pilot draft (superseded by v2 above)](../audits/probe_discrepancy/pilot_manifest.DRAFT.json).
+At check35, all32 medium/large DMC parents beat fresh, all32 medium/large Myo
+parents lose. Shared b cancels; mechanism remains unidentified. Only one original
+component/curve NPZ is accessible. Recovery inventories48 early/late targets,
+207 accessible candidate files/10 containers; Delta TCP proxy refused and W&B
+HTTPS proxy403 prevent live remote inventory. No remote-absence claim.
+
+22 CPU tests pass, including six source guard mutations and ten prior accounting
+tests; nine source guards and original-NPZ arithmetic pass. New original-source
+routing controls use stand-ins and perform no numerical fits or model forwards.
+No production fixes justified, training, GPUs/Slurm, historical changes or merge.
+Pilot adapter is not implemented/frozen/qualified; original full recipe stays
+unchanged. Selected W&B runtime sum206.882h is only a planning proxy; resources,
+source/runtime/equivalence/restoration, owner approvals and actual launch remain
+blocked. No prior2/4h budget transfers and no main experiment is queued.
+
 ## Retained-data probe difficulty accounting (24 October 2026)
 
 [Draft PR15](https://github.com/kaves29/scaling-drl-research/pull/15), tested

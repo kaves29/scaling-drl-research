@@ -1,0 +1,101 @@
+{
+  "actions": {
+    "RL_training": 0,
+    "gpu_jobs": 0,
+    "new_probe_fits": 0,
+    "production_scientific_code_changed": false,
+    "sbatch_submissions": 0,
+    "scientific_method_changed": false
+  },
+  "analysis_receipt": {
+    "archive_max_paired_float32_vs_real_mse_delta": 7.897615432739258e-07,
+    "available_original_check_files": 1,
+    "canonical_parents": 96,
+    "controlled_routing": {
+      "2000_index_rows": true,
+      "distinct_parameter_routing": true,
+      "one_normalization": true,
+      "one_teacher_per_pair": true,
+      "parameters_unchanged": true,
+      "rms_and_training_rng_unchanged": true,
+      "same_array_objects_within_pair": true,
+      "scope": "original control flow with fake fitter/teacher; not a numerical fit or original runtime certification"
+    },
+    "excluded_pilots": 7,
+    "gpu_jobs": 0,
+    "model_forwards": 0,
+    "new_fits": 0,
+    "paired_checks": 4738,
+    "pilot_approved": false,
+    "pilot_manifest_sha256": "59b4484f358c1f6df015ddf04139273710672b1dc2c9364fc1a36011709f178c",
+    "pilot_runs": 10,
+    "remote_storage_inventory_completed": false,
+    "source": "f597ee9898e4d401912092c336c3e5330cf2fda1",
+    "source_guards": 9,
+    "targeted_missing_check_files": 48
+  },
+  "code_and_plan_sha256": {
+    "main/audits/probe_discrepancy/__init__.py": "ceca817e562a9662d0366c2ecd23ee09e0ae0c470e0085a1d98ef93188ce0dbe",
+    "main/audits/probe_discrepancy/inventory.py": "483457e14dbb687b409f478e1e88eaacd2b1c25860d8baff14a233e486e60d6d",
+    "main/audits/probe_discrepancy/investigate.py": "3f4382c388d6ebd6f37aceec9759177545ca592a899fcc158bfce9587beafb25",
+    "main/audits/probe_discrepancy/launch.py": "a83506a2f188a970452580cff797c92d04a51c0dc832f137b8048e4daf1bd976",
+    "main/audits/probe_discrepancy/launch_approval.template.json": "7ddb1f1037897a1c206dd81d7a5922d4b4914c7381bad87a137d7fdf326ce9dc",
+    "main/audits/probe_discrepancy/pilot_manifest.DRAFT.json": "59b4484f358c1f6df015ddf04139273710672b1dc2c9364fc1a36011709f178c",
+    "main/audits/probe_discrepancy/plan.py": "f768c719ab553e251f72257950ccc9dfee1d332d3669f24bf7a911fdef5496bf",
+    "main/audits/probe_discrepancy/source_checks.py": "c7a8ae6d669c8ca76a81e4c505956e0a252da7beb5353b0fecf02f6e4718f1ec",
+    "main/audits/probe_discrepancy/source_config_bindings.json": "f50eb90a45548b1879b6fbb511657b9af41629ca55b7826c7334aab2739f9045",
+    "main/scripts/sbatch_echocritic_diagnostic_pilot.sh": "fe87abba1a7371138b290d7b91eb0a3094408a330a6bc16f0b78c128c0575eac",
+    "main/tests/test_diagnostic_pilot_launch.py": "5e6cd571679ef5df14214d5280857ff8341c067e6384e8852de689d382cb7f2c",
+    "main/tests/test_probe_discrepancy.py": "7391512b7328177d75686cd7608bd5b9855c8a1e2703890fe35d2bd3c9780403"
+  },
+  "design": {
+    "all_ten_configs_match_immutable_raw_metadata": true,
+    "automatic_retries": false,
+    "distinct_scientific_configs": 5,
+    "executions": 10,
+    "generator_matches_tracked_manifest": true,
+    "processes_per_gpu": [
+      5,
+      5
+    ],
+    "replacements": false,
+    "waves": 1
+  },
+  "evidence_sha256": {
+    "/workspace/artifacts/diagnostic-pilot-10/analysis-final.log": "52411d0260ac8c81b188d562dbd58105bae723f38cb5eb4b8ed6b3b429941788",
+    "/workspace/artifacts/diagnostic-pilot-10/cloud-inspection.json": "b50216b3831acc1e0671b4f9d85dd6c1e2a04111d1c3f4d859bb8d234ff0e169",
+    "/workspace/artifacts/diagnostic-pilot-10/draft_refusal.json": "5380cff63fb042bf09f60d372403632599ad537c83334b5e9e6f0f2442a65761",
+    "/workspace/artifacts/diagnostic-pilot-10/unit-final-reviewed.log": "a15db98d5fb4405f8e0ab6b809d5a7cfcf6a64174c122febd17adcfed81928b5"
+  },
+  "pr_url": "https://github.com/kaves29/scaling-drl-research/pull/16",
+  "prior_pr_head": "84688e81a8280016814b730bcda733e228b8eb2f",
+  "prior_receipt": {
+    "path": "main/audits/probe_discrepancy/validation_receipt.v1.json",
+    "sha256": "858977759d27890729bf0d2301602eb2226a3658d6debb237a89677808c7a588"
+  },
+  "qualification": {
+    "actual_delta_node_inventory": false,
+    "adapter_implemented_reviewed": false,
+    "delta_storage_access": false,
+    "executable": false,
+    "launch_approved": false,
+    "packing_qualified": false,
+    "real_qualification_evidence_synthesized": false,
+    "slurm_or_nvidia_smi_available_in_cloud": false,
+    "source_matched_cuda_smoke": false,
+    "source_matched_five_process_per_gpu_profile": false
+  },
+  "remaining_gates": "main/docs/diagnostic_pilot_10_review_checklist.md",
+  "revision": "ten-run-simultaneous-v2",
+  "validation": {
+    "actual_draft_command": "exit2 BLOCKED, no sbatch invocation",
+    "actual_draft_preflight": "exit2 BLOCKED, no command printed",
+    "bash_n": "passed",
+    "black": "8 files unchanged; check passed",
+    "compileall": "passed",
+    "diff_check": "passed",
+    "mock_dispatch_and_failure_retention": "passed; no real GPU or training subprocess",
+    "pyflakes": "passed",
+    "pytest": "72 passed, 14 deprecation warnings in 2.53s"
+  }
+}
