@@ -1,5 +1,6 @@
 """Phase 4: fork, control restart, identity fork, injected arm, Checks 1-3, kill-and-resume around the fork."""
 
+import hashlib
 import importlib.util
 import json
 import os
@@ -60,6 +61,12 @@ def _without_arm(rows):
     return [{k: v for k, v in r.items() if k != "arm"} for r in rows]
 
 
+def _checkpoint_files(root):
+    root = Path(root)
+    return {str(p.relative_to(root)): hashlib.sha256(p.read_bytes()).hexdigest()
+            for p in root.rglob("*") if p.is_file()}
+
+
 class ForkEndToEndTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -69,6 +76,8 @@ class ForkEndToEndTest(unittest.TestCase):
         cls.overrides = fork_overrides(cls.results)
         cls.run_dir = os.path.join(cls.tmp, "run")
         run_exp1(cls.run_dir, cls.overrides)
+        cls.fork_files_after_parent = _checkpoint_files(fork.fork_dir(cls.run_dir) / "state")
+        assert (Path(cls.run_dir) / "DONE").exists()
         cls.arm_dirs = {}
         for arm in ("identity", "injected"):
             cls.arm_dirs[arm] = os.path.join(cls.tmp, f"arm_{arm}")
@@ -93,6 +102,20 @@ class ForkEndToEndTest(unittest.TestCase):
             self.assertTrue((d / name).exists(), name)
         self.assertEqual(fork.load_npz(d / "panel.npz")["observation"].shape[0], 256)
         self.assertEqual(_meta(latest_state_dir(d / "state"))["interaction_step"], 100)
+
+    def test_delayed_arms_preserve_complete_trigger_checkpoint(self):
+        # Both arms in setUpClass start only after the Exp1 control has completed.
+        self.assertEqual(_checkpoint_files(fork.fork_dir(self.run_dir) / "state"),
+                         self.fork_files_after_parent)
+        self.assertEqual(self.plan["fork_step"], 100)
+        self.assertLess(_meta(latest_state_dir(fork.fork_dir(self.run_dir) / "state"))["update_step"],
+                        _meta(latest_state_dir(Path(self.run_dir) / "state"))["update_step"])
+        # The existing identity comparison covers optimizer, replay, observation
+        # normalization, RNG, environment state and all training counters.
+        self.assertEqual(state_differences(
+            latest_state_dir(fork.fork_dir(self.run_dir) / "identity_control"),
+            latest_state_dir(Path(self.arm_dirs["identity"]) / "identity_identity"),
+            ignore_meta=("wandb_run_id", "extra_state")), [])
 
     def test_exp1_ledger_records_fork_and_control_completes(self):
         runs, checks = ledger.load(self.results, include_dev=True)
@@ -525,8 +548,8 @@ class KillMatrixTest(unittest.TestCase):
     def tearDown(self):
         shutil.rmtree(self.tmp, ignore_errors=True)
 
-    def _run(self, run_dir, experiment="exp1", source=None, **crash):
-        overrides = fork_overrides(run_dir + "_results")
+    def _run(self, run_dir, experiment="exp1", source=None, extra=(), **crash):
+        overrides = fork_overrides(run_dir + "_results", extra=extra)
         if experiment == "exp2_arm":
             overrides += [f"fork.source={source}", "fork.arm=injected", "injection.m=half"]
         spec = {"experiment": experiment, "overrides": overrides, "checkpoint_dir": run_dir,
@@ -568,6 +591,38 @@ class KillMatrixTest(unittest.TestCase):
         self._kill_and_resume(final, "mid probe interval", crash_step=67)
         self._kill_and_resume(final, "inside a routine save (step 60)", crash_inside_save_step=60,
                               check=previous_state_intact)
+
+    def test_late_fork_control_resume_keeps_checks_past_the_budget(self):
+        """Fork at check 19 (step 380): control_end 480 > B, so checks 21-24 lie past 100% of B.
+        A control killed after its own post-fork save must keep them on resume."""
+        late = ["testing.force_trigger_check=19"]
+        ref = os.path.join(self.tmp, "late_ref")
+        self.assertEqual(self._run(ref, extra=late).returncode, 0)
+        final = latest_state_dir(Path(ref) / "state")
+        steps = [r["interaction_step"] for r in _meta(final)["extra_state"]["probe_records"]]
+        self.assertEqual(steps[-4:], [420, 440, 460, 480])
+        run_dir = os.path.join(self.tmp, "late_kill")
+        r = self._run(run_dir, extra=late, crash_step=425)  # after the control's save at 420
+        self.assertNotEqual(r.returncode, 0)
+        self.assertEqual(_meta(latest_state_dir(Path(run_dir) / "state"))["interaction_step"], 420)
+        r = self._run(run_dir, extra=late)
+        self.assertEqual(r.returncode, 0, r.stderr[-3000:])
+        resumed = latest_state_dir(Path(run_dir) / "state")
+        self.assertEqual([x["interaction_step"] for x in _meta(resumed)["extra_state"]["probe_records"]], steps)
+        self.assertEqual(state_differences(final, resumed, ignore_meta=("wandb_run_id",)), [])
+
+    def test_killed_before_the_first_checkpoint_restarts_from_scratch_identically(self):
+        """No committed state yet: rerunning the same command reproduces the uninterrupted run."""
+        _, final = self._reference()
+        run_dir = os.path.join(self.tmp, "early_kill")
+        r = self._run(run_dir, crash_step=15)
+        self.assertNotEqual(r.returncode, 0)
+        self.assertTrue((Path(run_dir) / "run_metadata.json").exists())
+        self.assertIsNone(latest_state_dir(Path(run_dir) / "state"))
+        r = self._run(run_dir)
+        self.assertEqual(r.returncode, 0, r.stderr[-3000:])
+        self.assertEqual(state_differences(final, latest_state_dir(Path(run_dir) / "state"),
+                                           ignore_meta=("wandb_run_id",)), [])
 
     def test_at_and_after_the_fork(self):
         ref, final = self._reference()

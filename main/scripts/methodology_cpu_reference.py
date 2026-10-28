@@ -113,7 +113,7 @@ def main():
             assert cfg.agent.critic_use_cdq == cfg.env_name.startswith("h1-")
             assert (
                 cfg.probe.rounds == 5
-                and cfg.probe.steps == 1000
+                and cfg.probe.steps == 2000
                 and cfg.probe.pool_size == 25600
                 and cfg.probe.batch_size == 256
             )
