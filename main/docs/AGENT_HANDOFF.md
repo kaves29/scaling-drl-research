@@ -1,5 +1,24 @@
 # Shared agent handoff
 
+## Exp2 implementation/readiness review (28 October 2026)
+
+Codex's isolated `codex/exp2-readiness-review-20261028` starts from approved
+integration `844e3c0cc24998b25c3d1e667bcbfe056b1b336c`. Implementation checkpoint
+`ee5e3d3398117197cfaab9efc657c830623ac698` adds only an Exp2 arm startup
+source-admission guard and eight regressions; scientific/Exp1/pilot files are unchanged.
+See [source-bound readiness review](exp2_readiness_20261028.md) for full CPU
+receipts, version comparison, blockers and the December1/December5 dependency plan.
+
+Production Exp2 remains **NO-GO**. Approved integration retains the legacy
+five-round/1,000-step protocol; published main087 records approved Method C
+(aa)/(ab), but its shared certifier still requires 1,000-step curves. A CPU array
+fixture reproduced that compatibility defect. Neither the unintegrated Exp96
+successor/PR2 nor alternative PR18 supplies a current Exp2 certificate. No m was
+chosen, no source branch promoted, and no GPU/job/preflight/submission was run.
+Natural source-bound evidence, owner-frozen m, correct versioned integration and
+actual CUDA/resource qualification remain separate gates. Historical status below
+retains its original scope; do not infer live jobs from it.
+
 Branch: `integration/exp12`. This file establishes the shared protocol; it does
 not authorize scientific changes, main merges or Delta submissions.
 
