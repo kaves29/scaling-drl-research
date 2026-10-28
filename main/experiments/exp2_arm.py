@@ -42,6 +42,14 @@ def check_matches_parent(cfg, source: Path) -> None:
     parent = load_run_metadata(source / RUN_METADATA_FILENAME)
     if parent is None:
         raise ValueError(f"{source} has no {RUN_METADATA_FILENAME}")
+    from utils.run_metadata import code_version
+
+    current = code_version()
+    commit = current.get("commit")
+    if (parent.get("code") != current or current.get("dirty") is not False or
+            not isinstance(commit, str) or len(commit) != 40 or
+            any(c not in "0123456789abcdef" for c in commit)):
+        raise ValueError("arm source must be the parent's exact clean, verified source commit")
     import omegaconf
 
     mine = omegaconf.OmegaConf.to_container(cfg, resolve=True)
