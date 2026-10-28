@@ -43,7 +43,9 @@ class IntegratedMethodCArtifactTest(unittest.TestCase):
         observations = np.arange(64, dtype=np.float32).reshape(32, 2) / 65
         actions = np.linspace(-1, 1, 32, dtype=np.float32).reshape(32, 1)
         params = net.init(
-            jax.random.PRNGKey(17), jnp.asarray(observations[:1]), jnp.asarray(actions[:1])
+            jax.random.PRNGKey(17),
+            jnp.asarray(observations[:1]),
+            jnp.asarray(actions[:1]),
         )["params"]
         trainer = SimpleNamespace(
             cfg=cls.cfg,
@@ -51,7 +53,9 @@ class IntegratedMethodCArtifactTest(unittest.TestCase):
             buffer=SimpleNamespace(
                 _observations=observations, _actions=actions, _num_in_buffer=32
             ),
-            _sac_agent=SimpleNamespace(critic=SimpleNamespace(network_def=net, params=params)),
+            _sac_agent=SimpleNamespace(
+                critic=SimpleNamespace(network_def=net, params=params)
+            ),
         )
         # Supply the real runner's dependencies without building/training an RL agent.
         probes = RunProbes.__new__(RunProbes)
@@ -66,7 +70,8 @@ class IntegratedMethodCArtifactTest(unittest.TestCase):
         result = probes._probe(1, {"current": (net, params), "fresh": (net, params)})
         cls.record = {
             "check_index": 1,
-            "interaction_step": int(cls.cfg.num_interaction_steps) // cls.probe_cfg.checks,
+            "interaction_step": int(cls.cfg.num_interaction_steps)
+            // cls.probe_cfg.checks,
             **{
                 f"score_{name}_r{r}": float(value)
                 for name in result
@@ -84,7 +89,12 @@ class IntegratedMethodCArtifactTest(unittest.TestCase):
             num_checks=cls.probe_cfg.checks,
         )
         cls.directory = ledger.write_run(
-            identity, [cls.record], None, "running", probes.dir, str(cls.root / "results")
+            identity,
+            [cls.record],
+            None,
+            "running",
+            probes.dir,
+            str(cls.root / "results"),
         )
         cls.check2 = exp2_arm.check2(trainer, probes, {"fork_check_index": 1}, params)
         cls.check2_path = probes.dir / "check2_curves.npz"
@@ -97,9 +107,13 @@ class IntegratedMethodCArtifactTest(unittest.TestCase):
         retained = os.environ.get("EXP2_METHOD_C_TEST_ARTIFACTS")
         if retained:
             destination = Path(retained)
-            shutil.copytree(cls.root, destination)  # Refuse to overwrite earlier evidence.
+            shutil.copytree(
+                cls.root, destination
+            )  # Refuse to overwrite earlier evidence.
             hashes = {
-                str(p.relative_to(destination)): hashlib.sha256(p.read_bytes()).hexdigest()
+                str(p.relative_to(destination)): hashlib.sha256(
+                    p.read_bytes()
+                ).hexdigest()
                 for p in sorted(destination.rglob("*"))
                 if p.is_file()
             }
@@ -108,8 +122,12 @@ class IntegratedMethodCArtifactTest(unittest.TestCase):
 
     def validate_parent_curves(self, config=None):
         validation._curves(
-            validation.Snapshot(), self.directory / "probe_curves.npz", [1], False,
-            [self.record], config if config is not None else self.config,
+            validation.Snapshot(),
+            self.directory / "probe_curves.npz",
+            [1],
+            False,
+            [self.record],
+            config if config is not None else self.config,
         )
 
     def test_exact_produced_saved_and_consolidated_curves_certify(self):
@@ -125,8 +143,14 @@ class IntegratedMethodCArtifactTest(unittest.TestCase):
 
     def test_real_check2_artifact_certifies_without_forcing_a_rescue(self):
         validation._check2(
-            validation.Snapshot(), self.check2, self.check2_path, 1, int(self.cfg.seed),
-            self.config, False, "synthetic-curve-io",
+            validation.Snapshot(),
+            self.check2,
+            self.check2_path,
+            1,
+            int(self.cfg.seed),
+            self.config,
+            False,
+            "synthetic-curve-io",
         )
         self.assertFalse(self.check2["pass"])
         self.assertEqual(self.check2["paired_difference_rounds"], [0.0] * 5)
