@@ -1,5 +1,20 @@
 # Shared agent handoff
 
+## PR18 revised six-run review (27 October 2026)
+
+Current packet: [six-run review](sequential_six_review.md) and review-only JSON.
+Approved base remains844e3c0. Replaces the earlier five-job/producer-first plan:
+all six dog/pen small/medium/large seed0 cells, one2-GPU wave,3 processes/GPU,
+<=6hours and <=12 aggregate reserved GPU-hours. even_milestones_v2 traverses
+all8 A/B targets but reports2/4/6/8; C fits only those4.440000 probe updates/run,
+2640000 total. Generic bounded bank readiness runs before consumer trainer/seeding;
+receipt SHA is pinned into resume identity. Exact-source CPU receipt and Delta
+handoff are in the updated PR18 description. Cluster packing/runtime/storage and
+Delta watchdog are unqualified: NO-GO until hard preflight passes. Review flags
+remain approved=false, executable=false, submitted=false. Delta-only launcher
+work may not change scientific code/settings. No Cloud GPU submission, no PR17
+change, no approved production/config/methodology or10-run pilot change.
+
 ## Clean alternative-only successor review (27 October 2026)
 
 Separate successor starts from tested00ed566 on approved integration844e3c0;

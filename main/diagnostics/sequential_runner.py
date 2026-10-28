@@ -87,6 +87,7 @@ def run(args, alternative=None):
     ).validate(int(cfg.probe.pool_size))
     if cfg.evaluation_per_interaction_step <= 0 or args["checkpoint_interval"] <= 0:
         raise ValueError("positive explicit evaluation/checkpoint cadence required")
+    probe.reported_targets(alternative.get("schedule", probe.ALL_TARGETS))
     teacher_config = alternative["teacher"]
     if (
         set(teacher_config) != {"block_type", "num_blocks", "hidden_dim", "dtype"}
@@ -107,10 +108,41 @@ def run(args, alternative=None):
     set_matmul_precision()
     configure_compilation_cache()
     contract = probe.precision_contract(teacher)
+    ready_bank_sha = None
+    if alternative.get("bank_wait"):
+        from .sequential_bank_gate import wait_for_bank
+
+        if alternative["bank_producer"]:
+            raise ValueError("producer must not wait for its own bank")
+        wait = alternative["bank_wait"]
+        ready_bank_sha = wait_for_bank(
+            alternative["bank"],
+            expected={
+                "environment": alternative["environment"],
+                "seed": alternative["seed"],
+                "source": alternative["source"],
+                "teacher_architecture": alternative["teacher_architecture"],
+                "teacher_definition": repr(teacher),
+                "scale": float(cfg.probe.target_scale),
+                "teacher_eval_chunk": int(cfg.probe.eval_chunk),
+                "warmup": int(cfg.buffer.min_length),
+                "num_filled": int(cfg.buffer.min_length),
+                "execution": contract,
+            },
+            pool_size=int(cfg.probe.pool_size),
+            normalized=bool(cfg.agent.normalize_observation),
+            timeout_seconds=wait["timeout_seconds"],
+            allocation_deadline_unix=wait["allocation_deadline_unix"],
+            producer_status=wait["producer_status"],
+            audit_dir=root / "bank_gate",
+        )
+    observer_options = {k: v for k, v in alternative.items() if k != "bank_wait"}
+    if ready_bank_sha is not None:
+        observer_options["bank_receipt_sha256"] = ready_bank_sha
     identity = {
         "mode": "sequential_alternative_only_v1",
         "config": OmegaConf.to_container(cfg, resolve=True),
-        "alternative": alternative,
+        "alternative": observer_options,
         "execution": contract,
         "git_commit": subprocess.check_output(
             ["git", "rev-parse", "HEAD"],
@@ -145,7 +177,7 @@ def run(args, alternative=None):
         probe.commit_directory(
             identity_dir, lambda tmp: probe.seal(tmp, {"identity": identity})
         )
-    observer = Observer(**{**alternative, "teacher": teacher})
+    observer = Observer(**{**observer_options, "teacher": teacher})
     np.random.seed(cfg.seed)
     random.seed(cfg.seed)
     trainer = Exp12Trainer(cfg, str(root))

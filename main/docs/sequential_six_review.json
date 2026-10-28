@@ -1,0 +1,136 @@
+{
+  "schema": "sequential-six-run-review-v2",
+  "approved": false,
+  "executable": false,
+  "submitted": false,
+  "base_sha": "844e3c0cc24998b25c3d1e667bcbfe056b1b336c",
+  "source_sha": null,
+  "runs": [
+    {
+      "id": "dog-small",
+      "environment": "dog-run",
+      "architecture": "D2W512",
+      "gpu": 0,
+      "bank_producer": true,
+      "seed": 0
+    },
+    {
+      "id": "myo-medium",
+      "environment": "myo-pen-twirl",
+      "architecture": "D4W1024",
+      "gpu": 0,
+      "bank_producer": false,
+      "seed": 0
+    },
+    {
+      "id": "dog-large",
+      "environment": "dog-run",
+      "architecture": "D4W1536",
+      "gpu": 0,
+      "bank_producer": false,
+      "seed": 0
+    },
+    {
+      "id": "myo-small",
+      "environment": "myo-pen-twirl",
+      "architecture": "D2W512",
+      "gpu": 1,
+      "bank_producer": true,
+      "seed": 0
+    },
+    {
+      "id": "dog-medium",
+      "environment": "dog-run",
+      "architecture": "D4W1024",
+      "gpu": 1,
+      "bank_producer": false,
+      "seed": 0
+    },
+    {
+      "id": "myo-large",
+      "environment": "myo-pen-twirl",
+      "architecture": "D4W1536",
+      "gpu": 1,
+      "bank_producer": false,
+      "seed": 0
+    }
+  ],
+  "requested_allocation": {
+    "nodes": 1,
+    "GPUs": 2,
+    "run_processes": 6,
+    "processes_per_GPU": [
+      3,
+      3
+    ],
+    "waves": 1,
+    "walltime_seconds": 21600,
+    "max_aggregate_reserved_GPU_hours": 12
+  },
+  "diagnostic": {
+    "schedule": "even_milestones_v2",
+    "teacher": {
+      "block_type": "residual",
+      "num_blocks": 2,
+      "hidden_dim": 512,
+      "dtype": "float32"
+    },
+    "teacher_architecture": "D2W512",
+    "target_scale": 100000.0,
+    "pool_size": 25600,
+    "batch_size": 256,
+    "chunk": 2560,
+    "warmup": 5000,
+    "endpoint_interactions": 500000,
+    "cadence_interactions": 50000,
+    "reported_K": [
+      2,
+      4,
+      6,
+      8
+    ],
+    "AB_fitted_K": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+    ],
+    "C_fitted_K": [
+      2,
+      4,
+      6,
+      8
+    ],
+    "steps_per_target": 2000,
+    "observations_per_run": 11,
+    "updates_per_observation": 40000,
+    "updates_per_run": 440000,
+    "updates_total": 2640000,
+    "fixed_fresh_architecture_offset": true
+  },
+  "cluster_qualification": {
+    "verified": false,
+    "GPU_model": null,
+    "GPU_UUIDs": null,
+    "CPUs": null,
+    "host_memory": null,
+    "VRAM_peak": null,
+    "checkpoint_interval": null,
+    "bank_timeout_seconds": null,
+    "storage_capacity": null,
+    "compile_and_steady_profile": null,
+    "six_hour_completion_evidence": null,
+    "account": null,
+    "partition": null
+  },
+  "outputs": {
+    "durable_campaign_root": null,
+    "retrieval_destination": null,
+    "per_run_WandB_identity_required": true,
+    "alternative_arrays_auto_uploaded_to_WandB": false
+  }
+}

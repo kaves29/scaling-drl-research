@@ -15,6 +15,8 @@ import numpy as np
 
 from diagnostics.sequential_probe import (
     Settings,
+    EVEN_MILESTONES,
+    ALL_TARGETS,
     create_bank,
     create_reference,
     evaluate,
@@ -25,6 +27,7 @@ from scale_rl.agents.sac.sac_network import SACCritic
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--out", required=True)
+    parser.add_argument("--even-milestones", action="store_true")
     args = parser.parse_args()
     root = Path(args.out).resolve()
     repository = Path(__file__).resolve().parents[2]
@@ -79,6 +82,7 @@ def main():
             fresh=fresh,
             checkpoint=checkpoint,
             settings=Settings(batch_size=2, chunk=2),
+            schedule=EVEN_MILESTONES if args.even_milestones else ALL_TARGETS,
         )
     print("Synthetic CPU artifacts:", root)
     print("No SAC training, GPU execution, scientific qualification or launch.")

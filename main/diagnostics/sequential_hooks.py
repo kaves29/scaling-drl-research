@@ -20,6 +20,8 @@ class Observer:
         seed=None,
         source=None,
         bank_producer=False,
+        schedule="all_targets_v1",
+        bank_receipt_sha256=None,
     ):
         self.enabled = enabled
         self.options = dict(
@@ -33,6 +35,8 @@ class Observer:
             seed=seed,
             source=source,
             bank_producer=bank_producer,
+            schedule=schedule,
+            bank_receipt_sha256=bank_receipt_sha256,
         )
         self.fresh = None
 
@@ -87,6 +91,14 @@ class Observer:
                 source=o["source"],
             )
         bank = verify(o["bank"])
+        if o["bank_receipt_sha256"] is not None:
+            from .sequential_probe import digest
+
+            if (
+                digest((Path(o["bank"]) / "receipt.json").read_bytes())
+                != o["bank_receipt_sha256"]
+            ):
+                raise ValueError("bank changed after readiness gate")
         if (
             bank["environment"] != o["environment"]
             or bank["seed"] != o["seed"]
@@ -121,6 +133,14 @@ class Observer:
         if cfg.agent.critic_use_cdq or cfg.agent.critic_sparsity:
             raise ValueError("resume requires a single dense critic")
         bank = verify(o["bank"])
+        if o["bank_receipt_sha256"] is not None:
+            from .sequential_probe import digest
+
+            if (
+                digest((Path(o["bank"]) / "receipt.json").read_bytes())
+                != o["bank_receipt_sha256"]
+            ):
+                raise ValueError("bank changed after readiness gate")
         ref = verify(o["reference"])
         if (
             bank["environment"],
@@ -164,6 +184,7 @@ class Observer:
             fresh=self.fresh,
             checkpoint=int(trainer.interaction_step),
             settings=self.settings,
+            schedule=self.options["schedule"],
         )
 
 

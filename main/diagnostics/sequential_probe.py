@@ -24,6 +24,20 @@ import numpy as np
 from experiments.exp12.probe import _mean_prediction, critic_optimizer
 
 STREAM = 0x53514551
+ALL_TARGETS = "all_targets_v1"
+EVEN_MILESTONES = "even_milestones_v2"
+
+
+def reported_targets(schedule):
+    if schedule == ALL_TARGETS:
+        return list(range(1, 9))
+    if schedule == EVEN_MILESTONES:
+        return [2, 4, 6, 8]
+    raise ValueError("unsupported explicit sequential schedule")
+
+
+def phase_arms(k, schedule):
+    return "ABC" if k in reported_targets(schedule) else "AB"
 
 
 def precision_contract(network=None, params=None, observations=None, actions=None):
@@ -403,12 +417,14 @@ def evaluate(
     fresh=None,
     checkpoint=None,
     settings=None,
+    schedule=ALL_TARGETS,
 ):
     """Explicit checkpoint API. Disabled means no reads, RNG draws or model work."""
     if not enabled:
         return None
     if checkpoint is None or settings is None:
         raise ValueError("explicit checkpoint and configured settings required")
+    milestones = reported_targets(schedule)
     verify(bank)
     ref = verify(reference)
     if tree_hash(fresh) != ref["fresh_hash"] or repr(network) != ref["network"]:
@@ -432,6 +448,8 @@ def evaluate(
     settings.validate(len(obs))
     signature = {
         "checkpoint": checkpoint,
+        "schedule": schedule,
+        "reported_targets": milestones,
         "implementation_sha256": digest(Path(__file__).read_bytes()),
         "runtime_versions": {
             k: importlib.metadata.version(k)
@@ -459,6 +477,8 @@ def evaluate(
     bank_seed = verify(bank)["seed"]
     summaries = []
     for k in range(8):
+        arms = phase_arms(k + 1, schedule)
+        reported = k + 1 in milestones
         phase = output / f"phase_{k+1:02d}"
         idx = jnp.asarray(
             np.random.default_rng([bank_seed, STREAM, k]).integers(
@@ -468,16 +488,29 @@ def evaluate(
         )
         if phase.exists():
             rec = verify(phase)
-            if rec["summary"]["K"] != k + 1 or rec["updates_per_arm"] != settings.steps:
+            if (
+                rec["K"] != k + 1
+                or rec["reported"] != reported
+                or (
+                    rec["summary"]["K"] != k + 1
+                    if reported
+                    else rec["summary"] is not None
+                )
+                or rec["updates_per_arm"] != settings.steps
+            ):
                 raise ValueError("phase sequence/update metadata mismatch")
             if (
                 rec["target_sha256"] != array_hash(targets[k])
                 or rec["indices_sha256"] != array_hash(idx)
-                or rec["optimizer_initializations"] != {a: 1 for a in "ABC"}
+                or rec["optimizer_initializations"] != {a: 1 for a in arms}
                 or rec["milestones"] != [0, 100, 500, 1000, 2000]
             ):
                 raise ValueError("phase target/index/optimizer contract mismatch")
-            for arm in "ABC":
+            if set(rec["initial_parameter_hashes"]) != set(arms):
+                raise ValueError("phase arm roster mismatch")
+            if not reported and (phase / "C.npz").exists():
+                raise ValueError("unexpected C fit outside reporting milestone")
+            for arm in arms:
                 initial = fresh if arm == "C" else state[arm]
                 if rec["initial_parameter_hashes"][arm] != tree_hash(initial):
                     raise ValueError("phase continuation parameter mismatch")
@@ -494,14 +527,15 @@ def evaluate(
                 )
                 if tree_hash(state[arm]) != rec["final_parameter_hashes"][arm]:
                     raise ValueError("restored phase parameter mismatch")
-            summaries.append(rec["summary"])
+            if reported:
+                summaries.append(rec["summary"])
             continue
         pending_record = {"K": k + 1}
         try:
             # Same phase-specific stream in A/B/C and at all checkpoints.
             target = jnp.asarray(targets[k])
             results, fitted = {}, {}
-            for arm in ("A", "B", "C"):
+            for arm in arms:
                 start = fresh if arm == "C" else state[arm]
                 # Reuse the verified captured fit primitive with an explicit
                 # literal target and zero offset: no learner-dependent recentering.
@@ -523,13 +557,15 @@ def evaluate(
                 if not all(np.isfinite(v).all() for v in arrays.values()):
                     raise ValueError("nonfinite fitting result")
                 fitted[arm], results[arm] = parameters, arrays
-            summary = {
-                "K": k + 1,
-                "frozen_fresh_offset": offset,
-                "variance": float(variances[k]),
-                "final_mse": {a: float(v["final_mse"]) for a, v in results.items()},
-            }
-            summary.update(scores(variances[k], summary["final_mse"]))
+            summary = None
+            if reported:
+                summary = {
+                    "K": k + 1,
+                    "frozen_fresh_offset": offset,
+                    "variance": float(variances[k]),
+                    "final_mse": {a: float(v["final_mse"]) for a, v in results.items()},
+                }
+                summary.update(scores(variances[k], summary["final_mse"]))
 
             def writer(tmp):
                 for arm in results:
@@ -541,6 +577,8 @@ def evaluate(
                 seal(
                     tmp,
                     {
+                        "K": k + 1,
+                        "reported": reported,
                         "summary": summary,
                         "optimizer_initializations": {a: 1 for a in results},
                         "updates_per_arm": settings.steps,
@@ -559,14 +597,15 @@ def evaluate(
 
             commit_directory(phase, writer)
             state = {a: fitted[a] for a in ("A", "B")}
-            summaries.append(summary)
+            if reported:
+                summaries.append(summary)
         except BaseException as exc:
             write_json(
                 output / f"failure_{k+1:02d}_{uuid.uuid4().hex}.json",
                 {
                     **pending_record,
                     "error": repr(exc),
-                    "committed_phases": len(summaries),
+                    "committed_phases": k,
                 },
             )
             raise
@@ -577,6 +616,9 @@ def evaluate(
         "architecture": ref["architecture"],
         "unit": "independent training seed; K/tasks are repeated measurements",
         "sign": "C-A or B-A > 0 means A has larger final fitting error",
+        "schedule": schedule,
+        "reported_targets": milestones,
+        "fitted_AB_targets": list(range(1, 9)),
         "phases": summaries,
     }
     summary_path = output / "trajectory.json"

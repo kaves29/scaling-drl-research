@@ -1,4 +1,7 @@
-# Clean alternative-probe candidate and five-job engineering review
+# Historical five-job engineering review
+
+**Superseded for the current request by [six-run review](sequential_six_review.md).**
+The producer-first gate below is retained historical material, not the current launch plan.
 
 **approved=false; executable=false; submitted=false. NO-GO for execution.**
 This packet and companion JSON are review material, not runnable training requests,
