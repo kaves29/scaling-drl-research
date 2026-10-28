@@ -1,5 +1,35 @@
 # Current agent handoff
 
+## PR17 alternative-only runner review (26 October 2026)
+
+Continuing [PR17](https://github.com/kaves29/scaling-drl-research/pull/17) on
+`codex/sequential-alternative-probe`, retaining PR16 base
+`57d2beb78be7cf0e1145f4a9479082a07924cd16`. Shared main observed at
+`087feab341b9be1f377697668f2d1c750ec0467f`; unmerged dependency approval is
+unresolved, so no restack/force push/merge. Runtime dependency bindings are in
+`main/diagnostics/sequential_base_dependencies.json`.
+
+The dedicated `diagnostics.sequential_runner` never constructs RunProbes when
+enabled, and delegates the unchanged default path when disabled. It uses the
+real trainer's pre-update fresh capture, ordinary SAC/actor evaluations and
+complete-state save/restore, with verified phase-level resume. Alternative arrays
+are local output artifacts; ordinary SAC W&B logging is preserved. Backend/precision
+and dtype contracts fail closed; target/index/parameter/reset receipts are
+explicit. Approved probe, main configurations and active pilot remain unchanged.
+
+Published implementation `545008f4b447bebd6c9b1b9291548b7cfdb751fd` is verified:
+141 CPU tests pass,0 failures/skips,231 warnings (69 alternative cases plus72
+existing regressions). Existing74-case mutation suite passes twice, all65
+simulator restoration cells pass, and the tiny real-critic example plus independent
+16-phase/48-archive reload pass. Black/Pyflakes/compileall/diff checks pass.
+Receipt: `main/diagnostics/sequential_validation_receipt.json`; logs and arrays:
+`/workspace/artifacts/sequential-review-20261026-545008f/`. Final receipt/handoff
+commits contain documentation/receipts only; resolve live PR head for final SHA. All SAC updates are tiny
+CPU engineering checks, not campaign runs or scientific/GPU qualification.
+The draft five-job engineering smoke and30-parent proposal remain unapproved,
+non-executable, with all scientific task/teacher/seed/cadence/resource choices
+pending owner decisions. No GPU/Slurm launch or merge.
+
 ## Ten-run simultaneous diagnostic pilot revision (25 October 2026)
 
 Updates [PR16](https://github.com/kaves29/scaling-drl-research/pull/16) in place.

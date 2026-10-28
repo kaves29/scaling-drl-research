@@ -1,0 +1,70 @@
+{
+  "base_commit": "57d2beb78be7cf0e1145f4a9479082a07924cd16",
+  "branch": "codex/sequential-alternative-probe",
+  "code_plan_sha256": {
+    "main/configs/alternative_diagnostics/sequential_pilot.DRAFT.json": "0a342377f351c71766456e93ecd5247374d6d7296497ce55c3b8944b5f8d19b9",
+    "main/diagnostics/__init__.py": "f9f28ad5082773b349fa03db74b265eff6d2e624b80ac9c35fa74b8bb786d2aa",
+    "main/diagnostics/sequential_hooks.py": "c3a6ccf758b5888fd48238612aa2f56f75f7ef42291b0fdcc87dc037bb64c2bb",
+    "main/diagnostics/sequential_probe.py": "2541971b83cc99b63eb9093c8190a99016a98652604e3c836fb23caff671f272",
+    "main/scripts/sequential_probe_cpu_example.py": "6f7426a35f60d3cdc0ce417a84aa8bc6091ae551b82286c014d51bd87adfb939",
+    "main/tests/test_sequential_probe.py": "52ee67dae882c2637171056b9eb802aeef827b6f49a8584bc96328dbb4b8bd95"
+  },
+  "evidence_sha256": {
+    "/workspace/artifacts/sequential-alternative-probe/cpu-delivery.log": "64b26aebe382a87b3752a74a161bc798b4bb46b7e4a0d5f4a021baa62c262e69",
+    "/workspace/artifacts/sequential-alternative-probe/cpu-delivery.xml": "9adda1e92b45d102989800e1f167dc8f192cf7541cf586119d289e7bb66ce5a7",
+    "/workspace/artifacts/sequential-alternative-probe/example-delivery.log": "97315aa6c5c8ae64cceee06d0cef1687120403edda613139a862aed02b0ea8d9"
+  },
+  "pilot": {
+    "additional_updates_per_observation": 48000,
+    "approved": false,
+    "executable": false,
+    "five_job_smoke_is_not_five_seeds_per_architecture": true,
+    "gpu_hours_estimate": null,
+    "nominal_additional_updates_grid": 15840000,
+    "nominal_additional_updates_per_parent": 528000,
+    "storage_GiB_unmeasured_range": [
+      800,
+      2000
+    ],
+    "training_parents_proposed": 30
+  },
+  "remaining_qualification": [
+    "full-size/GPU/runtime equivalence and memory/throughput/storage",
+    "actual SAC/simulator on-off/restore integration",
+    "owner approval of alternative pilot tasks, teacher config, bank producer, schedule and resources"
+  ],
+  "restrictions": {
+    "RL_training": 0,
+    "active_Kaggle_changed": false,
+    "gpu_work": 0,
+    "jobs_submitted_or_cancelled": 0,
+    "main_method_or_manifest_changed": false
+  },
+  "scientific_status": "new opt-in sequential extension, not validated by Lyle2023 or GPU qualification",
+  "unchanged_default_source_sha256": {
+    "main/configs/base_exp12_ten.yaml": "0ca2efb2fdaa2b250ec0109c18ce20b4d66a0cd6345824bc2890c02ba9082934",
+    "main/experiments/exp1.py": "c0c4f2797c8dba489450df8bd6cf71e35235f7e32c4f29767fe6bddd1e7a570d",
+    "main/experiments/exp12/probe.py": "a9ef945e194e6b2c6789834e80d78aa1f67c0c0aeba2c327b42bddd432393250",
+    "main/experiments/exp12/run_probes.py": "03ff2c2b45dca81c585475e3653147dc02a0cd7770a8186b2e20cd92684e7bb8",
+    "main/experiments/exp12/trainer.py": "dc22f2b18f379ae50f675160e0c779dfcdaf5662daad316f7f8fd6ebcce8cc6b",
+    "main/scale_rl/agents/sac/sac_agent.py": "b1df406731b8db48a14f1e38e0e5709139c350c5649a826dbf79f7f56a95747c",
+    "main/scale_rl/agents/sac/sac_update.py": "6245dba06c7623b09003d9a03418a1b8d60694092833639ce063b8452974dbd8"
+  },
+  "validation": {
+    "black": "5 Python files unchanged; passed",
+    "command": "JAX_PLATFORMS=cpu CUDA_VISIBLE_DEVICES='' python -m pytest -q tests/test_sequential_probe.py tests/test_method_c_ten_reference.py tests/test_probe_discrepancy_adapter.py tests/test_forensic_probe_audit.py --junitxml=/workspace/artifacts/sequential-alternative-probe/cpu-delivery.xml",
+    "compileall": "passed",
+    "diff_check": "passed",
+    "elapsed_seconds": 22.86,
+    "example_command": "JAX_PLATFORMS=cpu CUDA_VISIBLE_DEVICES='' python scripts/sequential_probe_cpu_example.py --out /workspace/artifacts/sequential-alternative-probe/example-delivery",
+    "example_result": "completed two synthetic checkpoints, all8 K and all3 arms, arrays/reload receipts saved; not campaign data",
+    "existing_regressions": 17,
+    "failed": 0,
+    "independent_example_reload": "bank/reference +16 phase receipts verified; B/C arrays bitwise invariant across both synthetic checkpoints",
+    "new_alternative_tests": 32,
+    "passed": 49,
+    "pyflakes": "passed",
+    "skipped": 0,
+    "warnings": 14
+  }
+}

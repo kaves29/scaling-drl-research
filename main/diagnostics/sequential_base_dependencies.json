@@ -1,0 +1,181 @@
+{
+  "current_pr": 17,
+  "pr_base_ref": "codex/source-bound-discrepancy-pilot",
+  "pr_base_sha": "57d2beb78be7cf0e1145f4a9479082a07924cd16",
+  "shared_target_ref": "main",
+  "shared_target_observed_sha": "087feab341b9be1f377697668f2d1c750ec0467f",
+  "merge_base": "087feab341b9be1f377697668f2d1c750ec0467f",
+  "restacked": false,
+  "reason": "Unmerged dependency stack has not been approved for integration; preserve shared history and current PR base",
+  "not_direct_dependencies": [
+    "main/audits/probe_discrepancy/adapter.py",
+    "main/audits/probe_discrepancy/pilot_manifest.DRAFT.json",
+    "main/audits/probe_discrepancy/launch.py",
+    "PR16 Slurm scripts"
+  ],
+  "scope": "Runtime source bindings and last-change provenance, not a claim that each full commit is a minimal cherry-pick dependency",
+  "runtime_files": [
+    {
+      "path": "main/experiments/exp12/probe.py",
+      "usage": "numerical core: _mean_prediction, _chunked, critic_optimizer",
+      "base_sha256": "a9ef945e194e6b2c6789834e80d78aa1f67c0c0aeba2c327b42bddd432393250",
+      "last_change_at_base": "5fe2ff65ae96cf900b23bf9810f79464730def9d",
+      "differs_from_shared_main": true,
+      "modified_by_review": false
+    },
+    {
+      "path": "main/experiments/exp1.py",
+      "usage": "default delegation and approved config composition",
+      "base_sha256": "c0c4f2797c8dba489450df8bd6cf71e35235f7e32c4f29767fe6bddd1e7a570d",
+      "last_change_at_base": "20d8c6b47cf9ec5e62f1d35190ea48b5fe115a5b",
+      "differs_from_shared_main": true,
+      "modified_by_review": false
+    },
+    {
+      "path": "main/experiments/exp12/trainer.py",
+      "usage": "actual SAC lifecycle and complete state save/restore",
+      "base_sha256": "dc22f2b18f379ae50f675160e0c779dfcdaf5662daad316f7f8fd6ebcce8cc6b",
+      "last_change_at_base": "1d849c3b52f1b6bdc2514f8972a2388021b929c7",
+      "differs_from_shared_main": true,
+      "modified_by_review": false
+    },
+    {
+      "path": "main/experiments/exp12/state.py",
+      "usage": "latest checkpoint, state serialization/restoration",
+      "base_sha256": "c81dd7361e99b62ea40fd16d9037e9954d1008955d540a651a97c07cccd19cfc",
+      "last_change_at_base": "d65f9bb798f5c5c74b1857a6329669e068ddf517",
+      "differs_from_shared_main": false,
+      "modified_by_review": false
+    },
+    {
+      "path": "main/experiments/exp12/envs.py",
+      "usage": "transitive: real simulator state",
+      "base_sha256": "856a6982591855c009e6b4117b30d7f54f17039606802d42ca31b2c3cf823594",
+      "last_change_at_base": "f9002e0a36f33740ccfcb2b749a76b413d2d1b04",
+      "differs_from_shared_main": false,
+      "modified_by_review": false
+    },
+    {
+      "path": "main/experiments/exp12/precision.py",
+      "usage": "source precision policy and compilation cache",
+      "base_sha256": "5c945bb1c8838870673072bb11aabab1ab8d2a33785ce570e039737122b951c8",
+      "last_change_at_base": "27da3ebc2065f9d5ba5ead921f3677d6c75d46c3",
+      "differs_from_shared_main": false,
+      "modified_by_review": false
+    },
+    {
+      "path": "main/experiments/exp12/instrumentation.py",
+      "usage": "transitive: trainer/entrypoint instrumentation",
+      "base_sha256": "ecbcdc225f28ae61947a18ea0aa8354e5563cd38337c841520e8cec32e78776e",
+      "last_change_at_base": "f8ad82f064547c76e12539804c98be75b32656d8",
+      "differs_from_shared_main": true,
+      "modified_by_review": false
+    },
+    {
+      "path": "main/experiments/exp12/diagnostics.py",
+      "usage": "transitive: existing training metrics",
+      "base_sha256": "efcbf1f67aa1db78c95eab55605c4faa26024e05d0e62a229ae8ea096581f47f",
+      "last_change_at_base": "12839f656e53b00a3327384f2cb4fc1be47e73fe",
+      "differs_from_shared_main": true,
+      "modified_by_review": false
+    },
+    {
+      "path": "main/scale_rl/agents/sac/sac_agent.py",
+      "usage": "transitive: SAC agent initialization/update/state",
+      "base_sha256": "b1df406731b8db48a14f1e38e0e5709139c350c5649a826dbf79f7f56a95747c",
+      "last_change_at_base": "ca95b1e4ea9262eb9abde406848769349eeb8e17",
+      "differs_from_shared_main": false,
+      "modified_by_review": false
+    },
+    {
+      "path": "main/scale_rl/agents/sac/sac_update.py",
+      "usage": "transitive: original SAC update mathematics",
+      "base_sha256": "6245dba06c7623b09003d9a03418a1b8d60694092833639ce063b8452974dbd8",
+      "last_change_at_base": "2f67915cf9243d75f56299645ccd3961e9c0c44e",
+      "differs_from_shared_main": false,
+      "modified_by_review": false
+    },
+    {
+      "path": "main/scale_rl/agents/sac/sac_network.py",
+      "usage": "teacher and learner network definitions",
+      "base_sha256": "0c9318286397874d207fc9f64ee4215508352eba0b2c611ebe443d33ccf05232",
+      "last_change_at_base": "c293b9a226e6d12727151abecb3ee568fbdd0088",
+      "differs_from_shared_main": false,
+      "modified_by_review": false
+    },
+    {
+      "path": "main/scale_rl/networks/layers.py",
+      "usage": "transitive: residual/normalization layers",
+      "base_sha256": "2878bb8b5c35027ae1b027efeaedcf376cd190986e01722d85e79842c4f769c4",
+      "last_change_at_base": "f08c5b189e2b53d36b22d06cf165b8ede1f77e15",
+      "differs_from_shared_main": true,
+      "modified_by_review": false
+    },
+    {
+      "path": "main/scale_rl/diagnostics/critic_metrics.py",
+      "usage": "transitive: default trainer optional measurements",
+      "base_sha256": "9e72ba361ecfe3192c85d25cc032bc0c66020a637ee3f94397fd34a83a352e0d",
+      "last_change_at_base": "f08c5b189e2b53d36b22d06cf165b8ede1f77e15",
+      "differs_from_shared_main": true,
+      "modified_by_review": false
+    },
+    {
+      "path": "main/scale_rl/common/logger.py",
+      "usage": "transitive: ordinary actor/training logger",
+      "base_sha256": "d1152d394b9c6fdd42c89ef29271f3f22a7ced18492c28c477d0383924bc1fcd",
+      "last_change_at_base": "1d849c3b52f1b6bdc2514f8972a2388021b929c7",
+      "differs_from_shared_main": true,
+      "modified_by_review": false
+    },
+    {
+      "path": "main/configs/base_exp12_ten.yaml",
+      "usage": "caller-selectable ten-round approved-path configuration; alternatives retain own K8",
+      "base_sha256": "0ca2efb2fdaa2b250ec0109c18ce20b4d66a0cd6345824bc2890c02ba9082934",
+      "last_change_at_base": "5fe2ff65ae96cf900b23bf9810f79464730def9d",
+      "differs_from_shared_main": true,
+      "modified_by_review": false
+    },
+    {
+      "path": "main/configs/base_exp12.yaml",
+      "usage": "base SAC/probe settings; no changes by PR17",
+      "base_sha256": "9662ecf7376a25f13690a528d8ec3b1f41a35b40430b04decb583ed9f5d54649",
+      "last_change_at_base": "f8619dd5f494399d9febc79fc9092010234c714d",
+      "differs_from_shared_main": true,
+      "modified_by_review": false
+    }
+  ],
+  "alternative_imports": [
+    {
+      "path": "main/diagnostics/sequential_probe.py",
+      "imports": [
+        "dataclasses",
+        "experiments.exp12.probe",
+        "pathlib",
+        "types"
+      ]
+    },
+    {
+      "path": "main/diagnostics/sequential_hooks.py",
+      "imports": [
+        ".sequential_probe",
+        "pathlib"
+      ]
+    },
+    {
+      "path": "main/diagnostics/sequential_runner.py",
+      "imports": [
+        ".",
+        ".sequential_hooks",
+        "experiments",
+        "experiments.exp12.precision",
+        "experiments.exp12.state",
+        "experiments.exp12.trainer",
+        "flax",
+        "omegaconf",
+        "pathlib",
+        "scale_rl.agents.sac.sac_network",
+        "scale_rl.common.logger"
+      ]
+    }
+  ]
+}
