@@ -1,0 +1,125 @@
+{
+  "schema": "sequential-five-job-review-v1",
+  "approved": false,
+  "executable": false,
+  "submitted": false,
+  "base_sha": "844e3c0cc24998b25c3d1e667bcbfe056b1b336c",
+  "tested_candidate_sha": "00ed566e4c7f00c784b61d98afc9768e89906665",
+  "source_sha": null,
+  "expected_execution": null,
+  "teacher_architecture": null,
+  "teacher_definition": null,
+  "target_scale": 100000.0,
+  "teacher_eval_chunk": 2560,
+  "pool_size": 25600,
+  "warmup": 5000,
+  "endpoint": 500000,
+  "cadence_interactions": 50000,
+  "K": 8,
+  "updates_per_target": 2000,
+  "probe_updates_per_job": 528000,
+  "probe_updates_total": 2640000,
+  "jobs": [
+    {
+      "id": "dog-small",
+      "environment": "dog-run",
+      "architecture": "D2W512",
+      "seed": 0,
+      "bank_producer": true,
+      "run_dir": null,
+      "reference_dir": null,
+      "output_dir": null,
+      "wandb_id": null
+    },
+    {
+      "id": "dog-medium",
+      "environment": "dog-run",
+      "architecture": "D4W1024",
+      "seed": 0,
+      "bank_producer": false,
+      "run_dir": null,
+      "reference_dir": null,
+      "output_dir": null,
+      "wandb_id": null
+    },
+    {
+      "id": "dog-large",
+      "environment": "dog-run",
+      "architecture": "D4W1536",
+      "seed": 0,
+      "bank_producer": false,
+      "run_dir": null,
+      "reference_dir": null,
+      "output_dir": null,
+      "wandb_id": null
+    },
+    {
+      "id": "myo-small",
+      "environment": "myo-pen-twirl",
+      "architecture": "D2W512",
+      "seed": 0,
+      "bank_producer": true,
+      "run_dir": null,
+      "reference_dir": null,
+      "output_dir": null,
+      "wandb_id": null
+    },
+    {
+      "id": "myo-large",
+      "environment": "myo-pen-twirl",
+      "architecture": "D4W1536",
+      "seed": 0,
+      "bank_producer": false,
+      "run_dir": null,
+      "reference_dir": null,
+      "output_dir": null,
+      "wandb_id": null
+    }
+  ],
+  "banks": {
+    "dog-run": {
+      "path": null,
+      "receipt_sha256": null,
+      "identity_path": null,
+      "identity_receipt_sha256": null,
+      "done_path": null,
+      "done_sha256": null
+    },
+    "myo-pen-twirl": {
+      "path": null,
+      "receipt_sha256": null,
+      "identity_path": null,
+      "identity_receipt_sha256": null,
+      "done_path": null,
+      "done_sha256": null
+    }
+  },
+  "missing_cell": {
+    "environment": "myo-pen-twirl",
+    "architecture": "D4W1024",
+    "seed": 0
+  },
+  "resources": {
+    "GPU_model": null,
+    "GPUs_per_job": null,
+    "concurrency": null,
+    "CPU_per_job": null,
+    "host_memory": null,
+    "VRAM": null,
+    "walltime": null,
+    "GPU_hours": null,
+    "storage_bytes": null,
+    "account": null,
+    "partition": null
+  },
+  "owner_decisions": [
+    "Confirm five listed cells and development seed0 eligibility; missing Myo medium remains excluded.",
+    "Approve fixed teacher architecture/configuration (prior proposal D2W512), frozen bank/RMS convention and D2W512 producer.",
+    "Approve 5000-warmup/50000-cadence/500000-endpoint, pool25600, chunk2560, sine scale1e5 and K1..8/2000-update alternative interpretation.",
+    "Explicitly approve fork.enabled=false for dedicated alternative-only runs; approved default remains untouched.",
+    "Approve complete-producers-first staging (two producer jobs, then three consumers); no early-stop/resume staging or CPU-generated GPU bank.",
+    "Select and qualify hardware/backend/precision, source identity, scheduler/account/resources, concurrency, checkpoint cadence and caps.",
+    "Choose durable shared bank/output roots, artifact retrieval destination, retention/storage budget and ordinary W&B identities.",
+    "Independent source review and explicit GPU/smoke approval before any producer or consumer execution."
+  ]
+}

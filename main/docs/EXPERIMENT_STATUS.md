@@ -1,5 +1,35 @@
 # Exp1/Exp2 scientific and validation status
 
+## PR18 revised six-run review (27 October 2026)
+
+Current packet: [six-run review](sequential_six_review.md) and review-only JSON.
+Approved base remains844e3c0. Replaces the earlier five-job/producer-first plan:
+all six dog/pen small/medium/large seed0 cells, one2-GPU wave,3 processes/GPU,
+<=6hours and <=12 aggregate reserved GPU-hours. even_milestones_v2 traverses
+all8 A/B targets but reports2/4/6/8; C fits only those4.440000 probe updates/run,
+2640000 total. Generic bounded bank readiness runs before consumer trainer/seeding;
+receipt SHA is pinned into resume identity. Exact-source CPU receipt and Delta
+handoff are in the updated PR18 description. Cluster packing/runtime/storage and
+Delta watchdog are unqualified: NO-GO until hard preflight passes. Review flags
+remain approved=false, executable=false, submitted=false. Delta-only launcher
+work may not change scientific code/settings. No Cloud GPU submission, no PR17
+change, no approved production/config/methodology or10-run pilot change.
+
+## Clean alternative-only successor review (27 October 2026)
+
+Separate successor starts from tested00ed566 on approved integration844e3c0;
+PR17 and its base remain unchanged. The readiness branch46ad72e adds only
+documentation after00ed566; no candidate runtime change was imported.
+See [five-job review packet](sequential_smoke_review.md) and review-only JSON.
+The eight alternative candidate files remain byte-identical. Added staging gate
+requires both complete D2W512 producers and verified immutable bank receipts
+before consumers request GPUs; it never submits or authorizes a job.
+All smoke flags remain approved=false, executable=false, submitted=false.
+Missing Myo D4W1024, pending teacher/eligibility/cadence/resources/transport and
+GPU qualification make this NO-GO. Fresh exact-source CPU evidence is external
+at /workspace/artifacts/alternative-review-20261027/ and summarized in the
+successor draft PR. No 10-run pilot change or inferred live status.
+
 This is a status index, not a methodology amendment. Read the canonical
 [methodology and amendments](../.claude/methodology-exp1-exp2.md) and the
 [approved decisions](exp12_decisions.md). Historical reports retain their original
