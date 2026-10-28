@@ -84,6 +84,21 @@ def verify_bank(path, expected, pool_size, normalized):
     return sha(path / "receipt.json")
 
 
+def producer_state(path, expected):
+    path = Path(path)
+    if not path.exists():
+        return None
+    status = json.loads(path.read_text())
+    if any(status.get(k) != expected[k] for k in ("source", "environment", "seed")):
+        raise BankGateError("producer status identity mismatch")
+    state = status.get("status")
+    if state not in {"STARTING", "RUNNING", "BANK_READY", "COMPLETED", "FAILED"}:
+        raise BankGateError("unknown producer status")
+    if state == "FAILED":
+        raise BankGateError("producer failed; consumer refused")
+    return state
+
+
 def wait_for_bank(
     path,
     *,
@@ -135,41 +150,19 @@ def wait_for_bank(
             if _monotonic() >= deadline or _wall() >= allocation_deadline_unix:
                 raise BankGateError("bounded bank readiness timeout")
             status_path = Path(producer_status)
-            if status_path.exists():
-                status = json.loads(status_path.read_text())
-                if any(
-                    status.get(k) != expected[k]
-                    for k in ("source", "environment", "seed")
-                ):
-                    raise BankGateError("producer status identity mismatch")
-                state = status.get("status")
-                if state not in {
-                    "STARTING",
-                    "RUNNING",
-                    "BANK_READY",
-                    "COMPLETED",
-                    "FAILED",
-                }:
-                    raise BankGateError("unknown producer status")
-                if state == "FAILED":
-                    raise BankGateError("producer failed; consumer refused")
-                if state == "COMPLETED" and not Path(path).exists():
-                    raise BankGateError("producer completed without committed bank")
+            state = producer_state(status_path, expected)
+            if state == "COMPLETED" and not Path(path).exists():
+                raise BankGateError("producer completed without committed bank")
             if Path(path).exists():
+                if state is None:
+                    raise BankGateError("committed bank has no producer status")
                 receipt_sha = verify_bank(path, expected, pool_size, normalized)
                 if _monotonic() >= deadline or _wall() >= allocation_deadline_unix:
                     raise BankGateError("deadline exceeded while verifying bank")
-                if status_path.exists():
-                    latest = json.loads(status_path.read_text())
-                    if latest.get("status") == "FAILED":
-                        raise BankGateError("producer failed during verification")
-                    if any(
-                        latest.get(k) != expected[k]
-                        for k in ("source", "environment", "seed")
-                    ):
-                        raise BankGateError(
-                            "producer identity changed during verification"
-                        )
+                if producer_state(status_path, expected) is None:
+                    raise BankGateError(
+                        "producer status disappeared during verification"
+                    )
                 audit.update(status="BANK_VERIFIED", receipt_sha256=receipt_sha)
                 return receipt_sha
             _sleep(max(0.0, min(0.25, deadline - _monotonic())))

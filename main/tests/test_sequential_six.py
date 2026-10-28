@@ -209,6 +209,7 @@ def test_in_wave_wait_success_is_readonly_and_does_not_draw_training_rng(
         "wrong_rms",
         "wrong_rms_values",
         "wrong_status",
+        "missing_status",
         "runtime",
         "missing_after_completion",
         "over_cap",
@@ -238,6 +239,8 @@ def test_in_wave_gate_fails_closed(package, tmp_path, failure):
         record = s.load_json(bank / "receipt.json")
         record["rms"]["count"] += 1
         s.write_json(bank / "receipt.json", record)
+    elif failure == "missing_status":
+        status.unlink()
     elif failure == "wrong_status":
         record = json.loads(status.read_text())
         record["seed"] += 1
@@ -402,7 +405,9 @@ def test_real_even_consumer_gate_and_resume_preserve_complete_training_state(tmp
         )
 
 
-@pytest.mark.parametrize("race", ["deadline", "producer_failure"])
+@pytest.mark.parametrize(
+    "race", ["deadline", "producer_failure", "missing_status", "unknown_status"]
+)
 def test_verification_cannot_release_late_or_failed_producer(package, tmp_path, race):
     clock = Clock()
     args = bank_args(package, tmp_path, clock)
@@ -414,9 +419,12 @@ def test_verification_cannot_release_late_or_failed_producer(package, tmp_path, 
             clock.seconds = 3
         else:
             status = Path(args["producer_status"])
-            value = json.loads(status.read_text())
-            value["status"] = "FAILED"
-            status.write_text(json.dumps(value))
+            if race == "missing_status":
+                status.unlink()
+            else:
+                value = json.loads(status.read_text())
+                value["status"] = "FAILED" if race == "producer_failure" else "UNKNOWN"
+                status.write_text(json.dumps(value))
         return result
 
     with patch.object(gate, "verify_bank", side_effect=verified):
