@@ -1,5 +1,42 @@
 # Exp1/Exp2 scientific and validation status
 
+## PR #19 Method C certifier follow-up (28 October 2026)
+
+The stale `(5,1000)` curve checks are corrected at implementation checkpoint
+`dbf9eb85ab25fedf67f2e560b5f118831fa696c6`: expected length is bound to the
+canonical frozen configuration, so Method C requires exactly2,000 entries per
+round. Producer, streams, continuous AdamW state, scoring and triggers are unchanged.
+[Follow-up report](exp2_method_c_certifier_20261028.md) traces the active offline
+Exp2 publication path and records80 PR CPU tests,75 on an isolated approved
+Method C source with the same patch,74 mutation checks and65 simulator cells.
+The independent Method C CPU checkout is `aff6b72282582c3ebee4e957d4557613003d5d09`;
+it is not an integration merge or GPU qualification. PR19 remains draft:
+https://github.com/kaves29/scaling-drl-research/pull/19.
+
+Approved integration still lacks the Method C producer/config/amendment promotion.
+Natural same-source evidence, owner-frozen m and GPU/resource/launch gates remain
+blocked. Older readiness sections below retain their original source snapshots.
+No training campaign, job, pilot, m or scientific setting was changed.
+
+## Exp2 implementation/readiness review (28 October 2026)
+
+Codex's isolated `codex/exp2-readiness-review-20261028` starts from approved
+integration `844e3c0cc24998b25c3d1e667bcbfe056b1b336c`. Implementation checkpoint
+`ee5e3d3398117197cfaab9efc657c830623ac698` adds only an Exp2 arm startup
+source-admission guard and eight regressions; scientific/Exp1/pilot files are unchanged.
+See [source-bound readiness review](exp2_readiness_20261028.md) for full CPU
+receipts, version comparison, blockers and the December1/December5 dependency plan.
+
+Production Exp2 remains **NO-GO**. Approved integration retains the legacy
+five-round/1,000-step protocol; published main087 records approved Method C
+(aa)/(ab), but its shared certifier still requires 1,000-step curves. A CPU array
+fixture reproduced that compatibility defect. Neither the unintegrated Exp96
+successor/PR2 nor alternative PR18 supplies a current Exp2 certificate. No m was
+chosen, no source branch promoted, and no GPU/job/preflight/submission was run.
+Natural source-bound evidence, owner-frozen m, correct versioned integration and
+actual CUDA/resource qualification remain separate gates. Historical status below
+retains its original scope; do not infer live jobs from it.
+
 This is a status index, not a methodology amendment. Read the canonical
 [methodology and amendments](../.claude/methodology-exp1-exp2.md) and the
 [approved decisions](exp12_decisions.md). Historical reports retain their original

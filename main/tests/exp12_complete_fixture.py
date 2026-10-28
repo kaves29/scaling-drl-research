@@ -76,7 +76,9 @@ def state(root, meta):
         target.write_bytes(b"synthetic persistence evidence")
 
 
-def records(n, end, twin=False, eligible=False, invalid=False, fork_check=2):
+def records(
+    n, end, twin=False, eligible=False, invalid=False, fork_check=2, steps=1000
+):
     result, curves = [], {}
     for k in range(end // (n // 20) + 1):
         fresh = np.ones(5, np.float32)
@@ -110,7 +112,9 @@ def records(n, end, twin=False, eligible=False, invalid=False, fork_check=2):
             )
         for name, values in [("fresh", fresh)] + ([("current", current)] if k else []):
             for part in [f"{name}_q{q}" for q in (1, 2)] if twin else [name]:
-                curves[f"check_{k:02d}/{part}_losses"] = np.zeros((5, 1000), np.float32)
+                curves[f"check_{k:02d}/{part}_losses"] = np.zeros(
+                    (5, steps), np.float32
+                )
                 curves[f"check_{k:02d}/{part}_score"] = values
                 if twin:
                     row.update(
@@ -153,7 +157,13 @@ def parent(base, study, a, e, s, eligible=False, invalid=False, fork_check=2):
     )
     end = max(n, fs["interaction_step"] + n // 4) if fs else n
     recs, curves = records(
-        n, end, v.suite(e) == "humanoid_bench", eligible, invalid, fork_check
+        n,
+        end,
+        v.suite(e) == "humanoid_bench",
+        eligible,
+        invalid,
+        fork_check,
+        steps=cfg["probe"]["steps"],
     )
     m = dict(
         interaction_step=end,
@@ -306,7 +316,7 @@ def make_fork(base, study, a, e, s, cfg, source, meta, fs):
             if v.suite(e) == "humanoid_bench"
             else [name]
         ):
-            curves[f"{part}_losses"] = np.zeros((5, 1000), np.float32)
+            curves[f"{part}_losses"] = np.zeros((5, cfg["probe"]["steps"]), np.float32)
             curves[f"{part}_score"] = score
             check2[f"score_{part}_rounds"] = score.tolist()
     (arm_source / "probes").mkdir()
