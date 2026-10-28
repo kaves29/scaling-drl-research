@@ -1,5 +1,23 @@
 # Shared agent handoff
 
+## PR #19 Method C certifier follow-up (28 October 2026)
+
+The stale `(5,1000)` curve checks are corrected at implementation checkpoint
+`dbf9eb85ab25fedf67f2e560b5f118831fa696c6`: expected length is bound to the
+canonical frozen configuration, so Method C requires exactly2,000 entries per
+round. Producer, streams, continuous AdamW state, scoring and triggers are unchanged.
+[Follow-up report](exp2_method_c_certifier_20261028.md) traces the active offline
+Exp2 publication path and records80 PR CPU tests,75 on an isolated approved
+Method C source with the same patch,74 mutation checks and65 simulator cells.
+The independent Method C CPU checkout is `aff6b72282582c3ebee4e957d4557613003d5d09`;
+it is not an integration merge or GPU qualification. PR19 remains draft:
+https://github.com/kaves29/scaling-drl-research/pull/19.
+
+Approved integration still lacks the Method C producer/config/amendment promotion.
+Natural same-source evidence, owner-frozen m and GPU/resource/launch gates remain
+blocked. Older readiness sections below retain their original source snapshots.
+No training campaign, job, pilot, m or scientific setting was changed.
+
 ## Exp2 implementation/readiness review (28 October 2026)
 
 Codex's isolated `codex/exp2-readiness-review-20261028` starts from approved

@@ -1,5 +1,7 @@
 # Experiment 2 implementation and readiness review — 28 October 2026
 
+> **Follow-up after716916b:** the obsolete curve-shape checks are now corrected and tested on both this PR and the approved Method C source. See [Method C certifier follow-up](exp2_method_c_certifier_20261028.md). The original review below is retained as a source-bound snapshot, not a claim that the corrected validator still requires1,000-step Method C curves. Production integration and scientific/GPU gates remain separate.
+
 **CPU engineering review; production Exp2 NO-GO.** No job, training campaign,
 new scientific probe fit, Delta preflight or GPU execution was performed. Only
 the repository's tiny CPU test fixtures execute updates/fits. No main experiment,
