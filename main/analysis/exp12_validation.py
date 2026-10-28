@@ -384,15 +384,34 @@ def _checks(snapshot, path, meta, n, end, seed, config, architecture, environmen
     return frame, original, invalid
 
 
-def _curves(snapshot, path, checks, twin, records):
+def _probe_curve_shape(config):
+    """Bind curves to the declared frozen protocol, never to observed lengths."""
+    probe = config.get("probe", {})
+    rounds, steps = probe.get("rounds"), probe.get("steps")
+    require(
+        type(rounds) is int
+        and rounds == 5
+        and type(steps) is int
+        and steps in (1000, 2000),
+        "unsupported or ambiguous five-target probe curve contract",
+    )
+    return rounds, steps
+
+
+def _curves(snapshot, path, checks, twin, records, config):
+    expected_shape = _probe_curve_shape(config)
     with np.load(io.BytesIO(snapshot.read(path))) as arrays:
+        require(
+            len(arrays.files) == len(set(arrays.files)),
+            f"{path}: duplicate curve fields",
+        )
         for k in checks:
             names = [f"fresh_q{q}" for q in (1, 2)] if twin else ["fresh"]
             if k:
                 names += [f"current_q{q}" for q in (1, 2)] if twin else ["current"]
             for name in names:
                 require(
-                    arrays[f"check_{k:02d}/{name}_losses"].shape == (5, 1000),
+                    arrays[f"check_{k:02d}/{name}_losses"].shape == expected_shape,
                     f"{path}: wrong curve shape",
                 )
                 record = next(row for row in records if row["check_index"] == k)
@@ -508,6 +527,7 @@ def _parent(snapshot, directory, architecture, environment, seed, study):
         frame.check_index,
         suite(environment) == "humanoid_bench",
         records,
+        config,
     )
     _metrics(snapshot, directory / "metrics.csv", meta, n, end, key)
     evaluations = pd.DataFrame(meta["eval_rows"])
@@ -866,17 +886,21 @@ def _fork(snapshot, root, item, study):
 
 
 def _check2(snapshot, result, path, k, seed, config, twin, key):
+    expected_shape = _probe_curve_shape(config)
     require(
         result["check_index"] == k and isinstance(result["pass"], bool),
         f"{key}: incomplete Check 2",
     )
     with np.load(io.BytesIO(snapshot.read(path))) as data:
+        require(
+            len(data.files) == len(set(data.files)), f"{path}: duplicate curve fields"
+        )
         scores = {}
         for name in ("control", "injected", "fresh"):
             parts = [f"{name}_q{q}" for q in (1, 2)] if twin else [name]
             for part in parts:
                 require(
-                    data[f"{part}_losses"].shape == (5, 1000),
+                    data[f"{part}_losses"].shape == expected_shape,
                     f"{key}: incomplete Check 2 curve",
                 )
                 require(
