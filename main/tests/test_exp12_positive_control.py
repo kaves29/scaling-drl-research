@@ -167,6 +167,10 @@ class PositiveControlEndToEndTest(unittest.TestCase):
         self.assertEqual(report["healthy_reference"], "fresh critic (check 0), L_healthy = 0")
         self.assertEqual(set(report["shared_offset_sensitivity"]), {"degraded", "fresh", "mean"})
         sel = report["selection"]
+        for label, row in sel["plasticity_loss_contrasts"].items():
+            self.assertEqual(row["unrescued_loss_iqm"], sel["l_trigger"])
+            self.assertEqual(row["injected_loss_iqm"], sel["l_injected"][label])
+            self.assertEqual(row["unrescued_minus_injected"], sel["l_trigger"] - sel["l_injected"][label])
         # Noise: pooled SD over the four real-settings evaluations only (shared-offset repeats excluded).
         self.assertEqual(sel["noise_series"], ["degraded", "injected_all", "injected_half", "injected_last"])
         self.assertAlmostEqual(sel["noise_sd"], pooled_sd({n: np.array(v) for n, v in report["loss_rounds"].items()}))

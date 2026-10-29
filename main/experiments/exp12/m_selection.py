@@ -47,6 +47,19 @@ def evaluate(loss: Dict[str, np.ndarray], noise_threshold: float, similar_within
     noise_sd = pooled_sd(loss)
     out = {"l_trigger": l_trigger, "l_injected": {m: iqm(loss[f"injected_{m}"]) for m in M_LABELS},
            "noise_sd": noise_sd, "noise_series": sorted(loss), "chosen_m": None, "stop": None}
+    out["plasticity_loss_contrasts"] = {
+        m: {
+            "unrescued_loss_iqm": l_trigger,
+            "injected_loss_iqm": out["l_injected"][m],
+            "unrescued_minus_injected": l_trigger - out["l_injected"][m],
+        }
+        for m in M_LABELS
+    }
+    out["plasticity_loss_contrast_definition"] = (
+        "unrescued_loss_iqm - injected_loss_iqm; "
+        "positive means lower plasticity loss after injection; "
+        "difference of IQMs, not IQM of paired differences"
+    )
     if not l_trigger > 0:
         out["stop"] = f"L at the trigger ({l_trigger:.6g}) is not above 0; recovery is undefined"
         return out
