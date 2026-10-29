@@ -62,4 +62,3 @@ class DurableStateAndAtomicNpzTest(unittest.TestCase):
                     fork.save_npz(path, {"q": np.zeros(1)})
             self.assertTrue(np.array_equal(fork.load_npz(path)["q"], np.arange(4.0)))  # old file intact
             self.assertEqual(sorted(p.name for p in Path(directory).iterdir()), ["check1_control.npz"])
-

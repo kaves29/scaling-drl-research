@@ -13,13 +13,13 @@
       "path": "main/docs/AGENT_HANDOFF.md",
       "source": "5482b2a516de5d51dab2c1bd7a4e86a49832b768",
       "sha256": "78593c57affe60abe6550527f69f8e184ff2e063f3f41a82f8dd8f8b154051b0",
-      "mode": "byte-identical import"
+      "mode": "historical import with current candidate status and dated-section labels"
     },
     {
       "path": "main/docs/EXPERIMENT_STATUS.md",
       "source": "5482b2a516de5d51dab2c1bd7a4e86a49832b768",
       "sha256": "1f6e46c9bfe28d784abab0a4e1e7fd5eb2ca88a166a7eccfe6b4ec7ec656d0d1",
-      "mode": "byte-identical import"
+      "mode": "historical import with current candidate status and dated-section labels"
     },
     {
       "path": "main/docs/exp2_method_c_certifier_20261028.md",
@@ -140,7 +140,8 @@
       "source": "087feab341b9be1f377697668f2d1c750ec0467f",
       "source_path": "main/tests/test_exp12_review_fixes.py",
       "mode": "exact class extraction; minimal imports",
-      "class_name": "DurableStateAndAtomicNpzTest"
+      "class_name": "DurableStateAndAtomicNpzTest",
+      "class_sha256": "0946606a0f88817d3ae96cb021f44b5c8d27ca71b3e30ec41a032f8614b76ae9"
     }
   ]
 }

@@ -1,13 +1,30 @@
-# Method C integration candidate (28 October 2026)
-
-Codex is preparing a separate review-only candidate from approved integration844,
-combining exact approved Method C (aa)/(ab) source with PR19 admission/certification.
-PR19 and integration remain untouched. See [current candidate report](exp2_method_c_integration_20261028.md)
-and its machine-readable source map. Earlier sections below retain their dated
-source snapshots; their integration blockers may be resolved only in this candidate.
-No production/GPU/scientific qualification or launch approval is implied.
-
 # Shared agent handoff
+
+## Method C source integration candidate (28 October 2026)
+
+Separate review branch: `codex/exp2-method-c-integration-candidate-20261028`,
+from approved integration844. Exact Method C producer/config and (aa)/(ab)
+amendments are combined with PR19's admission/certifier fixes; see the
+[current integration report](exp2_method_c_integration_20261028.md) and
+[per-file source map](exp2_method_c_integration_sources.json).
+
+Implementation `a3d7efa151ce276191851bda040e979086d0592e` passes 650 unique CPU tests /73 modules,
+74 mutation checks and65 simulator restoration cells. Final tested successor
+SHA and focused results are in the external final validation receipt.
+
+Separate draft review PR: https://github.com/kaves29/scaling-drl-research/pull/20
+
+Current candidate defaults: five paired rounds,2,000 continuous AdamW updates
+per target, first/next1,000 streams unchanged; no selected m or scientific
+forced trigger. Approved Method C runtime matches main087 except PR19's
+stricter source admission. This is GO for review, NO-GO for production.
+Natural same-source evidence, owner-frozen m, CUDA/resource qualification and
+launch-tool review/approval remain separate. No GPU jobs, training campaign,
+production source promotion or active-pilot changes occurred. PR19 remains
+draft at5482b2a; integration remains844e3c0.
+
+The sections below are retained historical source/status snapshots. Their
+1,000-step integration settings describe844, not this candidate's defaults.
 
 ## PR #19 Method C certifier follow-up (28 October 2026)
 
