@@ -1,5 +1,14 @@
 # Exp1/Exp2 scientific and validation status
 
+## Owner-directed CPU review (28–29 October 2026)
+
+Separate successor `codex/exp20-owner-decisions-cpu-20261028` preserves PR20 c931 and integration844. Owner selected PR20’s combined route; do not apply PR19 twice. The only runtime addition is signed per-m raw plasticity-loss reporting; methodology/config/probe/trigger/training/pilots remain unchanged relative to c931.
+
+See the [single consolidated review](exp20_owner_cpu_review_20261028.md) and [recorded answers](exp2_owner_review_decisions_20261028.md). Implementation `03aa0b0b6179db01fb1bda8a7315d64f38006207`:654 unique CPU tests/74 modules,74 mutation checks,65 legacy simulator restoration cells; exact final-head source/receipts are external under `/workspace/artifacts/exp20-owner-cpu-20261028/`. Legacy13-task/195-config coverage is engineering compatibility, not restoration of the official scope.
+
+The four-task/96-parent ten-sine historical source is distinct from PR20’s canonical five-sine protocol. All96 retained identities/configs verify;32 medium/large Myo histories contain eligible detector sequences, none observed in32 DMC histories (four DMC histories partial). These are not certified disk forks or null false-positive estimates. Missing5/100 raw calibration rows remain unavailable. No m was frozen, no scientific/GPU qualification claimed and no campaign or job execution performed. Official Exp3 method/capture decisions remain unspecified; the deadline covers all three official experiments. GO for review; NO-GO for production. The sections below retain historical snapshots and do not grant current authorization.
+
+
 ## Method C source integration candidate (28 October 2026)
 
 Separate review branch: `codex/exp2-method-c-integration-candidate-20261028`,

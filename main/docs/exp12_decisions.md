@@ -1859,3 +1859,21 @@ twin-critic tests, the identity-fork gate on the final commit (D4W1024 and
 D4W1536 on dog-run, myo-key-turn and h1-run-v0) and h1-run-v0 twin speed,
 probe time and memory. Compute effect (estimates): HumanoidBench runs ~1.2×
 (D2W512) to ~1.6× (D4W1536) longer; probe checks and critic memory double.
+
+
+## Owner-directed CPU review — 28–29 October 2026
+
+Authority: the latest owner request, retained verbatim outside Git as
+`/workspace/artifacts/exp20-owner-cpu-20261028/owner_request.txt`, SHA256
+`e00a35c7f390288086fcb2b3eec7f60523ee5c0bcde88bc086d17e96e988a0ce`.
+This chronological entry records decisions, not source promotion or execution approval.
+
+- Use PR20’s combined route, including PR19’s changes once. Preserve both existing PRs; keep the separate successor draft for review.
+- Keep two consecutive scheduled firing checks, the existing range formula/cutoff, and the settled entropy/training setting. No forced trigger or methodology change.
+- Use naturally eligible medium/large official Exp1 parents for Exp2. Any extra-seed/precision plan is prospective review material; no seed execution is authorized.
+- Keep the current m ranking/selection rule. Add each m’s unrescued L, injected L and signed unrescued-minus-injected difference alongside recovery. Rank alone is not rescue evidence; no m is chosen here.
+- The December5,2026 hard deadline concerns official Exp1, Exp2 and Exp3 execution plus analysis; December1 is intermediate. Exp1 may proceed through its own gates without waiting for Exp2 positive control or m, as amendment(ab) already states.
+- Do not restore removed environments or adopt the older13-task/195-parent population as current. The inspected four-task/96-parent source exists separately from PR20’s five-target protocol; its source-bound freeze and certification must be reconciled before official use. This entry does not promote either protocol.
+- CPU-only investigation and reporting engineering are authorized. No active-pilot changes, GPU planning, submissions, source promotion, merges or gate waivers are authorized by this task.
+
+Unresolved: five-/ten-sine source reconciliation (no verified sign transform), raw calibration/range availability, D04 invalid calibration-pair policy, D05 n=1 reporting convention, natural same-source positive-control evidence and owner-frozen m, and the official Exp3 method/capture/source decisions. Do not re-ask the settled trigger, range, entropy or PR-route choices. The [consolidated review](exp20_owner_cpu_review_20261028.md) and [compact record](exp2_owner_review_decisions_20261028.md) replace the older unanswered form for this task. No new scientific setting is enacted.
