@@ -1,0 +1,147 @@
+{
+  "base": "844e3c0cc24998b25c3d1e667bcbfe056b1b336c",
+  "pr19": "5482b2a516de5d51dab2c1bd7a4e86a49832b768",
+  "approved_method_c": "087feab341b9be1f377697668f2d1c750ec0467f",
+  "files": [
+    {
+      "path": "main/analysis/exp12_validation.py",
+      "source": "5482b2a516de5d51dab2c1bd7a4e86a49832b768",
+      "sha256": "dbbfa2d52aeb8a36fd3c5cb6c6922d0259cd4cde9a8aaeb1795cc17954ff8727",
+      "mode": "byte-identical import"
+    },
+    {
+      "path": "main/docs/AGENT_HANDOFF.md",
+      "source": "5482b2a516de5d51dab2c1bd7a4e86a49832b768",
+      "sha256": "78593c57affe60abe6550527f69f8e184ff2e063f3f41a82f8dd8f8b154051b0",
+      "mode": "historical import with current candidate status and dated-section labels"
+    },
+    {
+      "path": "main/docs/EXPERIMENT_STATUS.md",
+      "source": "5482b2a516de5d51dab2c1bd7a4e86a49832b768",
+      "sha256": "1f6e46c9bfe28d784abab0a4e1e7fd5eb2ca88a166a7eccfe6b4ec7ec656d0d1",
+      "mode": "historical import with current candidate status and dated-section labels"
+    },
+    {
+      "path": "main/docs/exp2_method_c_certifier_20261028.md",
+      "source": "5482b2a516de5d51dab2c1bd7a4e86a49832b768",
+      "sha256": "99c363158b36e177c16d8850ba03d2d37daf51dd5ee8d998ba3fc8fdd18e79ab",
+      "mode": "byte-identical import"
+    },
+    {
+      "path": "main/docs/exp2_readiness_20261028.md",
+      "source": "5482b2a516de5d51dab2c1bd7a4e86a49832b768",
+      "sha256": "0d2c57d516efd1cadf66f1020e8c22b2a35f0cb9c613d4fbc710f0a930155c27",
+      "mode": "byte-identical import"
+    },
+    {
+      "path": "main/experiments/exp2_arm.py",
+      "source": "5482b2a516de5d51dab2c1bd7a4e86a49832b768",
+      "sha256": "77c413bedc0130832491feedd58cb97d54f4122340a68f52e599778b84d4f583",
+      "mode": "byte-identical import"
+    },
+    {
+      "path": "main/tests/exp12_complete_fixture.py",
+      "source": "5482b2a516de5d51dab2c1bd7a4e86a49832b768",
+      "sha256": "728ccdd4c3f36539f3788ae453a00661cd43e6005c68831aa9ab0d3b4c061756",
+      "mode": "byte-identical import"
+    },
+    {
+      "path": "main/tests/test_exp2_method_c_certifier.py",
+      "source": "5482b2a516de5d51dab2c1bd7a4e86a49832b768",
+      "sha256": "956f9ed0e57c06fed8446f48667dc5f32e8b8ccce8145c94b405ae8c5199d595",
+      "mode": "byte-identical import"
+    },
+    {
+      "path": "main/tests/test_exp2_source_binding.py",
+      "source": "5482b2a516de5d51dab2c1bd7a4e86a49832b768",
+      "sha256": "4acef15fe6717342e4ad2ae309092f271389fec7e06cf53feab41af9c49cb186",
+      "mode": "byte-identical import"
+    },
+    {
+      "path": "main/.claude/methodology-exp1-exp2.md",
+      "source": "087feab341b9be1f377697668f2d1c750ec0467f",
+      "sha256": "001283d9e64d7cadddcdd37952082ba3d291b5e8fc1acec91a32a474b63a8ebf",
+      "mode": "byte-identical import"
+    },
+    {
+      "path": "main/configs/base_exp12.yaml",
+      "source": "087feab341b9be1f377697668f2d1c750ec0467f",
+      "sha256": "2e2d54a6062cf5ade43deb14753a5ad45f0a5cc0b3f415c5fca6ce2843008bb6",
+      "mode": "byte-identical import"
+    },
+    {
+      "path": "main/experiments/exp12/probe.py",
+      "source": "087feab341b9be1f377697668f2d1c750ec0467f",
+      "sha256": "8a7237ebc27394cc3f6271e9c63160afee703620d1adbda4c290eab7fe584698",
+      "mode": "byte-identical import"
+    },
+    {
+      "path": "main/experiments/exp1.py",
+      "source": "087feab341b9be1f377697668f2d1c750ec0467f",
+      "sha256": "cc49c91a2da11c28b8dcd335b7826b384862d82fa0d0caa4424d4c1e9147eecc",
+      "mode": "byte-identical import"
+    },
+    {
+      "path": "main/experiments/exp12/state.py",
+      "source": "087feab341b9be1f377697668f2d1c750ec0467f",
+      "sha256": "c81dd7361e99b62ea40fd16d9037e9954d1008955d540a651a97c07cccd19cfc",
+      "mode": "byte-identical import"
+    },
+    {
+      "path": "main/experiments/exp12/fork.py",
+      "source": "087feab341b9be1f377697668f2d1c750ec0467f",
+      "sha256": "72c73032720f54883d12a74ee33ec405ac7e2af2b80184410d126935c9b34e35",
+      "mode": "byte-identical import"
+    },
+    {
+      "path": "main/scripts/methodology_cpu_reference.py",
+      "source": "087feab341b9be1f377697668f2d1c750ec0467f",
+      "sha256": "96e3d03206ff0b53a1992da2572f54ac72b1396b369ee451277ce35890bb5015",
+      "mode": "byte-identical import"
+    },
+    {
+      "path": "main/tests/test_exp12_method_c.py",
+      "source": "087feab341b9be1f377697668f2d1c750ec0467f",
+      "sha256": "c955ca1ea3d06d7691dd705241b274d47854c481d8d7195317a898eba7d206a2",
+      "mode": "byte-identical import"
+    },
+    {
+      "path": "main/tests/test_exp12_fork.py",
+      "source": "087feab341b9be1f377697668f2d1c750ec0467f",
+      "sha256": "f0573c3de8422fac27e56d3979f518f8850b6bd2596c68b869fb69ecb778b599",
+      "mode": "byte-identical import"
+    },
+    {
+      "path": "main/tests/test_exp12_range_capture.py",
+      "source": "087feab341b9be1f377697668f2d1c750ec0467f",
+      "sha256": "a42bff10876a48da3f7daac2f9e4521d5f7373ffe139781227cc8c4135107c5f",
+      "mode": "byte-identical import"
+    },
+    {
+      "path": "main/docs/method_c_exp12_readiness.md",
+      "source": "087feab341b9be1f377697668f2d1c750ec0467f",
+      "sha256": "0843d0ea16a95a8d56a850a03e50134c93032150a824ed2b8447d414dd7a7528",
+      "mode": "byte-identical import"
+    },
+    {
+      "path": "main/docs/method_c_consolidated_review.md",
+      "source": "087feab341b9be1f377697668f2d1c750ec0467f",
+      "sha256": "4170640aa62d82231dfc0782f643cb0559b24bbaccd4952d5686b9e220ce9853",
+      "mode": "byte-identical import"
+    },
+    {
+      "path": "main/docs/exp12_ab_deferred_fork.md",
+      "source": "087feab341b9be1f377697668f2d1c750ec0467f",
+      "sha256": "c0eba14f751bd58911e633253ae1147cb0507e73f4a47fba30a96d7dba6b68b7",
+      "mode": "byte-identical import"
+    },
+    {
+      "path": "main/tests/test_exp2_integrated_durability.py",
+      "source": "087feab341b9be1f377697668f2d1c750ec0467f",
+      "source_path": "main/tests/test_exp12_review_fixes.py",
+      "mode": "exact class extraction; minimal imports",
+      "class_name": "DurableStateAndAtomicNpzTest",
+      "class_sha256": "0946606a0f88817d3ae96cb021f44b5c8d27ca71b3e30ec41a032f8614b76ae9"
+    }
+  ]
+}

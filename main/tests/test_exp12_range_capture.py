@@ -87,6 +87,15 @@ class RangeCaptureTest(unittest.TestCase):
                 )
 
     def test_mocked_full_workflow_preserves_the_approved_case_and_checksums(self):
+        self._workflow(method_c=False)
+
+    def test_method_c_base_config_is_refused_as_historical_capture(self):
+        """This tool re-captures the historical 1,000-step range case (job 22817406). Under the
+        current Method C base config (amendment (aa)) it must refuse, not relabel 2,000-step data."""
+        with self.assertRaisesRegex(ValueError, "unchanged approved full probe settings"):
+            self._workflow(method_c=True)
+
+    def _workflow(self, method_c):
         from experiments.exp1 import compose_config
 
         config_dir = str(Path(__file__).resolve().parents[1] / "configs")
@@ -100,7 +109,8 @@ class RangeCaptureTest(unittest.TestCase):
                 "run_role=dev",
                 "critic_num_blocks=4",
                 "critic_hidden_dim=1536",
-            ],
+            ]
+            + ([] if method_c else ["probe.steps=1000"]),  # historical approved capture setting
         )
         trainer = SimpleNamespace(
             cfg=cfg,

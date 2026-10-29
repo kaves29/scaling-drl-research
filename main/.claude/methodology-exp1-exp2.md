@@ -561,3 +561,34 @@ and sac_simba.yaml sets critic_use_cdq: ${env.episodic}) and paper (Table 7).
   Counts describe online networks before injection, excluding target networks
   and optimizer state. The ratios quantify the architecture imbalance; they
   do not establish that imbalance causes pathology.
+
+## Amendment on Method C fitting (2026-10-12)
+
+(aa) The project lead approved Method C for Experiment 1/2 implementation:
+each of the same five independently initialized target functions is fitted for
+2,000 continuous optimizer steps. For each round, the first 1,000 minibatch
+draws retain the original stream; the next 1,000 use its separate follow-up
+stream. The fitting parameters and AdamW optimizer state carry through the
+boundary without restart. This replaces the previous 1,000-step probe budget.
+The paired-score definition, fresh comparison, zero trigger threshold,
+10,000-resample 95% percentile-bootstrap interval, and first two consecutive
+scheduled firing checks are unchanged. No trigger is forced. This amendment
+does not constitute GPU qualification or approval to launch the 195-parent
+grid or Exp2 injected arms.
+
+## Amendment on conditional Experiment 1/2 launch (2026-10-13)
+
+(ab) The project lead approved separate launch qualification for the two
+experiments. Experiment 1 parents may launch after all Experiment 1 scientific,
+CUDA identity, source, resource and allocation gates pass, without waiting for
+Experiment 2's natural-trigger positive control. This supersedes only the
+earlier *launch-order requirement* that the positive control qualify before
+the 195 Experiment 1 parents. Experiment 2 injected arms remain blocked until
+a natural eligible fork, a same-source positive control, owner-frozen injection
+magnitude and separate Experiment 2 launch approval satisfy the original
+requirements. The Experiment 1 parent saves its complete trigger state at the
+original f*_run and immediately restores it for the observational/control
+continuation. The injected arm may later restore that retained trigger state;
+its scientific horizon is still measured from f*_run, not its wall-clock launch.
+No probe, trigger, measurement, threshold, training setting, endpoint, Check 1
+or Check 2 rule changes. A parent that never triggers remains a null result.

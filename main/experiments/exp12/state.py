@@ -6,6 +6,7 @@ the previous complete state as LATEST. Large arrays are stored with np.savez
 (buffer) or Orbax (agent); only small metadata is pickled.
 """
 
+import os
 import pickle
 import shutil
 import uuid
@@ -43,9 +44,36 @@ def new_state_dir(root, interaction_step: int) -> Path:
     return path
 
 
+def _fsync_tree(path: Path) -> None:
+    """Flush every file and directory of a saved state to stable storage."""
+    for directory, _, files in os.walk(path):
+        for name in files:
+            fd = os.open(os.path.join(directory, name), os.O_RDONLY)
+            try:
+                os.fsync(fd)
+            finally:
+                os.close(fd)
+        _fsync_dir(directory)
+
+
+def _fsync_dir(directory) -> None:
+    fd = os.open(directory, os.O_RDONLY)
+    try:
+        os.fsync(fd)
+    finally:
+        os.close(fd)
+
+
 def commit_state_dir(root, path: Path, keep_previous: bool = False) -> None:
-    """Repoints LATEST to path; then removes older states (incl. uncommitted orphans of a crash)."""
+    """Repoints LATEST to path; then removes older states (incl. uncommitted orphans of a crash).
+
+    The new state is flushed to stable storage before LATEST names it, and LATEST's directory
+    entry before any older state is deleted, so a host crash cannot leave LATEST pointing at
+    unwritten data with nothing to fall back on."""
+    _fsync_tree(path)
+    _fsync_dir(path.parent)
     atomic_write_text(Path(root) / LATEST, path.name)
+    _fsync_dir(root)
     if not keep_previous:
         for old in Path(root).glob("step_*"):
             if old != path:
