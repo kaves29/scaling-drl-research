@@ -92,3 +92,6 @@ runtime/VRAM, natural positive-control rescue or general DMC–Myo effects.
 Existing confirmatory configurations and injection definitions are unchanged.
 The confirmatory ten-target source/certifier integration is a separate readiness
 item; this development pilot does not grant official Exp2 admission.
+
+Exact CPU commands, coverage and transient mutation-attempt limitations are in
+[the validation receipt](m_control_pilot_validation_20261101.md).
