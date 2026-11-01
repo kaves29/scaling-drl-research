@@ -92,6 +92,8 @@ def run(args: dict) -> None:
     if (run_dir / DONE_MARKER).exists():
         raise ValueError(f"{run_dir} already holds a completed run ({DONE_MARKER} exists).")
     cfg = compose_config(args.config_path, args.config_name, args.overrides)
+    if args.get("stop_at_natural_fork", False) and cfg.run_role != "dev":
+        raise ValueError("stop_at_natural_fork is development-only")
     np.random.seed(cfg.seed)
     random.seed(cfg.seed)
 
@@ -213,6 +215,10 @@ def run(args: dict) -> None:
             trainer.close()
             build(latest_state_dir(fork.fork_dir(run_dir) / "state"))
             enter_control({**signal.plan, "run_key": identity.run_key})
+            if args.get("stop_at_natural_fork", False):
+                print("[exp1] development checkpoint retained; stopping before control continuation", flush=True)
+                live["trainer"].close()
+                return
         except fork.ValidationDone:
             print("[exp1] identity snapshot saved; stopping (testing.stop_after_identity_snapshot)")
             trainer.close()

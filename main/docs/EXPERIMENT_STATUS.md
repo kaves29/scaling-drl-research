@@ -212,3 +212,11 @@ GPU gates and trigger disposition, the owner must approve the full-length
 development/positive-control role and appropriate allocation/execution. No
 eight-hour resource proposal is adopted here. No demonstrated unresolved
 production engineering defect was introduced by this review.
+
+## November 1: development m-control successor
+
+The [five-condition m pilot](m_control_pilot_20261101.md) is prepared on a separate
+PR #21 successor for review: dog-run D4W1536 seed9, ten targets/2,000 updates/50
+checks, one A100 and10total GPU-hours maximum. Fresh/degraded/last/half/all and
+all three shared-offset checks remain. No m chosen, natural rescue verified,
+GPU qualification or submission claimed. Request flags remain false.

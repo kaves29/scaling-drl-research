@@ -52,14 +52,19 @@ def _stub_wandb():
     mock.patch("wandb.log").start()
 
 
-def _setting_errors(cfg, allow_any_setting: bool):
+def _setting_errors(cfg, allow_any_setting: bool, protocol="five-target"):
+    if protocol not in ("five-target", "m-control-ten"):
+        raise ValueError("unknown positive-control protocol")
+    ten = protocol == "m-control-ten"
     from scale_rl.common.logger import get_architecture_id
 
     errors = []
     if cfg.run_role != "dev":
         errors.append(f"run_role is {cfg.run_role!r}, not 'dev'")
-    if 1 <= int(cfg.seed) <= 5:
-        errors.append(f"seed {cfg.seed} is a main-run seed (1-5)")
+    if 1 <= int(cfg.seed) <= (8 if ten else 5):
+        errors.append(f"seed {cfg.seed} is a main-run seed")
+    if ten and int(cfg.seed) != 9:
+        errors.append("m-control-ten requires development seed 9")
     pc = cfg.positive_control
     if not allow_any_setting:
         if get_architecture_id(cfg) != pc.architecture:
@@ -71,7 +76,7 @@ def _setting_errors(cfg, allow_any_setting: bool):
         from experiments.exp1 import compose_config
         from utils.run_metadata import _strip_locations, differing_keys
         canonical = compose_config(str(Path(__file__).resolve().parents[1] / "configs"),
-                                   "base_exp12", ["env_name=dog-run", "env=dmc_hard",
+                                   "base_exp12_m_control_ten" if ten else "base_exp12", ["env_name=dog-run", "env=dmc_hard",
                                    "critic_num_blocks=4", "critic_hidden_dim=1536",
                                    "run_role=dev", f"seed={cfg.seed}"])
         import omegaconf
@@ -181,7 +186,7 @@ def run(args) -> int:
     if not run_dir.is_absolute() or not out_dir.is_absolute():
         raise SystemExit("--run_dir and --out_dir must be absolute")
     out_dir.mkdir(parents=True, exist_ok=True)
-    for name in ("positive_control.json", "positive_control_curves.npz"):
+    for name in ("positive_control.json", "positive_control_curves.npz", "positive_control_sensitivity_curves.npz"):
         if (out_dir / name).exists() or (out_dir / name).is_symlink():
             raise SystemExit(f"{out_dir / name}: refusing to overwrite positive-control evidence; use a fresh output directory")
     meta = load_run_metadata(run_dir / RUN_METADATA_FILENAME)
@@ -205,7 +210,9 @@ def run(args) -> int:
         print(json.dumps({k: report[k] for k in ("status", "stop", "chosen_m")}), flush=True)
         return 0 if status == "m_chosen" else STOP_EXIT
 
-    errors = _setting_errors(cfg, args.allow_any_setting)
+    protocol = getattr(args, "protocol", "five-target")
+    report["protocol"] = protocol
+    errors = _setting_errors(cfg, args.allow_any_setting, protocol)
     if errors:
         raise SystemExit("not a valid positive-control run: " + "; ".join(errors))
     if not fork.is_ready(run_dir):
@@ -231,7 +238,13 @@ def run(args) -> int:
     fresh = orbax.checkpoint.PyTreeCheckpointer().restore(str(run_dir / FRESH_CRITIC_DIR))["params"]
     critic_def, critics = probe_critics(trainer, fresh)
     tx, pcfg, seed = critic_optimizer(cfg.agent), probe_config(cfg), int(cfg.seed)
-    result = run_probe(trainer.agent, trainer.buffer, critic_def, critics, tx, seed, k, pcfg)
+    def retain_round(phase):
+        def save_round(index, values):
+            with (out_dir / f"partial_{phase}_r{index:02d}.npz").open("xb") as stream:
+                np.savez_compressed(stream, **{f"{n}_{f}": v for n, d in values.items() for f, v in d.items()})
+        return {"on_round": save_round} if protocol == "m-control-ten" else {}
+
+    result = run_probe(trainer.agent, trainer.buffer, critic_def, critics, tx, seed, k, pcfg, **retain_round("main"))
     loss = {n: result["fresh"]["score"] - result[n]["score"] for n in critics if n != "fresh"}
     report["probe"] = {n: {"score_rounds": result[n]["score"].tolist(), "score_iqm": iqm(result[n]["score"]),
                            "b_rounds": result[n]["b"].tolist(), "offset_rounds": result[n]["offset"].tolist()}
@@ -245,18 +258,23 @@ def run(args) -> int:
         np.savez_compressed(curves, **{f"{n}_{f}": v for n, d in result.items() for f, v in d.items()})
 
     sensitivity = {}
+    sensitivity_arrays = {}
     for mode in SHARED_OFFSETS:
         shared = run_probe(trainer.agent, trainer.buffer, critic_def,
                            {"fresh": critics["fresh"], "degraded": critics["degraded"]}, tx, seed, k, pcfg,
-                           shared_offset=mode)
+                           shared_offset=mode, **retain_round(mode))
+        sensitivity_arrays.update({f"{mode}_{n}_{f}": v for n, d in shared.items() for f, v in d.items()})
         l_shared = shared["fresh"]["score"] - shared["degraded"]["score"]
         sensitivity[mode] = {"loss_rounds": l_shared.tolist(), "loss_iqm": iqm(l_shared),
                              "offset_rounds": shared["degraded"]["offset"].tolist(),
                              "sign_agrees": bool(np.sign(iqm(l_shared)) == np.sign(report["loss_iqm"]["degraded"]))}
+    with open(out_dir / "positive_control_sensitivity_curves.npz", "xb") as curves:
+        np.savez_compressed(curves, **sensitivity_arrays)
     report["shared_offset_sensitivity"] = sensitivity
 
     pc = cfg.positive_control
-    selection = evaluate(loss, float(pc.noise_threshold), float(pc.similar_within))
+    selection = evaluate(loss, float(pc.noise_threshold), float(pc.similar_within),
+                         rounds=10 if protocol == "m-control-ten" else 5)
     report["selection"] = selection
     report["chosen_m"] = selection["chosen_m"]
     trainer.close()
@@ -271,6 +289,7 @@ def run(args) -> int:
 
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("--protocol", choices=("five-target", "m-control-ten"), default="five-target")
     parser.add_argument("--run_dir", required=True)
     parser.add_argument("--out_dir", required=True)
     parser.add_argument("--allow_any_setting", action="store_true",
