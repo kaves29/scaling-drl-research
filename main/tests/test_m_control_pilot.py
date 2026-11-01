@@ -1,6 +1,14 @@
 """CPU coverage only; tiny synthetic fixtures are not campaign evidence."""
 
 import dataclasses
+import json
+import os
+import signal
+import subprocess
+import sys
+import tempfile
+import threading
+from unittest import mock
 from pathlib import Path
 import unittest
 import jax
@@ -125,6 +133,110 @@ class PilotTest(unittest.TestCase):
                 reserve(ledger, stage, "source")
         with self.assertRaises(ValueError):
             reserve(ledger, "calibrate", "changed-source")
+
+
+class StageProcessTest(unittest.TestCase):
+    """Execute real harmless CPU children; only Git identity and CUDA binding are fixtures."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self.tmp.name)
+        self.original_handler = signal.getsignal(signal.SIGTERM)
+        self.children = []
+        self.real_popen = subprocess.Popen
+
+    def tearDown(self):
+        signal.signal(signal.SIGTERM, self.original_handler)
+        for child in self.children:
+            if child.poll() is None:
+                os.killpg(child.pid, signal.SIGKILL)
+                child.wait()
+        self.tmp.cleanup()
+
+    def invoke(
+        self,
+        code="print('retained output', flush=True)",
+        binding="GPU-fixture",
+        git=("reviewed", ""),
+    ):
+        from scripts import m_control_pilot as pilot
+
+        def start(command, **kwargs):
+            child = self.real_popen([sys.executable, "-u", "-c", code], **kwargs)
+            self.children.append(child)
+            return child
+
+        args = [
+            "pilot",
+            "--root",
+            str(self.root),
+            "--source-sha",
+            "reviewed",
+            "--stage",
+            "startup",
+        ]
+        with mock.patch.object(sys, "argv", args), mock.patch.dict(
+            os.environ, {"CUDA_VISIBLE_DEVICES": binding}
+        ), mock.patch.object(
+            pilot.subprocess, "check_output", side_effect=git
+        ), mock.patch.object(
+            pilot.subprocess, "Popen", side_effect=start
+        ), mock.patch.dict(
+            pilot.LIMITS, {"startup": 1}
+        ):
+            return pilot.main()
+
+    def receipt(self):
+        return json.loads((self.root / "budget.json").read_text())["stages"]["startup"]
+
+    def test_success_retains_log_and_refuses_retry(self):
+        self.assertEqual(self.invoke(), 0)
+        self.assertEqual(self.receipt()["status"], "complete")
+        self.assertIn("retained output", (self.root / "startup.log").read_text())
+        with self.assertRaises(ValueError):
+            self.invoke()
+        self.assertEqual(len(self.children), 1)
+
+    def test_failed_child_preserves_reservation_and_blocks_retry(self):
+        self.assertEqual(self.invoke("raise SystemExit(7)"), 7)
+        self.assertEqual(self.receipt()["status"], "failed")
+        self.assertEqual(self.receipt()["reserved_seconds"], 1)
+        with self.assertRaises(ValueError):
+            self.invoke()
+
+    def test_timeout_kills_process_group_and_preserves_partial_log(self):
+        with self.assertRaises(subprocess.TimeoutExpired):
+            self.invoke("import time; print('partial', flush=True); time.sleep(60)")
+        self.assertIsNotNone(self.children[0].poll())
+        self.assertEqual(self.receipt()["status"], "interrupted_or_timeout")
+        self.assertIn("partial", (self.root / "startup.log").read_text())
+        with self.assertRaises(ValueError):
+            self.invoke()
+
+    def test_parent_sigterm_cleans_child(self):
+        timer = threading.Timer(0.3, lambda: os.kill(os.getpid(), signal.SIGTERM))
+        timer.start()
+        try:
+            with self.assertRaises(KeyboardInterrupt):
+                self.invoke("import time; print('partial', flush=True); time.sleep(60)")
+        finally:
+            timer.cancel()
+            timer.join()
+        self.assertIsNotNone(self.children[0].poll())
+        self.assertEqual(self.receipt()["status"], "interrupted_or_timeout")
+
+    def test_source_and_binding_rejected_before_launch_or_reservation(self):
+        for git, binding in [
+            (("different", ""), "GPU-fixture"),
+            (("reviewed", " M source.py"), "GPU-fixture"),
+            (("reviewed", ""), ""),
+            (("reviewed", ""), "0,1"),
+            (("reviewed", ""), "-1"),
+        ]:
+            with self.assertRaises(ValueError):
+                self.invoke(git=git, binding=binding)
+            self.assertFalse((self.root / "budget.json").exists())
+        self.assertEqual(self.children, [])
 
 
 if __name__ == "__main__":
