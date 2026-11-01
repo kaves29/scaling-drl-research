@@ -1,0 +1,11 @@
+# Development-only m pilot; excludes official seeds 1-8. Never an official campaign config.
+defaults:
+  - base_exp12
+  - _self_
+run_role: dev
+seed: 9
+critic_num_blocks: 4
+critic_hidden_dim: 1536
+probe:
+  rounds: 10
+  checks: 50

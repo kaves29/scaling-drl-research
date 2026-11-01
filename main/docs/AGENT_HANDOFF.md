@@ -294,3 +294,13 @@ under the existing 300-second internal timeout/seven-minute Slurm allocation;
 changing staging or budgets requires owner approval. No current CPU result grants
 production-launch authorization. Historical Angle/Modal and delta-fixes branches
 remain untouched pending individual investigation.
+
+## November 1: owner-confirmed development m pilot
+
+Separate successor `codex/m-control-pilot-20261101` builds on PR #21 at38e5abb7325a949e23440d6197b5d7d9ecd57c43.
+Owner clarified the intended five-condition last/half/all pilot. See
+[m-control handoff](m_control_pilot_20261101.md) and its non-executable request.
+Ten-target development admission and selection, serial stage reservations and
+partial curves are implemented; default five-target admission and all original
+injection boundaries remain. No GPU job submitted or qualified. Final source
+SHA resolves from the branch/PR, not this committed document.

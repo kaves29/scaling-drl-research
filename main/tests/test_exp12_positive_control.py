@@ -114,12 +114,12 @@ class SharedOffsetTest(unittest.TestCase):
         np.testing.assert_array_equal(self._round("a")["a"]["score"], own["a"]["score"])
 
 
-def _run_exp1(run_dir, overrides):
+def _run_exp1(run_dir, overrides, **kwargs):
     from experiments import exp1
 
     exp1.run({"experiment": "exp1", "config_path": CONFIG_PATH, "config_name": "base_exp12",
               "overrides": overrides, "checkpoint_dir": run_dir, "checkpoint_interval": 10**9,
-              "checkpoint_start_frac": 0.0})
+              "checkpoint_start_frac": 0.0, **kwargs})
 
 
 class PositiveControlEndToEndTest(unittest.TestCase):
@@ -192,6 +192,48 @@ class PositiveControlEndToEndTest(unittest.TestCase):
         _, report = self._script(self.run_dir, "pc_offsets")
         offsets = {n: report["probe"][n]["offset_rounds"] for n in ("degraded", "injected_last")}
         np.testing.assert_allclose(offsets["degraded"], offsets["injected_last"], rtol=0, atol=1e-6)
+
+    def test_development_stop_retains_ready_fork_before_continuation(self):
+        from experiments.exp12 import fork
+        from experiments.exp12.state import latest_state_dir, load_meta
+        path = os.path.join(self.tmp, "stop_at_fork")
+        _run_exp1(path, tiny_overrides(seed=9, steps=400, extra=[
+            "run_role=dev", "testing.force_trigger_check=5", "fork.architectures=[D1W8]",
+            "env.max_episode_steps=40", "fork.eval_episodes=1",
+            f"results_root={self.tmp}/stop_results"]), stop_at_natural_fork=True)
+        self.assertTrue(fork.is_ready(path))
+        plan = fork.read_fork(path)
+        state = latest_state_dir(fork.fork_dir(path) / "state")
+        self.assertEqual(load_meta(state)["interaction_step"], plan["fork_step"])
+        self.assertFalse((Path(path) / "DONE").exists())
+
+    def test_ten_target_end_to_end_retains_artifacts(self):
+        import hashlib
+        import positive_control
+        path = os.path.join(self.tmp, "ten_target_dev")
+        _run_exp1(path, tiny_overrides(seed=9, steps=1000, extra=[
+            "run_role=dev", "probe.rounds=10", "probe.steps=2000", "probe.checks=50",
+            "testing.force_trigger_check=5", "fork.architectures=[D1W8]",
+            "env.max_episode_steps=40", "fork.eval_episodes=1",
+            f"results_root={self.tmp}/ten_results"]), stop_at_natural_fork=True)
+        def hashes():
+            return {str(p.relative_to(path)): hashlib.sha256(p.read_bytes()).hexdigest()
+                    for p in Path(path).rglob("*") if p.is_file()}
+        before = hashes()
+        out = os.path.join(self.tmp, "ten_calibration")
+        args = positive_control_args(path, out)
+        args.protocol = "m-control-ten"
+        self.assertEqual(positive_control.run(args), 3)
+        self.assertEqual(before, hashes())
+        report = json.loads((Path(out) / "positive_control.json").read_text())
+        self.assertIsNone(report["chosen_m"])
+        self.assertEqual(len(report["loss_rounds"]["degraded"]), 10)
+        self.assertEqual(len(list(Path(out).glob("partial_*.npz"))), 40)
+        with np.load(Path(out) / "positive_control_curves.npz") as arrays:
+            for name in ("fresh", "degraded", "injected_last", "injected_half", "injected_all"):
+                self.assertEqual(arrays[f"{name}_losses"].shape, (10, 2000))
+        with np.load(Path(out) / "positive_control_sensitivity_curves.npz") as arrays:
+            self.assertEqual(arrays["mean_fresh_losses"].shape, (10, 2000))
 
     def test_never_triggered_run_stops(self):
         code, report = self._script(self.no_fork_dir, "pc_nofork")

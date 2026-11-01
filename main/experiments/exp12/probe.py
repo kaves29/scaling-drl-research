@@ -153,13 +153,15 @@ def probe_rng(seed: int, check_index: int, round_index: int) -> np.random.Genera
 
 
 def run_probe(agent, buffer, target_def, critics: Dict[str, tuple], tx, seed: int, check_index: int,
-              cfg: ProbeConfig, shared_offset: Optional[str] = None) -> Dict[str, Dict[str, np.ndarray]]:
+              cfg: ProbeConfig, shared_offset: Optional[str] = None, on_round=None) -> Dict[str, Dict[str, np.ndarray]]:
     """All rounds of one check. Transfers to host once, after the last round."""
     rounds = []
     for r in range(cfg.rounds):
         obs, act = sample_pool(agent, buffer, probe_rng(seed, check_index, r), cfg.pool_size)
         rounds.append(probe_round(target_def, critics, tx, obs, act, probe_key(seed, check_index, r), cfg,
                                   shared_offset))
+        if on_round is not None:
+            on_round(r, jax.device_get(rounds[-1]))
     rounds = jax.device_get(rounds)
     return {
         name: {k: np.stack([rd[name][k] for rd in rounds]) for k in rounds[0][name]}
