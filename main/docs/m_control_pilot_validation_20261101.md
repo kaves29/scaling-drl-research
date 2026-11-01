@@ -50,3 +50,27 @@ if needed. Final source SHA and log hashes are recorded in that directory's
 receipt. Tests do not qualify CUDA, full-size VRAM/storage, runtime or rescue.
 No GPU model execution, training campaign, Slurm submission, merge or automatic
 m freeze was performed. See the pilot handoff for the remaining Delta gates.
+
+
+## Additional pre-queue CPU checks
+
+Owner requested a final CPU readiness check. On clean, fixed commit
+`6c3e33cfaa5b34e28a3cd64e9f711e885049df7d`, the focused command above passed **49/49 tests**
+in75.685s, and the unchanged full mutation command passed **74/74**, exit0.
+The source and working tree remained fixed throughout both completed runs.
+This closes the earlier mutation-run commit-boundary limitation for this source.
+
+Five additional tests use real harmless CPU subprocesses to verify successful
+completion, nonzero exit, retained logs/reservations, retry refusal, timeout
+process-group cleanup, parent-SIGTERM cleanup, and rejection of wrong/dirty
+source or absent/multiple GPU bindings before any child or reservation. Git
+identity and CUDA binding are fixtures; no test claims real CUDA qualification.
+No production code or scientific configuration changed in this follow-up.
+The previous65 simulator cells apply to identical executable/configuration bytes.
+
+Evidence: `/workspace/artifacts/m-control-prequeue-20261101/`, including exact
+source SHA, completed logs and checksums. The earlier uncommitted-source test
+attempt was deliberately stopped and is not counted. No additional CPU check is
+currently recommended before Delta preflight. Delta must still verify exact
+source/environment, allocation/binding, CUDA execution, storage and budget before
+queueing; full-size runtime/memory and natural rescue remain unmeasured.
