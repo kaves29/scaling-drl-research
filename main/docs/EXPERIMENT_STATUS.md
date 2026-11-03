@@ -1,5 +1,18 @@
 # Exp1/Exp2 scientific and validation status
 
+## Official Exp1 reconciliation candidate — 3 November 2026
+
+Owner selected legacy tasks without both HumanoidBench environments: eleven
+remaining environments, ten seeds and three critic sizes (330 parents), ten sine
+targets, 2,000 updates, 50 checks. Legacy swimmer/hopper budgets are retained.
+See [source and validation map](exp1_official_integration_20261103.md).
+Separate branch `codex/exp1-official-integration-20261103` builds from owner-selected
+PR21 `38e5abb7325a949e23440d6197b5d7d9ecd57c43`, not an overwrite of the approved
+integration ref. New official profile, population, diagnostics/W&B and certifier
+are connected; legacy/Exp2 paths remain explicit. This candidate is for review,
+not a source promotion or permission to run GPU jobs. Do not merge PR23 twice.
+
+
 ## Owner-directed CPU review (28–29 October 2026)
 
 Separate successor `codex/exp20-owner-decisions-cpu-20261028` preserves PR20 c931 and integration844. Owner selected PR20’s combined route; do not apply PR19 twice. The only runtime addition is signed per-m raw plasticity-loss reporting; methodology/config/probe/trigger/training/pilots remain unchanged relative to c931.

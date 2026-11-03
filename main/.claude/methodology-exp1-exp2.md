@@ -592,3 +592,29 @@ continuation. The injected arm may later restore that retained trigger state;
 its scientific horizon is still measured from f*_run, not its wall-clock launch.
 No probe, trigger, measurement, threshold, training setting, endpoint, Check 1
 or Check 2 rule changes. A parent that never triggers remains a null result.
+
+## Owner-directed official Exp1 source reconciliation — 3 November 2026
+
+This amendment applies to the new `base_exp1_official` / `no-hb-v1` Exp1
+profile. Historical source definitions and the legacy Exp2 profile remain
+explicit; do not reinterpret archived results under this version.
+
+- Population: the legacy thirteen environments with **both HumanoidBench tasks
+  removed**. This is eleven environments, seeds 1–10, and D2W512/D4W1024/D4W1536:
+  **330 parents**. The earlier four-environment/eight-seed population was a pilot.
+- Ten randomized **sine** targets, 2,000 continuous optimizer updates, 50 checks.
+  Preserve first/next-1,000 index streams, own-mean offsets, architecture-specific
+  teachers, fresh optimizer state, paired arithmetic and fractional ten-round IQM.
+- Owner explicitly retained legacy environment budgets: swimmer/swimmer15 and
+  hopper/hop have 500,000 raw steps; other retained tasks have 1,000,000. Action
+  repeat and warmup remain unchanged. For those two short tasks the nominal first
+  scheduled check coincides with warmup. Capture fresh before the first SAC update
+  and perform paired check 1 after that update at the same interaction count;
+  preserve all 50 scheduled checks. No warmup/budget reduction or omitted check.
+- New critic measurements supplement historical keys, and their values enter W&B
+  with per-run artifacts. Expensive rank computation can be explicitly disabled;
+  no extra replay sample or training RNG draw is introduced.
+- This source reconciliation does not adopt proposed replacements for Experiment
+  2 or 3, choose m, grant CUDA/resource qualification, promote source, or authorize
+  a launch. Exp1's existing natural-fork/control capture does not choose m or launch
+  an injected arm. Those permissions remain separate.

@@ -5,6 +5,13 @@ defaults:
 - _self_
 
 project_name: echocritic_official_exp1
+official_exp1_version: no-hb-v1
+
+critic_measurements:
+  enabled: true
+  compute_rank: true
+  every: 1
+  freeze_first: false
 
 probe:
   rounds: 10

@@ -100,6 +100,16 @@ class Exp12Trainer:
         from scale_rl.diagnostics.critic_metrics import from_environment
 
         self.critic_measurements = from_environment(self.run_dir)
+        measurements = cfg.get("critic_measurements", {})
+        if self.critic_measurements is None and measurements.get("enabled", False):
+            from scale_rl.diagnostics.critic_metrics import CriticMeasurements
+
+            self.critic_measurements = CriticMeasurements(
+                Path(self.run_dir) / "critic_diagnostics",
+                compute_rank=bool(measurements.get("compute_rank", False)),
+                every=int(measurements.get("every", 1)),
+                freeze_first=bool(measurements.get("freeze_first", False)),
+            )
         self.run_name = (
             f"{cfg.env_name}_CD{cfg.agent.critic_num_blocks}_CW{cfg.agent.critic_hidden_dim}"
             f"_AD{cfg.agent.actor_num_blocks}_AW{cfg.agent.actor_hidden_dim}_seed{cfg.seed}"

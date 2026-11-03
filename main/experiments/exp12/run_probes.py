@@ -44,7 +44,9 @@ class RunProbes:
             raise ValueError(f"testing.force_trigger_check must be >= trigger.consecutive_checks "
                              f"({self.trigger.consecutive_checks}): f*_run needs that many firing checks")
         checks = check_steps(int(trainer.cfg.num_interaction_steps), self.cfg.checks)
-        if checks[0] <= int(trainer.cfg.buffer.min_length):
+        warmup = int(trainer.cfg.buffer.min_length)
+        official = trainer.cfg.get("official_exp1_version") == "no-hb-v1"
+        if checks[0] < warmup or (checks[0] == warmup and not official):
             raise ValueError(
                 f"The first probe check (interaction step {checks[0]}) must come after the fresh-critic "
                 f"probe at buffer.min_length={trainer.cfg.buffer.min_length}."

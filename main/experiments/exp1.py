@@ -57,6 +57,10 @@ def compose_config(config_path: str, config_name: str, overrides):
     omegaconf.OmegaConf.resolve(cfg)
     if "run_role" not in cfg or cfg.run_role not in ("confirmatory", "dev"):
         raise ValueError("Exp 1/2 runs need configs/base_exp12.yaml (run_role confirmatory|dev).")
+    if cfg.get("official_exp1_version") == "no-hb-v1":
+        from experiments.exp12.official_exp1 import validate_config
+
+        validate_config(cfg)
     return cfg
 
 
@@ -91,7 +95,10 @@ def run(args: dict) -> None:
     run_dir = Path(require_absolute(args.checkpoint_dir or "", "checkpoint_dir"))
     if (run_dir / DONE_MARKER).exists():
         raise ValueError(f"{run_dir} already holds a completed run ({DONE_MARKER} exists).")
-    cfg = compose_config(args.config_path, args.config_name, args.overrides)
+    config_name = args.config_name
+    if not config_name or config_name == "base_sac":
+        config_name = "base_exp1_official"
+    cfg = compose_config(args.config_path, config_name, args.overrides)
     np.random.seed(cfg.seed)
     random.seed(cfg.seed)
 
