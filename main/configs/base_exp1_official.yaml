@@ -1,0 +1,12 @@
+# Official Exp1 integration candidate; population IDs must be explicitly frozen.
+# Inherits the selected PR20/21 Method C producer, not the legacy integration.
+defaults:
+- base_exp12
+- _self_
+
+project_name: echocritic_official_exp1
+
+probe:
+  rounds: 10
+  steps: 2000
+  checks: 50

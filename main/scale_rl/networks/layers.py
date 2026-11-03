@@ -19,12 +19,14 @@ class MLPBlock(nn.Module):
             dtype=self.dtype,
         )(x)
         x = nn.relu(x)
+        self.sow("critic_diagnostics_v1", "post_relu", x)
         x = nn.Dense(
             self.hidden_dim,
             kernel_init=orthogonal_init(jnp.sqrt(2)),
             dtype=self.dtype,
         )(x)
         x = nn.relu(x)
+        self.sow("critic_diagnostics_v1", "post_relu_second", x)
         return x
 
 
@@ -40,5 +42,6 @@ class ResidualBlock(nn.Module):
             self.hidden_dim * 4, kernel_init=he_normal_init(), dtype=self.dtype
         )(x)
         x = nn.relu(x)
+        self.sow("critic_diagnostics_v1", "post_relu", x)
         x = nn.Dense(self.hidden_dim, kernel_init=he_normal_init(), dtype=self.dtype)(x)
         return res + x
