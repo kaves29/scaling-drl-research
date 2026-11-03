@@ -45,7 +45,11 @@ def bootstrap_interval(loss_rounds, seed: int, check_index: int, reps: int, conf
         return float("nan"), float("nan")
     rng = np.random.default_rng([seed, BOOT_STREAM, check_index])
     resamples = x[rng.integers(0, x.size, size=(reps, x.size))]
-    stats = trim_mean(resamples, proportiontocut=0.25, axis=1)
+    if x.size == 10:
+        ordered = np.sort(resamples, axis=1)
+        stats = (ordered[:, 2] + ordered[:, 7]) / 10 + np.sum(ordered[:, 3:7], axis=1) / 5
+    else:
+        stats = trim_mean(resamples, proportiontocut=0.25, axis=1)
     tail = 100 * (1 - confidence) / 2
     low, high = np.percentile(stats, [tail, 100 - tail])
     return float(low), float(high)

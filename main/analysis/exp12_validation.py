@@ -15,7 +15,7 @@ import pandas as pd
 from scipy.stats import trim_mean
 
 from experiments.exp12 import exp2_ledger, ledger, trigger
-from experiments.exp12.probe import paired_loss
+from experiments.exp12.probe import paired_loss, iqm
 from utils.run_metadata import _hash, _strip_locations, training_protocol
 
 ARCHITECTURES = ("D2W512", "D4W1024", "D4W1536")
@@ -145,9 +145,12 @@ def _state(snapshot, root):
     name = snapshot.read(root / "LATEST").decode().strip()
     require(name and Path(name).name == name, f"{root}: invalid LATEST")
     state = root / name
-    require(name not in (".", "..") and state.is_dir()
-            and state.resolve().parent == root.resolve(),
-            f"{root}: state directory escapes root or is missing")
+    require(
+        name not in (".", "..")
+        and state.is_dir()
+        and state.resolve().parent == root.resolve(),
+        f"{root}: state directory escapes root or is missing",
+    )
     for name in ("meta.pkl", "buffer.npz", "buffer_meta.pkl", "obs_rms.pkl"):
         require(
             (state / name).is_file() and (state / name).stat().st_size > 0,
@@ -237,13 +240,15 @@ def _csv_records(records, columns):
 
 
 def _checks(snapshot, path, meta, n, end, seed, config, architecture, environment):
+    rounds, _ = _probe_curve_shape(config)
+    checks = int(config["probe"]["checks"])
     frame = snapshot.csv(path)
-    expected_indices = list(range(end // (n // 20) + 1))
+    expected_indices = list(range(end // (n // checks) + 1))
     require(
         list(frame.check_index) == expected_indices,
         f"{path}: missing/duplicate/wrong check indices",
     )
-    steps = [5000] + [k * n // 20 for k in expected_indices[1:]]
+    steps = [5000] + [k * n // checks for k in expected_indices[1:]]
     require(list(frame.interaction_step) == steps, f"{path}: incorrect check times")
     for column, value in (
         ("run_key", run_key(architecture, environment, seed)),
@@ -261,7 +266,7 @@ def _checks(snapshot, path, meta, n, end, seed, config, architecture, environmen
     original = meta["extra_state"]["probe_records"]
     fields = [
         k
-        for k in ledger.CHECK_COLUMNS
+        for k in ledger.check_columns(rounds)
         if k
         not in (
             "run_key",
@@ -280,18 +285,18 @@ def _checks(snapshot, path, meta, n, end, seed, config, architecture, environmen
     invalid = []
     for row in original:
         k = row["check_index"]
-        fresh = np.array([row[f"score_fresh_r{r}"] for r in range(5)])
+        fresh = np.array([row[f"score_fresh_r{r}"] for r in range(rounds)])
         if suite(environment) == "humanoid_bench":
             for name in ("fresh", "current") if k else ("fresh",):
                 parts = np.array(
                     [
-                        [row[f"score_{name}_q{q}_r{r}"] for r in range(5)]
+                        [row[f"score_{name}_q{q}_r{r}"] for r in range(rounds)]
                         for q in (1, 2)
                     ],
                     np.float32,
                 )
                 aggregate = np.array(
-                    [row[f"score_{name}_r{r}"] for r in range(5)], np.float32
+                    [row[f"score_{name}_r{r}"] for r in range(rounds)], np.float32
                 )
                 require(
                     np.array_equal(aggregate, parts.mean(0), equal_nan=True),
@@ -300,21 +305,19 @@ def _checks(snapshot, path, meta, n, end, seed, config, architecture, environmen
             if k:
                 for q in (1, 2):
                     f = np.array(
-                        [row[f"score_fresh_q{q}_r{r}"] for r in range(5)], np.float32
+                        [row[f"score_fresh_q{q}_r{r}"] for r in range(rounds)],
+                        np.float32,
                     )
                     c = np.array(
-                        [row[f"score_current_q{q}_r{r}"] for r in range(5)], np.float32
+                        [row[f"score_current_q{q}_r{r}"] for r in range(rounds)],
+                        np.float32,
                     )
-                    values = np.array([row[f"loss_q{q}_r{r}"] for r in range(5)])
+                    values = np.array([row[f"loss_q{q}_r{r}"] for r in range(rounds)])
                     require(
                         np.array_equal(values, f - c, equal_nan=True),
                         f"{path}: inconsistent per-Q loss",
                     )
-                    expected_iqm = (
-                        float(trim_mean(values, 0.25))
-                        if np.isfinite(values).all()
-                        else np.nan
-                    )
+                    expected_iqm = iqm(values) if np.isfinite(values).all() else np.nan
                     require(
                         np.array_equal(
                             [row[f"loss_q{q}_iqm"]], [expected_iqm], equal_nan=True
@@ -324,12 +327,12 @@ def _checks(snapshot, path, meta, n, end, seed, config, architecture, environmen
         if k == 0:
             require(np.isfinite(fresh).all(), f"{path}: invalid initial fresh probe")
             require(
-                row["score_fresh_iqm"] == float(trim_mean(fresh, 0.25)),
+                row["score_fresh_iqm"] == iqm(fresh),
                 f"{path}: stale initial score",
             )
             continue
-        loss = np.array([row[f"loss_r{r}"] for r in range(5)])
-        current = np.array([row[f"score_current_r{r}"] for r in range(5)])
+        loss = np.array([row[f"loss_r{r}"] for r in range(rounds)])
+        current = np.array([row[f"score_current_r{r}"] for r in range(rounds)])
         valid = bool(
             np.isfinite(loss).all()
             and np.isfinite(fresh).all()
@@ -342,11 +345,22 @@ def _checks(snapshot, path, meta, n, end, seed, config, architecture, environmen
         else:
             require(
                 np.array_equal(
-                    loss, paired_loss({
-                        name: {"score": np.array([row[f"score_{name}_r{r}"] for r in range(5)], np.float32)}
-                        for name in (("fresh_q1", "fresh_q2", "current_q1", "current_q2")
-                                     if suite(environment) == "humanoid_bench" else ("fresh", "current"))
-                    })
+                    loss,
+                    paired_loss(
+                        {
+                            name: {
+                                "score": np.array(
+                                    [row[f"score_{name}_r{r}"] for r in range(rounds)],
+                                    np.float32,
+                                )
+                            }
+                            for name in (
+                                ("fresh_q1", "fresh_q2", "current_q1", "current_q2")
+                                if suite(environment) == "humanoid_bench"
+                                else ("fresh", "current")
+                            )
+                        }
+                    ),
                 ),
                 f"{path}: inconsistent round losses at {k}",
             )
@@ -366,17 +380,17 @@ def _checks(snapshot, path, meta, n, end, seed, config, architecture, environmen
                 ("loss_iqm", loss),
             ):
                 require(
-                    row[name] == float(trim_mean(values, 0.25)),
+                    row[name] == iqm(values),
                     f"{path}: inconsistent {name} at {k}",
                 )
         require(not row.get("forced", False), f"{path}: forced confirmatory trigger")
         if suite(environment) == "humanoid_bench":
             for q in (1, 2):
                 require(
-                    all(f"loss_q{q}_r{r}" in row for r in range(5)),
+                    all(f"loss_q{q}_r{r}" in row for r in range(rounds)),
                     f"{path}: missing per-Q measurements",
                 )
-    final = next(r for r in original if r["check_index"] == 20)
+    final = next(r for r in original if r["check_index"] == checks)
     require(
         final["valid"] and np.isfinite(final["loss_iqm"]),
         f"{path}: invalid final endpoint",
@@ -388,12 +402,15 @@ def _probe_curve_shape(config):
     """Bind curves to the declared frozen protocol, never to observed lengths."""
     probe = config.get("probe", {})
     rounds, steps = probe.get("rounds"), probe.get("steps")
+    official = config.get("official_exp1_version") == "no-hb-v1"
     require(
         type(rounds) is int
-        and rounds == 5
         and type(steps) is int
-        and steps in (1000, 2000),
-        "unsupported or ambiguous five-target probe curve contract",
+        and (
+            (official and (rounds, steps, probe.get("checks")) == (10, 2000, 50))
+            or (not official and rounds == 5 and steps in (1000, 2000))
+        ),
+        "unsupported or ambiguous five-target/official probe curve contract",
     )
     return rounds, steps
 
@@ -416,7 +433,9 @@ def _curves(snapshot, path, checks, twin, records, config):
                 )
                 record = next(row for row in records if row["check_index"] == k)
                 score_name = "score_" + name
-                values = np.array([record[f"{score_name}_r{r}"] for r in range(5)])
+                values = np.array(
+                    [record[f"{score_name}_r{r}"] for r in range(expected_shape[0])]
+                )
                 require(
                     np.array_equal(
                         arrays[f"check_{k:02d}/{name}_score"], values, equal_nan=True
@@ -426,6 +445,7 @@ def _curves(snapshot, path, checks, twin, records, config):
 
 
 def _parent(snapshot, directory, architecture, environment, seed, study):
+    checks = int(study["configs"][f"{architecture}/{environment}"]["probe"]["checks"])
     key = run_key(architecture, environment, seed)
     runs = snapshot.csv(directory / "run.csv")
     require(
@@ -448,7 +468,7 @@ def _parent(snapshot, directory, architecture, environment, seed, study):
     n = budget(environment) // 2
     require(
         (row.budget_env_steps, row.num_interaction_steps, row.num_checks, row.status)
-        == (2 * n, n, 20, "complete"),
+        == (2 * n, n, checks, "complete"),
         f"{key}: incomplete/wrong budget",
     )
     require(row.code_commit == study["code_commit"], f"{key}: ledger revision mismatch")
@@ -492,12 +512,12 @@ def _parent(snapshot, directory, architecture, environment, seed, study):
         row.initial_fresh_score_iqm == frame.iloc[0].score_fresh_iqm,
         f"{key}: stale initial score",
     )
-    final = frame[frame.check_index == 20].iloc[0]
+    final = frame[frame.check_index == checks].iloc[0]
     require(
         np.isfinite(row.final_loss_iqm) and row.final_loss_iqm == final.loss_iqm,
         f"{key}: stale endpoint",
     )
-    fstar = trigger.f_star(records, 20, 2, 0.95)
+    fstar = trigger.f_star(records, checks, 2, 0.95)
     require(
         (
             fstar is None
@@ -509,7 +529,7 @@ def _parent(snapshot, directory, architecture, environment, seed, study):
             fstar is not None
             and row.f_star_check == fstar["check_index"]
             and row.f_star_interaction_step == fstar["interaction_step"]
-            and row.f_star_fraction == fstar["check_index"] / 20
+            and row.f_star_fraction == fstar["check_index"] / checks
         ),
         f"{key}: inconsistent eligibility",
     )
@@ -937,9 +957,21 @@ def _check2(snapshot, result, path, k, seed, config, twin, key):
                 f"{key}: stale Check 2 IQM",
             )
         diff = scores["injected"] - scores["control"]
-        loss_inputs = {name: {"score": data[f"{name}_score"]}
-                       for name in (("fresh_q1", "fresh_q2", "injected_q1", "injected_q2",
-                                     "control_q1", "control_q2") if twin else scores)}
+        loss_inputs = {
+            name: {"score": data[f"{name}_score"]}
+            for name in (
+                (
+                    "fresh_q1",
+                    "fresh_q2",
+                    "injected_q1",
+                    "injected_q2",
+                    "control_q1",
+                    "control_q2",
+                )
+                if twin
+                else scores
+            )
+        }
         for field, values in (
             ("paired_difference_rounds", diff),
             ("loss_injected_rounds", paired_loss(loss_inputs, "injected")),
@@ -992,9 +1024,27 @@ def validate(results_root, study_manifest, experiment):
             "--study-manifest is required; use --exploratory for progress data",
         )
         study = snapshot.json(study_manifest)
+        official = study.get("protocol_version") == "no-hb-v1"
+        if official:
+            require(
+                experiment == "exp1",
+                "official Exp2 integration requires separate review",
+            )
+            from experiments.exp12.official_exp1 import (
+                ENVIRONMENTS as environments,
+                SEEDS as seeds,
+            )
+
+            environments = tuple(e for e, _ in environments)
+        else:
+            require("protocol_version" not in study, "unknown protocol version")
+            environments, seeds = ENVIRONMENTS, SEEDS
         require(
             study["schema_version"] == 1
-            and study["injection_m"] in ("last", "half", "all"),
+            and (
+                study["injection_m"] in ("last", "half", "all")
+                or (official and study["injection_m"] is None)
+            ),
             "invalid frozen study manifest",
         )
         require(
@@ -1005,7 +1055,7 @@ def validate(results_root, study_manifest, experiment):
         )
         require(
             set(study["configs"])
-            == {f"{a}/{e}" for a in ARCHITECTURES for e in ENVIRONMENTS},
+            == {f"{a}/{e}" for a in ARCHITECTURES for e in environments},
             "incorrect study config population",
         )
         from scripts.freeze_exp12_analysis_manifest import build
@@ -1016,6 +1066,7 @@ def validate(results_root, study_manifest, experiment):
             study["gpu_model"],
             study["injection_m"],
             study["runtime_by_suite"],
+            **({"protocol_version": "no-hb-v1"} if official else {}),
         )
         require(
             _strip_locations(study["configs"])
@@ -1026,7 +1077,7 @@ def validate(results_root, study_manifest, experiment):
         raise ValidationError([str(exc)]) from exc
     architectures = ARCHITECTURES if experiment == "exp1" else SCALED
     expected = {
-        run_key(a, e, s) for a in architectures for e in ENVIRONMENTS for s in SEEDS
+        run_key(a, e, s) for a in architectures for e in environments for s in seeds
     }
     observed = set()
     root = ledger.ledger_root(results_root)
@@ -1052,8 +1103,8 @@ def validate(results_root, study_manifest, experiment):
             f"population mismatch: missing={sorted(expected - observed)}, extra={sorted(observed - expected)}"
         )
     for a in architectures:
-        for e in ENVIRONMENTS:
-            for s in SEEDS:
+        for e in environments:
+            for s in seeds:
                 key = run_key(a, e, s)
                 try:
                     _, _, item = _parent(snapshot, root / key, a, e, s, study)

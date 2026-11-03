@@ -1,6 +1,6 @@
 """Experiment 1 analysis (.claude/methodology-exp1-exp2.md; decisions C1-C3).
 
-Primary endpoint: plasticity loss at the final scheduled check (20/20),
+Primary endpoint: plasticity loss at the final scheduled check,
 difference = IQM(scaled) - IQM(D2W512) over all runs, pooled across
 environments with rliable's stratified bootstrap (strata = environments;
 the two architectures are resampled independently, i.e. runs are unpaired) and
@@ -153,10 +153,13 @@ def plot_every_seed(checks: pd.DataFrame, path: Path) -> None:
     plt.close(fig)
 
 
-def plot_learning_curves(run_key: str, path: Path, results_root=None, check_indices=(1, 10, 20)) -> None:
+def plot_learning_curves(run_key: str, path: Path, results_root=None, check_indices=None) -> None:
     """Descriptive probe learning curves (current vs fresh, mean of rounds) for one run."""
     plt = _plot_setup()
     curves = np.load(ledger.ledger_root(results_root) / run_key / "probe_curves.npz")
+    if check_indices is None:
+        last = max(int(key.split("/")[0].removeprefix("check_")) for key in curves.files)
+        check_indices = tuple(sorted({1, max(1, last // 2), last}))
     fig, axes = plt.subplots(1, len(check_indices), figsize=(3.6 * len(check_indices), 2.8), squeeze=False)
     for ax, k in zip(axes[0], check_indices):
         twins = f"check_{k:02d}/fresh_q1_losses" in curves

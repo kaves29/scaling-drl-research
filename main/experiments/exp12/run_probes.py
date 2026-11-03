@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Dict, List
 
 import numpy as np
+import wandb
 import orbax.checkpoint
 import pandas as pd
 
@@ -43,7 +44,9 @@ class RunProbes:
             raise ValueError(f"testing.force_trigger_check must be >= trigger.consecutive_checks "
                              f"({self.trigger.consecutive_checks}): f*_run needs that many firing checks")
         checks = check_steps(int(trainer.cfg.num_interaction_steps), self.cfg.checks)
-        if checks[0] <= int(trainer.cfg.buffer.min_length):
+        warmup = int(trainer.cfg.buffer.min_length)
+        official = trainer.cfg.get("official_exp1_version") == "no-hb-v1"
+        if checks[0] < warmup or (checks[0] == warmup and not official):
             raise ValueError(
                 f"The first probe check (interaction step {checks[0]}) must come after the fresh-critic "
                 f"probe at buffer.min_length={trainer.cfg.buffer.min_length}."
@@ -51,6 +54,8 @@ class RunProbes:
         self.check_every = checks[0]
         self.check_index = {step: k for k, step in enumerate(checks, 1)}
         self.fresh = None
+        if wandb.run is not None:
+            wandb.define_metric("probe/*", step_metric="probe/interaction_step")
         if self.fresh_path.exists():
             self.fresh = orbax.checkpoint.PyTreeCheckpointer().restore(str(self.fresh_path))["params"]
 
@@ -86,6 +91,7 @@ class RunProbes:
             "score_fresh_iqm": iqm(score) if np.all(np.isfinite(score)) else float("nan"),
             **per_network_fields(result, fresh_only=True),
         })
+        self._log_record(self.records[-1])
 
     def maybe_check(self, trainer) -> None:
         k = self.check_index.get(trainer.interaction_step)
@@ -126,7 +132,20 @@ class RunProbes:
             self.trainer.extra_state["f_star"] = f_star(
                 self.records, self.cfg.checks, tc.consecutive_checks, tc.eligible_fraction
             )
+        self._log_record(row)
         return row
+
+    def _log_record(self, row: Dict) -> None:
+        """Transport the existing record; never recompute a probe for logging."""
+        if wandb.run is not None:
+            wandb.log(
+                {
+                    **{f"probe/{key}": value for key, value in row.items()},
+                    "probe/env_step": int(
+                        row["interaction_step"] * self.trainer.cfg.action_repeat
+                    ),
+                }
+            )
 
     def _probe(self, k: int, critics: Dict) -> Dict:
         t = self.trainer

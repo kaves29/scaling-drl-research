@@ -77,15 +77,23 @@ def state(root, meta):
 
 
 def records(
-    n, end, twin=False, eligible=False, invalid=False, fork_check=2, steps=1000
+    n,
+    end,
+    twin=False,
+    eligible=False,
+    invalid=False,
+    fork_check=2,
+    steps=1000,
+    rounds=5,
+    checks=20,
 ):
     result, curves = [], {}
-    for k in range(end // (n // 20) + 1):
-        fresh = np.ones(5, np.float32)
+    for k in range(end // (n // checks) + 1):
+        fresh = np.ones(rounds, np.float32)
         current = (
-            np.zeros(5, np.float32)
+            np.zeros(rounds, np.float32)
             if eligible and k in (fork_check - 1, fork_check)
-            else np.full(5, 2.0, np.float32)
+            else np.full(rounds, 2.0, np.float32)
         )
         if invalid and k == 3:
             current[0] = np.nan
@@ -93,7 +101,7 @@ def records(
         valid = bool(np.isfinite(loss).all())
         row = dict(
             check_index=k,
-            interaction_step=5000 if k == 0 else k * n // 20,
+            interaction_step=5000 if k == 0 else k * n // checks,
             **{f"score_fresh_r{r}": float(x) for r, x in enumerate(fresh)},
             score_fresh_iqm=iqm(fresh),
         )
@@ -113,7 +121,7 @@ def records(
         for name, values in [("fresh", fresh)] + ([("current", current)] if k else []):
             for part in [f"{name}_q{q}" for q in (1, 2)] if twin else [name]:
                 curves[f"check_{k:02d}/{part}_losses"] = np.zeros(
-                    (5, steps), np.float32
+                    (rounds, steps), np.float32
                 )
                 curves[f"check_{k:02d}/{part}_score"] = values
                 if twin:
@@ -164,6 +172,8 @@ def parent(base, study, a, e, s, eligible=False, invalid=False, fork_check=2):
         invalid,
         fork_check,
         steps=cfg["probe"]["steps"],
+        rounds=cfg["probe"]["rounds"],
+        checks=cfg["probe"]["checks"],
     )
     m = dict(
         interaction_step=end,
@@ -183,7 +193,7 @@ def parent(base, study, a, e, s, eligible=False, invalid=False, fork_check=2):
         seed=s,
         budget_env_steps=2 * n,
         num_interaction_steps=n,
-        num_checks=20,
+        num_checks=cfg["probe"]["checks"],
         code_commit=COMMIT,
     )
     directory = ledger.write_run(

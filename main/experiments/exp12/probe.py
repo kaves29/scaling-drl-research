@@ -38,8 +38,12 @@ class ProbeConfig:
 
 
 def iqm(values) -> float:
-    """Interquartile mean, as rliable's metrics.aggregate_iqm."""
-    return float(trim_mean(np.asarray(values, dtype=np.float64), proportiontocut=0.25, axis=None))
+    """Historical trimmed mean for five; empirical 25%-75% IQM for ten."""
+    x = np.asarray(values, dtype=np.float64)
+    if x.size == 10:
+        ordered = np.sort(x)
+        return float((ordered[2] + ordered[7]) / 10 + np.sum(ordered[3:7]) / 5)
+    return float(trim_mean(x, proportiontocut=0.25, axis=None))
 
 
 def check_steps(num_interaction_steps: int, checks: int):

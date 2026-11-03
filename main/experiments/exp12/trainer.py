@@ -11,6 +11,7 @@ windows).
 """
 
 import random
+import uuid
 from pathlib import Path
 from typing import Callable, Dict, List, Optional
 
@@ -97,6 +98,19 @@ class Exp12Trainer:
         # Small per-experiment state (e.g. probe records) persisted with every save.
         self.extra_state: Dict = {}
         self.diagnostics = ActorDiagnostics(cfg)
+        from scale_rl.diagnostics.critic_metrics import from_environment
+
+        self.critic_measurements = from_environment(self.run_dir)
+        measurements = cfg.get("critic_measurements", {})
+        if self.critic_measurements is None and measurements.get("enabled", False):
+            from scale_rl.diagnostics.critic_metrics import CriticMeasurements
+
+            self.critic_measurements = CriticMeasurements(
+                Path(self.run_dir) / "critic_diagnostics" / uuid.uuid4().hex,
+                compute_rank=bool(measurements.get("compute_rank", False)),
+                every=int(measurements.get("every", 1)),
+                freeze_first=bool(measurements.get("freeze_first", False)),
+            )
         self.run_name = (
             f"{cfg.env_name}_CD{cfg.agent.critic_num_blocks}_CW{cfg.agent.critic_hidden_dim}"
             f"_AD{cfg.agent.actor_num_blocks}_AW{cfg.agent.actor_hidden_dim}_seed{cfg.seed}"
@@ -182,7 +196,8 @@ class Exp12Trainer:
 
             if interaction_step % cfg.logging_per_interaction_step == 0:
                 self.pending.flush()
-                metrics_info = self.agent.get_metrics(self.update_step, self.buffer.sample())
+                metrics_batch = self.buffer.sample()
+                metrics_info = self.agent.get_metrics(self.update_step, metrics_batch)
                 self.logger.update_metric(**metrics_info)
                 self.logger.update_metric(**self.diagnostics.window_metrics())
 
@@ -197,6 +212,16 @@ class Exp12Trainer:
                 snapshot.update(self.logger.average_meter_dict.averages())
                 snapshot.update(self.logger.media_dict)
                 self.metrics_rows.append(snapshot)
+                observer = self.critic_measurements
+                if observer is not None:
+                    critic_record = observer.record(
+                        self._sac_agent.critic, metrics_batch,
+                        interaction_step=self.interaction_step,
+                        optimizer_step=self.update_step, legacy_metrics=snapshot,
+                    )
+                    self.logger.update_critic_diagnostics(
+                        critic_record, observer.output, step=env_step
+                    )
                 self.logger.log_metric(step=env_step)
                 self.logger.reset()
 

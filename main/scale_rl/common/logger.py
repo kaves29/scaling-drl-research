@@ -82,6 +82,17 @@ class WandbTrainerLogger(object):
             else:
                 self.media_dict[k] = v
 
+    def update_critic_diagnostics(self, record, output, *, step: int) -> None:
+        """Merge new scalars into this logging event and queue mask artifacts."""
+        if record is None:
+            return
+        from scale_rl.diagnostics.wandb_logging import scalar_payload, publish_masks
+
+        payload = scalar_payload(record, environment_step=step)
+        publish_masks(record, output, environment_step=step)
+        # These are already per-event measurements, not update-window samples.
+        self.media_dict.update(payload)
+
     def log_metric(self, step: int) -> Dict:
         log_data = {}
         log_data.update(self.average_meter_dict.averages())
