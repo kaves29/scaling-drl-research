@@ -11,6 +11,7 @@ windows).
 """
 
 import random
+import uuid
 from pathlib import Path
 from typing import Callable, Dict, List, Optional
 
@@ -105,7 +106,7 @@ class Exp12Trainer:
             from scale_rl.diagnostics.critic_metrics import CriticMeasurements
 
             self.critic_measurements = CriticMeasurements(
-                Path(self.run_dir) / "critic_diagnostics",
+                Path(self.run_dir) / "critic_diagnostics" / uuid.uuid4().hex,
                 compute_rank=bool(measurements.get("compute_rank", False)),
                 every=int(measurements.get("every", 1)),
                 freeze_first=bool(measurements.get("freeze_first", False)),

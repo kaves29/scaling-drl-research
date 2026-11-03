@@ -272,3 +272,29 @@ def test_complete_synthetic_330_parent_certificate(tmp_path):
     metadata.write_text(json.dumps(content))
     with pytest.raises(fixture.v.ValidationError, match="revision|source|commit"):
         validate(str(tmp_path / "results"), str(path), "exp1")
+
+
+def test_diagnostic_sessions_preserve_previous_outputs_when_reopening_run(tmp_path):
+    from experiments.exp12.trainer import Exp12Trainer
+    from tests.exp12_helpers import compose, tiny_overrides
+
+    cfg = compose(
+        tiny_overrides(
+            steps=500, extra=["run_role=dev", "critic_measurements.compute_rank=false"]
+        ),
+        config_name="base_exp1_official",
+    )
+    first = Exp12Trainer(cfg, str(tmp_path))
+    try:
+        directory = first.critic_measurements.output
+        marker = directory / "retained.json"
+        marker.write_text("original evidence")
+    finally:
+        first.close()
+    second = Exp12Trainer(cfg, str(tmp_path))
+    try:
+        assert second.critic_measurements.output != directory
+        assert marker.read_text() == "original evidence"
+        assert second.critic_measurements.output.is_dir()
+    finally:
+        second.close()

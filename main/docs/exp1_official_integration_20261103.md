@@ -104,3 +104,20 @@ Use `--experiment exp1` with the normal CLI defaults to select this official
 profile; explicit legacy `--config_name base_exp12` remains available for old
 fixtures/protocols. New source cannot resume old-source official runs through the
 source-admission guard. No active/completed run or historical output was changed.
+
+## Final integration regression found and repaired
+
+The first configuration-driven diagnostics integration used one fixed output
+folder. The collector correctly refuses existing folders, so reopening a run
+would fail before restoration. The repair follows the existing environment-driven
+observer pattern: each opening gets a distinct UUID session beneath the run's
+`critic_diagnostics` directory. Previous masks/receipts are preserved. Persistence
+statistics are session-scoped; do not interpret a restart as uninterrupted mask
+history. No training RNG is used for the session identifier.
+
+The reopening regression fails on the pre-fix trainer and passes with the repair.
+This was an integration defect caught before release, not evidence of a cause of
+the historical probe scores. Before this final repair, clean-source validation
+passed 87 combined CPU tests and all 74 mutations; 110 official environment/seed
+restoration checks passed. Final-head results are separately recorded externally
+and must not be added to those overlapping counts.
