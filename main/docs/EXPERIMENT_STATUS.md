@@ -1,5 +1,16 @@
 # Exp1/Exp2 scientific and validation status
 
+## Probe reporting repair candidate (3 November 2026)
+
+Separate branch `codex/probe-reporting-audit-20261103`, based on approved
+integration `844e3c0cc24998b25c3d1e667bcbfe056b1b336c`.
+[Repair and audit](probe_reporting_audit_20261103.md) describes transport of
+already-computed probe records to W&B, regression coverage and source-binding
+limitations. Scientific producer/configuration and existing pilots are unchanged.
+This is a reporting-only review candidate, not adoption of the base
+protocol for the newer ten-target campaign or authorization to execute.
+
+
 This is a status index, not a methodology amendment. Read the canonical
 [methodology and amendments](../.claude/methodology-exp1-exp2.md) and the
 [approved decisions](exp12_decisions.md). Historical reports retain their original
