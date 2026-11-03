@@ -34,7 +34,9 @@ def build(
         config_name = "base_exp1_official"
     elif protocol_version is None:
         if injection_m not in ("last", "half", "all"):
-            raise ValueError("legacy combined study requires a frozen injection magnitude")
+            raise ValueError(
+                "legacy combined study requires a frozen injection magnitude"
+            )
         environments, architectures, config_name = EXP12_ENVS, EXP12_ARCHS, "base_exp12"
     else:
         raise ValueError("unknown protocol version")
