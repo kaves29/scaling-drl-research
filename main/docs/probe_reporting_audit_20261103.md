@@ -101,7 +101,7 @@ training on/off identity, twin reporting/restoration, runtime and mutation check
 provide additional regression coverage; exact commands/results are recorded in
 the validation receipt rather than treating stale reports as authorization.
 
-The focused candidate suite reports 48 passing tests, including six new
+The focused candidate suite reports 48 passing tests, including five new
 parameterized transport cases and existing probe, twin-reporting, twin-critic and
 runtime checks. The two aggregate transport cases fail against the unmodified
 base (five and ten rounds). Legacy simulator construction/next-transition and
