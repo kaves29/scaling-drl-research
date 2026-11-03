@@ -600,7 +600,7 @@ profile. Historical source definitions and the legacy Exp2 profile remain
 explicit; do not reinterpret archived results under this version.
 
 - Population: the legacy thirteen environments with **both HumanoidBench tasks
-  removed**. This is eleven environments, seeds 1–10, and D2W512/D4W1024/D4W1536:
+  removed**. This is eleven environments, ten seeds, and D2W512/D4W1024/D4W1536:
   **330 parents**. The earlier four-environment/eight-seed population was a pilot.
 - Ten randomized **sine** targets, 2,000 continuous optimizer updates, 50 checks.
   Preserve first/next-1,000 index streams, own-mean offsets, architecture-specific
@@ -618,3 +618,5 @@ explicit; do not reinterpret archived results under this version.
   2 or 3, choose m, grant CUDA/resource qualification, promote source, or authorize
   a launch. Exp1's existing natural-fork/control capture does not choose m or launch
   an injected arm. Those permissions remain separate.
+
+The ten-seed count is approved; the exact IDs remain a pending owner decision because seed 9 was reserved for development calibration. The candidate tests provisional IDs 1–10. IDs 1–8,10,11 were recommended to retain the development exclusion; no final choice has been recorded.

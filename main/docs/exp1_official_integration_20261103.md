@@ -121,3 +121,17 @@ the historical probe scores. Before this final repair, clean-source validation
 passed 87 combined CPU tests and all 74 mutations; 110 official environment/seed
 restoration checks passed. Final-head results are separately recorded externally
 and must not be added to those overlapping counts.
+
+## Final CPU result and remaining owner choice
+
+At implementation `6d011afa7160c93b377b05452fb81ba1c1733c1e`, all 88 combined
+CPU tests and all 74 mutation checks pass. There are 110 passing environment/seed
+restoration cells. These counts overlap prior runs and are not additive.
+
+The ten-seed **count** is settled; the current 1–10 IDs are provisional. Seed 9
+was previously development calibration. Owner clarification was requested on
+using IDs 1–8,10,11 to preserve its exclusion versus explicitly revisiting that
+exclusion. Until resolved, do not freeze/promote or launch the provisional
+population. The environment list, budgets, sine targets and all other reconciled
+settings remain as described above. Final source freeze requires this answer;
+this review draft is concrete and CPU-tested but not production-approved.
