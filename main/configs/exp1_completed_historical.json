@@ -1,0 +1,623 @@
+{
+  "schema_version": 1,
+  "inventory_sha256": "77920520a9f908db23fdf25e9236793eb29f210d07e44d54298a55c71cf99550",
+  "meaning": "Owner-authorized completed-cell reuse; exact artifact/source admission remains separate",
+  "completed": [
+    {
+      "run_id": "0hjur18k",
+      "environment": "myo-key-turn",
+      "architecture": "D2W512",
+      "seed": 8,
+      "source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+    },
+    {
+      "run_id": "0i020va8",
+      "environment": "myo-pen-twirl",
+      "architecture": "D4W1024",
+      "seed": 3,
+      "source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+    },
+    {
+      "run_id": "14fmtkz6",
+      "environment": "myo-pen-twirl",
+      "architecture": "D4W1536",
+      "seed": 5,
+      "source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+    },
+    {
+      "run_id": "1j54fl54",
+      "environment": "humanoid-run",
+      "architecture": "D4W1024",
+      "seed": 3,
+      "source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+    },
+    {
+      "run_id": "1ygj8vna",
+      "environment": "myo-pen-twirl",
+      "architecture": "D2W512",
+      "seed": 2,
+      "source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+    },
+    {
+      "run_id": "2hnvxif1",
+      "environment": "dog-run",
+      "architecture": "D2W512",
+      "seed": 2,
+      "source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+    },
+    {
+      "run_id": "2j9z776f",
+      "environment": "dog-run",
+      "architecture": "D4W1024",
+      "seed": 2,
+      "source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+    },
+    {
+      "run_id": "2vybacn1",
+      "environment": "myo-key-turn",
+      "architecture": "D4W1536",
+      "seed": 4,
+      "source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+    },
+    {
+      "run_id": "341e3dqc",
+      "environment": "dog-run",
+      "architecture": "D4W1536",
+      "seed": 4,
+      "source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+    },
+    {
+      "run_id": "347giqsc",
+      "environment": "humanoid-run",
+      "architecture": "D2W512",
+      "seed": 6,
+      "source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+    },
+    {
+      "run_id": "3gph5ufg",
+      "environment": "myo-pen-twirl",
+      "architecture": "D4W1024",
+      "seed": 7,
+      "source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+    },
+    {
+      "run_id": "3hfsq13w",
+      "environment": "dog-run",
+      "architecture": "D4W1536",
+      "seed": 1,
+      "source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+    },
+    {
+      "run_id": "3p8q5bs0",
+      "environment": "myo-pen-twirl",
+      "architecture": "D4W1536",
+      "seed": 1,
+      "source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+    },
+    {
+      "run_id": "515e9nqz",
+      "environment": "myo-pen-twirl",
+      "architecture": "D2W512",
+      "seed": 7,
+      "source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+    },
+    {
+      "run_id": "5beg01yn",
+      "environment": "myo-key-turn",
+      "architecture": "D4W1024",
+      "seed": 7,
+      "source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+    },
+    {
+      "run_id": "5bp87gdz",
+      "environment": "myo-key-turn",
+      "architecture": "D4W1024",
+      "seed": 8,
+      "source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+    },
+    {
+      "run_id": "5u5uambc",
+      "environment": "myo-pen-twirl",
+      "architecture": "D4W1024",
+      "seed": 2,
+      "source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+    },
+    {
+      "run_id": "5z1wpev1",
+      "environment": "dog-run",
+      "architecture": "D4W1024",
+      "seed": 1,
+      "source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+    },
+    {
+      "run_id": "63b389qb",
+      "environment": "myo-pen-twirl",
+      "architecture": "D2W512",
+      "seed": 5,
+      "source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+    },
+    {
+      "run_id": "6lrxxyfg",
+      "environment": "myo-pen-twirl",
+      "architecture": "D2W512",
+      "seed": 6,
+      "source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+    },
+    {
+      "run_id": "7egofbq8",
+      "environment": "dog-run",
+      "architecture": "D2W512",
+      "seed": 1,
+      "source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+    },
+    {
+      "run_id": "7ic002ar",
+      "environment": "dog-run",
+      "architecture": "D2W512",
+      "seed": 5,
+      "source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+    },
+    {
+      "run_id": "7s2joo8n",
+      "environment": "humanoid-run",
+      "architecture": "D4W1024",
+      "seed": 2,
+      "source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+    },
+    {
+      "run_id": "82osz4uh",
+      "environment": "dog-run",
+      "architecture": "D2W512",
+      "seed": 7,
+      "source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+    },
+    {
+      "run_id": "86itjkh3",
+      "environment": "myo-key-turn",
+      "architecture": "D4W1024",
+      "seed": 1,
+      "source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+    },
+    {
+      "run_id": "8w8yil3c",
+      "environment": "myo-key-turn",
+      "architecture": "D2W512",
+      "seed": 6,
+      "source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+    },
+    {
+      "run_id": "92t1q6ax",
+      "environment": "myo-pen-twirl",
+      "architecture": "D2W512",
+      "seed": 8,
+      "source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+    },
+    {
+      "run_id": "9j0g5bee",
+      "environment": "myo-key-turn",
+      "architecture": "D4W1536",
+      "seed": 5,
+      "source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+    },
+    {
+      "run_id": "bftpzg4k",
+      "environment": "myo-key-turn",
+      "architecture": "D4W1024",
+      "seed": 6,
+      "source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+    },
+    {
+      "run_id": "bwqxy3ce",
+      "environment": "dog-run",
+      "architecture": "D2W512",
+      "seed": 8,
+      "source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+    },
+    {
+      "run_id": "c8nuc1zv",
+      "environment": "humanoid-run",
+      "architecture": "D4W1536",
+      "seed": 6,
+      "source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+    },
+    {
+      "run_id": "chhgyiuq",
+      "environment": "humanoid-run",
+      "architecture": "D4W1024",
+      "seed": 5,
+      "source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+    },
+    {
+      "run_id": "ctf78953",
+      "environment": "humanoid-run",
+      "architecture": "D2W512",
+      "seed": 5,
+      "source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+    },
+    {
+      "run_id": "cu8g1le4",
+      "environment": "myo-pen-twirl",
+      "architecture": "D4W1024",
+      "seed": 4,
+      "source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+    },
+    {
+      "run_id": "dce5c6uv",
+      "environment": "myo-key-turn",
+      "architecture": "D2W512",
+      "seed": 4,
+      "source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+    },
+    {
+      "run_id": "deaf606s",
+      "environment": "myo-key-turn",
+      "architecture": "D4W1536",
+      "seed": 2,
+      "source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+    },
+    {
+      "run_id": "dt1jcy1i",
+      "environment": "myo-pen-twirl",
+      "architecture": "D4W1536",
+      "seed": 6,
+      "source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+    },
+    {
+      "run_id": "dusktfpi",
+      "environment": "humanoid-run",
+      "architecture": "D4W1536",
+      "seed": 3,
+      "source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+    },
+    {
+      "run_id": "dw8udycp",
+      "environment": "myo-pen-twirl",
+      "architecture": "D4W1536",
+      "seed": 3,
+      "source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+    },
+    {
+      "run_id": "emnx77pl",
+      "environment": "humanoid-run",
+      "architecture": "D4W1024",
+      "seed": 8,
+      "source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+    },
+    {
+      "run_id": "f2itkrl6",
+      "environment": "myo-pen-twirl",
+      "architecture": "D2W512",
+      "seed": 4,
+      "source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+    },
+    {
+      "run_id": "frffxhm4",
+      "environment": "humanoid-run",
+      "architecture": "D2W512",
+      "seed": 3,
+      "source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+    },
+    {
+      "run_id": "g3tcvyor",
+      "environment": "dog-run",
+      "architecture": "D2W512",
+      "seed": 3,
+      "source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+    },
+    {
+      "run_id": "g9pxg41p",
+      "environment": "myo-pen-twirl",
+      "architecture": "D4W1024",
+      "seed": 5,
+      "source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+    },
+    {
+      "run_id": "gxta0ldp",
+      "environment": "myo-key-turn",
+      "architecture": "D4W1536",
+      "seed": 3,
+      "source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+    },
+    {
+      "run_id": "h1wkz2qs",
+      "environment": "myo-key-turn",
+      "architecture": "D4W1024",
+      "seed": 2,
+      "source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+    },
+    {
+      "run_id": "hhrv4pn3",
+      "environment": "humanoid-run",
+      "architecture": "D4W1536",
+      "seed": 2,
+      "source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+    },
+    {
+      "run_id": "hnth93hd",
+      "environment": "myo-key-turn",
+      "architecture": "D2W512",
+      "seed": 5,
+      "source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+    },
+    {
+      "run_id": "htg273zh",
+      "environment": "dog-run",
+      "architecture": "D4W1536",
+      "seed": 3,
+      "source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+    },
+    {
+      "run_id": "jbcstd01",
+      "environment": "humanoid-run",
+      "architecture": "D4W1024",
+      "seed": 1,
+      "source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+    },
+    {
+      "run_id": "jiotx3f8",
+      "environment": "humanoid-run",
+      "architecture": "D4W1536",
+      "seed": 1,
+      "source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+    },
+    {
+      "run_id": "jljd2ome",
+      "environment": "humanoid-run",
+      "architecture": "D2W512",
+      "seed": 7,
+      "source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+    },
+    {
+      "run_id": "jln9bn35",
+      "environment": "myo-pen-twirl",
+      "architecture": "D4W1024",
+      "seed": 8,
+      "source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+    },
+    {
+      "run_id": "k507pwct",
+      "environment": "humanoid-run",
+      "architecture": "D2W512",
+      "seed": 4,
+      "source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+    },
+    {
+      "run_id": "k91ccw3w",
+      "environment": "humanoid-run",
+      "architecture": "D4W1024",
+      "seed": 7,
+      "source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+    },
+    {
+      "run_id": "kqkedgtk",
+      "environment": "myo-key-turn",
+      "architecture": "D4W1536",
+      "seed": 6,
+      "source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+    },
+    {
+      "run_id": "ks1mkbbx",
+      "environment": "myo-key-turn",
+      "architecture": "D2W512",
+      "seed": 7,
+      "source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+    },
+    {
+      "run_id": "l0zz3kb7",
+      "environment": "dog-run",
+      "architecture": "D4W1024",
+      "seed": 4,
+      "source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+    },
+    {
+      "run_id": "lcmc7x3b",
+      "environment": "myo-key-turn",
+      "architecture": "D2W512",
+      "seed": 1,
+      "source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+    },
+    {
+      "run_id": "mv51059y",
+      "environment": "dog-run",
+      "architecture": "D2W512",
+      "seed": 6,
+      "source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+    },
+    {
+      "run_id": "mwalj6y2",
+      "environment": "dog-run",
+      "architecture": "D4W1024",
+      "seed": 8,
+      "source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+    },
+    {
+      "run_id": "n6a91kke",
+      "environment": "myo-pen-twirl",
+      "architecture": "D2W512",
+      "seed": 1,
+      "source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+    },
+    {
+      "run_id": "nhjqmwnz",
+      "environment": "myo-pen-twirl",
+      "architecture": "D4W1024",
+      "seed": 1,
+      "source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+    },
+    {
+      "run_id": "nikoq5ao",
+      "environment": "dog-run",
+      "architecture": "D4W1024",
+      "seed": 6,
+      "source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+    },
+    {
+      "run_id": "nzs2f1az",
+      "environment": "myo-pen-twirl",
+      "architecture": "D2W512",
+      "seed": 3,
+      "source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+    },
+    {
+      "run_id": "onl4uqen",
+      "environment": "myo-key-turn",
+      "architecture": "D2W512",
+      "seed": 2,
+      "source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+    },
+    {
+      "run_id": "onrxf1xo",
+      "environment": "myo-key-turn",
+      "architecture": "D4W1536",
+      "seed": 1,
+      "source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+    },
+    {
+      "run_id": "pe52kqd1",
+      "environment": "humanoid-run",
+      "architecture": "D4W1024",
+      "seed": 6,
+      "source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+    },
+    {
+      "run_id": "puc8o7in",
+      "environment": "dog-run",
+      "architecture": "D2W512",
+      "seed": 4,
+      "source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+    },
+    {
+      "run_id": "q0859o4f",
+      "environment": "dog-run",
+      "architecture": "D4W1536",
+      "seed": 6,
+      "source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+    },
+    {
+      "run_id": "qfu6gtqq",
+      "environment": "humanoid-run",
+      "architecture": "D4W1536",
+      "seed": 5,
+      "source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+    },
+    {
+      "run_id": "qh5oo3aw",
+      "environment": "myo-pen-twirl",
+      "architecture": "D4W1536",
+      "seed": 4,
+      "source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+    },
+    {
+      "run_id": "qkmtsaxu",
+      "environment": "humanoid-run",
+      "architecture": "D4W1024",
+      "seed": 4,
+      "source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+    },
+    {
+      "run_id": "qlxfxfy9",
+      "environment": "myo-key-turn",
+      "architecture": "D2W512",
+      "seed": 3,
+      "source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+    },
+    {
+      "run_id": "qvgyoxly",
+      "environment": "myo-key-turn",
+      "architecture": "D4W1024",
+      "seed": 4,
+      "source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+    },
+    {
+      "run_id": "r124fxqm",
+      "environment": "dog-run",
+      "architecture": "D4W1024",
+      "seed": 3,
+      "source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+    },
+    {
+      "run_id": "rs1gpjb0",
+      "environment": "dog-run",
+      "architecture": "D4W1536",
+      "seed": 2,
+      "source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+    },
+    {
+      "run_id": "stv2sg3f",
+      "environment": "myo-pen-twirl",
+      "architecture": "D4W1536",
+      "seed": 2,
+      "source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+    },
+    {
+      "run_id": "uj0lmzfa",
+      "environment": "humanoid-run",
+      "architecture": "D2W512",
+      "seed": 2,
+      "source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+    },
+    {
+      "run_id": "vi8gd0nw",
+      "environment": "humanoid-run",
+      "architecture": "D4W1536",
+      "seed": 4,
+      "source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+    },
+    {
+      "run_id": "w5gyiy2y",
+      "environment": "myo-pen-twirl",
+      "architecture": "D4W1024",
+      "seed": 6,
+      "source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+    },
+    {
+      "run_id": "w7jrvvim",
+      "environment": "dog-run",
+      "architecture": "D4W1024",
+      "seed": 7,
+      "source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+    },
+    {
+      "run_id": "wtbzqq2o",
+      "environment": "dog-run",
+      "architecture": "D4W1024",
+      "seed": 5,
+      "source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+    },
+    {
+      "run_id": "xbbglr5b",
+      "environment": "dog-run",
+      "architecture": "D4W1536",
+      "seed": 5,
+      "source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+    },
+    {
+      "run_id": "y6ecehqg",
+      "environment": "myo-key-turn",
+      "architecture": "D4W1024",
+      "seed": 3,
+      "source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+    },
+    {
+      "run_id": "z30a504l",
+      "environment": "humanoid-run",
+      "architecture": "D2W512",
+      "seed": 8,
+      "source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+    },
+    {
+      "run_id": "zlwpdeln",
+      "environment": "myo-key-turn",
+      "architecture": "D4W1024",
+      "seed": 5,
+      "source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+    },
+    {
+      "run_id": "zvvewb1y",
+      "environment": "humanoid-run",
+      "architecture": "D2W512",
+      "seed": 1,
+      "source": "f597ee9898e4d401912092c336c3e5330cf2fda1"
+    }
+  ]
+}
