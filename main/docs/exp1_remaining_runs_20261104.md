@@ -76,3 +76,10 @@ partial cells remaining missing, duplicates/foreign source, missing/partial
 completion rows, incompatible seed lists and refusal to reuse existing outputs.
 The real CLI is also exercised to produce the242-entry preview; no model fit,
 training, GPU job, source promotion or merge is performed.
+
+## Architecture-specific lists
+
+Use `--architecture-dir /absolute/new_directory` to emit three disjoint command
+lists (78 small,78 medium,86 large) alongside the manifest. See the
+[four-GPU resource assessment](exp1_allocation_planning_20261104.md) before choosing
+concurrency or walltime; requested10/6/3 packing and10/18/48 hours are not qualified.

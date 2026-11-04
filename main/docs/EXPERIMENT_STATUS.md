@@ -225,3 +225,10 @@ GPU gates and trigger disposition, the owner must approve the full-length
 development/positive-control role and appropriate allocation/execution. No
 eight-hour resource proposal is adopted here. No demonstrated unresolved
 production engineering defect was introduced by this review.
+
+## Four-GPU resource planning — 4 November 2026
+
+Three size-specific missing-run lists are generated without changing runtime.
+See [planning assessment](exp1_allocation_planning_20261104.md); requested packing
+and walltime are not established. This is not launch approval or a new resource
+limit. No GPU/Slurm execution occurred.

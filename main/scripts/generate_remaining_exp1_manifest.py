@@ -109,6 +109,11 @@ def main():
     parser.add_argument("--seeds", required=True, type=int, nargs=10)
     parser.add_argument("--out", required=True, type=Path)
     parser.add_argument("--commands-out", type=Path)
+    parser.add_argument(
+        "--architecture-dir",
+        type=Path,
+        help="Create a new directory with one command list per critic size (no launch)",
+    )
     args = parser.parse_args()
     result = select_remaining(
         build(args.root), json.loads(COMPLETED.read_text()), args.seeds
@@ -120,6 +125,17 @@ def main():
     for path in [args.out, args.commands_out]:
         if path is not None and path.exists():
             raise FileExistsError(path)
+    if args.architecture_dir is not None:
+        args.architecture_dir.mkdir(exist_ok=False)
+        for arch, _, _ in ARCHITECTURES:
+            with (args.architecture_dir / f"{arch}.txt").open("x") as stream:
+                stream.write(
+                    "".join(
+                        shlex.join(row["command"]) + "\n"
+                        for row in result["entries"]
+                        if row["architecture"] == arch
+                    )
+                )
     with args.out.open("x") as stream:
         json.dump(result, stream, indent=2)
     if args.commands_out is not None:

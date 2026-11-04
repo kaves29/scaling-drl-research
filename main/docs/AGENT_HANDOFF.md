@@ -307,3 +307,13 @@ under the existing 300-second internal timeout/seven-minute Slurm allocation;
 changing staging or budgets requires owner approval. No current CPU result grants
 production-launch authorization. Historical Angle/Modal and delta-fixes branches
 remain untouched pending individual investigation.
+
+## Four-GPU size-specific planning — 4 November 2026
+
+PR25 follow-up adds optional three-list output only, preserving all runtime/config
+settings. See [allocation assessment](exp1_allocation_planning_20261104.md):
+78/78/86 remaining; requested10/6/3 processes per GPU and10/18/48-hour caps are
+unverified. Historical regular-probe median elapsed times5.315/13.301/18.591 h
+and six-run device-wide memory samples do not qualify the proposed layouts.
+No allocation or training launched; seed IDs and historical artifact admission
+remain pending. Evidence is outside Git in exp1-allocation-planning-20261104.

@@ -93,3 +93,48 @@ def test_missing_completion_or_partial_in_completion_registry_is_rejected(tmp_pa
     large["seed"] = 7
     with pytest.raises(ValueError, match="88 completed"):
         select_remaining(plan, completed, list(range(1, 11)))
+
+
+def test_architecture_cli_lists_partition_without_changing_commands(
+    tmp_path, monkeypatch
+):
+    import shlex
+    import sys
+    from scripts import generate_remaining_exp1_manifest as generator
+
+    plan, _ = fixture(tmp_path)
+    monkeypatch.setattr(generator, "build", lambda root: plan)
+    output = tmp_path / "plan.json"
+    directory = tmp_path / "architectures"
+    argv = [
+        "generator",
+        "--root",
+        str(tmp_path / "fresh"),
+        "--seeds",
+        *map(str, range(1, 11)),
+        "--out",
+        str(output),
+        "--architecture-dir",
+        str(directory),
+    ]
+    monkeypatch.setattr(sys, "argv", argv)
+    generator.main()
+    result = json.loads(output.read_text())
+    combined = []
+    for arch, count in [("D2W512", 78), ("D4W1024", 78), ("D4W1536", 86)]:
+        commands = [
+            shlex.split(line)
+            for line in (directory / f"{arch}.txt").read_text().splitlines()
+        ]
+        assert len(commands) == count
+        assert commands == [
+            r["command"] for r in result["entries"] if r["architecture"] == arch
+        ]
+        combined.extend(map(tuple, commands))
+    assert len(combined) == len(set(combined)) == 242
+    original = (directory / "D2W512.txt").read_bytes()
+    output.unlink()
+    with pytest.raises(FileExistsError):
+        generator.main()
+    assert not output.exists()
+    assert (directory / "D2W512.txt").read_bytes() == original
