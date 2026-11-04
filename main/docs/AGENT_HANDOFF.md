@@ -307,3 +307,36 @@ under the existing 300-second internal timeout/seven-minute Slurm allocation;
 changing staging or budgets requires owner approval. No current CPU result grants
 production-launch authorization. Historical Angle/Modal and delta-fixes branches
 remain untouched pending individual investigation.
+
+## Four-GPU size-specific planning — 4 November 2026
+
+PR25 follow-up adds optional three-list output only, preserving all runtime/config
+settings. See [allocation assessment](exp1_allocation_planning_20261104.md):
+78/78/86 remaining; requested10/6/3 processes per GPU and10/18/48-hour caps are
+unverified. Historical regular-probe median elapsed times5.315/13.301/18.591 h
+and six-run device-wide memory samples do not qualify the proposed layouts.
+No allocation or training launched; seed IDs and historical artifact admission
+remain pending. Evidence is outside Git in exp1-allocation-planning-20261104.
+
+### Raw-clock recheck and revised allocation reference
+
+All88 completed raw histories agree with elapsed-runtime medians; large median
+first-to-last timestamp span18.5900h, largest adjacent gap939s. No long queue
+pause is hidden in that value. Forty-four run intervals overlap on gpuc05;
+elapsed time is not exclusive GPU compute. PR25's optional architecture output
+now includes a conditional reference: observed maxima+20% assumption, rounded to
+7/17/24h per run; proposed10/6/3 processes per GPU on four GPUs yield14h,
+2×34h,4×48h allocations. Reference ceiling1,096GPUh, not qualified throughput.
+No scientific/source promotion or Slurm changes. Recheck evidence and final
+source receipt: `/workspace/artifacts/exp1-runtime-recheck-20261104/`.
+
+### Owner launch handoff — 4 November 2026
+
+Owner froze seeds1–10 including development-exposed9; keep11 environments.
+Latest layout4GPU small→4GPU medium plus8GPU large stream; reference14h,
+2×34h,2×48h allocations, peak12 GPUs, overlap96h before queues/unmeasured slowdown.
+W&B project echocritic_official_exp1 already exists (103 records). The generator
+now records4/4/8 GPU counts and stream ordering. Delta must implement launcher,
+feasible CPU binding and recovery on the exact recorded source; no Cloud Slurm
+execution occurred. Preserve archived/historical run IDs and separate cohort
+selection from deletion. See main/docs/exp1_delta_launch_handoff_20261104.md.

@@ -620,3 +620,14 @@ explicit; do not reinterpret archived results under this version.
   an injected arm. Those permissions remain separate.
 
 The ten-seed count is approved; the exact IDs remain a pending owner decision because seed 9 was reserved for development calibration. The candidate tests provisional IDs 1–10. IDs 1–8,10,11 were recommended to retain the development exclusion; no final choice has been recorded.
+
+### Owner seed clarification — 4 November 2026
+
+The owner explicitly selected **seeds1–10**, including seed9, for the official
+11-environment / ten-seed / three-critic population. This supersedes the pending
+seed-ID note above. Seed9's prior development reservation/exposure remains part
+of provenance; it is not described as held-out. The seed count and all scientific
+settings, targets, fitting steps, budgets, trigger/statistical rules and existing
+fork/control behavior remain unchanged. Owner also selected A100x4 for small and
+medium and A100x8 for large; medium follows completed small. Those operational
+choices do not establish packing/throughput qualification or remove preflight.

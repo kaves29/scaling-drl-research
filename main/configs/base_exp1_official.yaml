@@ -1,4 +1,4 @@
-# Official Exp1 integration candidate; population IDs must be explicitly frozen.
+# Official Exp1 integration candidate; owner froze seeds 1–10 on 4 November 2026.
 # Inherits the selected PR20/21 Method C producer, not the legacy integration.
 defaults:
 - base_exp12

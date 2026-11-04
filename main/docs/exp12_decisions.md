@@ -1877,3 +1877,18 @@ This chronological entry records decisions, not source promotion or execution ap
 - CPU-only investigation and reporting engineering are authorized. No active-pilot changes, GPU planning, submissions, source promotion, merges or gate waivers are authorized by this task.
 
 Unresolved: five-/ten-sine source reconciliation (no verified sign transform), raw calibration/range availability, D04 invalid calibration-pair policy, D05 n=1 reporting convention, natural same-source positive-control evidence and owner-frozen m, and the official Exp3 method/capture/source decisions. Do not re-ask the settled trigger, range, entropy or PR-route choices. The [consolidated review](exp20_owner_cpu_review_20261028.md) and [compact record](exp2_owner_review_decisions_20261028.md) replace the older unanswered form for this task. No new scientific setting is enacted.
+
+## Official Exp1 launch handoff clarification — 4 November 2026
+
+Owner keeps eleven environments and explicitly chooses seeds1–10, allowing
+previously development-reserved seed9 in the official campaign. Preserve that
+exposure in provenance. Use four A100s for small, then four for medium; use eight
+A100s for large. The small→medium and large streams can overlap (up to12 GPUs
+across separate allocations). Target packing remains10/6/3 processes per GPU;
+no claim that increased packing has been measured is authorized by this choice.
+Prepare the Delta launcher and online W&B handoff; no merge or scientific retuning.
+The official W&B project already exists as
+`s_kaveti23-seckinger/echocritic_official_exp1` (read-only check:103 records).
+Historical deletion scope remains unspecified; existing88 reuse identities and
+all archived evidence must be preserved. Excluding non-cohort records from the
+new campaign ledger does not require deletion and must not delay launch preparation.
