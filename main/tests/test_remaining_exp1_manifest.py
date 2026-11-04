@@ -120,6 +120,31 @@ def test_architecture_cli_lists_partition_without_changing_commands(
     monkeypatch.setattr(sys, "argv", argv)
     generator.main()
     result = json.loads(output.read_text())
+    reference = json.loads((directory / "allocation_reference.json").read_text())
+    assert not any(
+        reference[k]
+        for k in (
+            "approved",
+            "executable",
+            "submitted",
+            "packing_verified",
+            "throughput_verified",
+        )
+    )
+    for arch, hours in [
+        ("D2W512", [14]),
+        ("D4W1024", [34, 34]),
+        ("D4W1536", [48, 48, 48, 48]),
+    ]:
+        group = reference["architectures"][arch]
+        assert [a["wall_hours"] for a in group["allocations"]] == hours
+        cells = [tuple(cell) for a in group["allocations"] for cell in a["cells"]]
+        assert cells == [
+            (r["environment"], r["architecture"], r["seed"])
+            for r in result["entries"]
+            if r["architecture"] == arch
+        ]
+        assert group["allocated_gpu_hour_ceiling"] == sum(hours) * 4
     combined = []
     for arch, count in [("D2W512", 78), ("D4W1024", 78), ("D4W1536", 86)]:
         commands = [

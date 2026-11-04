@@ -2,6 +2,72 @@
 
 This is a planning assessment, not launch approval. All requested layouts use
 exactly four GPUs. No GPU tests, training, Slurm queries or submissions were run.
+
+## Revised reference after checking raw clocks
+
+The recheck reads **all88 completed raw histories**, not just the derived runtime
+column. All reach1,000,000 raw steps without a logged step or runtime reversal.
+Median first-to-last timestamp spans are5.3138 /13.2996 /18.5900 h, agreeing with
+the earlier runtime medians to seconds. Largest gaps between any adjacent log
+records are344 /751 /939 seconds by architecture. This rules out a multi-hour
+unlogged pause as the explanation in these retained histories; it does not prove
+continuous GPU utilization between records. Planned fork save/restore appears in
+some logs, so these are not claimed to be uninterrupted single-trainer objects.
+
+Concrete example: large pen-twirl run `14fmtkz6`, raw_api/14fmtkz6/history.jsonl,
+first record21October22:53:00.797618UTC and final record22October17:21:41.301629UTC:
+18h28m40.504s elapsed, raw step0→1,000,000. Its largest adjacent gap is697.56s.
+The original output.log records a20.5s fork save at interaction30,000, followed
+by a1.4s restore into the control continuation. That is genuine resumed state,
+not evidence that eighteen hours was queue time or just a metadata-unit error.
+
+The important correction is to interpretation: **18.6 h is shared-resource
+process elapsed time, not18.6 exclusive GPU-hours per run**. All96 campaign
+metadata records identify gpuc05, an eight-A100 host; at most44 retained logged
+run intervals overlap. This demonstrates overlapping run intervals, not exact
+per-GPU assignment or simultaneous GPU compute. The historical scheduler
+documentation describes7/5/4 homogeneous packing and bounded mixtures; it is a
+design record, not a recovered per-child packing receipt. Do not divide elapsed
+time by7/5/4, or multiply it by a new packing ratio, as a verified speed estimate.
+
+For a more cautious **conditional reference**, the generator now uses each
+architecture's largest observed elapsed time plus a stated20% planning allowance,
+rounded up: ceil(5.526×1.2)=7h, ceil(13.615×1.2)=17h,
+ceil(19.236×1.2)=24h per run. The20% allowance is an analyst assumption, not a
+measurement, owner-frozen resource limit or statistical confidence bound. It
+does **not** quantitatively account for different packing throughput or new tasks.
+
+|Critic|Proposed processes/GPU|Assumed per-run duration|Reference allocations on four GPUs|Total wall hours|Allocated GPU-hour ceiling|
+|---|---:|---:|---|---:|---:|
+|D2W512,78 runs|10|7h|one14h allocation (78 runs)|14|56|
+|D4W1024,78 runs|6|17h|two34h allocations (48+30 runs)|68|272|
+|D4W1536,86 runs|3|24h|four48h allocations (24+24+24+14 runs)|192|768|
+
+Total reference ceiling: **1,096 allocated GPU-hours**, conditional on the
+assumptions and running these allocations for their full requested times. These
+are conservative relative to retained elapsed measurements, **not guaranteed
+completion estimates for the proposed packing**. Actual consumption is lower
+if allocations exit early and higher if additional allocations are needed.
+These are three architecture-specific work lists, requiring seven reference
+allocations under a48-hour maximum; they are not three single-node submissions.
+The48h limit is retained for planning, not verified live scheduler eligibility.
+Dynamic replacement may improve utilization; this reference deliberately counts
+fixed waves and includes short hopper/swimmer tasks at full reference duration,
+since their50-check probe budget is not halved. No claim that total experiment
+cost is exactly1,096 GPU-hours is justified.
+
+`--architecture-dir` additionally writes `allocation_reference.json`, containing
+the per-allocation cell identities, four-GPU layout, assumptions and false
+approval/execution/packing/throughput flags. The three command lists and scientific
+argv are unchanged. It neither sets a Slurm time limit nor submits/resumes jobs.
+Exact raw-clock rows, input checksums, tested source and regenerated lists are
+outside Git under `/workspace/artifacts/exp1-runtime-recheck-20261104/`.
+
+The sections below preserve the original requested limits and earlier
+median-based comparison, rather than silently relabeling them as new approvals.
+
+## Initial source boundary
+
 The approved remote integration ref was verified as
 844e3c0cc24998b25c3d1e667bcbfe056b1b336c. This planning-only successor extends
 PR25's 6adbe42f6d4bc3c25d41380ec21336d609f3d788; its runtime/configuration remains

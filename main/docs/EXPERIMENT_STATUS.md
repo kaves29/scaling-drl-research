@@ -232,3 +232,11 @@ Three size-specific missing-run lists are generated without changing runtime.
 See [planning assessment](exp1_allocation_planning_20261104.md); requested packing
 and walltime are not established. This is not launch approval or a new resource
 limit. No GPU/Slurm execution occurred.
+
+### Revised elapsed-time planning reference
+
+All88 finished raw histories confirm the earlier elapsed times, not exclusive
+GPU compute costs. [Revised planning](exp1_allocation_planning_20261104.md) uses
+conditional7/17/24h per-run assumptions and14h,2×34h,4×48h allocations on four
+GPUs. Packing/throughput remain unverified; these are not production approvals.
+The generator writes the reference alongside three unchanged architecture lists.

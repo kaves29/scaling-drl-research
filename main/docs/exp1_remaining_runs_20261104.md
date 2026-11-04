@@ -83,3 +83,6 @@ Use `--architecture-dir /absolute/new_directory` to emit three disjoint command
 lists (78 small,78 medium,86 large) alongside the manifest. See the
 [four-GPU resource assessment](exp1_allocation_planning_20261104.md) before choosing
 concurrency or walltime; requested10/6/3 packing and10/18/48 hours are not qualified.
+The same directory now contains `allocation_reference.json`: conditional7/17/24h
+per-run assumptions imply14h small,2×34h medium and4×48h large allocations.
+These revised planning numbers are not verified throughput or launch approval.

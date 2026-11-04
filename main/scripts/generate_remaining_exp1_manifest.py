@@ -3,6 +3,7 @@
 import argparse
 import hashlib
 import json
+import math
 from pathlib import Path
 import shlex
 import sys
@@ -16,6 +17,52 @@ COMPLETED = (
     Path(__file__).resolve().parents[1] / "configs/exp1_completed_historical.json"
 )
 HISTORICAL_SOURCE = "f597ee9898e4d401912092c336c3e5330cf2fda1"
+# Observed maximum W&B elapsed hours, not exclusive GPU compute measurements.
+REFERENCE_MAX_HOURS = {
+    "D2W512": 5.526354135163889,
+    "D4W1024": 13.615150735955833,
+    "D4W1536": 19.23633549748028,
+}
+
+
+def allocation_reference(entries):
+    """Conditional fixed-wave planning only; does not qualify throughput or submit."""
+    groups = {}
+    for arch, per_gpu in zip(REFERENCE_MAX_HOURS, (10, 6, 3)):
+        rows = [row for row in entries if row["architecture"] == arch]
+        hours = math.ceil(REFERENCE_MAX_HOURS[arch] * 1.2)
+        slots = 4 * per_gpu
+        capacity = (48 // hours) * slots
+        allocations = []
+        for start in range(0, len(rows), capacity):
+            selected = rows[start : start + capacity]
+            allocations.append(
+                {
+                    "wall_hours": math.ceil(len(selected) / slots) * hours,
+                    "cells": [list(identity(row)) for row in selected],
+                }
+            )
+        total = sum(a["wall_hours"] for a in allocations)
+        groups[arch] = {
+            "gpus": 4,
+            "proposed_processes_per_gpu": per_gpu,
+            "observed_max_elapsed_hours": REFERENCE_MAX_HOURS[arch],
+            "assumed_per_run_hours": hours,
+            "allocations": allocations,
+            "total_wall_hours": total,
+            "allocated_gpu_hour_ceiling": 4 * total,
+        }
+    return {
+        "approved": False,
+        "executable": False,
+        "submitted": False,
+        "packing_verified": False,
+        "throughput_verified": False,
+        "basis": "Historical maximum elapsed + 20% assumed allowance, rounded up; fixed waves; unchanged process speed assumed",
+        "historical_source": HISTORICAL_SOURCE,
+        "max_allocation_hours": 48,
+        "architectures": groups,
+    }
 
 
 def identity(row):
@@ -127,6 +174,8 @@ def main():
             raise FileExistsError(path)
     if args.architecture_dir is not None:
         args.architecture_dir.mkdir(exist_ok=False)
+        with (args.architecture_dir / "allocation_reference.json").open("x") as stream:
+            json.dump(allocation_reference(result["entries"]), stream, indent=2)
         for arch, _, _ in ARCHITECTURES:
             with (args.architecture_dir / f"{arch}.txt").open("x") as stream:
                 stream.write(

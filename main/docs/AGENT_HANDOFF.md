@@ -317,3 +317,15 @@ unverified. Historical regular-probe median elapsed times5.315/13.301/18.591 h
 and six-run device-wide memory samples do not qualify the proposed layouts.
 No allocation or training launched; seed IDs and historical artifact admission
 remain pending. Evidence is outside Git in exp1-allocation-planning-20261104.
+
+### Raw-clock recheck and revised allocation reference
+
+All88 completed raw histories agree with elapsed-runtime medians; large median
+first-to-last timestamp span18.5900h, largest adjacent gap939s. No long queue
+pause is hidden in that value. Forty-four run intervals overlap on gpuc05;
+elapsed time is not exclusive GPU compute. PR25's optional architecture output
+now includes a conditional reference: observed maxima+20% assumption, rounded to
+7/17/24h per run; proposed10/6/3 processes per GPU on four GPUs yield14h,
+2×34h,4×48h allocations. Reference ceiling1,096GPUh, not qualified throughput.
+No scientific/source promotion or Slurm changes. Recheck evidence and final
+source receipt: `/workspace/artifacts/exp1-runtime-recheck-20261104/`.
