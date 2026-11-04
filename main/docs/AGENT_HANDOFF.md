@@ -329,3 +329,14 @@ now includes a conditional reference: observed maxima+20% assumption, rounded to
 2×34h,4×48h allocations. Reference ceiling1,096GPUh, not qualified throughput.
 No scientific/source promotion or Slurm changes. Recheck evidence and final
 source receipt: `/workspace/artifacts/exp1-runtime-recheck-20261104/`.
+
+### Owner launch handoff — 4 November 2026
+
+Owner froze seeds1–10 including development-exposed9; keep11 environments.
+Latest layout4GPU small→4GPU medium plus8GPU large stream; reference14h,
+2×34h,2×48h allocations, peak12 GPUs, overlap96h before queues/unmeasured slowdown.
+W&B project echocritic_official_exp1 already exists (103 records). The generator
+now records4/4/8 GPU counts and stream ordering. Delta must implement launcher,
+feasible CPU binding and recovery on the exact recorded source; no Cloud Slurm
+execution occurred. Preserve archived/historical run IDs and separate cohort
+selection from deletion. See main/docs/exp1_delta_launch_handoff_20261104.md.

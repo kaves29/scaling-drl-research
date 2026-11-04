@@ -240,3 +240,10 @@ GPU compute costs. [Revised planning](exp1_allocation_planning_20261104.md) uses
 conditional7/17/24h per-run assumptions and14h,2×34h,4×48h allocations on four
 GPUs. Packing/throughput remain unverified; these are not production approvals.
 The generator writes the reference alongside three unchanged architecture lists.
+
+### Latest launch layout and seed decision
+
+Owner chose seeds1–10 including seed9 and A100x4 small→medium, A100x8 large.
+Generator and handoff updated; W&B official project exists and is configured.
+Delta-specific launch/preflight/packing remain unfinished, not passed. No jobs
+submitted from Cloud. Read exp1_delta_launch_handoff_20261104.md before launch.

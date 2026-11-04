@@ -1,7 +1,43 @@
 # Four-GPU Exp1 allocation planning — 4 November 2026
 
-This is a planning assessment, not launch approval. All requested layouts use
-exactly four GPUs. No GPU tests, training, Slurm queries or submissions were run.
+This is a planning assessment, not a submission receipt. The latest layout uses
+four GPUs for small/medium and eight for large. No GPU tests, training, Slurm
+queries or submissions were run in Cloud.
+
+## Latest owner layout — four/four/eight GPUs
+
+Owner kept eleven environments and froze seeds1–10, explicitly including seed9.
+Small uses4 A100s, medium uses4 after small completes, and large uses8. The
+small→medium stream and large stream may overlap, using at most12 GPUs across
+separate allocations. Their reference schedules are:
+
+|Critic|Remaining|GPUs|Proposed processes/GPU|Reference allocation hours|
+|---|---:|---:|---:|---|
+|Small D2W512|78|4|10|14|
+|Medium D4W1024|78|4|6|34+34|
+|Large D4W1536|86|8|3|48+48|
+
+Large reference walltime falls from192 to96h. Small→medium is82h. If both streams
+start together and have no queue gaps, the overlap reference is96h (four days),
+versus178h if every allocation is sequential. Total reference GPU-hour ceiling
+remains1,096:56+272+768. Larger allocation queue delays are not estimated.
+Per-process7/17/24h assumptions and unverified packing/throughput caveats remain.
+
+CPU binding must also fit the live allocation. In particular,40 small processes
+cannot each receive2 disjoint CPUs on a64-CPU four-GPU node: that would require80
+CPUs. Delta must choose and record feasible CPU binding from actual allocated
+CPUs and report its throughput implications; old2/3/4-core profiles cannot be
+silently reused with10/6/3 packing. No code here claims a CPU/RAM entitlement.
+
+Online W&B is already wired by `base_exp1_official.yaml` and the logger. The
+project `s_kaveti23-seckinger/echocritic_official_exp1` exists (103 records at
+read-only inspection). New runs must log there with distinct IDs, durable local
+outputs and cohort/source receipts. Keep references to the88 reused original
+IDs; exclude other records in the campaign ledger rather than deleting historical
+records under an ambiguous "unused" label. No W&B writes/deletions were made.
+
+The following earlier four-GPU tables retain the chronological calculations;
+they are superseded for the large-critic GPU count by this section.
 
 ## Revised reference after checking raw clocks
 

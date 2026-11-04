@@ -134,7 +134,7 @@ def test_architecture_cli_lists_partition_without_changing_commands(
     for arch, hours in [
         ("D2W512", [14]),
         ("D4W1024", [34, 34]),
-        ("D4W1536", [48, 48, 48, 48]),
+        ("D4W1536", [48, 48]),
     ]:
         group = reference["architectures"][arch]
         assert [a["wall_hours"] for a in group["allocations"]] == hours
@@ -144,7 +144,17 @@ def test_architecture_cli_lists_partition_without_changing_commands(
             for r in result["entries"]
             if r["architecture"] == arch
         ]
-        assert group["allocated_gpu_hour_ceiling"] == sum(hours) * 4
+        assert group["gpus"] == (8 if arch == "D4W1536" else 4)
+        assert group["allocated_gpu_hour_ceiling"] == sum(hours) * group["gpus"]
+    assert reference["streams"] == [["D2W512", "D4W1024"], ["D4W1536"]]
+    assert reference["overlap_reference_wall_hours"] == 96
+    assert reference["peak_concurrent_gpus_if_streams_overlap"] == 12
+    assert (
+        sum(
+            g["allocated_gpu_hour_ceiling"] for g in reference["architectures"].values()
+        )
+        == 1096
+    )
     combined = []
     for arch, count in [("D2W512", 78), ("D4W1024", 78), ("D4W1536", 86)]:
         commands = [

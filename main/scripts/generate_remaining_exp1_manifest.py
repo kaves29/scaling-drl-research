@@ -28,10 +28,10 @@ REFERENCE_MAX_HOURS = {
 def allocation_reference(entries):
     """Conditional fixed-wave planning only; does not qualify throughput or submit."""
     groups = {}
-    for arch, per_gpu in zip(REFERENCE_MAX_HOURS, (10, 6, 3)):
+    for arch, per_gpu, gpus in zip(REFERENCE_MAX_HOURS, (10, 6, 3), (4, 4, 8)):
         rows = [row for row in entries if row["architecture"] == arch]
         hours = math.ceil(REFERENCE_MAX_HOURS[arch] * 1.2)
-        slots = 4 * per_gpu
+        slots = gpus * per_gpu
         capacity = (48 // hours) * slots
         allocations = []
         for start in range(0, len(rows), capacity):
@@ -44,14 +44,15 @@ def allocation_reference(entries):
             )
         total = sum(a["wall_hours"] for a in allocations)
         groups[arch] = {
-            "gpus": 4,
+            "gpus": gpus,
             "proposed_processes_per_gpu": per_gpu,
             "observed_max_elapsed_hours": REFERENCE_MAX_HOURS[arch],
             "assumed_per_run_hours": hours,
             "allocations": allocations,
             "total_wall_hours": total,
-            "allocated_gpu_hour_ceiling": 4 * total,
+            "allocated_gpu_hour_ceiling": gpus * total,
         }
+    streams = (("D2W512", "D4W1024"), ("D4W1536",))
     return {
         "approved": False,
         "executable": False,
@@ -61,6 +62,12 @@ def allocation_reference(entries):
         "basis": "Historical maximum elapsed + 20% assumed allowance, rounded up; fixed waves; unchanged process speed assumed",
         "historical_source": HISTORICAL_SOURCE,
         "max_allocation_hours": 48,
+        "streams": streams,
+        "overlap_reference_wall_hours": max(
+            sum(groups[arch]["total_wall_hours"] for arch in stream)
+            for stream in streams
+        ),
+        "peak_concurrent_gpus_if_streams_overlap": 12,
         "architectures": groups,
     }
 

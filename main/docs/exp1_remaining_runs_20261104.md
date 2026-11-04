@@ -26,8 +26,7 @@ only for the missing cells. It never submits or starts a training process and
 does not assign GPUs, waves or partitions. Existing reviewed launch/preflight
 machinery must consume this selection; no separate unqualified runner is added.
 
-Example planning invocation from `main/` (IDs1–10 are provisional, not a new
-seed approval):
+Example planning invocation from `main/` (owner froze IDs1–10 on4November):
 
 ```bash
 python scripts/generate_remaining_exp1_manifest.py \
@@ -61,13 +60,11 @@ historical-cohort admission/materialization route. No such gate is silently waiv
 
 ## Seed IDs
 
-Ten official IDs must be supplied explicitly and match the official source's
-population. The existing profile still uses provisional1–10; the seed9
-development-exclusion decision is pending. If IDs1–8,10,11 are chosen, first
-update/freeze that official profile, then regenerate. Both candidate sets include
-all original seeds1–8, so the78/78/86 counts are unchanged. Other seed sets require
-recalculation; an incompatible profile fails closed rather than quietly running
-the wrong seed.
+Owner explicitly froze IDs1–10 on4November, including previously development-
+reserved seed9. The official profile already has those IDs; its values need no
+change. The CLI requires the exact ten IDs and checks the generated population.
+Keep seed9's prior development exposure in provenance; it is not a held-out seed.
+The88 completed historical exclusions and78/78/86 missing counts are unchanged.
 
 ## Validation
 
@@ -84,5 +81,6 @@ lists (78 small,78 medium,86 large) alongside the manifest. See the
 [four-GPU resource assessment](exp1_allocation_planning_20261104.md) before choosing
 concurrency or walltime; requested10/6/3 packing and10/18/48 hours are not qualified.
 The same directory now contains `allocation_reference.json`: conditional7/17/24h
-per-run assumptions imply14h small,2×34h medium and4×48h large allocations.
+per-run assumptions imply14h small on4 GPUs,2×34h medium on4 GPUs and2×48h large
+on8 GPUs. Small→medium may overlap with large (peak12 GPUs).
 These revised planning numbers are not verified throughput or launch approval.

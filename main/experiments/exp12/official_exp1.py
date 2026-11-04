@@ -13,6 +13,7 @@ ENVIRONMENTS = (
     ("myo-pose-hard", "myosuite_simba"),
     ("myo-reach", "myosuite_simba"),
 )
+# Owner explicitly included development-exposed seed 9 on 4 November 2026.
 SEEDS = tuple(range(1, 11))
 ARCHITECTURES = (("D2W512", 2, 512), ("D4W1024", 4, 1024), ("D4W1536", 4, 1536))
 CONFIG_NAME = "base_exp1_official"
