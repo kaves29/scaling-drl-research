@@ -99,12 +99,16 @@ def run(args: dict) -> None:
     if not config_name or config_name == "base_sac":
         config_name = "base_exp1_official"
     cfg = compose_config(args.config_path, config_name, args.overrides)
+    official_exp1 = cfg.get("official_exp1_version") == "no-hb-v1"
     np.random.seed(cfg.seed)
     random.seed(cfg.seed)
 
     state_root = run_dir / "state"
     latest = latest_state_dir(state_root)
-    plan = fork.read_fork(run_dir) if fork.is_ready(run_dir) else None
+    fork_ready = fork.is_ready(run_dir)
+    if official_exp1 and fork_ready:
+        raise ValueError("official Exp1 cannot resume an Exp2 fork/control state")
+    plan = fork.read_fork(run_dir) if fork_ready else None
     if plan is not None:
         fork.check_same_device(run_dir)  # the control continues on the fork's device model
         fork.validate_control_restore(run_dir, cfg.results_root)
@@ -130,7 +134,8 @@ def run(args: dict) -> None:
         "num_interaction_steps": num_steps, "num_checks": int(cfg.probe.checks),
         "code_commit": code_version()["commit"],
     }
-    forks_here = bool(cfg.fork.enabled) and identity.architecture in list(cfg.fork.architectures)
+    forks_here = (not official_exp1 and bool(cfg.fork.enabled)
+                  and identity.architecture in list(cfg.fork.architectures))
     fork.check_validation_flags(cfg)
     if forks_here and not cfg.probe.enabled:
         raise ValueError("forking needs the probes (f*_run comes from them)")
@@ -145,6 +150,8 @@ def run(args: dict) -> None:
                   f"in {time.perf_counter() - t0:.1f} s", flush=True)
         else:
             trainer.start()
+        if official_exp1 and trainer.extra_state.get("fork") is not None:
+            raise ValueError("official Exp1 cannot restore an Exp2 fork/control state")
         live["trainer"] = trainer
         live["probes"] = RunProbes(trainer, str(run_dir)) if cfg.probe.enabled else None
         plan = trainer.extra_state.get("fork")
