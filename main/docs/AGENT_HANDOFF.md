@@ -340,3 +340,12 @@ now records4/4/8 GPU counts and stream ordering. Delta must implement launcher,
 feasible CPU binding and recovery on the exact recorded source; no Cloud Slurm
 execution occurred. Preserve archived/historical run IDs and separate cohort
 selection from deletion. See main/docs/exp1_delta_launch_handoff_20261104.md.
+
+### Matched-data Exp2 proposal — 6 November 2026
+
+An isolated opt-in prototype based on Exp1 source `22e1666` validates completed
+small/large replay parents and creates a read-only common-sampling plan. See
+[the proposal](exp2_matched_data_framework_20261106.md). It does not implement
+or approve Exp2 training, replace the historical injection design, or affect
+the separately frozen Delta jobs. This older handoff's launch status is a
+source snapshot; consult live Slurm receipts for current job state.
