@@ -247,3 +247,12 @@ Owner chose seeds1–10 including seed9 and A100x4 small→medium, A100x8 large.
 Generator and handoff updated; W&B official project exists and is configured.
 Delta-specific launch/preflight/packing remain unfinished, not passed. No jobs
 submitted from Cloud. Read exp1_delta_launch_handoff_20261104.md before launch.
+
+### Separate matched-data Exp2 proposal — 6 November 2026
+
+The opt-in [framework](exp2_matched_data_framework_20261106.md) adds a CPU-tested,
+read-only admission and deterministic common-replay sampling plan for completed
+official Exp1 small/large parents. This is a proposed alternative to the older
+injection Exp2, not an approved methodology or training implementation. It
+does not modify Exp1 source behavior or infer current Delta job status from
+the preceding dated notes.
