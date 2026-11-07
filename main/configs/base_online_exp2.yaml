@@ -1,0 +1,26 @@
+# Opt-in online reference-policy prototype. Nulls are deliberate launch gates.
+defaults:
+- base_exp12
+- _self_
+
+run_role: dev
+fork:
+  enabled: false
+critic_measurements:
+  enabled: false
+
+online_exp2:
+  enabled: true
+  initialization: fresh
+  environments: null
+  training_seeds: null
+  reference_critic: null  # {blocks: 2, width: 512} is an example, not a default
+  training_interactions: null
+  checkpoint_steps: null
+  probe_checkpoints: null
+  evaluation_episodes: null
+  evaluation_mode: null  # deterministic or stochastic
+  intervention_updates: null
+  analysis_aggregation: null
+  resource_cap_gpu_hours: null
+  dev_architectures: null  # small CPU fixtures only

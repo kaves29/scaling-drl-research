@@ -1,5 +1,9 @@
 # Exp1/Exp2 scientific and validation status
 
+## Online reference-policy Exp2 development (7 November 2026)
+
+The `codex/exp2-online-prototype-20261107` branch contains a proposed online three-role prototype based on official Exp1 candidate `22e1666f0ff680699b06ded1ce70ec0962f9c103`. Its configuration leaves the reference critic, population, schedule and resource choices unresolved and restricts execution to CPU development mode. CPU contracts and a tiny real DMC smoke are engineering checks only; they do not qualify the full-size protocol or authorize a Delta job. Details and evidence boundaries are in [online_exp2_prototype.md](online_exp2_prototype.md). Older sections below retain their dated source-specific status.
+
 ## Official Exp1 reconciliation candidate — 3 November 2026
 
 Owner selected legacy tasks without both HumanoidBench environments: eleven

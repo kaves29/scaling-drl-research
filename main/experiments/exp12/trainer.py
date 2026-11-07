@@ -150,6 +150,7 @@ class Exp12Trainer:
         last_step: int,
         after_step: Optional[Callable[["Exp12Trainer"], None]] = None,
         before_first_update: Optional[Callable[["Exp12Trainer"], None]] = None,
+        before_updates: Optional[Callable[["Exp12Trainer", Dict[str, np.ndarray]], None]] = None,
     ) -> None:
         cfg = self.cfg
         for interaction_step in range(self.interaction_step + 1, int(last_step) + 1):
@@ -187,8 +188,17 @@ class Exp12Trainer:
                     self.update_counter -= 1
                     num_updates += 1
                 if num_updates:
-                    batches = [self.buffer.sample() for _ in range(num_updates)]
+                    sampled = [self.buffer.sample(return_indices=True) if before_updates is not None
+                               else self.buffer.sample() for _ in range(num_updates)]
+                    batch_indices = None
+                    if before_updates is not None:
+                        batch_indices = [indices for _, indices in sampled]
+                        batches = [batch for batch, _ in sampled]
+                    else:
+                        batches = sampled
                     batches = {key: np.stack([b[key] for b in batches]) for key in batches[0]}
+                    if before_updates is not None:
+                        before_updates(self, batches, batch_indices)
                     update_info = self.agent.update_many(self.update_step, batches, int(cfg.actor_grad_cosine_every),
                                                          **self.diagnostics.update_kwargs(self))
                     self.pending.add(self.update_step, update_info)
@@ -228,7 +238,8 @@ class Exp12Trainer:
             if after_step is not None:
                 after_step(self)
 
-    def save(self, root, keep_previous: bool = False) -> Path:
+    def save(self, root, keep_previous: bool = False,
+             before_commit: Optional[Callable[[Path], None]] = None) -> Path:
         """Writes the complete state under root and repoints root/LATEST to it."""
         self.pending.flush()
         path = new_state_dir(root, self.interaction_step)
@@ -258,6 +269,8 @@ class Exp12Trainer:
             },
             "actor_diagnostics": self.diagnostics.state(),
         })
+        if before_commit is not None:
+            before_commit(path)
         commit_state_dir(root, path, keep_previous=keep_previous)
         self.write_logs()
         return path

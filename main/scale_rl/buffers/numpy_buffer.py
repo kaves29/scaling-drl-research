@@ -135,7 +135,7 @@ class NpyUniformBuffer(BaseBuffer):
         else:
             return True
 
-    def sample(self) -> Batch:
+    def sample(self, return_indices: bool = False) -> Batch:
         sample_idxs = np.random.randint(
             0, self._num_in_buffer, size=self._sample_batch_size
         )
@@ -149,7 +149,7 @@ class NpyUniformBuffer(BaseBuffer):
         batch["truncated"] = np.array(self._truncateds[sample_idxs])
         batch["next_observation"] = np.array(self._next_observations[sample_idxs])
 
-        return batch
+        return (batch, sample_idxs.copy()) if return_indices else batch
 
     def sample_batch(self,size) -> Batch:
         sample_idxs = np.random.randint(
