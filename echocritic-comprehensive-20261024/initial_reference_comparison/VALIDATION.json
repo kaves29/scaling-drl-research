@@ -1,0 +1,9 @@
+{
+  "training_runs": 96,
+  "checks": 4738,
+  "max_anchored_decomposition_error": 2.1649348980190553e-15,
+  "all_initial_checks_at_5000": true,
+  "all_checks_on_10000_interaction_grid": true,
+  "score_iqm_definition": "source fractional IQM over ten rounds",
+  "no_new_fits": true
+}

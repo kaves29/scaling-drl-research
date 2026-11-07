@@ -1,0 +1,18 @@
+{
+  "approved": false,
+  "study_version": "method-c-ten-96-v1",
+  "expected_commit": null,
+  "parent_count": 96,
+  "decision_reference": null,
+  "gates": {
+    "ten_function_method": {"status": "PENDING", "decision_reference": null},
+    "scientific_calibration": {"status": "PENDING", "decision_reference": null},
+    "gpu_smoke": {
+      "status": "PENDING",
+      "decision_reference": null,
+      "evidence": {"path": null, "sha256": null}
+    },
+    "allocation_and_storage": {"status": "PENDING", "decision_reference": null},
+    "cross_seed_analysis": {"status": "PENDING", "decision_reference": null}
+  }
+}

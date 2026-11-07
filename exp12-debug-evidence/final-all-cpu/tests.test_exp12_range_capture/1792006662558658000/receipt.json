@@ -1,0 +1,19 @@
+{
+  "module": "tests.test_exp12_range_capture",
+  "source_hash": "52468342b4543cf79e93cc96c34167ddc17c8dd811e7e45949cacf4b5cee0c6b",
+  "success": true,
+  "tests_run": 7,
+  "test_ids": [
+    "tests.test_exp12_range_capture.RangeCaptureTest.test_cpu_cannot_enter_full_setting_gpu_capture",
+    "tests.test_exp12_range_capture.RangeCaptureTest.test_delegates_once_and_returns_the_identical_result",
+    "tests.test_exp12_range_capture.RangeCaptureTest.test_live_cpu_probe_arrays_are_unchanged_by_retention",
+    "tests.test_exp12_range_capture.RangeCaptureTest.test_method_c_base_config_is_refused_as_historical_capture",
+    "tests.test_exp12_range_capture.RangeCaptureTest.test_mocked_full_workflow_preserves_the_approved_case_and_checksums",
+    "tests.test_exp12_range_capture.RangeCaptureTest.test_probe_failure_is_not_converted_to_a_result",
+    "tests.test_exp12_range_capture.RangeCaptureTest.test_refuses_to_replace_retained_curves"
+  ],
+  "failures": 0,
+  "errors": 0,
+  "skips": [],
+  "unexpected_successes": 0
+}

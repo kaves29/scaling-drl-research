@@ -1,0 +1,48 @@
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+ total params: 1.54K
+{
+  "verdict": "SINGLE_OFF_COMPLETE",
+  "off": {
+    "overrides": [
+      "env_name=hopper-hop",
+      "env=dmc_medium",
+      "seed=1",
+      "actor_num_blocks=1",
+      "actor_hidden_dim=8",
+      "critic_num_blocks=1",
+      "critic_hidden_dim=8",
+      "env.num_env_steps=800",
+      "buffer.min_length=10",
+      "buffer.max_length=1000",
+      "buffer.sample_batch_size=8",
+      "evaluation_per_interaction_step=100",
+      "logging_per_interaction_step=20",
+      "num_eval_episodes=1",
+      "probe.steps=20",
+      "probe.pool_size=64",
+      "probe.batch_size=16",
+      "probe.eval_chunk=32",
+      "diagnostics.enabled=false",
+      "results_root=/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/frozen-off-cpu/off/results"
+    ],
+    "status": "COMPLETE",
+    "elapsed_seconds": 11.434587459021714,
+    "started_at_utc": "2026-10-14T19:45:34.957397+00:00",
+    "ended_at_utc": "2026-10-14T19:45:46.392028+00:00",
+    "interactions_per_second": 34.981585600135155,
+    "updates": 782,
+    "updates_per_second": 68.38899984826422,
+    "peak_host_rss_kib": 635174912,
+    "device_memory_stats": null
+  }
+}

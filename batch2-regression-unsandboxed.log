@@ -1,0 +1,1065 @@
+test_aot_signature_and_original_repeat (tests.test_fixed_task.FixedTaskTests.test_aot_signature_and_original_repeat) ... ok
+test_continuation_keeps_adam_count (tests.test_fixed_task.FixedTaskTests.test_continuation_keeps_adam_count) ... ok
+test_frozen_indices_prefix (tests.test_fixed_task.FixedTaskTests.test_frozen_indices_prefix) ... ok
+test_original_segmented_and_identity (tests.test_fixed_task.FixedTaskTests.test_original_segmented_and_identity) ... ok
+test_own_offset_translation_cancels (tests.test_fixed_task.FixedTaskTests.test_own_offset_translation_cancels) ... ok
+test_partial_checkpoint_and_readonly_replay (tests.test_fixed_task.FixedTaskTests.test_partial_checkpoint_and_readonly_replay) ... ERROR
+test_pool_error_decomposition (tests.test_fixed_task.FixedTaskTests.test_pool_error_decomposition) ... ok
+test_numeric_payload_corruption_is_rejected (tests.test_fixed_task_bank_integration.TaskBankIntegrationTests.test_numeric_payload_corruption_is_rejected) ... ok
+test_runner_bank_preserves_fitting_and_pair_identity (tests.test_fixed_task_bank_integration.TaskBankIntegrationTests.test_runner_bank_preserves_fitting_and_pair_identity) ... ok
+test_continuous_2k_4k_8k_matches_monolithic_real_residual_critic (tests.test_exp96_diagnostic_engineering.NumericalInstrumentationTest.test_continuous_2k_4k_8k_matches_monolithic_real_residual_critic) ... ok
+test_failed_gpu_guard_is_retained_and_nonfinite_rejected (tests.test_exp96_diagnostic_engineering.NumericalInstrumentationTest.test_failed_gpu_guard_is_retained_and_nonfinite_rejected) ... ok
+test_first_update_matches_independent_adamw_reference_and_preserves_input (tests.test_exp96_diagnostic_engineering.NumericalInstrumentationTest.test_first_update_matches_independent_adamw_reference_and_preserves_input) ... ok
+test_trained_and_fork_checkpoint_parameters_are_exact_and_read_only (tests.test_exp96_diagnostic_engineering.NumericalInstrumentationTest.test_trained_and_fork_checkpoint_parameters_are_exact_and_read_only) ... ok
+test_constructor_uses_archived_optimizer_instead_of_generic_sac (tests.test_exp96_diagnostic_engineering.OptimizerBindingTest.test_constructor_uses_archived_optimizer_instead_of_generic_sac) ... ok
+test_duplicate_queue_identity_is_rejected (tests.test_exp96_diagnostic_engineering.OptimizerBindingTest.test_duplicate_queue_identity_is_rejected) ... ok
+test_missing_metadata_is_rejected_without_fallback (tests.test_exp96_diagnostic_engineering.OptimizerBindingTest.test_missing_metadata_is_rejected_without_fallback) ... ok
+test_source_identity_and_config_hash_mismatches_are_rejected (tests.test_exp96_diagnostic_engineering.OptimizerBindingTest.test_source_identity_and_config_hash_mismatches_are_rejected) ... ok
+test_valid_but_conflicting_parent_optimizers_are_rejected (tests.test_exp96_diagnostic_engineering.OptimizerBindingTest.test_valid_but_conflicting_parent_optimizers_are_rejected) ... ok
+test_all_templates_load_and_reject_silent_parameter_changes (tests.test_exp96_diagnostic_engineering.PlanAndRunnerTest.test_all_templates_load_and_reject_silent_parameter_changes) ... ok
+test_budget_skip_is_explicit_and_unknown_targets_fail (tests.test_exp96_diagnostic_engineering.PlanAndRunnerTest.test_budget_skip_is_explicit_and_unknown_targets_fail) ... ok
+test_explicit_fit_persists_continuation_and_first_update (tests.test_exp96_diagnostic_engineering.PlanAndRunnerTest.test_explicit_fit_persists_continuation_and_first_update) ... FIT controlled {'step': 8000, 'segment_seconds_including_dispatch': 0.001227749977260828, 'mse_reduction_per_update': 3.205755352973938e-05, 'centered_error_variance': 0.323161244392395, 'mean_error': -0.03342340141534805, 'mse': 0.3242783844470978, 'q_mean': 1.9627021551132202, 'q_variance': 0.128526508808136}
+ok
+test_latest_cannot_escape_original_checkpoint (tests.test_exp96_diagnostic_engineering.PlanAndRunnerTest.test_latest_cannot_escape_original_checkpoint) ... ok
+test_plan_executor_reuses_identical_tasks_across_architectures (tests.test_exp96_diagnostic_engineering.PlanAndRunnerTest.test_plan_executor_reuses_identical_tasks_across_architectures) ... FIT architecture_common_task_D2W512_fresh_zero {'step': 2000, 'segment_seconds_including_dispatch': 0.008954750024713576, 'mse_reduction_per_update': 8.53022038936615e-05, 'centered_error_variance': 0.40258362889289856, 'mean_error': 0.01272861659526825, 'mse': 0.40274566411972046, 'q_mean': 0.008854009211063385, 'q_variance': 0.07367599010467529}
+FIT architecture_common_task_D4W1024_fresh_zero {'step': 2000, 'segment_seconds_including_dispatch': 0.008165332954376936, 'mse_reduction_per_update': 8.53022038936615e-05, 'centered_error_variance': 0.40258362889289856, 'mean_error': 0.01272861659526825, 'mse': 0.40274566411972046, 'q_mean': 0.008854009211063385, 'q_variance': 0.07367599010467529}
+ok
+test_atomic_numeric_publication_preserves_prior_file_on_failed_write (tests.test_exp96_diagnostic_execution.BudgetTest.test_atomic_numeric_publication_preserves_prior_file_on_failed_write) ... ok
+test_export_includes_partial_results_and_verifiable_checksums_not_replay (tests.test_exp96_diagnostic_execution.BudgetTest.test_export_includes_partial_results_and_verifiable_checksums_not_replay) ... ok
+test_failed_preflight_can_be_exported_without_results (tests.test_exp96_diagnostic_execution.BudgetTest.test_failed_preflight_can_be_exported_without_results) ... ok
+test_live_preflight_rechecks_accounting_and_actual_slurm_limit (tests.test_exp96_diagnostic_execution.BudgetTest.test_live_preflight_rechecks_accounting_and_actual_slurm_limit) ... ok
+test_physical_usage_is_parent_elapsed_not_steps_or_billing (tests.test_exp96_diagnostic_execution.BudgetTest.test_physical_usage_is_parent_elapsed_not_steps_or_billing) ... ok
+test_unsettled_missing_unknown_and_restarted_allocations_fail (tests.test_exp96_diagnostic_execution.BudgetTest.test_unsettled_missing_unknown_and_restarted_allocations_fail) ... ok
+test_output_cannot_be_created_in_frozen_campaign (tests.test_exp96_diagnostic_execution.EntryPointTest.test_output_cannot_be_created_in_frozen_campaign) ... FAIL
+test_partial_execution_has_nonzero_exit_and_preserved_status (tests.test_exp96_diagnostic_execution.EntryPointTest.test_partial_execution_has_nonzero_exit_and_preserved_status) ... ERROR
+test_primary_failure_survives_result_serialization_failure (tests.test_exp96_diagnostic_execution.EntryPointTest.test_primary_failure_survives_result_serialization_failure) ... ERROR
+test_pilot_measurement_contracts (unittest.loader._FailedTest.test_pilot_measurement_contracts) ... ERROR
+test_a_critic_that_learns_scores_higher_than_one_that_cannot (tests.test_exp12_probe.ProbeArithmeticTest.test_a_critic_that_learns_scores_higher_than_one_that_cannot) ... ok
+test_frozen_constant_critic_has_known_score (tests.test_exp12_probe.ProbeArithmeticTest.test_frozen_constant_critic_has_known_score) ... ok
+test_iqm_matches_rliable_definition (tests.test_exp12_probe.ProbeArithmeticTest.test_iqm_matches_rliable_definition) ... ok
+test_non_finite_round_marks_check_invalid (tests.test_exp12_probe.ProbeArithmeticTest.test_non_finite_round_marks_check_invalid) ... ok
+test_sign_convention_plasticity_loss_positive_when_current_is_worse (tests.test_exp12_probe.ProbeArithmeticTest.test_sign_convention_plasticity_loss_positive_when_current_is_worse) ... ok
+test_breaking_probe_isolation_is_detected (tests.test_exp12_probe.ProbeDoesNotChangeTrainingTest.test_breaking_probe_isolation_is_detected) ... ERROR
+test_probes_on_equals_probes_off (tests.test_exp12_probe.ProbeDoesNotChangeTrainingTest.test_probes_on_equals_probes_off) ... ERROR
+test_identical_inputs_targets_and_minibatches (tests.test_exp12_probe.ProbePairingTest.test_identical_inputs_targets_and_minibatches) ... ERROR
+test_per_critic_offset_is_each_critics_own_mean (tests.test_exp12_probe.ProbePairingTest.test_per_critic_offset_is_each_critics_own_mean) ... ok
+test_diagnostic_forward_passes_are_highest_and_training_matmuls_keep_the_run_setting (tests.test_exp12_diagnostics.DiagnosticsPrecisionTest.test_diagnostic_forward_passes_are_highest_and_training_matmuls_keep_the_run_setting) ... ERROR
+test_diagnostics_never_change_the_update (tests.test_exp12_diagnostics.KnownAnswerTest.test_diagnostics_never_change_the_update) ... ERROR
+test_existing_path_has_no_new_outputs (tests.test_exp12_diagnostics.KnownAnswerTest.test_existing_path_has_no_new_outputs) ... ERROR
+test_gnorm_std_is_the_population_sd_of_the_window (tests.test_exp12_diagnostics.KnownAnswerTest.test_gnorm_std_is_the_population_sd_of_the_window) ... ok
+test_policy_kl_is_the_closed_form_gaussian_kl_new_vs_old (tests.test_exp12_diagnostics.KnownAnswerTest.test_policy_kl_is_the_closed_form_gaussian_kl_new_vs_old) ... ERROR
+test_policy_kl_near_deterministic_actor_is_reported_not_gated (tests.test_exp12_diagnostics.KnownAnswerTest.test_policy_kl_near_deterministic_actor_is_reported_not_gated) ... ERROR
+test_saturation_is_the_fraction_of_sampled_components_beyond_the_threshold (tests.test_exp12_diagnostics.KnownAnswerTest.test_saturation_is_the_fraction_of_sampled_components_beyond_the_threshold) ... ERROR
+test_recording_modes_resume_and_preserve_complete_training_state (tests.test_exp12_diagnostics.RecordingIsolationTest.test_recording_modes_resume_and_preserve_complete_training_state) ... ERROR
+test_recording_modes_supply_identical_compiled_arguments_and_updates (tests.test_exp12_diagnostics.RecordingIsolationTest.test_recording_modes_supply_identical_compiled_arguments_and_updates) ... ERROR
+test_recording_off_transfers_diagnostics_then_filters_host_logging (tests.test_exp12_diagnostics.RecordingIsolationTest.test_recording_off_transfers_diagnostics_then_filters_host_logging) ... ok
+test_reference_inputs_match_for_each_approved_critic_architecture (tests.test_exp12_diagnostics.RecordingIsolationTest.test_reference_inputs_match_for_each_approved_critic_architecture) ... ok
+test_reference_sampling_and_global_rng_match_for_recording_modes (tests.test_exp12_diagnostics.RecordingIsolationTest.test_reference_sampling_and_global_rng_match_for_recording_modes) ... ok
+test_reference_batch_per_window_from_a_dedicated_stream (tests.test_exp12_diagnostics.ReferenceBatchTest.test_reference_batch_per_window_from_a_dedicated_stream) ... ERROR
+setUpClass (tests.test_exp12_diagnostics.TrainingRunTest) ... ERROR
+
+======================================================================
+ERROR: test_partial_checkpoint_and_readonly_replay (tests.test_fixed_task.FixedTaskTests.test_partial_checkpoint_and_readonly_replay)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/tests/test_fixed_task.py", line 131, in test_partial_checkpoint_and_readonly_replay
+    mm = replay_array(root, "observations")
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/experiments/exp12/diagnostic_artifacts.py", line 106, in replay_array
+    shape, fortran, dtype = np.lib.format._read_array_header(stream, version)
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'numpy.lib.format' has no attribute '_read_array_header'. Did you mean: 'read_array_header_1_0'?
+
+======================================================================
+ERROR: test_partial_execution_has_nonzero_exit_and_preserved_status (tests.test_exp96_diagnostic_execution.EntryPointTest.test_partial_execution_has_nonzero_exit_and_preserved_status)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/tests/test_exp96_diagnostic_execution.py", line 252, in test_partial_execution_has_nonzero_exit_and_preserved_status
+    self.exercise(partial=True)
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/tests/test_exp96_diagnostic_execution.py", line 245, in exercise
+    self.assertEqual(module.main(), 3)
+                     ^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/scripts/exp96_fixed_task_diagnostics.py", line 699, in main
+    require_pinned_stack()
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/scripts/exp12_launch_plan.py", line 52, in require_pinned_stack
+    raise ValueError(
+ValueError: pinned requirement mismatch: numpy must be 1.26.4
+
+======================================================================
+ERROR: test_primary_failure_survives_result_serialization_failure (tests.test_exp96_diagnostic_execution.EntryPointTest.test_primary_failure_survives_result_serialization_failure)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/tests/test_exp96_diagnostic_execution.py", line 255, in test_primary_failure_survives_result_serialization_failure
+    self.exercise(save_failure=True)
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/tests/test_exp96_diagnostic_execution.py", line 240, in exercise
+    module.main()
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/scripts/exp96_fixed_task_diagnostics.py", line 699, in main
+    require_pinned_stack()
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/scripts/exp12_launch_plan.py", line 52, in require_pinned_stack
+    raise ValueError(
+ValueError: pinned requirement mismatch: numpy must be 1.26.4
+
+======================================================================
+ERROR: test_pilot_measurement_contracts (unittest.loader._FailedTest.test_pilot_measurement_contracts)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_pilot_measurement_contracts
+Traceback (most recent call last):
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/unittest/loader.py", line 137, in loadTestsFromName
+    module = __import__(module_name)
+             ^^^^^^^^^^^^^^^^^^^^^^^
+ModuleNotFoundError: No module named 'tests.test_pilot_measurement_contracts'
+
+
+======================================================================
+ERROR: test_breaking_probe_isolation_is_detected (tests.test_exp12_probe.ProbeDoesNotChangeTrainingTest.test_breaking_probe_isolation_is_detected)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/tests/test_exp12_probe.py", line 198, in test_breaking_probe_isolation_is_detected
+    off_dir, off = self._run("off", False)
+                   ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/tests/test_exp12_probe.py", line 181, in _run
+    exp1.run({"experiment": "exp1", "config_path": CONFIG_PATH, "config_name": "base_exp12",
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/experiments/exp1.py", line 202, in run
+    build(latest)
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/experiments/exp1.py", line 134, in build
+    trainer = Exp12Trainer(cfg, str(run_dir))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/experiments/exp12/trainer.py", line 90, in __init__
+    self.agent = create_agent(observation_space=observation_space, action_space=action_space, cfg=cfg.agent)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/scale_rl/agents/__init__.py", line 25, in create_agent
+    agent = SACAgent(observation_space, action_space, cfg)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/scale_rl/agents/sac/sac_agent.py", line 458, in __init__
+    self._init_network()
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/scale_rl/agents/sac/sac_agent.py", line 471, in _init_network
+    ) = _init_sac_networks(self._observation_dim, self._action_dim, self._cfg)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/scale_rl/agents/sac/sac_agent.py", line 113, in _init_sac_networks
+    _fake_actor_variables = actor_network_def.init(rng, fake_observations)
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/scale_rl/agents/sac/sac_network.py", line 62, in __call__
+    dist = self.predictor(z, temperature)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/scale_rl/networks/policies.py", line 54, in __call__
+    dist = tfd.MultivariateNormalDiag(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<decorator-gen-324>", line 2, in __init__
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/distribution.py", line 342, in wrapped_init
+    default_init(self_, *args, **kwargs)
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/mvn_diag.py", line 209, in __init__
+    super(MultivariateNormalDiag, self).__init__(
+  File "<decorator-gen-234>", line 2, in __init__
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/distribution.py", line 342, in wrapped_init
+    default_init(self_, *args, **kwargs)
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/mvn_linear_operator.py", line 205, in __init__
+    super(MultivariateNormalLinearOperator, self).__init__(
+  File "<decorator-gen-186>", line 2, in __init__
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/distribution.py", line 342, in wrapped_init
+    default_init(self_, *args, **kwargs)
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/transformed_distribution.py", line 244, in __init__
+    dtype = self.bijector.forward_dtype(self.distribution.dtype)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/bijectors/bijector.py", line 1705, in forward_dtype
+    input_dtype = nest.map_structure_up_to(
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/python/internal/backend/jax/nest.py", line 324, in map_structure_up_to
+    return map_structure_with_tuple_paths_up_to(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/python/internal/backend/jax/nest.py", line 353, in map_structure_with_tuple_paths_up_to
+    return dm_tree.map_structure_with_path_up_to(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tree/__init__.py", line 771, in map_structure_with_path_up_to
+    results.append(func(*path_and_values))
+                   ^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/python/internal/backend/jax/nest.py", line 326, in <lambda>
+    lambda _, *args: func(*args),  # Discards path.
+                     ^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/bijectors/bijector.py", line 1707, in <lambda>
+    lambda x: dtype_util.convert_to_dtype(x, dtype=self.dtype),
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/internal/dtype_util.py", line 247, in convert_to_dtype
+    elif np.issctype(tensor_or_dtype):
+         ^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/numpy/__init__.py", line 763, in __getattr__
+    raise AttributeError(
+AttributeError: `np.issctype` was removed in the NumPy 2.0 release. Use `issubclass(rep, np.generic)` instead.
+--------------------
+For simplicity, JAX has removed its internal frames from the traceback of the following exception. Set JAX_TRACEBACK_FILTERING=off to include these.
+
+======================================================================
+ERROR: test_probes_on_equals_probes_off (tests.test_exp12_probe.ProbeDoesNotChangeTrainingTest.test_probes_on_equals_probes_off)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/tests/test_exp12_probe.py", line 188, in test_probes_on_equals_probes_off
+    off_dir, off = self._run("off", False)
+                   ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/tests/test_exp12_probe.py", line 181, in _run
+    exp1.run({"experiment": "exp1", "config_path": CONFIG_PATH, "config_name": "base_exp12",
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/experiments/exp1.py", line 202, in run
+    build(latest)
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/experiments/exp1.py", line 134, in build
+    trainer = Exp12Trainer(cfg, str(run_dir))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/experiments/exp12/trainer.py", line 90, in __init__
+    self.agent = create_agent(observation_space=observation_space, action_space=action_space, cfg=cfg.agent)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/scale_rl/agents/__init__.py", line 25, in create_agent
+    agent = SACAgent(observation_space, action_space, cfg)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/scale_rl/agents/sac/sac_agent.py", line 458, in __init__
+    self._init_network()
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/scale_rl/agents/sac/sac_agent.py", line 471, in _init_network
+    ) = _init_sac_networks(self._observation_dim, self._action_dim, self._cfg)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/scale_rl/agents/sac/sac_agent.py", line 113, in _init_sac_networks
+    _fake_actor_variables = actor_network_def.init(rng, fake_observations)
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/scale_rl/agents/sac/sac_network.py", line 62, in __call__
+    dist = self.predictor(z, temperature)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/scale_rl/networks/policies.py", line 54, in __call__
+    dist = tfd.MultivariateNormalDiag(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<decorator-gen-324>", line 2, in __init__
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/distribution.py", line 342, in wrapped_init
+    default_init(self_, *args, **kwargs)
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/mvn_diag.py", line 209, in __init__
+    super(MultivariateNormalDiag, self).__init__(
+  File "<decorator-gen-234>", line 2, in __init__
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/distribution.py", line 342, in wrapped_init
+    default_init(self_, *args, **kwargs)
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/mvn_linear_operator.py", line 205, in __init__
+    super(MultivariateNormalLinearOperator, self).__init__(
+  File "<decorator-gen-186>", line 2, in __init__
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/distribution.py", line 342, in wrapped_init
+    default_init(self_, *args, **kwargs)
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/transformed_distribution.py", line 244, in __init__
+    dtype = self.bijector.forward_dtype(self.distribution.dtype)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/bijectors/bijector.py", line 1705, in forward_dtype
+    input_dtype = nest.map_structure_up_to(
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/python/internal/backend/jax/nest.py", line 324, in map_structure_up_to
+    return map_structure_with_tuple_paths_up_to(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/python/internal/backend/jax/nest.py", line 353, in map_structure_with_tuple_paths_up_to
+    return dm_tree.map_structure_with_path_up_to(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tree/__init__.py", line 771, in map_structure_with_path_up_to
+    results.append(func(*path_and_values))
+                   ^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/python/internal/backend/jax/nest.py", line 326, in <lambda>
+    lambda _, *args: func(*args),  # Discards path.
+                     ^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/bijectors/bijector.py", line 1707, in <lambda>
+    lambda x: dtype_util.convert_to_dtype(x, dtype=self.dtype),
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/internal/dtype_util.py", line 247, in convert_to_dtype
+    elif np.issctype(tensor_or_dtype):
+         ^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/numpy/__init__.py", line 763, in __getattr__
+    raise AttributeError(
+AttributeError: `np.issctype` was removed in the NumPy 2.0 release. Use `issubclass(rep, np.generic)` instead.
+--------------------
+For simplicity, JAX has removed its internal frames from the traceback of the following exception. Set JAX_TRACEBACK_FILTERING=off to include these.
+
+======================================================================
+ERROR: test_identical_inputs_targets_and_minibatches (tests.test_exp12_probe.ProbePairingTest.test_identical_inputs_targets_and_minibatches)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/tests/test_exp12_probe.py", line 120, in test_identical_inputs_targets_and_minibatches
+    t = self._agent_and_buffer()
+        ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/tests/test_exp12_probe.py", line 109, in _agent_and_buffer
+    t = Exp12Trainer(cfg, self.tmp)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/experiments/exp12/trainer.py", line 90, in __init__
+    self.agent = create_agent(observation_space=observation_space, action_space=action_space, cfg=cfg.agent)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/scale_rl/agents/__init__.py", line 25, in create_agent
+    agent = SACAgent(observation_space, action_space, cfg)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/scale_rl/agents/sac/sac_agent.py", line 458, in __init__
+    self._init_network()
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/scale_rl/agents/sac/sac_agent.py", line 471, in _init_network
+    ) = _init_sac_networks(self._observation_dim, self._action_dim, self._cfg)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/scale_rl/agents/sac/sac_agent.py", line 113, in _init_sac_networks
+    _fake_actor_variables = actor_network_def.init(rng, fake_observations)
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/scale_rl/agents/sac/sac_network.py", line 62, in __call__
+    dist = self.predictor(z, temperature)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/scale_rl/networks/policies.py", line 54, in __call__
+    dist = tfd.MultivariateNormalDiag(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<decorator-gen-324>", line 2, in __init__
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/distribution.py", line 342, in wrapped_init
+    default_init(self_, *args, **kwargs)
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/mvn_diag.py", line 209, in __init__
+    super(MultivariateNormalDiag, self).__init__(
+  File "<decorator-gen-234>", line 2, in __init__
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/distribution.py", line 342, in wrapped_init
+    default_init(self_, *args, **kwargs)
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/mvn_linear_operator.py", line 205, in __init__
+    super(MultivariateNormalLinearOperator, self).__init__(
+  File "<decorator-gen-186>", line 2, in __init__
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/distribution.py", line 342, in wrapped_init
+    default_init(self_, *args, **kwargs)
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/transformed_distribution.py", line 244, in __init__
+    dtype = self.bijector.forward_dtype(self.distribution.dtype)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/bijectors/bijector.py", line 1705, in forward_dtype
+    input_dtype = nest.map_structure_up_to(
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/python/internal/backend/jax/nest.py", line 324, in map_structure_up_to
+    return map_structure_with_tuple_paths_up_to(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/python/internal/backend/jax/nest.py", line 353, in map_structure_with_tuple_paths_up_to
+    return dm_tree.map_structure_with_path_up_to(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tree/__init__.py", line 771, in map_structure_with_path_up_to
+    results.append(func(*path_and_values))
+                   ^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/python/internal/backend/jax/nest.py", line 326, in <lambda>
+    lambda _, *args: func(*args),  # Discards path.
+                     ^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/bijectors/bijector.py", line 1707, in <lambda>
+    lambda x: dtype_util.convert_to_dtype(x, dtype=self.dtype),
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/internal/dtype_util.py", line 247, in convert_to_dtype
+    elif np.issctype(tensor_or_dtype):
+         ^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/numpy/__init__.py", line 763, in __getattr__
+    raise AttributeError(
+AttributeError: `np.issctype` was removed in the NumPy 2.0 release. Use `issubclass(rep, np.generic)` instead.
+--------------------
+For simplicity, JAX has removed its internal frames from the traceback of the following exception. Set JAX_TRACEBACK_FILTERING=off to include these.
+
+======================================================================
+ERROR: test_diagnostic_forward_passes_are_highest_and_training_matmuls_keep_the_run_setting (tests.test_exp12_diagnostics.DiagnosticsPrecisionTest.test_diagnostic_forward_passes_are_highest_and_training_matmuls_keep_the_run_setting)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/tests/test_exp12_diagnostics.py", line 183, in test_diagnostic_forward_passes_are_highest_and_training_matmuls_keep_the_run_setting
+    agent = _agent()
+            ^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/tests/test_exp12_diagnostics.py", line 38, in _agent
+    return create_agent(observation_space=obs_space, action_space=act_space, cfg=cfg.agent)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/scale_rl/agents/__init__.py", line 25, in create_agent
+    agent = SACAgent(observation_space, action_space, cfg)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/scale_rl/agents/sac/sac_agent.py", line 458, in __init__
+    self._init_network()
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/scale_rl/agents/sac/sac_agent.py", line 471, in _init_network
+    ) = _init_sac_networks(self._observation_dim, self._action_dim, self._cfg)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/scale_rl/agents/sac/sac_agent.py", line 113, in _init_sac_networks
+    _fake_actor_variables = actor_network_def.init(rng, fake_observations)
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/scale_rl/agents/sac/sac_network.py", line 62, in __call__
+    dist = self.predictor(z, temperature)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/scale_rl/networks/policies.py", line 54, in __call__
+    dist = tfd.MultivariateNormalDiag(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<decorator-gen-324>", line 2, in __init__
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/distribution.py", line 342, in wrapped_init
+    default_init(self_, *args, **kwargs)
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/mvn_diag.py", line 209, in __init__
+    super(MultivariateNormalDiag, self).__init__(
+  File "<decorator-gen-234>", line 2, in __init__
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/distribution.py", line 342, in wrapped_init
+    default_init(self_, *args, **kwargs)
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/mvn_linear_operator.py", line 205, in __init__
+    super(MultivariateNormalLinearOperator, self).__init__(
+  File "<decorator-gen-186>", line 2, in __init__
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/distribution.py", line 342, in wrapped_init
+    default_init(self_, *args, **kwargs)
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/transformed_distribution.py", line 244, in __init__
+    dtype = self.bijector.forward_dtype(self.distribution.dtype)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/bijectors/bijector.py", line 1705, in forward_dtype
+    input_dtype = nest.map_structure_up_to(
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/python/internal/backend/jax/nest.py", line 324, in map_structure_up_to
+    return map_structure_with_tuple_paths_up_to(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/python/internal/backend/jax/nest.py", line 353, in map_structure_with_tuple_paths_up_to
+    return dm_tree.map_structure_with_path_up_to(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tree/__init__.py", line 771, in map_structure_with_path_up_to
+    results.append(func(*path_and_values))
+                   ^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/python/internal/backend/jax/nest.py", line 326, in <lambda>
+    lambda _, *args: func(*args),  # Discards path.
+                     ^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/bijectors/bijector.py", line 1707, in <lambda>
+    lambda x: dtype_util.convert_to_dtype(x, dtype=self.dtype),
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/internal/dtype_util.py", line 247, in convert_to_dtype
+    elif np.issctype(tensor_or_dtype):
+         ^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/numpy/__init__.py", line 763, in __getattr__
+    raise AttributeError(
+AttributeError: `np.issctype` was removed in the NumPy 2.0 release. Use `issubclass(rep, np.generic)` instead.
+--------------------
+For simplicity, JAX has removed its internal frames from the traceback of the following exception. Set JAX_TRACEBACK_FILTERING=off to include these.
+
+======================================================================
+ERROR: test_diagnostics_never_change_the_update (tests.test_exp12_diagnostics.KnownAnswerTest.test_diagnostics_never_change_the_update)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/tests/test_exp12_diagnostics.py", line 136, in test_diagnostics_never_change_the_update
+    a, b = _agent(), _agent()
+           ^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/tests/test_exp12_diagnostics.py", line 38, in _agent
+    return create_agent(observation_space=obs_space, action_space=act_space, cfg=cfg.agent)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/scale_rl/agents/__init__.py", line 25, in create_agent
+    agent = SACAgent(observation_space, action_space, cfg)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/scale_rl/agents/sac/sac_agent.py", line 458, in __init__
+    self._init_network()
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/scale_rl/agents/sac/sac_agent.py", line 471, in _init_network
+    ) = _init_sac_networks(self._observation_dim, self._action_dim, self._cfg)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/scale_rl/agents/sac/sac_agent.py", line 113, in _init_sac_networks
+    _fake_actor_variables = actor_network_def.init(rng, fake_observations)
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/scale_rl/agents/sac/sac_network.py", line 62, in __call__
+    dist = self.predictor(z, temperature)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/scale_rl/networks/policies.py", line 54, in __call__
+    dist = tfd.MultivariateNormalDiag(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<decorator-gen-324>", line 2, in __init__
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/distribution.py", line 342, in wrapped_init
+    default_init(self_, *args, **kwargs)
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/mvn_diag.py", line 209, in __init__
+    super(MultivariateNormalDiag, self).__init__(
+  File "<decorator-gen-234>", line 2, in __init__
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/distribution.py", line 342, in wrapped_init
+    default_init(self_, *args, **kwargs)
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/mvn_linear_operator.py", line 205, in __init__
+    super(MultivariateNormalLinearOperator, self).__init__(
+  File "<decorator-gen-186>", line 2, in __init__
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/distribution.py", line 342, in wrapped_init
+    default_init(self_, *args, **kwargs)
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/transformed_distribution.py", line 244, in __init__
+    dtype = self.bijector.forward_dtype(self.distribution.dtype)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/bijectors/bijector.py", line 1705, in forward_dtype
+    input_dtype = nest.map_structure_up_to(
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/python/internal/backend/jax/nest.py", line 324, in map_structure_up_to
+    return map_structure_with_tuple_paths_up_to(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/python/internal/backend/jax/nest.py", line 353, in map_structure_with_tuple_paths_up_to
+    return dm_tree.map_structure_with_path_up_to(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tree/__init__.py", line 771, in map_structure_with_path_up_to
+    results.append(func(*path_and_values))
+                   ^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/python/internal/backend/jax/nest.py", line 326, in <lambda>
+    lambda _, *args: func(*args),  # Discards path.
+                     ^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/bijectors/bijector.py", line 1707, in <lambda>
+    lambda x: dtype_util.convert_to_dtype(x, dtype=self.dtype),
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/internal/dtype_util.py", line 247, in convert_to_dtype
+    elif np.issctype(tensor_or_dtype):
+         ^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/numpy/__init__.py", line 763, in __getattr__
+    raise AttributeError(
+AttributeError: `np.issctype` was removed in the NumPy 2.0 release. Use `issubclass(rep, np.generic)` instead.
+--------------------
+For simplicity, JAX has removed its internal frames from the traceback of the following exception. Set JAX_TRACEBACK_FILTERING=off to include these.
+
+======================================================================
+ERROR: test_existing_path_has_no_new_outputs (tests.test_exp12_diagnostics.KnownAnswerTest.test_existing_path_has_no_new_outputs)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/tests/test_exp12_diagnostics.py", line 125, in test_existing_path_has_no_new_outputs
+    agent = getattr(_agent(), "agent", _agent())
+                    ^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/tests/test_exp12_diagnostics.py", line 38, in _agent
+    return create_agent(observation_space=obs_space, action_space=act_space, cfg=cfg.agent)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/scale_rl/agents/__init__.py", line 25, in create_agent
+    agent = SACAgent(observation_space, action_space, cfg)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/scale_rl/agents/sac/sac_agent.py", line 458, in __init__
+    self._init_network()
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/scale_rl/agents/sac/sac_agent.py", line 471, in _init_network
+    ) = _init_sac_networks(self._observation_dim, self._action_dim, self._cfg)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/scale_rl/agents/sac/sac_agent.py", line 113, in _init_sac_networks
+    _fake_actor_variables = actor_network_def.init(rng, fake_observations)
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/scale_rl/agents/sac/sac_network.py", line 62, in __call__
+    dist = self.predictor(z, temperature)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/scale_rl/networks/policies.py", line 54, in __call__
+    dist = tfd.MultivariateNormalDiag(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<decorator-gen-324>", line 2, in __init__
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/distribution.py", line 342, in wrapped_init
+    default_init(self_, *args, **kwargs)
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/mvn_diag.py", line 209, in __init__
+    super(MultivariateNormalDiag, self).__init__(
+  File "<decorator-gen-234>", line 2, in __init__
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/distribution.py", line 342, in wrapped_init
+    default_init(self_, *args, **kwargs)
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/mvn_linear_operator.py", line 205, in __init__
+    super(MultivariateNormalLinearOperator, self).__init__(
+  File "<decorator-gen-186>", line 2, in __init__
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/distribution.py", line 342, in wrapped_init
+    default_init(self_, *args, **kwargs)
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/transformed_distribution.py", line 244, in __init__
+    dtype = self.bijector.forward_dtype(self.distribution.dtype)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/bijectors/bijector.py", line 1705, in forward_dtype
+    input_dtype = nest.map_structure_up_to(
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/python/internal/backend/jax/nest.py", line 324, in map_structure_up_to
+    return map_structure_with_tuple_paths_up_to(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/python/internal/backend/jax/nest.py", line 353, in map_structure_with_tuple_paths_up_to
+    return dm_tree.map_structure_with_path_up_to(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tree/__init__.py", line 771, in map_structure_with_path_up_to
+    results.append(func(*path_and_values))
+                   ^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/python/internal/backend/jax/nest.py", line 326, in <lambda>
+    lambda _, *args: func(*args),  # Discards path.
+                     ^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/bijectors/bijector.py", line 1707, in <lambda>
+    lambda x: dtype_util.convert_to_dtype(x, dtype=self.dtype),
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/internal/dtype_util.py", line 247, in convert_to_dtype
+    elif np.issctype(tensor_or_dtype):
+         ^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/numpy/__init__.py", line 763, in __getattr__
+    raise AttributeError(
+AttributeError: `np.issctype` was removed in the NumPy 2.0 release. Use `issubclass(rep, np.generic)` instead.
+--------------------
+For simplicity, JAX has removed its internal frames from the traceback of the following exception. Set JAX_TRACEBACK_FILTERING=off to include these.
+
+======================================================================
+ERROR: test_policy_kl_is_the_closed_form_gaussian_kl_new_vs_old (tests.test_exp12_diagnostics.KnownAnswerTest.test_policy_kl_is_the_closed_form_gaussian_kl_new_vs_old)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/tests/test_exp12_diagnostics.py", line 84, in test_policy_kl_is_the_closed_form_gaussian_kl_new_vs_old
+    agent = _agent(extra=["agent.actor_learning_rate=1e-3"])
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/tests/test_exp12_diagnostics.py", line 38, in _agent
+    return create_agent(observation_space=obs_space, action_space=act_space, cfg=cfg.agent)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/scale_rl/agents/__init__.py", line 25, in create_agent
+    agent = SACAgent(observation_space, action_space, cfg)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/scale_rl/agents/sac/sac_agent.py", line 458, in __init__
+    self._init_network()
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/scale_rl/agents/sac/sac_agent.py", line 471, in _init_network
+    ) = _init_sac_networks(self._observation_dim, self._action_dim, self._cfg)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/scale_rl/agents/sac/sac_agent.py", line 113, in _init_sac_networks
+    _fake_actor_variables = actor_network_def.init(rng, fake_observations)
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/scale_rl/agents/sac/sac_network.py", line 62, in __call__
+    dist = self.predictor(z, temperature)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/scale_rl/networks/policies.py", line 54, in __call__
+    dist = tfd.MultivariateNormalDiag(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<decorator-gen-324>", line 2, in __init__
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/distribution.py", line 342, in wrapped_init
+    default_init(self_, *args, **kwargs)
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/mvn_diag.py", line 209, in __init__
+    super(MultivariateNormalDiag, self).__init__(
+  File "<decorator-gen-234>", line 2, in __init__
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/distribution.py", line 342, in wrapped_init
+    default_init(self_, *args, **kwargs)
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/mvn_linear_operator.py", line 205, in __init__
+    super(MultivariateNormalLinearOperator, self).__init__(
+  File "<decorator-gen-186>", line 2, in __init__
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/distribution.py", line 342, in wrapped_init
+    default_init(self_, *args, **kwargs)
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/transformed_distribution.py", line 244, in __init__
+    dtype = self.bijector.forward_dtype(self.distribution.dtype)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/bijectors/bijector.py", line 1705, in forward_dtype
+    input_dtype = nest.map_structure_up_to(
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/python/internal/backend/jax/nest.py", line 324, in map_structure_up_to
+    return map_structure_with_tuple_paths_up_to(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/python/internal/backend/jax/nest.py", line 353, in map_structure_with_tuple_paths_up_to
+    return dm_tree.map_structure_with_path_up_to(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tree/__init__.py", line 771, in map_structure_with_path_up_to
+    results.append(func(*path_and_values))
+                   ^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/python/internal/backend/jax/nest.py", line 326, in <lambda>
+    lambda _, *args: func(*args),  # Discards path.
+                     ^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/bijectors/bijector.py", line 1707, in <lambda>
+    lambda x: dtype_util.convert_to_dtype(x, dtype=self.dtype),
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/internal/dtype_util.py", line 247, in convert_to_dtype
+    elif np.issctype(tensor_or_dtype):
+         ^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/numpy/__init__.py", line 763, in __getattr__
+    raise AttributeError(
+AttributeError: `np.issctype` was removed in the NumPy 2.0 release. Use `issubclass(rep, np.generic)` instead.
+--------------------
+For simplicity, JAX has removed its internal frames from the traceback of the following exception. Set JAX_TRACEBACK_FILTERING=off to include these.
+
+======================================================================
+ERROR: test_policy_kl_near_deterministic_actor_is_reported_not_gated (tests.test_exp12_diagnostics.KnownAnswerTest.test_policy_kl_near_deterministic_actor_is_reported_not_gated)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/tests/test_exp12_diagnostics.py", line 99, in test_policy_kl_near_deterministic_actor_is_reported_not_gated
+    agent = _agent()
+            ^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/tests/test_exp12_diagnostics.py", line 38, in _agent
+    return create_agent(observation_space=obs_space, action_space=act_space, cfg=cfg.agent)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/scale_rl/agents/__init__.py", line 25, in create_agent
+    agent = SACAgent(observation_space, action_space, cfg)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/scale_rl/agents/sac/sac_agent.py", line 458, in __init__
+    self._init_network()
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/scale_rl/agents/sac/sac_agent.py", line 471, in _init_network
+    ) = _init_sac_networks(self._observation_dim, self._action_dim, self._cfg)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/scale_rl/agents/sac/sac_agent.py", line 113, in _init_sac_networks
+    _fake_actor_variables = actor_network_def.init(rng, fake_observations)
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/scale_rl/agents/sac/sac_network.py", line 62, in __call__
+    dist = self.predictor(z, temperature)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/scale_rl/networks/policies.py", line 54, in __call__
+    dist = tfd.MultivariateNormalDiag(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<decorator-gen-324>", line 2, in __init__
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/distribution.py", line 342, in wrapped_init
+    default_init(self_, *args, **kwargs)
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/mvn_diag.py", line 209, in __init__
+    super(MultivariateNormalDiag, self).__init__(
+  File "<decorator-gen-234>", line 2, in __init__
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/distribution.py", line 342, in wrapped_init
+    default_init(self_, *args, **kwargs)
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/mvn_linear_operator.py", line 205, in __init__
+    super(MultivariateNormalLinearOperator, self).__init__(
+  File "<decorator-gen-186>", line 2, in __init__
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/distribution.py", line 342, in wrapped_init
+    default_init(self_, *args, **kwargs)
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/transformed_distribution.py", line 244, in __init__
+    dtype = self.bijector.forward_dtype(self.distribution.dtype)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/bijectors/bijector.py", line 1705, in forward_dtype
+    input_dtype = nest.map_structure_up_to(
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/python/internal/backend/jax/nest.py", line 324, in map_structure_up_to
+    return map_structure_with_tuple_paths_up_to(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/python/internal/backend/jax/nest.py", line 353, in map_structure_with_tuple_paths_up_to
+    return dm_tree.map_structure_with_path_up_to(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tree/__init__.py", line 771, in map_structure_with_path_up_to
+    results.append(func(*path_and_values))
+                   ^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/python/internal/backend/jax/nest.py", line 326, in <lambda>
+    lambda _, *args: func(*args),  # Discards path.
+                     ^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/bijectors/bijector.py", line 1707, in <lambda>
+    lambda x: dtype_util.convert_to_dtype(x, dtype=self.dtype),
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/internal/dtype_util.py", line 247, in convert_to_dtype
+    elif np.issctype(tensor_or_dtype):
+         ^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/numpy/__init__.py", line 763, in __getattr__
+    raise AttributeError(
+AttributeError: `np.issctype` was removed in the NumPy 2.0 release. Use `issubclass(rep, np.generic)` instead.
+--------------------
+For simplicity, JAX has removed its internal frames from the traceback of the following exception. Set JAX_TRACEBACK_FILTERING=off to include these.
+
+======================================================================
+ERROR: test_saturation_is_the_fraction_of_sampled_components_beyond_the_threshold (tests.test_exp12_diagnostics.KnownAnswerTest.test_saturation_is_the_fraction_of_sampled_components_beyond_the_threshold)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/tests/test_exp12_diagnostics.py", line 110, in test_saturation_is_the_fraction_of_sampled_components_beyond_the_threshold
+    agent = getattr(_agent(), "agent", _agent())
+                    ^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/tests/test_exp12_diagnostics.py", line 38, in _agent
+    return create_agent(observation_space=obs_space, action_space=act_space, cfg=cfg.agent)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/scale_rl/agents/__init__.py", line 25, in create_agent
+    agent = SACAgent(observation_space, action_space, cfg)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/scale_rl/agents/sac/sac_agent.py", line 458, in __init__
+    self._init_network()
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/scale_rl/agents/sac/sac_agent.py", line 471, in _init_network
+    ) = _init_sac_networks(self._observation_dim, self._action_dim, self._cfg)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/scale_rl/agents/sac/sac_agent.py", line 113, in _init_sac_networks
+    _fake_actor_variables = actor_network_def.init(rng, fake_observations)
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/scale_rl/agents/sac/sac_network.py", line 62, in __call__
+    dist = self.predictor(z, temperature)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/scale_rl/networks/policies.py", line 54, in __call__
+    dist = tfd.MultivariateNormalDiag(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<decorator-gen-324>", line 2, in __init__
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/distribution.py", line 342, in wrapped_init
+    default_init(self_, *args, **kwargs)
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/mvn_diag.py", line 209, in __init__
+    super(MultivariateNormalDiag, self).__init__(
+  File "<decorator-gen-234>", line 2, in __init__
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/distribution.py", line 342, in wrapped_init
+    default_init(self_, *args, **kwargs)
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/mvn_linear_operator.py", line 205, in __init__
+    super(MultivariateNormalLinearOperator, self).__init__(
+  File "<decorator-gen-186>", line 2, in __init__
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/distribution.py", line 342, in wrapped_init
+    default_init(self_, *args, **kwargs)
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/transformed_distribution.py", line 244, in __init__
+    dtype = self.bijector.forward_dtype(self.distribution.dtype)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/bijectors/bijector.py", line 1705, in forward_dtype
+    input_dtype = nest.map_structure_up_to(
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/python/internal/backend/jax/nest.py", line 324, in map_structure_up_to
+    return map_structure_with_tuple_paths_up_to(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/python/internal/backend/jax/nest.py", line 353, in map_structure_with_tuple_paths_up_to
+    return dm_tree.map_structure_with_path_up_to(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tree/__init__.py", line 771, in map_structure_with_path_up_to
+    results.append(func(*path_and_values))
+                   ^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/python/internal/backend/jax/nest.py", line 326, in <lambda>
+    lambda _, *args: func(*args),  # Discards path.
+                     ^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/bijectors/bijector.py", line 1707, in <lambda>
+    lambda x: dtype_util.convert_to_dtype(x, dtype=self.dtype),
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/internal/dtype_util.py", line 247, in convert_to_dtype
+    elif np.issctype(tensor_or_dtype):
+         ^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/numpy/__init__.py", line 763, in __getattr__
+    raise AttributeError(
+AttributeError: `np.issctype` was removed in the NumPy 2.0 release. Use `issubclass(rep, np.generic)` instead.
+--------------------
+For simplicity, JAX has removed its internal frames from the traceback of the following exception. Set JAX_TRACEBACK_FILTERING=off to include these.
+
+======================================================================
+ERROR: test_recording_modes_resume_and_preserve_complete_training_state (tests.test_exp12_diagnostics.RecordingIsolationTest.test_recording_modes_resume_and_preserve_complete_training_state)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/tests/test_exp12_diagnostics.py", line 353, in test_recording_modes_resume_and_preserve_complete_training_state
+    straight = new_trainer(tag + "_straight")
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/tests/test_exp12_diagnostics.py", line 350, in new_trainer
+    return Exp12Trainer(cfg, os.path.join(directory, name))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/experiments/exp12/trainer.py", line 90, in __init__
+    self.agent = create_agent(observation_space=observation_space, action_space=action_space, cfg=cfg.agent)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/scale_rl/agents/__init__.py", line 25, in create_agent
+    agent = SACAgent(observation_space, action_space, cfg)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/scale_rl/agents/sac/sac_agent.py", line 458, in __init__
+    self._init_network()
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/scale_rl/agents/sac/sac_agent.py", line 471, in _init_network
+    ) = _init_sac_networks(self._observation_dim, self._action_dim, self._cfg)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/scale_rl/agents/sac/sac_agent.py", line 113, in _init_sac_networks
+    _fake_actor_variables = actor_network_def.init(rng, fake_observations)
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/scale_rl/agents/sac/sac_network.py", line 62, in __call__
+    dist = self.predictor(z, temperature)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/scale_rl/networks/policies.py", line 54, in __call__
+    dist = tfd.MultivariateNormalDiag(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<decorator-gen-324>", line 2, in __init__
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/distribution.py", line 342, in wrapped_init
+    default_init(self_, *args, **kwargs)
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/mvn_diag.py", line 209, in __init__
+    super(MultivariateNormalDiag, self).__init__(
+  File "<decorator-gen-234>", line 2, in __init__
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/distribution.py", line 342, in wrapped_init
+    default_init(self_, *args, **kwargs)
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/mvn_linear_operator.py", line 205, in __init__
+    super(MultivariateNormalLinearOperator, self).__init__(
+  File "<decorator-gen-186>", line 2, in __init__
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/distribution.py", line 342, in wrapped_init
+    default_init(self_, *args, **kwargs)
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/transformed_distribution.py", line 244, in __init__
+    dtype = self.bijector.forward_dtype(self.distribution.dtype)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/bijectors/bijector.py", line 1705, in forward_dtype
+    input_dtype = nest.map_structure_up_to(
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/python/internal/backend/jax/nest.py", line 324, in map_structure_up_to
+    return map_structure_with_tuple_paths_up_to(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/python/internal/backend/jax/nest.py", line 353, in map_structure_with_tuple_paths_up_to
+    return dm_tree.map_structure_with_path_up_to(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tree/__init__.py", line 771, in map_structure_with_path_up_to
+    results.append(func(*path_and_values))
+                   ^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/python/internal/backend/jax/nest.py", line 326, in <lambda>
+    lambda _, *args: func(*args),  # Discards path.
+                     ^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/bijectors/bijector.py", line 1707, in <lambda>
+    lambda x: dtype_util.convert_to_dtype(x, dtype=self.dtype),
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/internal/dtype_util.py", line 247, in convert_to_dtype
+    elif np.issctype(tensor_or_dtype):
+         ^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/numpy/__init__.py", line 763, in __getattr__
+    raise AttributeError(
+AttributeError: `np.issctype` was removed in the NumPy 2.0 release. Use `issubclass(rep, np.generic)` instead.
+--------------------
+For simplicity, JAX has removed its internal frames from the traceback of the following exception. Set JAX_TRACEBACK_FILTERING=off to include these.
+
+======================================================================
+ERROR: test_recording_modes_supply_identical_compiled_arguments_and_updates (tests.test_exp12_diagnostics.RecordingIsolationTest.test_recording_modes_supply_identical_compiled_arguments_and_updates)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/tests/test_exp12_diagnostics.py", line 259, in test_recording_modes_supply_identical_compiled_arguments_and_updates
+    on, off = (getattr(a, "agent", a) for a in (_agent(), _agent()))
+                                                ^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/tests/test_exp12_diagnostics.py", line 38, in _agent
+    return create_agent(observation_space=obs_space, action_space=act_space, cfg=cfg.agent)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/scale_rl/agents/__init__.py", line 25, in create_agent
+    agent = SACAgent(observation_space, action_space, cfg)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/scale_rl/agents/sac/sac_agent.py", line 458, in __init__
+    self._init_network()
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/scale_rl/agents/sac/sac_agent.py", line 471, in _init_network
+    ) = _init_sac_networks(self._observation_dim, self._action_dim, self._cfg)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/scale_rl/agents/sac/sac_agent.py", line 113, in _init_sac_networks
+    _fake_actor_variables = actor_network_def.init(rng, fake_observations)
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/scale_rl/agents/sac/sac_network.py", line 62, in __call__
+    dist = self.predictor(z, temperature)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/scale_rl/networks/policies.py", line 54, in __call__
+    dist = tfd.MultivariateNormalDiag(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<decorator-gen-324>", line 2, in __init__
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/distribution.py", line 342, in wrapped_init
+    default_init(self_, *args, **kwargs)
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/mvn_diag.py", line 209, in __init__
+    super(MultivariateNormalDiag, self).__init__(
+  File "<decorator-gen-234>", line 2, in __init__
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/distribution.py", line 342, in wrapped_init
+    default_init(self_, *args, **kwargs)
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/mvn_linear_operator.py", line 205, in __init__
+    super(MultivariateNormalLinearOperator, self).__init__(
+  File "<decorator-gen-186>", line 2, in __init__
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/distribution.py", line 342, in wrapped_init
+    default_init(self_, *args, **kwargs)
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/transformed_distribution.py", line 244, in __init__
+    dtype = self.bijector.forward_dtype(self.distribution.dtype)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/bijectors/bijector.py", line 1705, in forward_dtype
+    input_dtype = nest.map_structure_up_to(
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/python/internal/backend/jax/nest.py", line 324, in map_structure_up_to
+    return map_structure_with_tuple_paths_up_to(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/python/internal/backend/jax/nest.py", line 353, in map_structure_with_tuple_paths_up_to
+    return dm_tree.map_structure_with_path_up_to(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tree/__init__.py", line 771, in map_structure_with_path_up_to
+    results.append(func(*path_and_values))
+                   ^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/python/internal/backend/jax/nest.py", line 326, in <lambda>
+    lambda _, *args: func(*args),  # Discards path.
+                     ^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/bijectors/bijector.py", line 1707, in <lambda>
+    lambda x: dtype_util.convert_to_dtype(x, dtype=self.dtype),
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/internal/dtype_util.py", line 247, in convert_to_dtype
+    elif np.issctype(tensor_or_dtype):
+         ^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/numpy/__init__.py", line 763, in __getattr__
+    raise AttributeError(
+AttributeError: `np.issctype` was removed in the NumPy 2.0 release. Use `issubclass(rep, np.generic)` instead.
+--------------------
+For simplicity, JAX has removed its internal frames from the traceback of the following exception. Set JAX_TRACEBACK_FILTERING=off to include these.
+
+======================================================================
+ERROR: test_reference_batch_per_window_from_a_dedicated_stream (tests.test_exp12_diagnostics.ReferenceBatchTest.test_reference_batch_per_window_from_a_dedicated_stream)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/tests/test_exp12_diagnostics.py", line 210, in test_reference_batch_per_window_from_a_dedicated_stream
+    t = Exp12Trainer(cfg, tempfile.mkdtemp())
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/experiments/exp12/trainer.py", line 90, in __init__
+    self.agent = create_agent(observation_space=observation_space, action_space=action_space, cfg=cfg.agent)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/scale_rl/agents/__init__.py", line 25, in create_agent
+    agent = SACAgent(observation_space, action_space, cfg)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/scale_rl/agents/sac/sac_agent.py", line 458, in __init__
+    self._init_network()
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/scale_rl/agents/sac/sac_agent.py", line 471, in _init_network
+    ) = _init_sac_networks(self._observation_dim, self._action_dim, self._cfg)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/scale_rl/agents/sac/sac_agent.py", line 113, in _init_sac_networks
+    _fake_actor_variables = actor_network_def.init(rng, fake_observations)
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/scale_rl/agents/sac/sac_network.py", line 62, in __call__
+    dist = self.predictor(z, temperature)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/scale_rl/networks/policies.py", line 54, in __call__
+    dist = tfd.MultivariateNormalDiag(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<decorator-gen-324>", line 2, in __init__
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/distribution.py", line 342, in wrapped_init
+    default_init(self_, *args, **kwargs)
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/mvn_diag.py", line 209, in __init__
+    super(MultivariateNormalDiag, self).__init__(
+  File "<decorator-gen-234>", line 2, in __init__
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/distribution.py", line 342, in wrapped_init
+    default_init(self_, *args, **kwargs)
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/mvn_linear_operator.py", line 205, in __init__
+    super(MultivariateNormalLinearOperator, self).__init__(
+  File "<decorator-gen-186>", line 2, in __init__
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/distribution.py", line 342, in wrapped_init
+    default_init(self_, *args, **kwargs)
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/transformed_distribution.py", line 244, in __init__
+    dtype = self.bijector.forward_dtype(self.distribution.dtype)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/bijectors/bijector.py", line 1705, in forward_dtype
+    input_dtype = nest.map_structure_up_to(
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/python/internal/backend/jax/nest.py", line 324, in map_structure_up_to
+    return map_structure_with_tuple_paths_up_to(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/python/internal/backend/jax/nest.py", line 353, in map_structure_with_tuple_paths_up_to
+    return dm_tree.map_structure_with_path_up_to(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tree/__init__.py", line 771, in map_structure_with_path_up_to
+    results.append(func(*path_and_values))
+                   ^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/python/internal/backend/jax/nest.py", line 326, in <lambda>
+    lambda _, *args: func(*args),  # Discards path.
+                     ^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/bijectors/bijector.py", line 1707, in <lambda>
+    lambda x: dtype_util.convert_to_dtype(x, dtype=self.dtype),
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/internal/dtype_util.py", line 247, in convert_to_dtype
+    elif np.issctype(tensor_or_dtype):
+         ^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/numpy/__init__.py", line 763, in __getattr__
+    raise AttributeError(
+AttributeError: `np.issctype` was removed in the NumPy 2.0 release. Use `issubclass(rep, np.generic)` instead.
+--------------------
+For simplicity, JAX has removed its internal frames from the traceback of the following exception. Set JAX_TRACEBACK_FILTERING=off to include these.
+
+======================================================================
+ERROR: setUpClass (tests.test_exp12_diagnostics.TrainingRunTest)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/tests/test_exp12_diagnostics.py", line 398, in setUpClass
+    exp1.run({"experiment": "exp1", "config_path": CONFIG_PATH, "config_name": "base_exp12",
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/experiments/exp1.py", line 202, in run
+    build(latest)
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/experiments/exp1.py", line 134, in build
+    trainer = Exp12Trainer(cfg, str(run_dir))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/experiments/exp12/trainer.py", line 90, in __init__
+    self.agent = create_agent(observation_space=observation_space, action_space=action_space, cfg=cfg.agent)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/scale_rl/agents/__init__.py", line 25, in create_agent
+    agent = SACAgent(observation_space, action_space, cfg)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/scale_rl/agents/sac/sac_agent.py", line 458, in __init__
+    self._init_network()
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/scale_rl/agents/sac/sac_agent.py", line 471, in _init_network
+    ) = _init_sac_networks(self._observation_dim, self._action_dim, self._cfg)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/scale_rl/agents/sac/sac_agent.py", line 113, in _init_sac_networks
+    _fake_actor_variables = actor_network_def.init(rng, fake_observations)
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/scale_rl/agents/sac/sac_network.py", line 62, in __call__
+    dist = self.predictor(z, temperature)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/scale_rl/networks/policies.py", line 54, in __call__
+    dist = tfd.MultivariateNormalDiag(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<decorator-gen-324>", line 2, in __init__
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/distribution.py", line 342, in wrapped_init
+    default_init(self_, *args, **kwargs)
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/mvn_diag.py", line 209, in __init__
+    super(MultivariateNormalDiag, self).__init__(
+  File "<decorator-gen-234>", line 2, in __init__
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/distribution.py", line 342, in wrapped_init
+    default_init(self_, *args, **kwargs)
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/mvn_linear_operator.py", line 205, in __init__
+    super(MultivariateNormalLinearOperator, self).__init__(
+  File "<decorator-gen-186>", line 2, in __init__
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/distribution.py", line 342, in wrapped_init
+    default_init(self_, *args, **kwargs)
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/transformed_distribution.py", line 244, in __init__
+    dtype = self.bijector.forward_dtype(self.distribution.dtype)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/bijectors/bijector.py", line 1705, in forward_dtype
+    input_dtype = nest.map_structure_up_to(
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/python/internal/backend/jax/nest.py", line 324, in map_structure_up_to
+    return map_structure_with_tuple_paths_up_to(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/python/internal/backend/jax/nest.py", line 353, in map_structure_with_tuple_paths_up_to
+    return dm_tree.map_structure_with_path_up_to(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tree/__init__.py", line 771, in map_structure_with_path_up_to
+    results.append(func(*path_and_values))
+                   ^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/python/internal/backend/jax/nest.py", line 326, in <lambda>
+    lambda _, *args: func(*args),  # Discards path.
+                     ^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/bijectors/bijector.py", line 1707, in <lambda>
+    lambda x: dtype_util.convert_to_dtype(x, dtype=self.dtype),
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/internal/dtype_util.py", line 247, in convert_to_dtype
+    elif np.issctype(tensor_or_dtype):
+         ^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/numpy/__init__.py", line 763, in __getattr__
+    raise AttributeError(
+AttributeError: `np.issctype` was removed in the NumPy 2.0 release. Use `issubclass(rep, np.generic)` instead.
+--------------------
+For simplicity, JAX has removed its internal frames from the traceback of the following exception. Set JAX_TRACEBACK_FILTERING=off to include these.
+
+======================================================================
+FAIL: test_output_cannot_be_created_in_frozen_campaign (tests.test_exp96_diagnostic_execution.EntryPointTest.test_output_cannot_be_created_in_frozen_campaign)
+----------------------------------------------------------------------
+ValueError: pinned requirement mismatch: numpy must be 1.26.4
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/tests/test_exp96_diagnostic_execution.py", line 258, in test_output_cannot_be_created_in_frozen_campaign
+    self.exercise(unsafe_output=True)
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/tests/test_exp96_diagnostic_execution.py", line 232, in exercise
+    with self.assertRaisesRegex(
+         ^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: "outside source and frozen campaign" does not match "pinned requirement mismatch: numpy must be 1.26.4"
+
+----------------------------------------------------------------------
+Ran 55 tests in 5.913s
+
+FAILED (failures=1, errors=17)

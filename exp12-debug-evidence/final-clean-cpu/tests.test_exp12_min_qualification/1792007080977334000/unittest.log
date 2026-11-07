@@ -1,0 +1,28 @@
+test_runner_is_valid_bash_and_every_listed_test_exists (tests.test_exp12_min_qualification.HumanoidBenchRunnerTest.test_runner_is_valid_bash_and_every_listed_test_exists) ... ok
+test_runner_refuses_the_wrong_commit_before_writing (tests.test_exp12_min_qualification.HumanoidBenchRunnerTest.test_runner_refuses_the_wrong_commit_before_writing) ... ok
+test_names_match_the_unset_tolerances_which_stay_unset (tests.test_exp12_min_qualification.NumericBoundsPortTest.test_names_match_the_unset_tolerances_which_stay_unset) ... ok
+test_numeric_bound_rule_rounds_ten_times_the_maximum_up (tests.test_exp12_min_qualification.NumericBoundsPortTest.test_numeric_bound_rule_rounds_ten_times_the_maximum_up) ... ok
+test_one_digit_rounding (tests.test_exp12_min_qualification.NumericBoundsPortTest.test_one_digit_rounding) ... ok
+test_the_job_runs_existing_tests_in_both_modes_and_never_submits (tests.test_exp12_min_qualification.NumericBoundsPortTest.test_the_job_runs_existing_tests_in_both_modes_and_never_submits) ... ok
+test_generated_script_is_valid_bash_and_guards_source_and_outputs (tests.test_exp12_min_qualification.QualificationCommandsTest.test_generated_script_is_valid_bash_and_guards_source_and_outputs) ... ok
+test_inputs_are_validated (tests.test_exp12_min_qualification.QualificationCommandsTest.test_inputs_are_validated) ... ok
+test_six_cold_cases_with_sized_walltimes_and_priority_first (tests.test_exp12_min_qualification.QualificationCommandsTest.test_six_cold_cases_with_sized_walltimes_and_priority_first) ... ok
+test_the_tool_writes_a_file_and_cannot_submit (tests.test_exp12_min_qualification.QualificationCommandsTest.test_the_tool_writes_a_file_and_cannot_submit) ... wrote /var/folders/ms/h3zjmq652jvg08wcslr2z3t80000gn/T/tmpolr5c57w/submit.sh; A100-hour caps: 12.5 (identity + numerics); nothing submitted
+ok
+test_perturbation_moves_every_float32_leaf_by_one_ulp_or_the_relative_scale (tests.test_exp12_min_qualification.ResumePerturbationStudyTest.test_perturbation_moves_every_float32_leaf_by_one_ulp_or_the_relative_scale) ... ok
+test_summary_pairs_by_seed (tests.test_exp12_min_qualification.ResumePerturbationStudyTest.test_summary_pairs_by_seed) ... ok
+test_a_double_claim_is_detected (tests.test_exp12_min_qualification.SharedFilesystemClaimCheckTest.test_a_double_claim_is_detected) ... ok
+test_a_reclaimed_finished_row_or_a_missing_completion_is_detected (tests.test_exp12_min_qualification.SharedFilesystemClaimCheckTest.test_a_reclaimed_finished_row_or_a_missing_completion_is_detected) ... ok
+test_a_wrong_link_owner_a_left_guard_and_a_temporary_file_are_detected (tests.test_exp12_min_qualification.SharedFilesystemClaimCheckTest.test_a_wrong_link_owner_a_left_guard_and_a_temporary_file_are_detected) ... ok
+test_different_filesystems_fail (tests.test_exp12_min_qualification.SharedFilesystemClaimCheckTest.test_different_filesystems_fail) ... ok
+test_every_row_has_exactly_one_winner_and_recovery_preserves_the_old_claim (tests.test_exp12_min_qualification.SharedFilesystemClaimCheckTest.test_every_row_has_exactly_one_winner_and_recovery_preserves_the_old_claim) ... ok
+test_handoff_rows_are_finished_by_their_owner_and_never_reclaimed (tests.test_exp12_min_qualification.SharedFilesystemClaimCheckTest.test_handoff_rows_are_finished_by_their_owner_and_never_reclaimed) ... ok
+test_mismatched_item_counts_are_refused (tests.test_exp12_min_qualification.SharedFilesystemClaimCheckTest.test_mismatched_item_counts_are_refused) ... ok
+test_one_host_is_never_a_pass (tests.test_exp12_min_qualification.SharedFilesystemClaimCheckTest.test_one_host_is_never_a_pass) ... ok
+test_the_cpu_wrapper_is_valid_bash_and_never_requests_a_gpu (tests.test_exp12_min_qualification.SharedFilesystemClaimCheckTest.test_the_cpu_wrapper_is_valid_bash_and_never_requests_a_gpu) ... ok
+test_workers_run_without_jax (tests.test_exp12_min_qualification.SharedFilesystemClaimCheckTest.test_workers_run_without_jax) ... ok
+
+----------------------------------------------------------------------
+Ran 22 tests in 8.176s
+
+OK

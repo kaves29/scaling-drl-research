@@ -1,0 +1,21 @@
+{
+  "module": "tests.test_exp12_probe",
+  "source_hash": "427ac810143706c21cde9966a51d62940d777afd96197166c657d661be5830a6",
+  "success": true,
+  "tests_run": 9,
+  "test_ids": [
+    "tests.test_exp12_probe.ProbeArithmeticTest.test_a_critic_that_learns_scores_higher_than_one_that_cannot",
+    "tests.test_exp12_probe.ProbeArithmeticTest.test_frozen_constant_critic_has_known_score",
+    "tests.test_exp12_probe.ProbeArithmeticTest.test_iqm_matches_rliable_definition",
+    "tests.test_exp12_probe.ProbeArithmeticTest.test_non_finite_round_marks_check_invalid",
+    "tests.test_exp12_probe.ProbeArithmeticTest.test_sign_convention_plasticity_loss_positive_when_current_is_worse",
+    "tests.test_exp12_probe.ProbeDoesNotChangeTrainingTest.test_breaking_probe_isolation_is_detected",
+    "tests.test_exp12_probe.ProbeDoesNotChangeTrainingTest.test_probes_on_equals_probes_off",
+    "tests.test_exp12_probe.ProbePairingTest.test_identical_inputs_targets_and_minibatches",
+    "tests.test_exp12_probe.ProbePairingTest.test_per_critic_offset_is_each_critics_own_mean"
+  ],
+  "failures": 0,
+  "errors": 0,
+  "skips": [],
+  "unexpected_successes": 0
+}

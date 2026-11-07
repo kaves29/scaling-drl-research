@@ -1,0 +1,24 @@
+{
+  "source": "b0617c60cfff4b33bc267773f888d6059e9cbc17",
+  "focused_suite": {
+    "passed": 81,
+    "failed": 0
+  },
+  "expanded_offline_suite": {
+    "passed": 19,
+    "failed": 0
+  },
+  "mutations": {
+    "passed": 73,
+    "failed": 1,
+    "failure": "Twin metadata restored-state test fails in full mutation run; direct isolated test passes (1/1). Cause unresolved."
+  },
+  "gpu_qualification": false,
+  "real_campaign_processed": false,
+  "logs": {
+    "batch2-final-tests.log": "7996033a5bba9f636bf3189ea1628a7593ffbb8b074ac6113f9b362118f22f85",
+    "batch2-offline-lifecycle-final.log": "f1f3ec7d2e59455a28be559100e6ac95b19de958d52c40e7fc9f330d7237acfb",
+    "batch2-mutations-compatible.log": "50b0a850ef3accf7a7520359da52e1946b5374c42f741a16ce164c5440a12842",
+    "batch2-twin-failure.log": "5e795b72918562ca3dc358489a1fc22cc84efed7c9ee3d67b83683162b56e25a"
+  }
+}

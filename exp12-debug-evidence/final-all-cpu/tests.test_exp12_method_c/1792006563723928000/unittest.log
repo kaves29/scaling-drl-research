@@ -1,0 +1,8 @@
+test_canonical_configuration_changes_only_fitting_length (tests.test_exp12_method_c.MethodCProductionTest.test_canonical_configuration_changes_only_fitting_length) ... ok
+test_five_targets_and_first_stage_indices_are_preserved (tests.test_exp12_method_c.MethodCProductionTest.test_five_targets_and_first_stage_indices_are_preserved) ... ok
+test_one_scan_matches_two_stages_with_live_adamw_state (tests.test_exp12_method_c.MethodCProductionTest.test_one_scan_matches_two_stages_with_live_adamw_state) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.713s
+
+OK

@@ -1,0 +1,14 @@
+{
+  "module": "tests.test_sac_agent_checkpoint",
+  "source_hash": "52468342b4543cf79e93cc96c34167ddc17c8dd811e7e45949cacf4b5cee0c6b",
+  "success": true,
+  "tests_run": 2,
+  "test_ids": [
+    "tests.test_sac_agent_checkpoint.TestSACAgentChurnRefBatchCheckpoint.test_none_churn_ref_batch_round_trips_as_none_at_the_orbax_level",
+    "tests.test_sac_agent_checkpoint.TestSACAgentChurnRefBatchCheckpoint.test_populated_churn_ref_batch_survives_a_real_checkpoint_round_trip"
+  ],
+  "failures": 0,
+  "errors": 0,
+  "skips": [],
+  "unexpected_successes": 0
+}

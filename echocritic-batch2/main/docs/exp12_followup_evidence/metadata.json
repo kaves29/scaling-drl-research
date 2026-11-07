@@ -1,0 +1,66 @@
+{
+  "head": "438a5b049d897019e09407b2a40cf1da565e0d88",
+  "python": "3.12.13 (main, Mar  3 2026, 12:39:30) [Clang 21.0.0 (clang-2100.0.123.102)]",
+  "platform": "macOS-26.6.2-arm64-arm-64bit",
+  "machine": "arm64",
+  "packages": {
+    "jax": "0.4.34",
+    "jaxlib": "0.4.34",
+    "flax": "0.8.4",
+    "optax": "0.2.3",
+    "orbax-checkpoint": "0.5.3",
+    "numpy": "1.26.4",
+    "pandas": "2.1.4",
+    "mujoco": "3.6.0",
+    "dm-control": "1.0.38",
+    "myosuite": "2.12.2",
+    "rliable": "1.2.0"
+  },
+  "exact_array_reproducibility": {
+    "baoding_current_2": {
+      "first_obs": true,
+      "second_obs": true,
+      "first_rewards": true,
+      "second_rewards": true,
+      "actions": true
+    },
+    "baoding_6ffccba": {
+      "first_obs": true,
+      "second_obs": true,
+      "first_rewards": true,
+      "second_rewards": true,
+      "actions": true
+    },
+    "baoding_b554d45": {
+      "first_obs": true,
+      "second_obs": true,
+      "first_rewards": true,
+      "second_rewards": true,
+      "actions": true
+    },
+    "twin_current_2": {
+      "q_eager": true,
+      "q_panel": true,
+      "g_eager": true,
+      "g_panel": true,
+      "q_separate_jit": true,
+      "g_separate_jit": true,
+      "q_sliced": true,
+      "g_sliced": true,
+      "observation": true,
+      "action": true
+    },
+    "twin_c293b9a": {
+      "q_eager": true,
+      "q_panel": true,
+      "g_eager": true,
+      "g_panel": true,
+      "q_separate_jit": true,
+      "g_separate_jit": true,
+      "q_sliced": true,
+      "g_sliced": true,
+      "observation": true,
+      "action": true
+    }
+  }
+}

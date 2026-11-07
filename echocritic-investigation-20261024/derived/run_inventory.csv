@@ -1,0 +1,8 @@
+run_key,experiment,run_role,architecture,environment,seed,budget_env_steps,num_interaction_steps,num_checks,status,initial_fresh_score_iqm,final_loss_iqm,f_star_check,f_star_interaction_step,f_star_fraction,fork_interaction_step,code_commit
+exp1_D2W512_dog-run_seed1,exp1,confirmatory,D2W512,dog-run,1,1000000,500000,20,complete,0.4929951628049214,0.2411078860362371,8.0,200000.0,0.4,,f8619dd5f494399d9febc79fc9092010234c714d
+exp1_D2W512_myo-key-turn_seed1,exp1,confirmatory,D2W512,myo-key-turn,1,1000000,500000,20,complete,0.4973500470320384,0.4884779552618662,2.0,50000.0,0.1,,f8619dd5f494399d9febc79fc9092010234c714d
+exp1_D4W1024_dog-run_seed1,exp1,confirmatory,D4W1024,dog-run,1,1000000,500000,20,complete,0.4934489826361338,-0.0135018030802408,,,,,f8619dd5f494399d9febc79fc9092010234c714d
+exp1_D4W1024_humanoid-run_seed1,exp1,confirmatory,D4W1024,humanoid-run,1,1000000,500000,20,complete,0.4952596525351206,-0.0547762016455332,,,,,f8619dd5f494399d9febc79fc9092010234c714d
+exp1_D4W1024_myo-key-turn_seed1,exp1,confirmatory,D4W1024,myo-key-turn,1,1000000,500000,20,complete,0.4901328285535176,0.4324833452701568,2.0,50000.0,0.1,50000.0,f8619dd5f494399d9febc79fc9092010234c714d
+exp1_D4W1536_dog-run_seed1,exp1,confirmatory,D4W1536,dog-run,1,1000000,500000,20,complete,0.495572030544281,-0.0219487448533376,,,,,f8619dd5f494399d9febc79fc9092010234c714d
+exp1_D4W1536_myo-key-turn_seed1,exp1,confirmatory,D4W1536,myo-key-turn,1,1000000,500000,20,complete,0.4949985841910044,0.5984749794006348,2.0,50000.0,0.1,50000.0,f8619dd5f494399d9febc79fc9092010234c714d

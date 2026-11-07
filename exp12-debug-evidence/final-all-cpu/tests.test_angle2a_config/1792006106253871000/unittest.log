@@ -1,0 +1,14 @@
+test_architecture_label_matches_angle1_naming_convention (tests.test_angle2a_config.TestAngle2AConfigValidation.test_architecture_label_matches_angle1_naming_convention) ... ok
+test_build_role_agent_cfg_is_independent_per_role (tests.test_angle2a_config.TestAngle2AConfigValidation.test_build_role_agent_cfg_is_independent_per_role) ... ok
+test_build_role_agent_cfg_uses_role_architecture_not_top_level_fields (tests.test_angle2a_config.TestAngle2AConfigValidation.test_build_role_agent_cfg_uses_role_architecture_not_top_level_fields) ... ok
+test_explicit_null_is_reported_by_field_and_collected_with_other_missing (tests.test_angle2a_config.TestAngle2AConfigValidation.test_explicit_null_is_reported_by_field_and_collected_with_other_missing) ... ok
+test_fully_specified_config_validates_and_returns_architectures (tests.test_angle2a_config.TestAngle2AConfigValidation.test_fully_specified_config_validates_and_returns_architectures) ... ok
+test_missing_all_architecture_fields_raises_clear_error (tests.test_angle2a_config.TestAngle2AConfigValidation.test_missing_all_architecture_fields_raises_clear_error) ... ok
+test_no_hidden_default_leaks_through_when_only_some_roles_given (tests.test_angle2a_config.TestAngle2AConfigValidation.test_no_hidden_default_leaks_through_when_only_some_roles_given) ... ok
+test_partially_missing_fields_are_all_reported_together (tests.test_angle2a_config.TestAngle2AConfigValidation.test_partially_missing_fields_are_all_reported_together) ... ok
+test_top_level_critic_fields_are_genuinely_mandatory (tests.test_angle2a_config.TestAngle2AConfigValidation.test_top_level_critic_fields_are_genuinely_mandatory) ... ok
+
+----------------------------------------------------------------------
+Ran 9 tests in 0.263s
+
+OK

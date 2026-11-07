@@ -1,0 +1,23 @@
+{
+  "module": "tests.test_onset_ledger",
+  "source_hash": "52468342b4543cf79e93cc96c34167ddc17c8dd811e7e45949cacf4b5cee0c6b",
+  "success": true,
+  "tests_run": 11,
+  "test_ids": [
+    "tests.test_onset_ledger.TestOnsetLedger.test_inserting_a_second_distinct_run_appends_row",
+    "tests.test_onset_ledger.TestOnsetLedger.test_load_onset_ledger_returns_empty_schema_when_nothing_exists",
+    "tests.test_onset_ledger.TestOnsetLedger.test_load_onset_ledger_without_architecture_concatenates_all",
+    "tests.test_onset_ledger.TestOnsetLedger.test_malformed_existing_csv_is_not_silently_overwritten",
+    "tests.test_onset_ledger.TestOnsetLedger.test_missing_required_column_in_existing_ledger_raises_on_load",
+    "tests.test_onset_ledger.TestOnsetLedger.test_missing_required_column_in_row_raises",
+    "tests.test_onset_ledger.TestOnsetLedger.test_new_ledger_and_architecture_dir_are_created",
+    "tests.test_onset_ledger.TestOnsetLedger.test_no_leftover_temp_files_after_write",
+    "tests.test_onset_ledger.TestOnsetLedger.test_run_identity_mismatch_raises_and_does_not_write",
+    "tests.test_onset_ledger.TestOnsetLedger.test_unverifiable_identity_downgrades_status_instead_of_crashing",
+    "tests.test_onset_ledger.TestOnsetLedger.test_upsert_updates_existing_run_key_without_duplicating"
+  ],
+  "failures": 0,
+  "errors": 0,
+  "skips": [],
+  "unexpected_successes": 0
+}

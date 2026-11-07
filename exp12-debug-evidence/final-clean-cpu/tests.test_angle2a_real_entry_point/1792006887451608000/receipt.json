@@ -1,0 +1,13 @@
+{
+  "module": "tests.test_angle2a_real_entry_point",
+  "source_hash": "427ac810143706c21cde9966a51d62940d777afd96197166c657d661be5830a6",
+  "success": true,
+  "tests_run": 1,
+  "test_ids": [
+    "tests.test_angle2a_real_entry_point.Angle2ARealEntryPointTest.test_run_completes_end_to_end_with_pool_based_null_baseline"
+  ],
+  "failures": 0,
+  "errors": 0,
+  "skips": [],
+  "unexpected_successes": 0
+}

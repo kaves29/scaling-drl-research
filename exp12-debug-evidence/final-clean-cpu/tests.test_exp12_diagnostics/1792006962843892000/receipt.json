@@ -1,0 +1,27 @@
+{
+  "module": "tests.test_exp12_diagnostics",
+  "source_hash": "427ac810143706c21cde9966a51d62940d777afd96197166c657d661be5830a6",
+  "success": true,
+  "tests_run": 15,
+  "test_ids": [
+    "tests.test_exp12_diagnostics.DiagnosticsPrecisionTest.test_diagnostic_forward_passes_are_highest_and_training_matmuls_keep_the_run_setting",
+    "tests.test_exp12_diagnostics.KnownAnswerTest.test_diagnostics_never_change_the_update",
+    "tests.test_exp12_diagnostics.KnownAnswerTest.test_existing_path_has_no_new_outputs",
+    "tests.test_exp12_diagnostics.KnownAnswerTest.test_gnorm_std_is_the_population_sd_of_the_window",
+    "tests.test_exp12_diagnostics.KnownAnswerTest.test_policy_kl_is_the_closed_form_gaussian_kl_new_vs_old",
+    "tests.test_exp12_diagnostics.KnownAnswerTest.test_policy_kl_near_deterministic_actor_is_reported_not_gated",
+    "tests.test_exp12_diagnostics.KnownAnswerTest.test_saturation_is_the_fraction_of_sampled_components_beyond_the_threshold",
+    "tests.test_exp12_diagnostics.RecordingIsolationTest.test_recording_modes_resume_and_preserve_complete_training_state",
+    "tests.test_exp12_diagnostics.RecordingIsolationTest.test_recording_modes_supply_identical_compiled_arguments_and_updates",
+    "tests.test_exp12_diagnostics.RecordingIsolationTest.test_recording_off_transfers_diagnostics_then_filters_host_logging",
+    "tests.test_exp12_diagnostics.RecordingIsolationTest.test_reference_inputs_match_for_each_approved_critic_architecture",
+    "tests.test_exp12_diagnostics.RecordingIsolationTest.test_reference_sampling_and_global_rng_match_for_recording_modes",
+    "tests.test_exp12_diagnostics.ReferenceBatchTest.test_reference_batch_per_window_from_a_dedicated_stream",
+    "tests.test_exp12_diagnostics.TrainingRunTest.test_metrics_logged_every_window_once_learning_starts",
+    "tests.test_exp12_diagnostics.TrainingRunTest.test_training_is_identical_with_diagnostics_on_and_off"
+  ],
+  "failures": 0,
+  "errors": 0,
+  "skips": [],
+  "unexpected_successes": 0
+}

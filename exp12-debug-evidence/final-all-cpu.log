@@ -1,0 +1,234 @@
+{"module": "tests.test_angle1_probe_capture_snapshot", "success": true, "tests_run": 1}
+{"module": "tests.test_angle2a_config", "success": true, "tests_run": 9}
+{"module": "tests.test_angle2a_env_state", "success": true, "tests_run": 15}
+{"module": "tests.test_angle2a_env_state_determinism_smoke", "success": true, "tests_run": 16}
+{"module": "tests.test_angle2a_matchup_independence", "success": true, "tests_run": 10}
+{"module": "tests.test_angle2a_myosuite_matchup", "success": true, "tests_run": 1}
+{"module": "tests.test_angle2a_onset_lookup", "success": true, "tests_run": 9}
+{"module": "tests.test_angle2a_pool_null_baseline", "success": true, "tests_run": 2}
+{"module": "tests.test_angle2a_prereq_check", "success": true, "tests_run": 6}
+{"module": "tests.test_angle2a_probes", "success": true, "tests_run": 12}
+{"module": "tests.test_angle2a_r_calibration", "success": true, "tests_run": 11}
+{"module": "tests.test_angle2a_real_entry_point", "success": true, "tests_run": 1}
+{"module": "tests.test_angle2a_reference_independence", "success": true, "tests_run": 1}
+{"module": "tests.test_angle1_real_entry_point", "success": true, "tests_run": 17}
+{"module": "tests.test_angle2a_storage", "success": true, "tests_run": 5}
+{"module": "tests.test_angle2a_resumability", "success": true, "tests_run": 5}
+{"module": "tests.test_angle2b_real_entry_point", "success": true, "tests_run": 1}
+{"module": "tests.test_angle2b_statistics", "success": true, "tests_run": 4}
+{"module": "tests.test_angle2b_sourcing", "success": true, "tests_run": 3}
+{"module": "tests.test_angle_2b_smoke", "success": true, "tests_run": 2}
+{"module": "tests.test_baseline_calibration", "success": true, "tests_run": 15}
+{"module": "tests.test_dmc_heldout2", "success": true, "tests_run": 9}
+{"module": "tests.test_exp12_artifacts", "success": true, "tests_run": 12}
+{"module": "tests.test_exp12_bitwise_comparison", "success": true, "tests_run": 8}
+{"module": "tests.test_exp12_campaign_inventory", "success": true, "tests_run": 13}
+{"module": "tests.test_angle_2c_smoke", "success": true, "tests_run": 2}
+{"module": "tests.test_exp12_compilation_cache", "success": true, "tests_run": 8}
+{"module": "tests.test_exp12_cpu_validation_driver", "success": true, "tests_run": 4}
+{"module": "tests.test_exp12_diagnostics", "success": true, "tests_run": 15}
+{"module": "tests.test_exp12_dynamic_delta_preflight", "success": true, "tests_run": 2}
+{"module": "tests.test_exp12_dynamic_scheduler", "success": false, "tests_run": 17}
+{"module": "tests.test_exp12_completeness", "success": true, "tests_run": 19}
+{"module": "tests.test_exp12_exp2_analysis", "success": true, "tests_run": 11}
+{"module": "tests.test_exp12_foundations", "success": true, "tests_run": 12}
+{"module": "tests.test_exp12_hb_cpu_restore", "success": true, "tests_run": 3}
+{"module": "tests.test_exp12_hb_qualification", "success": true, "tests_run": 9}
+{"module": "tests.test_exp12_independent_numerics", "success": true, "tests_run": 6}
+{"module": "tests.test_exp12_injection", "success": true, "tests_run": 8}
+{"module": "tests.test_exp12_launch_preparation", "success": true, "tests_run": 26}
+{"module": "tests.test_exp12_ledger_contention", "success": true, "tests_run": 9}
+{"module": "tests.test_exp12_manifest", "success": true, "tests_run": 10}
+{"module": "tests.test_exp12_method_c", "success": true, "tests_run": 3}
+{"module": "tests.test_exp12_methodology_corrections", "success": true, "tests_run": 22}
+{"module": "tests.test_exp12_fork", "success": true, "tests_run": 28}
+{"module": "tests.test_exp12_min_qualification", "success": false, "tests_run": 22}
+{"module": "tests.test_exp12_numpy_oracle", "success": true, "tests_run": 2}
+{"module": "tests.test_exp12_orchestration", "success": true, "tests_run": 12}
+{"module": "tests.test_exp12_phase3", "success": true, "tests_run": 19}
+{"module": "tests.test_exp12_metric_checkpoint_contract", "success": true, "tests_run": 3}
+{"module": "tests.test_exp12_positive_control", "success": true, "tests_run": 15}
+{"module": "tests.test_exp12_pipeline", "success": true, "tests_run": 3}
+{"module": "tests.test_exp12_probe", "success": true, "tests_run": 9}
+{"module": "tests.test_exp12_probe_snapshot_isolation", "success": true, "tests_run": 1}
+{"module": "tests.test_exp12_qualification_evidence", "success": true, "tests_run": 16}
+{"module": "tests.test_exp12_range_capture", "success": true, "tests_run": 7}
+{"module": "tests.test_exp12_reports", "success": true, "tests_run": 5}
+{"module": "tests.test_exp12_review_blockers", "success": false, "tests_run": 32}
+{"module": "tests.test_exp12_review_fixes", "success": false, "tests_run": 12}
+{"module": "tests.test_exp12_recording_qualification", "success": true, "tests_run": 5}
+{"module": "tests.test_exp12_runtime", "success": true, "tests_run": 9}
+{"module": "tests.test_exp12_twin_reporting", "success": true, "tests_run": 2}
+{"module": "tests.test_exp12_validation_checkout", "success": true, "tests_run": 9}
+{"module": "tests.test_experiment_registry", "success": true, "tests_run": 9}
+{"module": "tests.test_generate_manifest", "success": true, "tests_run": 4}
+{"module": "tests.test_hardware_detection", "success": true, "tests_run": 20}
+{"module": "tests.test_metric_transfer", "success": true, "tests_run": 7}
+{"module": "tests.test_myosuite_core4", "success": true, "tests_run": 10}
+{"module": "tests.test_onset_detection", "success": true, "tests_run": 14}
+{"module": "tests.test_onset_ledger", "success": true, "tests_run": 11}
+{"module": "tests.test_output_paths", "success": true, "tests_run": 8}
+{"module": "tests.test_pipeline", "success": true, "tests_run": 5}
+{"module": "tests.test_exp12_twin_critic", "success": true, "tests_run": 24}
+{"module": "tests.test_runtime_control_flow", "success": true, "tests_run": 4}
+{"module": "tests.test_run_metadata", "success": true, "tests_run": 12}
+{"module": "tests.test_runtime_diagnostic_launcher", "success": false, "tests_run": 29}
+{"module": "tests.test_runtime_observability", "success": true, "tests_run": 11}
+{"module": "tests.test_wandb_resume", "success": true, "tests_run": 2}
+{"module": "tests.test_window_calibration", "success": true, "tests_run": 8}
+{"module": "tests.test_sac_agent_checkpoint", "success": true, "tests_run": 2}
+{
+  "success": false,
+  "source_unchanged": false,
+  "provenance": {
+    "commit": "723da0d1c0c6f95910468a4aae9c94f1c40f60ed",
+    "source_hash": "52468342b4543cf79e93cc96c34167ddc17c8dd811e7e45949cacf4b5cee0c6b",
+    "python": "/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/bin/python",
+    "python_version": "3.12.13",
+    "versions": {
+      "jax": "0.4.34",
+      "jaxlib": "0.4.34",
+      "numpy": "1.26.4",
+      "flax": "0.8.4",
+      "optax": "0.2.3",
+      "orbax-checkpoint": "0.5.3",
+      "gymnasium": "1.0.0a2",
+      "mujoco": "3.6.0",
+      "dm-control": "1.0.38",
+      "humanoid-bench": null
+    },
+    "humanoid_bench_source": null,
+    "modules": [
+      "tests.test_angle1_probe_capture_snapshot",
+      "tests.test_angle1_real_entry_point",
+      "tests.test_angle2a_config",
+      "tests.test_angle2a_env_state",
+      "tests.test_angle2a_env_state_determinism_smoke",
+      "tests.test_angle2a_matchup_independence",
+      "tests.test_angle2a_myosuite_matchup",
+      "tests.test_angle2a_onset_lookup",
+      "tests.test_angle2a_pool_null_baseline",
+      "tests.test_angle2a_prereq_check",
+      "tests.test_angle2a_probes",
+      "tests.test_angle2a_r_calibration",
+      "tests.test_angle2a_real_entry_point",
+      "tests.test_angle2a_reference_independence",
+      "tests.test_angle2a_resumability",
+      "tests.test_angle2a_storage",
+      "tests.test_angle2b_real_entry_point",
+      "tests.test_angle2b_sourcing",
+      "tests.test_angle2b_statistics",
+      "tests.test_angle_2b_smoke",
+      "tests.test_angle_2c_smoke",
+      "tests.test_baseline_calibration",
+      "tests.test_dmc_heldout2",
+      "tests.test_exp12_artifacts",
+      "tests.test_exp12_bitwise_comparison",
+      "tests.test_exp12_campaign_inventory",
+      "tests.test_exp12_compilation_cache",
+      "tests.test_exp12_completeness",
+      "tests.test_exp12_cpu_validation_driver",
+      "tests.test_exp12_diagnostics",
+      "tests.test_exp12_dynamic_delta_preflight",
+      "tests.test_exp12_dynamic_scheduler",
+      "tests.test_exp12_exp2_analysis",
+      "tests.test_exp12_fork",
+      "tests.test_exp12_foundations",
+      "tests.test_exp12_hb_cpu_restore",
+      "tests.test_exp12_hb_qualification",
+      "tests.test_exp12_independent_numerics",
+      "tests.test_exp12_injection",
+      "tests.test_exp12_launch_preparation",
+      "tests.test_exp12_ledger_contention",
+      "tests.test_exp12_manifest",
+      "tests.test_exp12_method_c",
+      "tests.test_exp12_methodology_corrections",
+      "tests.test_exp12_metric_checkpoint_contract",
+      "tests.test_exp12_min_qualification",
+      "tests.test_exp12_numpy_oracle",
+      "tests.test_exp12_orchestration",
+      "tests.test_exp12_phase3",
+      "tests.test_exp12_pipeline",
+      "tests.test_exp12_positive_control",
+      "tests.test_exp12_probe",
+      "tests.test_exp12_probe_snapshot_isolation",
+      "tests.test_exp12_qualification_evidence",
+      "tests.test_exp12_range_capture",
+      "tests.test_exp12_recording_qualification",
+      "tests.test_exp12_reports",
+      "tests.test_exp12_review_blockers",
+      "tests.test_exp12_review_fixes",
+      "tests.test_exp12_runtime",
+      "tests.test_exp12_twin_critic",
+      "tests.test_exp12_twin_reporting",
+      "tests.test_exp12_validation_checkout",
+      "tests.test_experiment_registry",
+      "tests.test_generate_manifest",
+      "tests.test_hardware_detection",
+      "tests.test_metric_transfer",
+      "tests.test_myosuite_core4",
+      "tests.test_onset_detection",
+      "tests.test_onset_ledger",
+      "tests.test_output_paths",
+      "tests.test_pipeline",
+      "tests.test_run_metadata",
+      "tests.test_runtime_control_flow",
+      "tests.test_runtime_diagnostic_launcher",
+      "tests.test_runtime_observability",
+      "tests.test_sac_agent_checkpoint",
+      "tests.test_wandb_resume",
+      "tests.test_window_calibration"
+    ],
+    "jobs": 2,
+    "environment": {
+      "JAX_PLATFORMS": "cpu",
+      "JAX_PLATFORM_NAME": "cpu",
+      "MUJOCO_GL": "disable",
+      "PYOPENGL_PLATFORM": null,
+      "EGL_PLATFORM": null,
+      "PYTHONPATH": "/private/tmp/exp12-validation-deps",
+      "XLA_FLAGS": null,
+      "JAX_ENABLE_X64": null,
+      "JAX_DEFAULT_MATMUL_PRECISION": null,
+      "NVIDIA_TF32_OVERRIDE": null,
+      "EXP12_JAX_CACHE_DIR": "off",
+      "OMP_NUM_THREADS": "1",
+      "OPENBLAS_NUM_THREADS": "1"
+    }
+  },
+  "modules": 79,
+  "tests_run": 765,
+  "skips": [
+    {
+      "test": "tests.test_exp12_compilation_cache.AtomicCacheWriteTest.test_eviction_cache_keeps_jax_put",
+      "reason": "jax needs filelock for an evicting cache; not installed here"
+    },
+    {
+      "test": "tests.test_exp12_fork.HumanoidBenchReachEvalSeedingTest.test_reach_eval_seeding_saves_and_restores_the_training_rng",
+      "reason": "needs humanoid_bench (venv_hb)"
+    },
+    {
+      "test": "tests.test_exp12_hb_cpu_restore.HumanoidBenchCpuRestoreTest.test_identity_arm_restored_in_a_new_process_matches_the_control",
+      "reason": "needs humanoid_bench (MUJOCO_GL=osmesa on CPU hosts)"
+    },
+    {
+      "test": "tests.test_exp12_hb_cpu_restore.HumanoidBenchCpuRestoreTest.test_killed_jobs_resume_bit_identically_in_a_new_process",
+      "reason": "needs humanoid_bench (MUJOCO_GL=osmesa on CPU hosts)"
+    },
+    {
+      "test": "tests.test_exp12_hb_cpu_restore.HumanoidBenchCpuRestoreTest.test_the_suite_configures_the_twin_critic",
+      "reason": "needs humanoid_bench (MUJOCO_GL=osmesa on CPU hosts)"
+    },
+    {
+      "test": "tests.test_exp12_pipeline.PipelinePerSuiteTest.test_humanoid_bench",
+      "reason": "needs humanoid_bench (venv_hb; MUJOCO_GL=PYOPENGL_PLATFORM=egl or osmesa)"
+    }
+  ],
+  "failed_modules": [
+    "tests.test_exp12_dynamic_scheduler",
+    "tests.test_exp12_min_qualification",
+    "tests.test_exp12_review_blockers",
+    "tests.test_exp12_review_fixes",
+    "tests.test_runtime_diagnostic_launcher"
+  ]
+}

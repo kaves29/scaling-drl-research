@@ -1,0 +1,27 @@
+{
+  "module": "tests.test_exp12_positive_control",
+  "source_hash": "427ac810143706c21cde9966a51d62940d777afd96197166c657d661be5830a6",
+  "success": true,
+  "tests_run": 15,
+  "test_ids": [
+    "tests.test_exp12_positive_control.MSelectionArithmeticTest.test_evaluate_chooses_m",
+    "tests.test_exp12_positive_control.MSelectionArithmeticTest.test_evaluate_stops_on_noise",
+    "tests.test_exp12_positive_control.MSelectionArithmeticTest.test_evaluate_stops_when_l_trigger_is_not_positive",
+    "tests.test_exp12_positive_control.MSelectionArithmeticTest.test_loss_rounds_ordered_numerically",
+    "tests.test_exp12_positive_control.MSelectionArithmeticTest.test_noise_exactly_at_the_threshold_stops",
+    "tests.test_exp12_positive_control.MSelectionArithmeticTest.test_pooled_sd",
+    "tests.test_exp12_positive_control.MSelectionArithmeticTest.test_recovery_toward_the_fresh_critic",
+    "tests.test_exp12_positive_control.MSelectionArithmeticTest.test_select_smallest_m_within_tolerance",
+    "tests.test_exp12_positive_control.PositiveControlEndToEndTest.test_cli_needs_no_definition_flags",
+    "tests.test_exp12_positive_control.PositiveControlEndToEndTest.test_full_report",
+    "tests.test_exp12_positive_control.PositiveControlEndToEndTest.test_injection_does_not_change_predictions_before_the_probe",
+    "tests.test_exp12_positive_control.PositiveControlEndToEndTest.test_never_triggered_run_stops",
+    "tests.test_exp12_positive_control.PositiveControlEndToEndTest.test_refuses_wrong_setting",
+    "tests.test_exp12_positive_control.SharedOffsetTest.test_default_is_each_critics_own_offset",
+    "tests.test_exp12_positive_control.SharedOffsetTest.test_shared_offset_modes"
+  ],
+  "failures": 0,
+  "errors": 0,
+  "skips": [],
+  "unexpected_successes": 0
+}

@@ -1,0 +1,17 @@
+{
+  "module": "tests.test_pipeline",
+  "source_hash": "427ac810143706c21cde9966a51d62940d777afd96197166c657d661be5830a6",
+  "success": true,
+  "tests_run": 5,
+  "test_ids": [
+    "tests.test_pipeline.TestPostHocPipeline.test_disabled_flags_write_nothing",
+    "tests.test_pipeline.TestPostHocPipeline.test_end_to_end_success_path",
+    "tests.test_pipeline.TestPostHocPipeline.test_missing_baseline_produces_needs_manual_review_not_crash",
+    "tests.test_pipeline.TestPostHocPipeline.test_no_persisted_metrics_produces_needs_manual_review",
+    "tests.test_pipeline.TestPostHocPipeline.test_pathology_prop_without_critic_degradation_flag_is_needs_manual_review"
+  ],
+  "failures": 0,
+  "errors": 0,
+  "skips": [],
+  "unexpected_successes": 0
+}

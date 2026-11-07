@@ -1,0 +1,14 @@
+{
+  "module": "tests.test_angle_2c_smoke",
+  "source_hash": "c07ca4fb99dc3308d1e6fed0f827f0bebd6442ded04ccc6e755cbde6ba77c455",
+  "success": false,
+  "tests_run": 2,
+  "test_ids": [
+    "tests.test_angle_2c_smoke.Angle2CSmokeTest.test_full_pipeline_smoke",
+    "tests.test_angle_2c_smoke.ReconstructionTestMathTest.test_reconstruction_correctly_identifies_the_dominant_property"
+  ],
+  "failures": 0,
+  "errors": 2,
+  "skips": [],
+  "unexpected_successes": 0
+}

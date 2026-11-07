@@ -1,0 +1,52 @@
+/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/matplotlib/_fontconfig_pattern.py:64: PyparsingDeprecationWarning: 'oneOf' deprecated - use 'one_of'
+  prop = Group((name + Suppress("=") + comma_separated(value)) | oneOf(_CONSTANTS))
+/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/matplotlib/_fontconfig_pattern.py:85: PyparsingDeprecationWarning: 'parseString' deprecated - use 'parse_string'
+  parse = parser.parseString(pattern)
+/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/matplotlib/_fontconfig_pattern.py:89: PyparsingDeprecationWarning: 'resetCache' deprecated - use 'reset_cache'
+  parser.resetCache()
+/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/matplotlib/_fontconfig_pattern.py:85: PyparsingDeprecationWarning: 'parseString' deprecated - use 'parse_string'
+  parse = parser.parseString(pattern)
+/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/matplotlib/_fontconfig_pattern.py:89: PyparsingDeprecationWarning: 'resetCache' deprecated - use 'reset_cache'
+  parser.resetCache()
+/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/matplotlib/_fontconfig_pattern.py:85: PyparsingDeprecationWarning: 'parseString' deprecated - use 'parse_string'
+  parse = parser.parseString(pattern)
+/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/matplotlib/_fontconfig_pattern.py:89: PyparsingDeprecationWarning: 'resetCache' deprecated - use 'reset_cache'
+  parser.resetCache()
+/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/matplotlib/_fontconfig_pattern.py:85: PyparsingDeprecationWarning: 'parseString' deprecated - use 'parse_string'
+  parse = parser.parseString(pattern)
+/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/matplotlib/_fontconfig_pattern.py:89: PyparsingDeprecationWarning: 'resetCache' deprecated - use 'reset_cache'
+  parser.resetCache()
+/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/matplotlib/_fontconfig_pattern.py:85: PyparsingDeprecationWarning: 'parseString' deprecated - use 'parse_string'
+  parse = parser.parseString(pattern)
+/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/matplotlib/_fontconfig_pattern.py:89: PyparsingDeprecationWarning: 'resetCache' deprecated - use 'reset_cache'
+  parser.resetCache()
+/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/matplotlib/_fontconfig_pattern.py:85: PyparsingDeprecationWarning: 'parseString' deprecated - use 'parse_string'
+  parse = parser.parseString(pattern)
+/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/matplotlib/_fontconfig_pattern.py:89: PyparsingDeprecationWarning: 'resetCache' deprecated - use 'reset_cache'
+  parser.resetCache()
+/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/matplotlib/_mathtext.py:45: PyparsingDeprecationWarning: 'enablePackrat' deprecated - use 'enable_packrat'
+  ParserElement.enablePackrat()
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/tests/exp12_break_checks.py", line 245, in <module>
+    from analysis import exp2_analysis  # noqa: E402
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/analysis/exp2_analysis.py", line 31, in <module>
+    from analysis.exp1_analysis import _plot_setup
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/analysis/exp1_analysis.py", line 21, in <module>
+    from rliable import library as rly
+  File "/tmp/echocritic-batch2-deps/rliable/library.py", line 18, in <module>
+    import arch.bootstrap as arch_bs
+  File "/tmp/echocritic-batch2-deps/arch/__init__.py", line 2, in <module>
+    from .univariate.mean import arch_model
+  File "/tmp/echocritic-batch2-deps/arch/univariate/__init__.py", line 11, in <module>
+    from arch.univariate.mean import (
+  File "/tmp/echocritic-batch2-deps/arch/univariate/mean.py", line 27, in <module>
+    from arch.univariate.base import (
+  File "/tmp/echocritic-batch2-deps/arch/univariate/base.py", line 1079, in <module>
+    class ARCHModelFixedResult(_SummaryRepr):
+  File "/tmp/echocritic-batch2-deps/arch/univariate/base.py", line 1525, in ARCHModelFixedResult
+    @deprecate_kwarg("type", "plot_type")
+     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: deprecate_kwarg() missing 1 required positional argument: 'new_arg_name'

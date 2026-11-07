@@ -1,0 +1,262 @@
+[
+  {
+    "commit": "f597ee9898e4d401912092c336c3e5330cf2fda1",
+    "path": "main/configs/base_exp12.yaml",
+    "sha256": "9662ecf7376a25f13690a528d8ec3b1f41a35b40430b04decb583ed9f5d54649"
+  },
+  {
+    "commit": "f597ee9898e4d401912092c336c3e5330cf2fda1",
+    "path": "main/experiments/exp12/__init__.py",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "commit": "f597ee9898e4d401912092c336c3e5330cf2fda1",
+    "path": "main/experiments/exp12/diagnostics.py",
+    "sha256": "efcbf1f67aa1db78c95eab55605c4faa26024e05d0e62a229ae8ea096581f47f"
+  },
+  {
+    "commit": "f597ee9898e4d401912092c336c3e5330cf2fda1",
+    "path": "main/experiments/exp12/envs.py",
+    "sha256": "856a6982591855c009e6b4117b30d7f54f17039606802d42ca31b2c3cf823594"
+  },
+  {
+    "commit": "f597ee9898e4d401912092c336c3e5330cf2fda1",
+    "path": "main/experiments/exp12/exp2_ledger.py",
+    "sha256": "214d4dae360318b2828d5448595b47b4a877da100f90b4efe723a9887145c0b7"
+  },
+  {
+    "commit": "f597ee9898e4d401912092c336c3e5330cf2fda1",
+    "path": "main/experiments/exp12/fork.py",
+    "sha256": "72c73032720f54883d12a74ee33ec405ac7e2af2b80184410d126935c9b34e35"
+  },
+  {
+    "commit": "f597ee9898e4d401912092c336c3e5330cf2fda1",
+    "path": "main/experiments/exp12/injection.py",
+    "sha256": "188de46db8b77c3e3cb20782cf4287c7fd543ffda757b65dc13c4465aa04c855"
+  },
+  {
+    "commit": "f597ee9898e4d401912092c336c3e5330cf2fda1",
+    "path": "main/experiments/exp12/ledger.py",
+    "sha256": "6cfb50f754d28ffab7df6be5f47fd3be2732bfcf468deeb039201801c299a6fc"
+  },
+  {
+    "commit": "f597ee9898e4d401912092c336c3e5330cf2fda1",
+    "path": "main/experiments/exp12/m_selection.py",
+    "sha256": "6a201bbeccda0684ee2047ffb7915876383c3200a216020282c04b987e7ea601"
+  },
+  {
+    "commit": "f597ee9898e4d401912092c336c3e5330cf2fda1",
+    "path": "main/experiments/exp12/precision.py",
+    "sha256": "5c945bb1c8838870673072bb11aabab1ab8d2a33785ce570e039737122b951c8"
+  },
+  {
+    "commit": "f597ee9898e4d401912092c336c3e5330cf2fda1",
+    "path": "main/experiments/exp12/probe.py",
+    "sha256": "a9ef945e194e6b2c6789834e80d78aa1f67c0c0aeba2c327b42bddd432393250"
+  },
+  {
+    "commit": "f597ee9898e4d401912092c336c3e5330cf2fda1",
+    "path": "main/experiments/exp12/run_probes.py",
+    "sha256": "03ff2c2b45dca81c585475e3653147dc02a0cd7770a8186b2e20cd92684e7bb8"
+  },
+  {
+    "commit": "f597ee9898e4d401912092c336c3e5330cf2fda1",
+    "path": "main/experiments/exp12/runtime_trace.py",
+    "sha256": "9d1a70a8b0389559a745e408921c5ff760596dbd67179286f787cf47dc583894"
+  },
+  {
+    "commit": "f597ee9898e4d401912092c336c3e5330cf2fda1",
+    "path": "main/experiments/exp12/state.py",
+    "sha256": "c81dd7361e99b62ea40fd16d9037e9954d1008955d540a651a97c07cccd19cfc"
+  },
+  {
+    "commit": "f597ee9898e4d401912092c336c3e5330cf2fda1",
+    "path": "main/experiments/exp12/trainer.py",
+    "sha256": "3a2109b375627b80732c87c21248ffedb8058891360ef82279c640c3429f284e"
+  },
+  {
+    "commit": "f597ee9898e4d401912092c336c3e5330cf2fda1",
+    "path": "main/experiments/exp12/trigger.py",
+    "sha256": "a1ca86de3c078293dbdfb57bb46502baa1b4e99a3d3413f0743363f735d055be"
+  },
+  {
+    "commit": "f597ee9898e4d401912092c336c3e5330cf2fda1",
+    "path": "main/experiments/exp12/twin.py",
+    "sha256": "92fe427382203eb4e21142d87fb8a6a422ab8712950a06efae015610881884f4"
+  },
+  {
+    "commit": "f597ee9898e4d401912092c336c3e5330cf2fda1",
+    "path": "main/scale_rl/agents/sac/__init__.py",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "commit": "f597ee9898e4d401912092c336c3e5330cf2fda1",
+    "path": "main/scale_rl/agents/sac/sac_agent.py",
+    "sha256": "b1df406731b8db48a14f1e38e0e5709139c350c5649a826dbf79f7f56a95747c"
+  },
+  {
+    "commit": "f597ee9898e4d401912092c336c3e5330cf2fda1",
+    "path": "main/scale_rl/agents/sac/sac_network.py",
+    "sha256": "0c9318286397874d207fc9f64ee4215508352eba0b2c611ebe443d33ccf05232"
+  },
+  {
+    "commit": "f597ee9898e4d401912092c336c3e5330cf2fda1",
+    "path": "main/scale_rl/agents/sac/sac_update.py",
+    "sha256": "6245dba06c7623b09003d9a03418a1b8d60694092833639ce063b8452974dbd8"
+  },
+  {
+    "commit": "f597ee9898e4d401912092c336c3e5330cf2fda1",
+    "path": "main/scale_rl/common/logger.py",
+    "sha256": "401633984e2f6c80a8f7c0269909c706ab24aacb485d16cd43a50931d3e4f83a"
+  },
+  {
+    "commit": "f597ee9898e4d401912092c336c3e5330cf2fda1",
+    "path": "main/scale_rl/networks/trainer.py",
+    "sha256": "6161830e674d0104e32e62178593221f1c581d7803c94d1cb7997ea49117ce3a"
+  },
+  {
+    "commit": "f597ee9898e4d401912092c336c3e5330cf2fda1",
+    "path": "main/scripts/exp96_campaign.py",
+    "sha256": "e1dfb36d211b417a1c5acf8ccf2b06960652b3a1f4451f87405c4c8255784998"
+  },
+  {
+    "commit": "f597ee9898e4d401912092c336c3e5330cf2fda1",
+    "path": "main/tests/test_exp96_campaign.py",
+    "sha256": "cf1b61ab2b3fa98e423cb28a599ae7886b4e9c4aa49844934f77fd346be74fa1"
+  },
+  {
+    "commit": "f597ee9898e4d401912092c336c3e5330cf2fda1",
+    "path": "main/tests/test_run_metadata.py",
+    "sha256": "12bf50f91b62d9a75035a2bb5fdb7bf66937a6a7317a4ae7873e49e5430d30ea"
+  },
+  {
+    "commit": "f597ee9898e4d401912092c336c3e5330cf2fda1",
+    "path": "main/utils/run_metadata.py",
+    "sha256": "1ae022275a1280ad24031c9630742131d859c1c1a5fd34b438e437225a882e47"
+  },
+  {
+    "commit": "f8619dd5f494399d9febc79fc9092010234c714d",
+    "path": "main/configs/base_exp12.yaml",
+    "sha256": "9662ecf7376a25f13690a528d8ec3b1f41a35b40430b04decb583ed9f5d54649"
+  },
+  {
+    "commit": "f8619dd5f494399d9febc79fc9092010234c714d",
+    "path": "main/experiments/exp12/__init__.py",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "commit": "f8619dd5f494399d9febc79fc9092010234c714d",
+    "path": "main/experiments/exp12/diagnostics.py",
+    "sha256": "efcbf1f67aa1db78c95eab55605c4faa26024e05d0e62a229ae8ea096581f47f"
+  },
+  {
+    "commit": "f8619dd5f494399d9febc79fc9092010234c714d",
+    "path": "main/experiments/exp12/envs.py",
+    "sha256": "856a6982591855c009e6b4117b30d7f54f17039606802d42ca31b2c3cf823594"
+  },
+  {
+    "commit": "f8619dd5f494399d9febc79fc9092010234c714d",
+    "path": "main/experiments/exp12/exp2_ledger.py",
+    "sha256": "214d4dae360318b2828d5448595b47b4a877da100f90b4efe723a9887145c0b7"
+  },
+  {
+    "commit": "f8619dd5f494399d9febc79fc9092010234c714d",
+    "path": "main/experiments/exp12/fork.py",
+    "sha256": "72c73032720f54883d12a74ee33ec405ac7e2af2b80184410d126935c9b34e35"
+  },
+  {
+    "commit": "f8619dd5f494399d9febc79fc9092010234c714d",
+    "path": "main/experiments/exp12/injection.py",
+    "sha256": "188de46db8b77c3e3cb20782cf4287c7fd543ffda757b65dc13c4465aa04c855"
+  },
+  {
+    "commit": "f8619dd5f494399d9febc79fc9092010234c714d",
+    "path": "main/experiments/exp12/ledger.py",
+    "sha256": "0858510a82a411d6878b347c785d410d1c7212102b0e9c6305c724d2bc90fc5f"
+  },
+  {
+    "commit": "f8619dd5f494399d9febc79fc9092010234c714d",
+    "path": "main/experiments/exp12/m_selection.py",
+    "sha256": "6a201bbeccda0684ee2047ffb7915876383c3200a216020282c04b987e7ea601"
+  },
+  {
+    "commit": "f8619dd5f494399d9febc79fc9092010234c714d",
+    "path": "main/experiments/exp12/precision.py",
+    "sha256": "5c945bb1c8838870673072bb11aabab1ab8d2a33785ce570e039737122b951c8"
+  },
+  {
+    "commit": "f8619dd5f494399d9febc79fc9092010234c714d",
+    "path": "main/experiments/exp12/probe.py",
+    "sha256": "8a7237ebc27394cc3f6271e9c63160afee703620d1adbda4c290eab7fe584698"
+  },
+  {
+    "commit": "f8619dd5f494399d9febc79fc9092010234c714d",
+    "path": "main/experiments/exp12/run_probes.py",
+    "sha256": "82119768d02a97e80e03a3c626a2e85dfb2fdd430ecd43ed9d950d090d49f036"
+  },
+  {
+    "commit": "f8619dd5f494399d9febc79fc9092010234c714d",
+    "path": "main/experiments/exp12/runtime_trace.py",
+    "sha256": "9d1a70a8b0389559a745e408921c5ff760596dbd67179286f787cf47dc583894"
+  },
+  {
+    "commit": "f8619dd5f494399d9febc79fc9092010234c714d",
+    "path": "main/experiments/exp12/state.py",
+    "sha256": "c81dd7361e99b62ea40fd16d9037e9954d1008955d540a651a97c07cccd19cfc"
+  },
+  {
+    "commit": "f8619dd5f494399d9febc79fc9092010234c714d",
+    "path": "main/experiments/exp12/trainer.py",
+    "sha256": "3a2109b375627b80732c87c21248ffedb8058891360ef82279c640c3429f284e"
+  },
+  {
+    "commit": "f8619dd5f494399d9febc79fc9092010234c714d",
+    "path": "main/experiments/exp12/trigger.py",
+    "sha256": "ebdbd282f9baa276b64fe18b98b63f605106c60665407e6cd511bfca5715cc4c"
+  },
+  {
+    "commit": "f8619dd5f494399d9febc79fc9092010234c714d",
+    "path": "main/experiments/exp12/twin.py",
+    "sha256": "92fe427382203eb4e21142d87fb8a6a422ab8712950a06efae015610881884f4"
+  },
+  {
+    "commit": "f8619dd5f494399d9febc79fc9092010234c714d",
+    "path": "main/scale_rl/agents/sac/__init__.py",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "commit": "f8619dd5f494399d9febc79fc9092010234c714d",
+    "path": "main/scale_rl/agents/sac/sac_agent.py",
+    "sha256": "b1df406731b8db48a14f1e38e0e5709139c350c5649a826dbf79f7f56a95747c"
+  },
+  {
+    "commit": "f8619dd5f494399d9febc79fc9092010234c714d",
+    "path": "main/scale_rl/agents/sac/sac_network.py",
+    "sha256": "0c9318286397874d207fc9f64ee4215508352eba0b2c611ebe443d33ccf05232"
+  },
+  {
+    "commit": "f8619dd5f494399d9febc79fc9092010234c714d",
+    "path": "main/scale_rl/agents/sac/sac_update.py",
+    "sha256": "6245dba06c7623b09003d9a03418a1b8d60694092833639ce063b8452974dbd8"
+  },
+  {
+    "commit": "f8619dd5f494399d9febc79fc9092010234c714d",
+    "path": "main/scale_rl/common/logger.py",
+    "sha256": "401633984e2f6c80a8f7c0269909c706ab24aacb485d16cd43a50931d3e4f83a"
+  },
+  {
+    "commit": "f8619dd5f494399d9febc79fc9092010234c714d",
+    "path": "main/scale_rl/networks/trainer.py",
+    "sha256": "6161830e674d0104e32e62178593221f1c581d7803c94d1cb7997ea49117ce3a"
+  },
+  {
+    "commit": "f8619dd5f494399d9febc79fc9092010234c714d",
+    "path": "main/tests/test_run_metadata.py",
+    "sha256": "12bf50f91b62d9a75035a2bb5fdb7bf66937a6a7317a4ae7873e49e5430d30ea"
+  },
+  {
+    "commit": "f8619dd5f494399d9febc79fc9092010234c714d",
+    "path": "main/utils/run_metadata.py",
+    "sha256": "1ae022275a1280ad24031c9630742131d859c1c1a5fd34b438e437225a882e47"
+  }
+]

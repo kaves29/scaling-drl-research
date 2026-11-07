@@ -1,0 +1,7 @@
+test_fresh_and_trained_probe_leave_live_state_unchanged (tests.test_exp12_probe_snapshot_isolation.ProbeSnapshotIsolationTest.test_fresh_and_trained_probe_leave_live_state_unchanged) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 5.990s
+
+OK
+ total params: 1.54K

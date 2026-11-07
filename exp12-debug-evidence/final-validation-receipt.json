@@ -1,0 +1,30 @@
+{
+  "base_commit": "723da0d1c0c6f95910468a4aae9c94f1c40f60ed",
+  "final_commit": "ae1e455c0de57ddd8304601ca35f62b334849766",
+  "branch": "codex/exp12-qualification-debug",
+  "push_verified": true,
+  "cpu_source_hash": "427ac810143706c21cde9966a51d62940d777afd96197166c657d661be5830a6",
+  "harness_sha256": "0880e7be8fa83a5e42249391f21bd7a5e4ac82004128528b94b040800fbe0c42",
+  "tests_run": 765,
+  "passed": 760,
+  "skipped": 5,
+  "failed_modules": [],
+  "gpu_jobs_submitted": 0,
+  "frozen_baseline_modified": false,
+  "runner_exit_codes": {
+    "final_clean_cpu": 0,
+    "final_regressions": 0,
+    "gnu_tools_regressions": 0,
+    "extended_mutations": 0,
+    "panel_mutation_restoration": 0,
+    "single_modes_corrected": 0,
+    "environment_restoration": 0,
+    "methodology_reference": 0,
+    "cpu_source_comparison": 0
+  },
+  "external_limits": [
+    "HumanoidBench absent locally (5 test skips, 10 simulator cells unavailable)",
+    "Delta CPU allocation rejected: only biqc-delta-gpu account available",
+    "Updated A100 qualification outside CPU-only authorization"
+  ]
+}

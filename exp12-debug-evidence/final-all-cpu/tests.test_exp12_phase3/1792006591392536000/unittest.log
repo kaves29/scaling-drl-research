@@ -1,0 +1,226 @@
+test_analysis_is_reproducible (tests.test_exp12_phase3.Exp1AnalysisTest.test_analysis_is_reproducible) ... /Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/matplotlib/_fontconfig_pattern.py:64: PyparsingDeprecationWarning: 'oneOf' deprecated - use 'one_of'
+  prop = Group((name + Suppress("=") + comma_separated(value)) | oneOf(_CONSTANTS))
+/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/matplotlib/_fontconfig_pattern.py:85: PyparsingDeprecationWarning: 'parseString' deprecated - use 'parse_string'
+  parse = parser.parseString(pattern)
+/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/matplotlib/_fontconfig_pattern.py:89: PyparsingDeprecationWarning: 'resetCache' deprecated - use 'reset_cache'
+  parser.resetCache()
+/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/matplotlib/_fontconfig_pattern.py:85: PyparsingDeprecationWarning: 'parseString' deprecated - use 'parse_string'
+  parse = parser.parseString(pattern)
+/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/matplotlib/_fontconfig_pattern.py:89: PyparsingDeprecationWarning: 'resetCache' deprecated - use 'reset_cache'
+  parser.resetCache()
+/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/matplotlib/_fontconfig_pattern.py:85: PyparsingDeprecationWarning: 'parseString' deprecated - use 'parse_string'
+  parse = parser.parseString(pattern)
+/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/matplotlib/_fontconfig_pattern.py:89: PyparsingDeprecationWarning: 'resetCache' deprecated - use 'reset_cache'
+  parser.resetCache()
+/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/matplotlib/_fontconfig_pattern.py:85: PyparsingDeprecationWarning: 'parseString' deprecated - use 'parse_string'
+  parse = parser.parseString(pattern)
+/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/matplotlib/_fontconfig_pattern.py:89: PyparsingDeprecationWarning: 'resetCache' deprecated - use 'reset_cache'
+  parser.resetCache()
+/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/matplotlib/_fontconfig_pattern.py:85: PyparsingDeprecationWarning: 'parseString' deprecated - use 'parse_string'
+  parse = parser.parseString(pattern)
+/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/matplotlib/_fontconfig_pattern.py:89: PyparsingDeprecationWarning: 'resetCache' deprecated - use 'reset_cache'
+  parser.resetCache()
+/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/matplotlib/_fontconfig_pattern.py:85: PyparsingDeprecationWarning: 'parseString' deprecated - use 'parse_string'
+  parse = parser.parseString(pattern)
+/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/matplotlib/_fontconfig_pattern.py:89: PyparsingDeprecationWarning: 'resetCache' deprecated - use 'reset_cache'
+  parser.resetCache()
+/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/matplotlib/_mathtext.py:45: PyparsingDeprecationWarning: 'enablePackrat' deprecated - use 'enable_packrat'
+  ParserElement.enablePackrat()
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+ok
+test_dev_runs_do_not_change_the_confirmatory_result (tests.test_exp12_phase3.Exp1AnalysisTest.test_dev_runs_do_not_change_the_confirmatory_result) ... /Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+ok
+test_full_analysis_writes_outputs (tests.test_exp12_phase3.Exp1AnalysisTest.test_full_analysis_writes_outputs) ... /Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+WARNING:matplotlib.style.core:In /Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/matplotlib/mpl-data/stylelib/classic.mplstyle: 'parseString' deprecated - use 'parse_string'
+WARNING:matplotlib.style.core:In /Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/matplotlib/mpl-data/stylelib/classic.mplstyle: 'resetCache' deprecated - use 'reset_cache'
+WARNING:matplotlib.style.core:In /Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/matplotlib/mpl-data/stylelib/classic.mplstyle: 'parseString' deprecated - use 'parse_string'
+WARNING:matplotlib.style.core:In /Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/matplotlib/mpl-data/stylelib/classic.mplstyle: 'resetCache' deprecated - use 'reset_cache'
+WARNING:matplotlib.style.core:In /Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/matplotlib/mpl-data/stylelib/classic.mplstyle: 'parseString' deprecated - use 'parse_string'
+WARNING:matplotlib.style.core:In /Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/matplotlib/mpl-data/stylelib/classic.mplstyle: 'resetCache' deprecated - use 'reset_cache'
+WARNING:matplotlib.style.core:In /Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/matplotlib/mpl-data/stylelib/classic.mplstyle: 'parseString' deprecated - use 'parse_string'
+WARNING:matplotlib.style.core:In /Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/matplotlib/mpl-data/stylelib/classic.mplstyle: 'resetCache' deprecated - use 'reset_cache'
+ok
+test_known_effect_is_recovered_and_null_effect_is_not (tests.test_exp12_phase3.Exp1AnalysisTest.test_known_effect_is_recovered_and_null_effect_is_not) ... /Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+ok
+test_missing_run_is_refused (tests.test_exp12_phase3.Exp1AnalysisTest.test_missing_run_is_refused) ... /Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+ok
+test_run_writes_ledger (tests.test_exp12_phase3.Exp1LedgerEndToEndTest.test_run_writes_ledger) ... WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+ok
+test_incomplete_and_foreign_rows_are_rejected (tests.test_exp12_phase3.LedgerTest.test_incomplete_and_foreign_rows_are_rejected) ... ok
+test_round_trip_and_dev_excluded_by_default (tests.test_exp12_phase3.LedgerTest.test_round_trip_and_dev_excluded_by_default) ... ok
+test_consecutive_checks_rule (tests.test_exp12_phase3.TriggerTest.test_consecutive_checks_rule) ... ok
+test_current_worse_triggers_and_reverse_never_does (tests.test_exp12_phase3.TriggerTest.test_current_worse_triggers_and_reverse_never_does) ... ok
+test_edge_cases (tests.test_exp12_phase3.TriggerTest.test_edge_cases) ... ok
+test_f_star_first_eligible_check_only (tests.test_exp12_phase3.TriggerTest.test_f_star_first_eligible_check_only) ... ok
+test_known_loss_is_detected (tests.test_exp12_phase3.TriggerTest.test_known_loss_is_detected) ... ok
+test_null_false_trigger_rate_is_measured (tests.test_exp12_phase3.TriggerTest.test_null_false_trigger_rate_is_measured) ... ok
+test_null_threshold_shifts_the_firing_line (tests.test_exp12_phase3.TriggerTest.test_null_threshold_shifts_the_firing_line) ... ok
+test_reproducible_from_seed_and_check (tests.test_exp12_phase3.TriggerTest.test_reproducible_from_seed_and_check) ... ok
+test_settings_come_from_config (tests.test_exp12_phase3.TriggerTest.test_settings_come_from_config) ... ok
+test_shipped_config_is_the_current_rule (tests.test_exp12_phase3.TriggerTest.test_shipped_config_is_the_current_rule) ... ok
+test_statistic_is_iqm_not_mean (tests.test_exp12_phase3.TriggerTest.test_statistic_is_iqm_not_mean) ... ok
+
+----------------------------------------------------------------------
+Ran 19 tests in 14.674s
+
+OK
+ total params: 1.54K
+
+[trigger] synthetic null, 5 rounds: per-check false-trigger rate 0.0493; implied chance a null run triggers at least once in 19 independent checks 0.617

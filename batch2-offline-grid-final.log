@@ -1,0 +1,32 @@
+test_103_record_names (tests.test_campaign_offline.CampaignTests.test_103_record_names) ... ok
+test_adapters (tests.test_campaign_offline.CampaignTests.test_adapters) ... ok
+test_deterministic_pipeline (tests.test_campaign_offline.CampaignTests.test_deterministic_pipeline) ... /Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/matplotlib/_fontconfig_pattern.py:64: PyparsingDeprecationWarning: 'oneOf' deprecated - use 'one_of'
+  prop = Group((name + Suppress("=") + comma_separated(value)) | oneOf(_CONSTANTS))
+/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/matplotlib/_fontconfig_pattern.py:85: PyparsingDeprecationWarning: 'parseString' deprecated - use 'parse_string'
+  parse = parser.parseString(pattern)
+/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/matplotlib/_fontconfig_pattern.py:89: PyparsingDeprecationWarning: 'resetCache' deprecated - use 'reset_cache'
+  parser.resetCache()
+/Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/matplotlib/_mathtext.py:45: PyparsingDeprecationWarning: 'enablePackrat' deprecated - use 'enable_packrat'
+  ParserElement.enablePackrat()
+In /Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/matplotlib/mpl-data/stylelib/classic.mplstyle: 'parseString' deprecated - use 'parse_string'
+In /Users/shouryakaveti/VS_Projects/scaling_rl_research/.venv/lib/python3.12/site-packages/matplotlib/mpl-data/stylelib/classic.mplstyle: 'resetCache' deprecated - use 'reset_cache'
+ok
+test_distribution (tests.test_campaign_offline.CampaignTests.test_distribution) ... ok
+test_integral (tests.test_campaign_offline.CampaignTests.test_integral) ... ok
+test_known_statistics (tests.test_campaign_offline.CampaignTests.test_known_statistics) ... ok
+test_missing_history (tests.test_campaign_offline.CampaignTests.test_missing_history) ... ok
+test_pairing (tests.test_campaign_offline.CampaignTests.test_pairing) ... ok
+test_quality_gates (tests.test_campaign_offline.CampaignTests.test_quality_gates) ... ok
+test_scores (tests.test_campaign_offline.CampaignTests.test_scores) ... ok
+test_unsafe_zip (tests.test_campaign_offline.CampaignTests.test_unsafe_zip) ... ok
+test_duplicate_zip_members (tests.test_campaign_offline.IndependenceTests.test_duplicate_zip_members) ... ok
+test_longitudinal_missing_steps (tests.test_campaign_offline.IndependenceTests.test_longitudinal_missing_steps) ... ok
+test_nan_statistic_rejected (tests.test_campaign_offline.IndependenceTests.test_nan_statistic_rejected) ... ok
+test_partial_crashed_and_mixed_configs (tests.test_campaign_offline.IndependenceTests.test_partial_crashed_and_mixed_configs) ... ok
+test_provenance_corruption (tests.test_campaign_offline.IndependenceTests.test_provenance_corruption) ... ok
+test_repeated_checkpoints_rejected (tests.test_campaign_offline.IndependenceTests.test_repeated_checkpoints_rejected) ... ok
+
+----------------------------------------------------------------------
+Ran 17 tests in 0.666s
+
+OK

@@ -1,0 +1,1246 @@
+{
+  "id": "xthjkzd5",
+  "name": "myo-key-turn_D4W1024_UTD2_CD4_CW1024_AD1_AW128_seed1",
+  "state": "finished",
+  "config": {
+    "env": {
+      "seed": 1,
+      "env_name": "myo-key-turn",
+      "env_type": "myosuite",
+      "episodic": false,
+      "reward_scale": 1,
+      "action_repeat": 2,
+      "num_env_steps": 1000000,
+      "num_eval_envs": 1,
+      "no_termination": false,
+      "num_train_envs": 1,
+      "rescale_action": true,
+      "max_episode_steps": 100
+    },
+    "fork": {
+      "arm": null,
+      "source": null,
+      "enabled": true,
+      "architectures": [
+        "D4W1024",
+        "D4W1536"
+      ],
+      "eval_episodes": 10,
+      "horizon_fraction": 0.25,
+      "max_total_fraction": 1.2,
+      "eval_every_fraction": 0.01,
+      "identity_snapshot_steps": null
+    },
+    "seed": 1,
+    "agent": {
+      "seed": 1,
+      "gamma": 0.95,
+      "n_step": 1,
+      "agent_type": "sac",
+      "target_tau": 0.005,
+      "actor_sparsity": 0,
+      "critic_use_cdq": false,
+      "num_train_envs": 1,
+      "critic_sparsity": 0,
+      "mixed_precision": false,
+      "actor_block_type": "residual",
+      "actor_hidden_dim": 128,
+      "actor_num_blocks": 1,
+      "critic_block_type": "residual",
+      "critic_hidden_dim": 1024,
+      "critic_num_blocks": 4,
+      "max_episode_steps": 100,
+      "temp_weight_decay": 0,
+      "actor_weight_decay": 0.01,
+      "temp_initial_value": 0.01,
+      "temp_learning_rate": 0.0001,
+      "actor_learning_rate": 0.0001,
+      "critic_weight_decay": 0.01,
+      "temp_target_entropy": null,
+      "critic_learning_rate": 0.0001,
+      "normalize_observation": true,
+      "temp_target_entropy_coef": -0.5
+    },
+    "gamma": 0.95,
+    "probe": {
+      "steps": 2000,
+      "checks": 20,
+      "rounds": 5,
+      "enabled": true,
+      "pool_size": 25600,
+      "batch_size": 256,
+      "eval_chunk": 2560,
+      "target_scale": 100000
+    },
+    "buffer": {
+      "gamma": 0.95,
+      "n_step": 1,
+      "max_length": 1000000,
+      "min_length": 5000,
+      "buffer_type": "uniform",
+      "add_batch_size": 1,
+      "buffer_class_type": "numpy",
+      "sample_batch_size": 256
+    },
+    "checks": {
+      "check1_tolerance_eps": 64
+    },
+    "n_step": 1,
+    "server": "local",
+    "testing": {
+      "force_trigger_check": null,
+      "stop_after_identity_snapshot": false
+    },
+    "trigger": {
+      "resamples": 10000,
+      "confidence": 0.95,
+      "null_threshold": 0,
+      "eligible_fraction": 0.95,
+      "consecutive_checks": 2
+    },
+    "env_name": "myo-key-turn",
+    "exp_name": "exp12",
+    "run_role": "confirmatory",
+    "injection": {
+      "m": null
+    },
+    "num_params": "33.88M",
+    "diagnostics": {
+      "enabled": true,
+      "kl_reference_size": 256,
+      "saturation_threshold": 0.99
+    },
+    "project_name": "echocritic_official_exp1",
+    "results_root": "/work/hdd/biqc/skaveti1/exp12_prod_pilot7_20261014T213210Z/results",
+    "action_repeat": 2,
+    "num_env_steps": 1000000,
+    "actor_sparsity": 0,
+    "num_train_envs": 1,
+    "critic_sparsity": 0,
+    "eff_episode_len": 50,
+    "actor_hidden_dim": 128,
+    "actor_num_blocks": 1,
+    "actor_num_params": "154.32K",
+    "positive_control": {
+      "env_name": "dog-run",
+      "architecture": "D4W1536",
+      "similar_within": 0.1,
+      "noise_threshold": 0.1
+    },
+    "critic_hidden_dim": 1024,
+    "critic_num_blocks": 4,
+    "critic_num_params": "33.72M",
+    "num_eval_episodes": 5,
+    "num_record_episodes": 0,
+    "num_interaction_steps": 500000,
+    "actor_grad_cosine_every": 30,
+    "logging_per_interaction_step": 2000,
+    "updates_per_interaction_step": 2,
+    "recording_per_interaction_step": 500000,
+    "evaluation_per_interaction_step": 50000
+  },
+  "summary": {
+    "_runtime": 20845.779205351,
+    "_step": 1000000,
+    "_timestamp": 1792069323.47688,
+    "_wandb.runtime": 20845,
+    "eval/avg_length": 50,
+    "eval/avg_return": 1007.4818735200508,
+    "eval/avg_success": 1,
+    "train/actor_DR0.1": 0,
+    "train/actor_DR0.2": 0.2604166865348816,
+    "train/actor_action": 0.5690802731066942,
+    "train/actor_fnorm": 3.5484185218811035,
+    "train/actor_gnorm": 3.71469016495347,
+    "train/actor_gnorm_std": 2.354136435819235,
+    "train/actor_grad_cosine": 0.00351182716584125,
+    "train/actor_loss": -468.7425060348511,
+    "train/actor_loss_var": 6.33301305770874,
+    "train/actor_pnorm": 49.70783402442933,
+    "train/actor_saturation": 0.03898677935311571,
+    "train/actor_srank": 102,
+    "train/actor_wnorm": 49.72417449951172,
+    "train/churn": 0.017746394500136375,
+    "train/critic_DR0.1": 0.213913694024086,
+    "train/critic_DR0.2": 1.1904761791229248,
+    "train/critic_fnorm": 37.19108581542969,
+    "train/critic_gnorm": 44.74279060745239,
+    "train/critic_loss": 1.4221970912422983,
+    "train/critic_pnorm": 339.8781042175293,
+    "train/critic_srank": 169,
+    "train/critic_wnorm": 339.9483337402344,
+    "train/entropy": -19.881035825962485,
+    "train/policy_churn": 0.017746393010253086,
+    "train/policy_kl": 0.04044276234193239,
+    "train/q1_mean": 467.1683578186035,
+    "train/q2_mean": 467.1683578186035,
+    "train/rew_mean": 19.237949342250825,
+    "train/td_error_var": 1.4112835784703492,
+    "train/temperature": 0.0077212660551304,
+    "train/temperature_gnorm": 0.013941906378318094,
+    "train/temperature_loss": -0.0029886557187056725
+  },
+  "attrs": {
+    "projectId": "45278843",
+    "id": "UnVuOnYxOnh0aGpremQ1OmVjaG9jcml0aWNfb2ZmaWNpYWxfZXhwMTpzX2thdmV0aTIzLXNlY2tpbmdlcg==",
+    "tags": [],
+    "name": "xthjkzd5",
+    "displayName": "myo-key-turn_D4W1024_UTD2_CD4_CW1024_AD1_AW128_seed1",
+    "sweepName": null,
+    "state": "finished",
+    "config": {
+      "env": {
+        "seed": 1,
+        "env_name": "myo-key-turn",
+        "env_type": "myosuite",
+        "episodic": false,
+        "reward_scale": 1,
+        "action_repeat": 2,
+        "num_env_steps": 1000000,
+        "num_eval_envs": 1,
+        "no_termination": false,
+        "num_train_envs": 1,
+        "rescale_action": true,
+        "max_episode_steps": 100
+      },
+      "fork": {
+        "arm": null,
+        "source": null,
+        "enabled": true,
+        "architectures": [
+          "D4W1024",
+          "D4W1536"
+        ],
+        "eval_episodes": 10,
+        "horizon_fraction": 0.25,
+        "max_total_fraction": 1.2,
+        "eval_every_fraction": 0.01,
+        "identity_snapshot_steps": null
+      },
+      "seed": 1,
+      "agent": {
+        "seed": 1,
+        "gamma": 0.95,
+        "n_step": 1,
+        "agent_type": "sac",
+        "target_tau": 0.005,
+        "actor_sparsity": 0,
+        "critic_use_cdq": false,
+        "num_train_envs": 1,
+        "critic_sparsity": 0,
+        "mixed_precision": false,
+        "actor_block_type": "residual",
+        "actor_hidden_dim": 128,
+        "actor_num_blocks": 1,
+        "critic_block_type": "residual",
+        "critic_hidden_dim": 1024,
+        "critic_num_blocks": 4,
+        "max_episode_steps": 100,
+        "temp_weight_decay": 0,
+        "actor_weight_decay": 0.01,
+        "temp_initial_value": 0.01,
+        "temp_learning_rate": 0.0001,
+        "actor_learning_rate": 0.0001,
+        "critic_weight_decay": 0.01,
+        "temp_target_entropy": null,
+        "critic_learning_rate": 0.0001,
+        "normalize_observation": true,
+        "temp_target_entropy_coef": -0.5
+      },
+      "gamma": 0.95,
+      "probe": {
+        "steps": 2000,
+        "checks": 20,
+        "rounds": 5,
+        "enabled": true,
+        "pool_size": 25600,
+        "batch_size": 256,
+        "eval_chunk": 2560,
+        "target_scale": 100000
+      },
+      "buffer": {
+        "gamma": 0.95,
+        "n_step": 1,
+        "max_length": 1000000,
+        "min_length": 5000,
+        "buffer_type": "uniform",
+        "add_batch_size": 1,
+        "buffer_class_type": "numpy",
+        "sample_batch_size": 256
+      },
+      "checks": {
+        "check1_tolerance_eps": 64
+      },
+      "n_step": 1,
+      "server": "local",
+      "testing": {
+        "force_trigger_check": null,
+        "stop_after_identity_snapshot": false
+      },
+      "trigger": {
+        "resamples": 10000,
+        "confidence": 0.95,
+        "null_threshold": 0,
+        "eligible_fraction": 0.95,
+        "consecutive_checks": 2
+      },
+      "env_name": "myo-key-turn",
+      "exp_name": "exp12",
+      "run_role": "confirmatory",
+      "injection": {
+        "m": null
+      },
+      "num_params": "33.88M",
+      "diagnostics": {
+        "enabled": true,
+        "kl_reference_size": 256,
+        "saturation_threshold": 0.99
+      },
+      "project_name": "echocritic_official_exp1",
+      "results_root": "/work/hdd/biqc/skaveti1/exp12_prod_pilot7_20261014T213210Z/results",
+      "action_repeat": 2,
+      "num_env_steps": 1000000,
+      "actor_sparsity": 0,
+      "num_train_envs": 1,
+      "critic_sparsity": 0,
+      "eff_episode_len": 50,
+      "actor_hidden_dim": 128,
+      "actor_num_blocks": 1,
+      "actor_num_params": "154.32K",
+      "positive_control": {
+        "env_name": "dog-run",
+        "architecture": "D4W1536",
+        "similar_within": 0.1,
+        "noise_threshold": 0.1
+      },
+      "critic_hidden_dim": 1024,
+      "critic_num_blocks": 4,
+      "critic_num_params": "33.72M",
+      "num_eval_episodes": 5,
+      "num_record_episodes": 0,
+      "num_interaction_steps": 500000,
+      "actor_grad_cosine_every": 30,
+      "logging_per_interaction_step": 2000,
+      "updates_per_interaction_step": 2,
+      "recording_per_interaction_step": 500000,
+      "evaluation_per_interaction_step": 50000
+    },
+    "group": "myo-key-turn_D4W1024_UTD2",
+    "jobType": "D4W1024",
+    "commit": "f8619dd5f494399d9febc79fc9092010234c714d",
+    "readOnly": false,
+    "createdAt": "2026-10-15T07:15:21Z",
+    "heartbeatAt": "2026-10-15T13:02:48Z",
+    "description": "myo-key-turn_D4W1024_UTD2_CD4_CW1024_AD1_AW128_seed1",
+    "notes": null,
+    "systemMetrics": {
+      "system.cpu": 2.5251952715325956,
+      "system.disk./.usageGB": 11.671951293945312,
+      "system.disk./.usagePercent": 9.277602603050294,
+      "system.disk.nvme0c0n1.in": 1.25,
+      "system.disk.nvme0c0n1.out": 802.21337890625,
+      "system.disk.nvme0n1.in": 1.25,
+      "system.disk.nvme0n1.out": 802.21337890625,
+      "system.gpu.0.correctedMemoryErrors": 0,
+      "system.gpu.0.enforcedPowerLimitWatts": 350,
+      "system.gpu.0.gpu": 90,
+      "system.gpu.0.memory": 59,
+      "system.gpu.0.memoryAllocated": 22.642059326171875,
+      "system.gpu.0.memoryAllocatedBytes": 9724690432,
+      "system.gpu.0.memoryClock": 1215,
+      "system.gpu.0.powerPercent": 88.5562857142857,
+      "system.gpu.0.powerWatts": 309.947,
+      "system.gpu.0.smClock": 1410,
+      "system.gpu.0.temp": 50,
+      "system.gpu.0.uncorrectedMemoryErrors": 0,
+      "system.gpu.1.correctedMemoryErrors": 0,
+      "system.gpu.1.enforcedPowerLimitWatts": 350,
+      "system.gpu.1.gpu": 100,
+      "system.gpu.1.memory": 63,
+      "system.gpu.1.memoryAllocated": 6.328582763671875,
+      "system.gpu.1.memoryAllocatedBytes": 2718105600,
+      "system.gpu.1.memoryClock": 1215,
+      "system.gpu.1.powerPercent": 82.61485714285713,
+      "system.gpu.1.powerWatts": 289.152,
+      "system.gpu.1.smClock": 1410,
+      "system.gpu.1.temp": 56,
+      "system.gpu.1.uncorrectedMemoryErrors": 0,
+      "system.memory_percent": 23.18822114283999,
+      "system.network.recv": 2562075863,
+      "system.network.sent": 113504438130,
+      "system.proc.cpu.threads": 173,
+      "system.proc.memory.availableMB": 197908.96875,
+      "system.proc.memory.percent": 2.7366806985009298,
+      "system.proc.memory.rssMB": 7051.1796875
+    },
+    "summaryMetrics": {
+      "_runtime": 20845.779205351,
+      "_step": 1000000,
+      "_timestamp": 1792069323.47688,
+      "_wandb.runtime": 20845,
+      "eval/avg_length": 50,
+      "eval/avg_return": 1007.4818735200508,
+      "eval/avg_success": 1,
+      "train/actor_DR0.1": 0,
+      "train/actor_DR0.2": 0.2604166865348816,
+      "train/actor_action": 0.5690802731066942,
+      "train/actor_fnorm": 3.5484185218811035,
+      "train/actor_gnorm": 3.71469016495347,
+      "train/actor_gnorm_std": 2.354136435819235,
+      "train/actor_grad_cosine": 0.00351182716584125,
+      "train/actor_loss": -468.7425060348511,
+      "train/actor_loss_var": 6.33301305770874,
+      "train/actor_pnorm": 49.70783402442933,
+      "train/actor_saturation": 0.03898677935311571,
+      "train/actor_srank": 102,
+      "train/actor_wnorm": 49.72417449951172,
+      "train/churn": 0.017746394500136375,
+      "train/critic_DR0.1": 0.213913694024086,
+      "train/critic_DR0.2": 1.1904761791229248,
+      "train/critic_fnorm": 37.19108581542969,
+      "train/critic_gnorm": 44.74279060745239,
+      "train/critic_loss": 1.4221970912422983,
+      "train/critic_pnorm": 339.8781042175293,
+      "train/critic_srank": 169,
+      "train/critic_wnorm": 339.9483337402344,
+      "train/entropy": -19.881035825962485,
+      "train/policy_churn": 0.017746393010253086,
+      "train/policy_kl": 0.04044276234193239,
+      "train/q1_mean": 467.1683578186035,
+      "train/q2_mean": 467.1683578186035,
+      "train/rew_mean": 19.237949342250825,
+      "train/td_error_var": 1.4112835784703492,
+      "train/temperature": 0.0077212660551304,
+      "train/temperature_gnorm": 0.013941906378318094,
+      "train/temperature_loss": -0.0029886557187056725
+    },
+    "historyLineCount": 251,
+    "user": {
+      "name": "Shourya",
+      "username": "s_kaveti23"
+    },
+    "historyKeys": {
+      "keys": {
+        "_runtime": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 251
+            }
+          ],
+          "monotonic": true,
+          "previousValue": 20845.779205351
+        },
+        "_step": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 251
+            }
+          ],
+          "monotonic": true,
+          "previousValue": 1000000
+        },
+        "_timestamp": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 251
+            }
+          ],
+          "monotonic": true,
+          "previousValue": 1792069323.47688
+        },
+        "eval/avg_length": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 11
+            }
+          ],
+          "monotonic": true,
+          "previousValue": 50
+        },
+        "eval/avg_return": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 11
+            }
+          ],
+          "previousValue": 1007.4818735200508
+        },
+        "eval/avg_success": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 11
+            }
+          ],
+          "monotonic": true,
+          "previousValue": 1
+        },
+        "system/cpu": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 2778
+            }
+          ]
+        },
+        "system/disk./.usageGB": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 2778
+            }
+          ]
+        },
+        "system/disk./.usagePercent": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 2778
+            }
+          ]
+        },
+        "system/disk.nvme0c0n1.in": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 2778
+            }
+          ]
+        },
+        "system/disk.nvme0c0n1.out": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 2778
+            }
+          ]
+        },
+        "system/disk.nvme0n1.in": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 2778
+            }
+          ]
+        },
+        "system/disk.nvme0n1.out": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 2778
+            }
+          ]
+        },
+        "system/gpu.0.correctedMemoryErrors": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 2778
+            }
+          ]
+        },
+        "system/gpu.0.enforcedPowerLimitWatts": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 2778
+            }
+          ]
+        },
+        "system/gpu.0.gpu": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 2778
+            }
+          ]
+        },
+        "system/gpu.0.memory": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 2778
+            }
+          ]
+        },
+        "system/gpu.0.memoryAllocated": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 2778
+            }
+          ]
+        },
+        "system/gpu.0.memoryAllocatedBytes": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 2778
+            }
+          ]
+        },
+        "system/gpu.0.memoryClock": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 2778
+            }
+          ]
+        },
+        "system/gpu.0.powerPercent": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 2778
+            }
+          ]
+        },
+        "system/gpu.0.powerWatts": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 2778
+            }
+          ]
+        },
+        "system/gpu.0.smClock": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 2778
+            }
+          ]
+        },
+        "system/gpu.0.temp": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 2778
+            }
+          ]
+        },
+        "system/gpu.0.uncorrectedMemoryErrors": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 2778
+            }
+          ]
+        },
+        "system/gpu.1.correctedMemoryErrors": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 2778
+            }
+          ]
+        },
+        "system/gpu.1.enforcedPowerLimitWatts": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 2778
+            }
+          ]
+        },
+        "system/gpu.1.gpu": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 2778
+            }
+          ]
+        },
+        "system/gpu.1.memory": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 2778
+            }
+          ]
+        },
+        "system/gpu.1.memoryAllocated": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 2778
+            }
+          ]
+        },
+        "system/gpu.1.memoryAllocatedBytes": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 2778
+            }
+          ]
+        },
+        "system/gpu.1.memoryClock": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 2778
+            }
+          ]
+        },
+        "system/gpu.1.powerPercent": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 2778
+            }
+          ]
+        },
+        "system/gpu.1.powerWatts": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 2778
+            }
+          ]
+        },
+        "system/gpu.1.smClock": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 2778
+            }
+          ]
+        },
+        "system/gpu.1.temp": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 2778
+            }
+          ]
+        },
+        "system/gpu.1.uncorrectedMemoryErrors": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 2778
+            }
+          ]
+        },
+        "system/memory_percent": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 2778
+            }
+          ]
+        },
+        "system/network.recv": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 2778
+            }
+          ]
+        },
+        "system/network.sent": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 2778
+            }
+          ]
+        },
+        "system/proc.cpu.threads": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 2778
+            }
+          ]
+        },
+        "system/proc.memory.availableMB": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 2778
+            }
+          ]
+        },
+        "system/proc.memory.percent": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 2778
+            }
+          ]
+        },
+        "system/proc.memory.rssMB": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 2778
+            }
+          ]
+        },
+        "train/actor_DR0.1": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 250
+            }
+          ],
+          "monotonic": true,
+          "previousValue": 0
+        },
+        "train/actor_DR0.2": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 250
+            }
+          ],
+          "previousValue": 0.2604166865348816
+        },
+        "train/actor_action": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 248
+            }
+          ],
+          "previousValue": 0.5690802731066942
+        },
+        "train/actor_fnorm": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 250
+            }
+          ],
+          "previousValue": 3.5484185218811035
+        },
+        "train/actor_gnorm": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 248
+            }
+          ],
+          "previousValue": 3.71469016495347
+        },
+        "train/actor_gnorm_std": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 248
+            }
+          ],
+          "previousValue": 2.354136435819235
+        },
+        "train/actor_grad_cosine": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 248
+            }
+          ],
+          "previousValue": 0.00351182716584125
+        },
+        "train/actor_loss": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 248
+            }
+          ],
+          "previousValue": -468.7425060348511
+        },
+        "train/actor_loss_var": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 248
+            }
+          ],
+          "previousValue": 6.33301305770874
+        },
+        "train/actor_pnorm": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 248
+            }
+          ],
+          "previousValue": 49.70783402442933
+        },
+        "train/actor_saturation": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 248
+            }
+          ],
+          "previousValue": 0.03898677935311571
+        },
+        "train/actor_srank": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 250
+            }
+          ],
+          "previousValue": 102
+        },
+        "train/actor_wnorm": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 250
+            }
+          ],
+          "previousValue": 49.72417449951172
+        },
+        "train/churn": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 248
+            }
+          ],
+          "previousValue": 0.017746394500136375
+        },
+        "train/critic_DR0.1": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 250
+            }
+          ],
+          "previousValue": 0.213913694024086
+        },
+        "train/critic_DR0.2": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 250
+            }
+          ],
+          "previousValue": 1.1904761791229248
+        },
+        "train/critic_fnorm": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 250
+            }
+          ],
+          "previousValue": 37.19108581542969
+        },
+        "train/critic_gnorm": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 248
+            }
+          ],
+          "previousValue": 44.74279060745239
+        },
+        "train/critic_loss": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 248
+            }
+          ],
+          "previousValue": 1.4221970912422983
+        },
+        "train/critic_pnorm": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 248
+            }
+          ],
+          "previousValue": 339.8781042175293
+        },
+        "train/critic_srank": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 250
+            }
+          ],
+          "previousValue": 169
+        },
+        "train/critic_wnorm": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 250
+            }
+          ],
+          "previousValue": 339.9483337402344
+        },
+        "train/entropy": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 248
+            }
+          ],
+          "previousValue": -19.881035825962485
+        },
+        "train/policy_churn": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 248
+            }
+          ],
+          "previousValue": 0.017746393010253086
+        },
+        "train/policy_kl": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 248
+            }
+          ],
+          "previousValue": 0.04044276234193239
+        },
+        "train/q1_mean": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 248
+            }
+          ],
+          "previousValue": 467.1683578186035
+        },
+        "train/q2_mean": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 248
+            }
+          ],
+          "previousValue": 467.1683578186035
+        },
+        "train/rew_mean": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 248
+            }
+          ],
+          "previousValue": 19.237949342250825
+        },
+        "train/td_error_var": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 248
+            }
+          ],
+          "previousValue": 1.4112835784703492
+        },
+        "train/temperature": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 248
+            }
+          ],
+          "previousValue": 0.0077212660551304
+        },
+        "train/temperature_gnorm": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 248
+            }
+          ],
+          "previousValue": 0.013941906378318094
+        },
+        "train/temperature_loss": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 248
+            }
+          ],
+          "previousValue": -0.0029886557187056725
+        }
+      },
+      "lastStep": 1000000,
+      "sets": []
+    },
+    "rawconfig": {
+      "_wandb": {
+        "m": [],
+        "t": {
+          "1": [
+            12,
+            45,
+            50
+          ],
+          "2": [
+            12,
+            45,
+            50
+          ],
+          "3": [
+            13,
+            16,
+            24,
+            61
+          ],
+          "4": "3.12.13",
+          "5": "0.28.1",
+          "12": "0.28.1",
+          "13": "linux-x86_64"
+        },
+        "cli_version": "0.28.1",
+        "python_version": "3.12.13"
+      },
+      "env": {
+        "seed": 1,
+        "env_name": "myo-key-turn",
+        "env_type": "myosuite",
+        "episodic": false,
+        "reward_scale": 1,
+        "action_repeat": 2,
+        "num_env_steps": 1000000,
+        "num_eval_envs": 1,
+        "no_termination": false,
+        "num_train_envs": 1,
+        "rescale_action": true,
+        "max_episode_steps": 100
+      },
+      "fork": {
+        "arm": null,
+        "source": null,
+        "enabled": true,
+        "architectures": [
+          "D4W1024",
+          "D4W1536"
+        ],
+        "eval_episodes": 10,
+        "horizon_fraction": 0.25,
+        "max_total_fraction": 1.2,
+        "eval_every_fraction": 0.01,
+        "identity_snapshot_steps": null
+      },
+      "seed": 1,
+      "agent": {
+        "seed": 1,
+        "gamma": 0.95,
+        "n_step": 1,
+        "agent_type": "sac",
+        "target_tau": 0.005,
+        "actor_sparsity": 0,
+        "critic_use_cdq": false,
+        "num_train_envs": 1,
+        "critic_sparsity": 0,
+        "mixed_precision": false,
+        "actor_block_type": "residual",
+        "actor_hidden_dim": 128,
+        "actor_num_blocks": 1,
+        "critic_block_type": "residual",
+        "critic_hidden_dim": 1024,
+        "critic_num_blocks": 4,
+        "max_episode_steps": 100,
+        "temp_weight_decay": 0,
+        "actor_weight_decay": 0.01,
+        "temp_initial_value": 0.01,
+        "temp_learning_rate": 0.0001,
+        "actor_learning_rate": 0.0001,
+        "critic_weight_decay": 0.01,
+        "temp_target_entropy": null,
+        "critic_learning_rate": 0.0001,
+        "normalize_observation": true,
+        "temp_target_entropy_coef": -0.5
+      },
+      "gamma": 0.95,
+      "probe": {
+        "steps": 2000,
+        "checks": 20,
+        "rounds": 5,
+        "enabled": true,
+        "pool_size": 25600,
+        "batch_size": 256,
+        "eval_chunk": 2560,
+        "target_scale": 100000
+      },
+      "buffer": {
+        "gamma": 0.95,
+        "n_step": 1,
+        "max_length": 1000000,
+        "min_length": 5000,
+        "buffer_type": "uniform",
+        "add_batch_size": 1,
+        "buffer_class_type": "numpy",
+        "sample_batch_size": 256
+      },
+      "checks": {
+        "check1_tolerance_eps": 64
+      },
+      "n_step": 1,
+      "server": "local",
+      "testing": {
+        "force_trigger_check": null,
+        "stop_after_identity_snapshot": false
+      },
+      "trigger": {
+        "resamples": 10000,
+        "confidence": 0.95,
+        "null_threshold": 0,
+        "eligible_fraction": 0.95,
+        "consecutive_checks": 2
+      },
+      "env_name": "myo-key-turn",
+      "exp_name": "exp12",
+      "run_role": "confirmatory",
+      "injection": {
+        "m": null
+      },
+      "num_params": "33.88M",
+      "diagnostics": {
+        "enabled": true,
+        "kl_reference_size": 256,
+        "saturation_threshold": 0.99
+      },
+      "project_name": "echocritic_official_exp1",
+      "results_root": "/work/hdd/biqc/skaveti1/exp12_prod_pilot7_20261014T213210Z/results",
+      "action_repeat": 2,
+      "num_env_steps": 1000000,
+      "actor_sparsity": 0,
+      "num_train_envs": 1,
+      "critic_sparsity": 0,
+      "eff_episode_len": 50,
+      "actor_hidden_dim": 128,
+      "actor_num_blocks": 1,
+      "actor_num_params": "154.32K",
+      "positive_control": {
+        "env_name": "dog-run",
+        "architecture": "D4W1536",
+        "similar_within": 0.1,
+        "noise_threshold": 0.1
+      },
+      "critic_hidden_dim": 1024,
+      "critic_num_blocks": 4,
+      "critic_num_params": "33.72M",
+      "num_eval_episodes": 5,
+      "num_record_episodes": 0,
+      "num_interaction_steps": 500000,
+      "actor_grad_cosine_every": 30,
+      "logging_per_interaction_step": 2000,
+      "updates_per_interaction_step": 2,
+      "recording_per_interaction_step": 500000,
+      "evaluation_per_interaction_step": 50000
+    }
+  },
+  "url": "https://forge.coreweave.com/wandb/s_kaveti23-seckinger/echocritic_official_exp1/runs/xthjkzd5"
+}

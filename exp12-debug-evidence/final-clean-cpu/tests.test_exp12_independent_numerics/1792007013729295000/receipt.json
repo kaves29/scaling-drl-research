@@ -1,0 +1,18 @@
+{
+  "module": "tests.test_exp12_independent_numerics",
+  "source_hash": "427ac810143706c21cde9966a51d62940d777afd96197166c657d661be5830a6",
+  "success": true,
+  "tests_run": 6,
+  "test_ids": [
+    "tests.test_exp12_independent_numerics.IndependentEntropyTest.test_literal_positive_and_negative_entropy_targets_have_opposite_updates",
+    "tests.test_exp12_independent_numerics.IndependentEntropyTest.test_polyak_update_matches_independent_equation_and_preserves_optimizer",
+    "tests.test_exp12_independent_numerics.IndependentEntropyTest.test_tanh_log_density_matches_independent_change_of_variables",
+    "tests.test_exp12_independent_numerics.IndependentFittingTest.test_every_minibatch_loss_final_full_pool_and_offset_match_analytic_adamw",
+    "tests.test_exp12_independent_numerics.IndependentFittingTest.test_offset_is_fixed_prefit_mean_not_a_learned_or_recentered_target",
+    "tests.test_exp12_independent_numerics.IndependentFittingTest.test_probe_streams_are_distinct_and_reconstructible"
+  ],
+  "failures": 0,
+  "errors": 0,
+  "skips": [],
+  "unexpected_successes": 0
+}

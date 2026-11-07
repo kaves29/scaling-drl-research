@@ -1,0 +1,12 @@
+test_empty_and_repeated_flushes_do_not_duplicate_rows (tests.test_metric_transfer.MetricTransferTest.test_empty_and_repeated_flushes_do_not_duplicate_rows) ... ok
+test_full_payload_matches_legacy_rows_meters_and_diagnostics (tests.test_metric_transfer.MetricTransferTest.test_full_payload_matches_legacy_rows_meters_and_diagnostics) ... ok
+test_group_transfers_bound_outstanding_copy_requests (tests.test_metric_transfer.MetricTransferTest.test_group_transfers_bound_outstanding_copy_requests) ... ok
+test_later_group_failure_does_not_partially_collect_or_replay (tests.test_metric_transfer.MetricTransferTest.test_later_group_failure_does_not_partially_collect_or_replay) ... ok
+test_materialization_preserves_float32_bits_and_mixed_dtypes (tests.test_metric_transfer.MetricTransferTest.test_materialization_preserves_float32_bits_and_mixed_dtypes) ... ok
+test_transfer_failure_retains_original_pending_and_diagnostics (tests.test_metric_transfer.MetricTransferTest.test_transfer_failure_retains_original_pending_and_diagnostics) ... ok
+test_variable_group_lengths_and_host_precision_preserve_order (tests.test_metric_transfer.MetricTransferTest.test_variable_group_lengths_and_host_precision_preserve_order) ... ok
+
+----------------------------------------------------------------------
+Ran 7 tests in 0.796s
+
+OK

@@ -1,0 +1,17 @@
+test_arm_jobs_only_for_completed_forks_grouped_by_device (tests.test_exp12_manifest.Exp12GridTest.test_arm_jobs_only_for_completed_forks_grouped_by_device) ... ok
+test_arm_refuses_parent_from_different_source (tests.test_exp12_manifest.Exp12GridTest.test_arm_refuses_parent_from_different_source) ... ok
+test_cli_writes_the_manifests (tests.test_exp12_manifest.Exp12GridTest.test_cli_writes_the_manifests) ... ok
+test_done_and_resume_classification (tests.test_exp12_manifest.Exp12GridTest.test_done_and_resume_classification) ... ok
+test_every_job_composes_with_the_methodology_budget (tests.test_exp12_manifest.Exp12GridTest.test_every_job_composes_with_the_methodology_budget) ... ok
+test_manifests_never_share_a_checkpoint_dir (tests.test_exp12_manifest.Exp12GridTest.test_manifests_never_share_a_checkpoint_dir) ... ok
+test_the_195_run_grid (tests.test_exp12_manifest.Exp12GridTest.test_the_195_run_grid) ... ok
+test_claim_launcher_dry_run_on_exp12_manifests (tests.test_exp12_manifest.LauncherTest.test_claim_launcher_dry_run_on_exp12_manifests) ... ok
+test_fail_when_the_architecture_does_not_fork (tests.test_exp12_manifest.PreflightTest.test_fail_when_the_architecture_does_not_fork) ... ok
+test_pass_with_fork_and_injected_arm (tests.test_exp12_manifest.PreflightTest.test_pass_with_fork_and_injected_arm) ... ok
+
+----------------------------------------------------------------------
+Ran 10 tests in 36.833s
+
+OK
+exp12_exp1_jobs.txt: queued 195
+exp1 fresh: 195

@@ -1,0 +1,24 @@
+{
+  "module": "tests.test_run_metadata",
+  "source_hash": "427ac810143706c21cde9966a51d62940d777afd96197166c657d661be5830a6",
+  "success": true,
+  "tests_run": 12,
+  "test_ids": [
+    "tests.test_run_metadata.AnalysisRefusesMismatchedRunsTest.test_a_baseline_with_a_different_cadence_is_refused_and_logged",
+    "tests.test_run_metadata.AnalysisRefusesMismatchedRunsTest.test_legacy_runs_without_metadata_are_analyzed_and_flagged",
+    "tests.test_run_metadata.Angle1RunMetadataTest.test_metadata_is_persisted_next_to_checkpoint_and_metrics",
+    "tests.test_run_metadata.Angle1RunMetadataTest.test_resume_under_a_different_config_is_refused",
+    "tests.test_run_metadata.Angle1RunMetadataTest.test_resume_with_only_a_moved_storage_root_is_allowed_and_recorded",
+    "tests.test_run_metadata.Angle1RunMetadataTest.test_resuming_a_checkpoint_without_metadata_marks_it_unrecorded",
+    "tests.test_run_metadata.CachedBaselineCadenceTest.test_cached_thresholds_are_rejected_for_a_different_logging_cadence",
+    "tests.test_run_metadata.ComparabilityRulesTest.test_any_protocol_difference_is_refused",
+    "tests.test_run_metadata.ComparabilityRulesTest.test_missing_metadata_is_reported_not_refused",
+    "tests.test_run_metadata.ComparabilityRulesTest.test_resume_check_ignores_locations_and_warns_on_a_code_change",
+    "tests.test_run_metadata.ComparabilityRulesTest.test_seed_architecture_and_locations_do_not_break_comparability",
+    "tests.test_run_metadata.PoolComparabilityTest.test_pool_agents_trained_under_different_settings_are_refused"
+  ],
+  "failures": 0,
+  "errors": 0,
+  "skips": [],
+  "unexpected_successes": 0
+}

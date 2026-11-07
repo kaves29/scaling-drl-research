@@ -1,0 +1,31 @@
+{
+  "module": "tests.test_exp12_phase3",
+  "source_hash": "427ac810143706c21cde9966a51d62940d777afd96197166c657d661be5830a6",
+  "success": true,
+  "tests_run": 19,
+  "test_ids": [
+    "tests.test_exp12_phase3.Exp1AnalysisTest.test_analysis_is_reproducible",
+    "tests.test_exp12_phase3.Exp1AnalysisTest.test_dev_runs_do_not_change_the_confirmatory_result",
+    "tests.test_exp12_phase3.Exp1AnalysisTest.test_full_analysis_writes_outputs",
+    "tests.test_exp12_phase3.Exp1AnalysisTest.test_known_effect_is_recovered_and_null_effect_is_not",
+    "tests.test_exp12_phase3.Exp1AnalysisTest.test_missing_run_is_refused",
+    "tests.test_exp12_phase3.Exp1LedgerEndToEndTest.test_run_writes_ledger",
+    "tests.test_exp12_phase3.LedgerTest.test_incomplete_and_foreign_rows_are_rejected",
+    "tests.test_exp12_phase3.LedgerTest.test_round_trip_and_dev_excluded_by_default",
+    "tests.test_exp12_phase3.TriggerTest.test_consecutive_checks_rule",
+    "tests.test_exp12_phase3.TriggerTest.test_current_worse_triggers_and_reverse_never_does",
+    "tests.test_exp12_phase3.TriggerTest.test_edge_cases",
+    "tests.test_exp12_phase3.TriggerTest.test_f_star_first_eligible_check_only",
+    "tests.test_exp12_phase3.TriggerTest.test_known_loss_is_detected",
+    "tests.test_exp12_phase3.TriggerTest.test_null_false_trigger_rate_is_measured",
+    "tests.test_exp12_phase3.TriggerTest.test_null_threshold_shifts_the_firing_line",
+    "tests.test_exp12_phase3.TriggerTest.test_reproducible_from_seed_and_check",
+    "tests.test_exp12_phase3.TriggerTest.test_settings_come_from_config",
+    "tests.test_exp12_phase3.TriggerTest.test_shipped_config_is_the_current_rule",
+    "tests.test_exp12_phase3.TriggerTest.test_statistic_is_iqm_not_mean"
+  ],
+  "failures": 0,
+  "errors": 0,
+  "skips": [],
+  "unexpected_successes": 0
+}

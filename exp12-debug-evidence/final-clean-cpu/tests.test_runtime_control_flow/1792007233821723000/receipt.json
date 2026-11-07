@@ -1,0 +1,16 @@
+{
+  "module": "tests.test_runtime_control_flow",
+  "source_hash": "427ac810143706c21cde9966a51d62940d777afd96197166c657d661be5830a6",
+  "success": true,
+  "tests_run": 4,
+  "test_ids": [
+    "tests.test_runtime_control_flow.RuntimeControlFlowTest.test_expected_signals_are_annotations_with_the_same_exception",
+    "tests.test_runtime_control_flow.RuntimeControlFlowTest.test_progress_failure_during_transition_is_not_hidden",
+    "tests.test_runtime_control_flow.RuntimeControlFlowTest.test_real_parent_and_identity_satisfy_existing_trace_validation",
+    "tests.test_runtime_control_flow.RuntimeControlFlowTest.test_uncaught_signal_still_fails_the_outer_trace"
+  ],
+  "failures": 0,
+  "errors": 0,
+  "skips": [],
+  "unexpected_successes": 0
+}

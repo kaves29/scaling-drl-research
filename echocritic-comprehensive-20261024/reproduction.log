@@ -1,0 +1,112 @@
+ANALYSIS_COMPLETE 96 campaign runs 4834 probe rows
+crash end spread seconds 351.6795184612274
+DEEP_CHECKS_COMPLETE 17 collapse cases
+ABLATIONS_COMPLETE
+                            fresh_change  current_change  mean_deficit_change
+environment   architecture                                                   
+dog-run       D2W512           -0.005744       -0.125915             0.120171
+              D4W1024          -0.010523       -0.002361            -0.008162
+              D4W1536          -0.025535       -0.000303            -0.025232
+humanoid-run  D2W512           -0.030981       -0.009357            -0.021623
+              D4W1024          -0.053712       -0.002886            -0.050826
+              D4W1536          -0.147257       -0.003504            -0.143753
+myo-key-turn  D2W512           -0.053704       -0.241400             0.187696
+              D4W1024          -0.060474       -0.143241             0.082767
+              D4W1536          -0.126032       -0.195139             0.069107
+myo-pen-twirl D2W512           -0.081507       -8.532319             8.450812
+              D4W1024          -0.152924       -0.856457             0.703533
+              D4W1536          -0.213204       -3.025101             2.811897
+                               reward            q           td        tdvar
+environment   architecture                                                  
+dog-run       D2W512         0.460274    82.733324     0.033773     0.033338
+              D4W1024        0.443543    82.747001     0.062629     0.061775
+              D4W1536        0.395267    80.606234     0.057249     0.056433
+humanoid-run  D2W512         0.120639    26.529932     0.009421     0.009288
+              D4W1024        0.142784    27.891584     0.008711     0.008567
+              D4W1536        0.130315    27.750187     0.014148     0.013927
+myo-key-turn  D2W512        19.529039   532.563050     2.090874     2.075060
+              D4W1024       18.637657   486.998850     2.806184     2.787003
+              D4W1536       19.319406   543.956971     3.221810     3.191111
+myo-pen-twirl D2W512        60.477420  2097.600820   899.100662   894.202770
+              D4W1024        1.006363    26.400894     0.105955     0.105110
+              D4W1536       24.799888   974.183207  1230.877727  1222.014329
+  environment architecture  n  spearman_rho  exploratory_p
+      dog-run          all 24      0.420000       0.041020
+      dog-run       D2W512  8      0.595238       0.119530
+      dog-run      D4W1024  8      0.642857       0.085559
+      dog-run      D4W1536  8     -0.071429       0.866526
+ humanoid-run          all 24     -0.195652       0.359548
+ humanoid-run       D2W512  8     -0.833333       0.010176
+ humanoid-run      D4W1024  8     -0.833333       0.010176
+ humanoid-run      D4W1536  8      0.761905       0.028005
+ myo-key-turn          all 24      0.575652       0.003246
+ myo-key-turn       D2W512  8      0.904762       0.002008
+ myo-key-turn      D4W1024  8      0.714286       0.046528
+ myo-key-turn      D4W1536  8      0.833333       0.010176
+myo-pen-twirl          all 24      0.663478       0.000409
+myo-pen-twirl       D2W512  8      0.166667       0.693239
+myo-pen-twirl      D4W1024  8      0.023810       0.955374
+myo-pen-twirl      D4W1536  8      0.761905       0.028005
+[
+  {
+    "check": "record_counts",
+    "passed": true,
+    "detail": "103 records, 96 campaign, eight crashed"
+  },
+  {
+    "check": "complete_canonical_grid",
+    "passed": true,
+    "detail": "4 environments \u00d7 3 architectures \u00d7 seeds1\u20138"
+  },
+  {
+    "check": "full_history_counts",
+    "passed": true,
+    "detail": "103/103"
+  },
+  {
+    "check": "step_integrity",
+    "passed": true,
+    "detail": "No duplicate or reversed logging steps"
+  },
+  {
+    "check": "source_fractional_IQM_reconstruction",
+    "passed": true,
+    "detail": "4738 nonzero-check scores exactly reproduced"
+  },
+  {
+    "check": "independent_final_return_recalculation",
+    "passed": true,
+    "detail": "max discrepancy 2.2737367544323206e-13"
+  },
+  {
+    "check": "pilot_overlap_detected",
+    "passed": true,
+    "detail": "Seven exact observational overlaps; pilot not pooled"
+  },
+  {
+    "check": "archived_curve_fresh_WandB_binding",
+    "passed": true,
+    "detail": "max score error 5.551115123125783e-17"
+  },
+  {
+    "check": "archived_score_identity_fresh",
+    "passed": true,
+    "detail": "FP32 baseline minus pool-MSE identity"
+  },
+  {
+    "check": "archived_curve_current_WandB_binding",
+    "passed": true,
+    "detail": "max score error 1.7763568394002505e-15"
+  },
+  {
+    "check": "archived_score_identity_current",
+    "passed": true,
+    "detail": "FP32 baseline minus pool-MSE identity"
+  },
+  {
+    "check": "raw_manifest_integrity",
+    "passed": true,
+    "detail": "697 immutable files"
+  }
+]
+REPORT_WORDS 8305

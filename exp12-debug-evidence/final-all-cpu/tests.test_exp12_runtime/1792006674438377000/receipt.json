@@ -1,0 +1,21 @@
+{
+  "module": "tests.test_exp12_runtime",
+  "source_hash": "52468342b4543cf79e93cc96c34167ddc17c8dd811e7e45949cacf4b5cee0c6b",
+  "success": true,
+  "tests_run": 9,
+  "test_ids": [
+    "tests.test_exp12_runtime.CompleteStateComparisonTest.test_replay_metadata_and_state_keys_are_compared",
+    "tests.test_exp12_runtime.RestoreRuntimeTest.test_comparison_does_not_require_the_saved_device",
+    "tests.test_exp12_runtime.RestoreRuntimeTest.test_one_payload_restore_with_and_without_reference",
+    "tests.test_exp12_runtime.RestoreRuntimeTest.test_twin_restore_uses_saved_reference_shape",
+    "tests.test_exp12_runtime.RuntimeTraceTest.test_backend_startup_failure_is_flushed",
+    "tests.test_exp12_runtime.RuntimeTraceTest.test_cache_outcomes_and_post_fork_progress",
+    "tests.test_exp12_runtime.RuntimeTraceTest.test_instrumentation_preserves_complete_state",
+    "tests.test_exp12_runtime.RuntimeTraceTest.test_progress_failure_preserves_training_exception",
+    "tests.test_exp12_runtime.RuntimeTraceTest.test_trace_preserves_exception_and_refuses_overwrite"
+  ],
+  "failures": 0,
+  "errors": 0,
+  "skips": [],
+  "unexpected_successes": 0
+}

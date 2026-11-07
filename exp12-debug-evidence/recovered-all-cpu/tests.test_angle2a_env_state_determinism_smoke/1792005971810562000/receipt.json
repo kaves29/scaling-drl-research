@@ -1,0 +1,28 @@
+{
+  "module": "tests.test_angle2a_env_state_determinism_smoke",
+  "source_hash": "c07ca4fb99dc3308d1e6fed0f827f0bebd6442ded04ccc6e755cbde6ba77c455",
+  "success": true,
+  "tests_run": 16,
+  "test_ids": [
+    "tests.test_angle2a_env_state_determinism_smoke.TestBaodingCounterRestore.test_fresh_instance_replays_exactly_with_same_episode_parameters",
+    "tests.test_angle2a_env_state_determinism_smoke.TestBaodingCounterRestore.test_repeated_restore_replays_exactly",
+    "tests.test_angle2a_env_state_determinism_smoke.TestDmcDeterminism.test_cheetah_run",
+    "tests.test_angle2a_env_state_determinism_smoke.TestDmcDeterminism.test_dog_run",
+    "tests.test_angle2a_env_state_determinism_smoke.TestDmcDeterminism.test_dog_trot",
+    "tests.test_angle2a_env_state_determinism_smoke.TestDmcDeterminism.test_fish_swim",
+    "tests.test_angle2a_env_state_determinism_smoke.TestDmcDeterminism.test_hopper_hop",
+    "tests.test_angle2a_env_state_determinism_smoke.TestDmcDeterminism.test_humanoid_run",
+    "tests.test_angle2a_env_state_determinism_smoke.TestDmcDeterminism.test_manipulator_bring_ball",
+    "tests.test_angle2a_env_state_determinism_smoke.TestDmcDeterminism.test_quadruped_run",
+    "tests.test_angle2a_env_state_determinism_smoke.TestMyosuiteDeterminism.test_myo_baoding_p1",
+    "tests.test_angle2a_env_state_determinism_smoke.TestMyosuiteDeterminism.test_myo_elbow_pose_random",
+    "tests.test_angle2a_env_state_determinism_smoke.TestMyosuiteDeterminism.test_myo_key_turn",
+    "tests.test_angle2a_env_state_determinism_smoke.TestMyosuiteDeterminism.test_myo_leg_walk",
+    "tests.test_angle2a_env_state_determinism_smoke.TestMyosuiteDeterminism.test_myo_pen_twirl",
+    "tests.test_angle2a_env_state_determinism_smoke.TestMyosuiteDeterminism.test_myo_reach"
+  ],
+  "failures": 0,
+  "errors": 0,
+  "skips": [],
+  "unexpected_successes": 0
+}

@@ -1,0 +1,24 @@
+{
+  "module": "tests.test_exp12_review_fixes",
+  "source_hash": "52468342b4543cf79e93cc96c34167ddc17c8dd811e7e45949cacf4b5cee0c6b",
+  "success": false,
+  "tests_run": 12,
+  "test_ids": [
+    "tests.test_exp12_review_fixes.ClaimContainmentTest.test_ended_owner_is_recovered",
+    "tests.test_exp12_review_fixes.ClaimContainmentTest.test_orphaned_transition_guard_is_reported_once",
+    "tests.test_exp12_review_fixes.ClaimContainmentTest.test_unknown_liveness_skips_the_row_without_killing_the_worker",
+    "tests.test_exp12_review_fixes.DurableStateAndAtomicNpzTest.test_save_npz_replaces_atomically",
+    "tests.test_exp12_review_fixes.DurableStateAndAtomicNpzTest.test_state_is_flushed_before_latest_names_it",
+    "tests.test_exp12_review_fixes.EnvironmentGroupsTest.test_every_manifest_group_has_an_estimate_slot_and_is_admissible",
+    "tests.test_exp12_review_fixes.EnvironmentGroupsTest.test_prepare_creates_submission_and_log_directories",
+    "tests.test_exp12_review_fixes.SlurmLivenessTest.test_listed_terminal_jobs_are_ended",
+    "tests.test_exp12_review_fixes.SlurmLivenessTest.test_purged_job_id_is_ended_not_a_crash",
+    "tests.test_exp12_review_fixes.SlurmLivenessTest.test_running_and_pending_jobs_are_alive",
+    "tests.test_exp12_review_fixes.SlurmLivenessTest.test_squeue_failure_falls_back_to_sacct_and_refuses_when_unknown",
+    "tests.test_exp12_review_fixes.SlurmLivenessTest.test_unrecognised_state_is_treated_as_alive"
+  ],
+  "failures": 0,
+  "errors": 1,
+  "skips": [],
+  "unexpected_successes": 0
+}

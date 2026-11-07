@@ -1,0 +1,32 @@
+[
+  {
+    "name": "artifact/3986704968/wandb_manifest.json",
+    "size": 0,
+    "md5": null
+  },
+  {
+    "name": "config.yaml",
+    "size": 8502,
+    "md5": "/Jc3AS1JnNu359wePTO0wg=="
+  },
+  {
+    "name": "output.log",
+    "size": 45320,
+    "md5": "UDa9eUsfLK7jSNauV8BQqA=="
+  },
+  {
+    "name": "requirements.txt",
+    "size": 2350,
+    "md5": "F5Ehgu0UZUaIpzgvYIK0wA=="
+  },
+  {
+    "name": "wandb-metadata.json",
+    "size": 3336,
+    "md5": "ij2YEEnn5AWWUg91xn+ssA=="
+  },
+  {
+    "name": "wandb-summary.json",
+    "size": 1376,
+    "md5": "NigDEV0U5PcmXs3/+m4rMA=="
+  }
+]

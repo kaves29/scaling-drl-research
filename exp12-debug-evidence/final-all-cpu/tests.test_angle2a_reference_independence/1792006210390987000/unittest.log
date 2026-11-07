@@ -1,0 +1,9 @@
+test_both_real_matchups_get_independent_reference_training_no_shared_handle (tests.test_angle2a_reference_independence.ReferenceIndependenceOrchestrationTest.test_both_real_matchups_get_independent_reference_training_no_shared_handle) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.037s
+
+OK
+[angle_2_a] matchup_1: D=D5W768 (fresh) vs R=D2W512 (fresh, independent) env=reacher-hard seed=108 -> stopping at onset_step=120000 (from run_key=fake_run_key_D5W768)
+[angle_2_a] matchup_2: D=D7W1024 (fresh) vs R=D2W512 (fresh, independent) env=reacher-hard seed=108 -> stopping at onset_step=180000 (from run_key=fake_run_key_D7W1024)
+[angle_2_a] done. seed=108 environment=reacher-hard

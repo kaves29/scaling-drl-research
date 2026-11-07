@@ -1,0 +1,107 @@
+##################################################################################
+# Experiments 1 and 2 (.claude/methodology-exp1-exp2.md)
+##################################################################################
+
+project_name: 'echocritic_official_exp1'
+exp_name: 'exp12'
+seed: 1
+server: 'local'
+
+env_name: 'dog-run'
+# Absolute root for ledgers/probe arrays; null = <repo>/results.
+results_root: null
+# 'confirmatory' or 'dev' (positive control / calibration); analysis drops dev by default.
+run_role: 'confirmatory'
+
+##################################################################################
+# Training (Methodology "Configurations"; everything else as in base_sac.yaml)
+##################################################################################
+actor_sparsity: 0.0
+actor_num_blocks: 1
+actor_hidden_dim: 128
+
+critic_sparsity: 0.0
+critic_num_blocks: 2
+critic_hidden_dim: 512
+# gamma value is set with a heuristic from TD-MPCv2
+eff_episode_len: ${eval:'${env.max_episode_steps} / ${env.action_repeat}'}
+gamma: ${eval:'max(min((${eff_episode_len} / 5 - 1) / (${eff_episode_len} / 5), 0.995), 0.95)'}
+n_step: 1
+
+num_train_envs: ${env.num_train_envs}
+num_env_steps: ${env.num_env_steps}
+action_repeat: ${env.action_repeat}
+
+num_interaction_steps: ${eval:'${num_env_steps} / (${num_train_envs} * ${action_repeat})'}
+updates_per_interaction_step: 2
+evaluation_per_interaction_step: 50_000
+recording_per_interaction_step: ${num_interaction_steps}
+logging_per_interaction_step: 2_000
+actor_grad_cosine_every: 30
+num_eval_episodes: 5
+num_record_episodes: 0
+
+defaults:
+- _self_
+- agent: sac_simba
+- buffer: numpy_uniform
+- env: dmc_hard
+
+##################################################################################
+# Plasticity probe (Lyle et al. 2023, adapted; docs/exp12_decisions.md A1-A9)
+##################################################################################
+probe:
+  enabled: true        # false only for the probes-on vs probes-off identity test
+  rounds: 5
+  steps: 2000              # Method C (amendment aa); optimizer state continues through step 2000
+  checks: 20
+  pool_size: 25_600
+  batch_size: 256
+  target_scale: 100_000.0
+  eval_chunk: 2_560
+
+##################################################################################
+# Operational trigger for f*_run (docs/exp12_decisions.md B1-B5 and the
+# pre-specified CUDA calibration rules of 2026-10-04)
+##################################################################################
+trigger:
+  resamples: 10_000        # percentile bootstrap of the IQM over the per-round losses
+  confidence: 0.95
+  consecutive_checks: 2    # f*_run = the check completing the first run of 2 consecutive firing checks (amendment (l))
+  null_threshold: 0.0      # fire when the lower bound > this; 0 = "distinguishable from zero"
+  eligible_fraction: 0.95  # f*_run must be at or before 95% of the budget (checks 1..19 of 20)
+
+##################################################################################
+# Experiment 2 fork (Methodology Exp 2; amendment (b))
+##################################################################################
+fork:
+  enabled: true
+  architectures: ['D4W1024', 'D4W1536']   # only scaled critics fork
+  horizon_fraction: 0.25                  # post-fork horizon, measured from the fork
+  max_total_fraction: 1.2                 # maximum total budget
+  eval_every_fraction: 0.01               # post-fork evaluation every 1% of B (F1)
+  eval_episodes: 10
+  identity_snapshot_steps: null           # validation only: control keeps a snapshot at fork + this many steps
+  source: null                            # arm jobs (exp2_arm): absolute path of the parent Exp 1 run directory
+  arm: null                               # arm jobs: 'injected' | 'identity' (validation only)
+
+injection:
+  m: null              # 'last' | 'half' | 'all'; frozen by the positive control before main Exp 2 runs
+
+checks:
+  check1_tolerance_eps: 64   # PROPOSED (pending lead approval): |dQ|, |d dQ/da| <= 64 * eps_f32 * scale
+
+diagnostics:                 # Exp 1/2 actor diagnostics I1-I4 (experiments/exp12/diagnostics.py)
+  enabled: true              # record metrics; Exp1/2 compute them in either recording mode
+  kl_reference_size: 256     # I1: states in the per-window KL reference batch
+  saturation_threshold: 0.99 # I3: |a| above this counts as saturated
+
+testing:
+  force_trigger_check: null  # TEST-ONLY: force f*_run at this check (it and the consecutive_checks - 1 before it fire); run_role=dev only
+  stop_after_identity_snapshot: false  # VALIDATION-ONLY: end the job once fork.identity_snapshot_steps is saved; run_role=dev only
+
+positive_control:            # scripts/positive_control.py, amendments (d)-(f)
+  architecture: D4W1536
+  env_name: dog-run
+  similar_within: 0.10       # choose the smallest m whose recovery is within this of the best
+  noise_threshold: 0.10      # STOP and consult if the probe's own noise exceeds this

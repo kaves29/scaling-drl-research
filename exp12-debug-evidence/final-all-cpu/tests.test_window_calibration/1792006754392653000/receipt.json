@@ -1,0 +1,20 @@
+{
+  "module": "tests.test_window_calibration",
+  "source_hash": "52468342b4543cf79e93cc96c34167ddc17c8dd811e7e45949cacf4b5cee0c6b",
+  "success": true,
+  "tests_run": 8,
+  "test_ids": [
+    "tests.test_window_calibration.TestWindowCalibration.test_accepts_the_expanded_10_seed_pool_and_calibrates_correctly",
+    "tests.test_window_calibration.TestWindowCalibration.test_acf_non_decay_is_capped_and_logged_not_raised",
+    "tests.test_window_calibration.TestWindowCalibration.test_calibrate_rejects_mixed_environments",
+    "tests.test_window_calibration.TestWindowCalibration.test_load_or_calibrate_caches_and_detects_staleness",
+    "tests.test_window_calibration.TestWindowCalibration.test_n_is_genuinely_different_between_a_fast_and_slow_decorrelating_environment",
+    "tests.test_window_calibration.TestWindowCalibration.test_negative_lag_seeds_are_excluded_not_folded_in",
+    "tests.test_window_calibration.TestWindowCalibration.test_rejects_a_seed_count_that_is_neither_5_nor_10",
+    "tests.test_window_calibration.TestWindowCalibration.test_w_recovers_an_injected_lag_and_differs_between_environments"
+  ],
+  "failures": 0,
+  "errors": 0,
+  "skips": [],
+  "unexpected_successes": 0
+}

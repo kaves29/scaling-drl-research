@@ -1,0 +1,9 @@
+test_threshold_is_mean_plus_two_std (tests.test_angle2b_statistics.TestCompareToNull.test_threshold_is_mean_plus_two_std) ... ok
+test_value_above_threshold_exceeds_null (tests.test_angle2b_statistics.TestCompareToNull.test_value_above_threshold_exceeds_null) ... ok
+test_value_below_threshold_does_not_exceed_null (tests.test_angle2b_statistics.TestCompareToNull.test_value_below_threshold_does_not_exceed_null) ... ok
+test_value_exactly_at_threshold_does_not_exceed_null (tests.test_angle2b_statistics.TestCompareToNull.test_value_exactly_at_threshold_does_not_exceed_null) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.000s
+
+OK

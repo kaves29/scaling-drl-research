@@ -1,0 +1,6091 @@
+{
+  "coverage": {
+    "exp96_verified_records": 96,
+    "pilot_verified_records": 7,
+    "records": 103
+  },
+  "input_sha256": "7c5a5c7a5d6778088a7f6f4527dc81e118ba7c65bed17edd19db0a5861d3f14b",
+  "issues": [
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "0/metadata.json",
+      "run_id": "0"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "1/metadata.json",
+      "run_id": "1"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "10/metadata.json",
+      "run_id": "10"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "100/metadata.json",
+      "run_id": "100"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "101/metadata.json",
+      "run_id": "101"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "102/metadata.json",
+      "run_id": "102"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "11/metadata.json",
+      "run_id": "11"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "12/metadata.json",
+      "run_id": "12"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "13/metadata.json",
+      "run_id": "13"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "14/metadata.json",
+      "run_id": "14"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "15/metadata.json",
+      "run_id": "15"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "16/metadata.json",
+      "run_id": "16"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "17/metadata.json",
+      "run_id": "17"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "18/metadata.json",
+      "run_id": "18"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "19/metadata.json",
+      "run_id": "19"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "2/metadata.json",
+      "run_id": "2"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "20/metadata.json",
+      "run_id": "20"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "21/metadata.json",
+      "run_id": "21"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "22/metadata.json",
+      "run_id": "22"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "23/metadata.json",
+      "run_id": "23"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "24/metadata.json",
+      "run_id": "24"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "25/metadata.json",
+      "run_id": "25"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "26/metadata.json",
+      "run_id": "26"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "27/metadata.json",
+      "run_id": "27"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "28/metadata.json",
+      "run_id": "28"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "29/metadata.json",
+      "run_id": "29"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "3/metadata.json",
+      "run_id": "3"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "30/metadata.json",
+      "run_id": "30"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "31/metadata.json",
+      "run_id": "31"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "32/metadata.json",
+      "run_id": "32"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "33/metadata.json",
+      "run_id": "33"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "34/metadata.json",
+      "run_id": "34"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "35/metadata.json",
+      "run_id": "35"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "36/metadata.json",
+      "run_id": "36"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "37/metadata.json",
+      "run_id": "37"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "38/metadata.json",
+      "run_id": "38"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "39/metadata.json",
+      "run_id": "39"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "4/metadata.json",
+      "run_id": "4"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "40/metadata.json",
+      "run_id": "40"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "41/metadata.json",
+      "run_id": "41"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "42/metadata.json",
+      "run_id": "42"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "43/metadata.json",
+      "run_id": "43"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "44/metadata.json",
+      "run_id": "44"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "45/metadata.json",
+      "run_id": "45"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "46/metadata.json",
+      "run_id": "46"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "47/metadata.json",
+      "run_id": "47"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "48/metadata.json",
+      "run_id": "48"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "49/metadata.json",
+      "run_id": "49"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "5/metadata.json",
+      "run_id": "5"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "50/metadata.json",
+      "run_id": "50"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "51/metadata.json",
+      "run_id": "51"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "52/metadata.json",
+      "run_id": "52"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "53/metadata.json",
+      "run_id": "53"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "54/metadata.json",
+      "run_id": "54"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "55/metadata.json",
+      "run_id": "55"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "56/metadata.json",
+      "run_id": "56"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "57/metadata.json",
+      "run_id": "57"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "58/metadata.json",
+      "run_id": "58"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "59/metadata.json",
+      "run_id": "59"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "6/metadata.json",
+      "run_id": "6"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "60/metadata.json",
+      "run_id": "60"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "61/metadata.json",
+      "run_id": "61"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "62/metadata.json",
+      "run_id": "62"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "63/metadata.json",
+      "run_id": "63"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "64/metadata.json",
+      "run_id": "64"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "65/metadata.json",
+      "run_id": "65"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "66/metadata.json",
+      "run_id": "66"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "67/metadata.json",
+      "run_id": "67"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "68/metadata.json",
+      "run_id": "68"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "69/metadata.json",
+      "run_id": "69"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "7/metadata.json",
+      "run_id": "7"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "70/metadata.json",
+      "run_id": "70"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "71/metadata.json",
+      "run_id": "71"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "72/metadata.json",
+      "run_id": "72"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "73/metadata.json",
+      "run_id": "73"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "74/metadata.json",
+      "run_id": "74"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "75/metadata.json",
+      "run_id": "75"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "76/metadata.json",
+      "run_id": "76"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "77/metadata.json",
+      "run_id": "77"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "78/metadata.json",
+      "run_id": "78"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "79/metadata.json",
+      "run_id": "79"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "8/metadata.json",
+      "run_id": "8"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "80/metadata.json",
+      "run_id": "80"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "81/metadata.json",
+      "run_id": "81"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "82/metadata.json",
+      "run_id": "82"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "83/metadata.json",
+      "run_id": "83"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "84/metadata.json",
+      "run_id": "84"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "85/metadata.json",
+      "run_id": "85"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "86/metadata.json",
+      "run_id": "86"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "87/metadata.json",
+      "run_id": "87"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "88/metadata.json",
+      "run_id": "88"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "89/metadata.json",
+      "run_id": "89"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "9/metadata.json",
+      "run_id": "9"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "90/metadata.json",
+      "run_id": "90"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "91/metadata.json",
+      "run_id": "91"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "92/metadata.json",
+      "run_id": "92"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "93/metadata.json",
+      "run_id": "93"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "94/metadata.json",
+      "run_id": "94"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "95/metadata.json",
+      "run_id": "95"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "96/metadata.json",
+      "run_id": "96"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "97/metadata.json",
+      "run_id": "97"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "98/metadata.json",
+      "run_id": "98"
+    },
+    {
+      "code": "incomplete_provenance",
+      "detail": null,
+      "record": "99/metadata.json",
+      "run_id": "99"
+    }
+  ],
+  "records": [
+    {
+      "architecture": "D2W4",
+      "archive_member": "0/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 1
+      },
+      "config_hash": "631e62ac6edc59ea2c36fe1f9f83a83b57c8bdefc375fc64e81658064d9860a3",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "0",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 1
+        },
+        "id": "0",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 1,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "1/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 2
+      },
+      "config_hash": "05189b8014f8c522c0e7658bfd87f2d36c8479ecbdf4ab945514b2f91d7fe636",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 1,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 2,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "1",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 2
+        },
+        "id": "1",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 2,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "10/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 11
+      },
+      "config_hash": "1328211467170b68b14cbf15d18ad4d586f511fb92142d7c223c0acd7bc6e88c",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 10,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 20,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "10",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 11
+        },
+        "id": "10",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 11,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "100/metadata.json",
+      "campaign": "pilot",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 101
+      },
+      "config_hash": "9f03c5324e9f9e333a1f96f8aa51303c24916eeef43c92a4a2e7073f2eb49fef",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 100,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 200,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "100",
+      "metadata": {
+        "campaign": "pilot",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 101
+        },
+        "id": "100",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 101,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "101/metadata.json",
+      "campaign": "pilot",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 102
+      },
+      "config_hash": "2dca7259c9ad3565e327042c98542b83157d2ad626373de44a3d496015062015",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 101,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 202,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "101",
+      "metadata": {
+        "campaign": "pilot",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 102
+        },
+        "id": "101",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 102,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "102/metadata.json",
+      "campaign": "pilot",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 103
+      },
+      "config_hash": "b82fefb80ec9923f7482e782dc2969100c2f89afadbc4e2af106d75974918fe0",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 102,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 204,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "102",
+      "metadata": {
+        "campaign": "pilot",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 103
+        },
+        "id": "102",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 103,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "11/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 12
+      },
+      "config_hash": "74d5679e85dee61bad9d28aad4f9cda183ff6b7025f6190c5bd1f11c69365363",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 11,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 22,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "11",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 12
+        },
+        "id": "11",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 12,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "12/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 13
+      },
+      "config_hash": "1c21d95023fc64da622c0a143183f71962acfa1933c1749b05e5243c45060821",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 12,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 24,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "12",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 13
+        },
+        "id": "12",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 13,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "13/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 14
+      },
+      "config_hash": "01ac9511dca33235695f3c05d96d5b12dd2f6b46f8c43e39bac09aec4b44e2f5",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 13,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 26,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "13",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 14
+        },
+        "id": "13",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 14,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "14/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 15
+      },
+      "config_hash": "4e87aa7dbac72f12d2c86d71c881090ed3c7d1e7fdd839c14a95e29d55f0cc87",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 14,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 28,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "14",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 15
+        },
+        "id": "14",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 15,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "15/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 16
+      },
+      "config_hash": "5353f87e67a0baef037a3a2623e323fa72777d99702da23da1e74ef0ca513b24",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 15,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 30,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "15",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 16
+        },
+        "id": "15",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 16,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "16/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 17
+      },
+      "config_hash": "42351a9dd21cb54bdc5b4a6902865eaf82b3f6dea49cf0e0093a78f06e3880fc",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 16,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 32,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "16",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 17
+        },
+        "id": "16",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 17,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "17/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 18
+      },
+      "config_hash": "77e913725a0a600c80dbef920964643b49f9dec8c8f14bfa798c7e98d6f2e4b0",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 17,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 34,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "17",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 18
+        },
+        "id": "17",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 18,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "18/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 19
+      },
+      "config_hash": "011497e5d634d86cb3ae9956da259431caabb39eb708d3e3b6291a6c6b535207",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 18,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 36,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "18",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 19
+        },
+        "id": "18",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 19,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "19/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 20
+      },
+      "config_hash": "b49a213105da7850c27491e9cc4f36707de953d7636d4d3032a3a6f527214be0",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 19,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 38,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "19",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 20
+        },
+        "id": "19",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 20,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "2/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 3
+      },
+      "config_hash": "4f9edc80806de426255df1f92db15630e0002113e177ce675ab40584e8063233",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 2,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 4,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "2",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 3
+        },
+        "id": "2",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 3,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "20/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 21
+      },
+      "config_hash": "a11d68da6c9ae965c56e6370102cd146d3e3f6ba8322270e73109a30185591f3",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 20,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 40,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "20",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 21
+        },
+        "id": "20",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 21,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "21/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 22
+      },
+      "config_hash": "a42799bd3b07c0ce742a971725abbe0c6c62069238b9e1fe4d65e5b58496f37d",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 21,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 42,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "21",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 22
+        },
+        "id": "21",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 22,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "22/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 23
+      },
+      "config_hash": "f58920ee0ff9073e601bb1310ac54bd19f006a1b45291e231eb08666f9b65e0c",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 22,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 44,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "22",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 23
+        },
+        "id": "22",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 23,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "23/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 24
+      },
+      "config_hash": "c867e67a368861b2faee5de9623a1a709ded11249a5d2dcfc85152fe5ad5d264",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 23,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 46,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "23",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 24
+        },
+        "id": "23",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 24,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "24/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 25
+      },
+      "config_hash": "161953665863c85d3f7e54cde020ff16937a247cfab8f63a8573cc2e1629b898",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 24,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 48,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "24",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 25
+        },
+        "id": "24",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 25,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "25/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 26
+      },
+      "config_hash": "333a1da14b34df551c7ecd2989321208c359b7aa562ecb5cb508dd5e73155460",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 25,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 50,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "25",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 26
+        },
+        "id": "25",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 26,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "26/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 27
+      },
+      "config_hash": "a71a971592d87eb1df77cb021efc925feca653606c414a498fd450e00a22e31d",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 26,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 52,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "26",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 27
+        },
+        "id": "26",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 27,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "27/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 28
+      },
+      "config_hash": "dade7f21992be6a1070be48f57fabc8e324fa6016577a46d7303fe3d1bf33944",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 27,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 54,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "27",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 28
+        },
+        "id": "27",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 28,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "28/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 29
+      },
+      "config_hash": "37e606b9470daab851ba2287a5c4bf7443c63e54efd0abef1a4cdd721691ba60",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 28,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 56,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "28",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 29
+        },
+        "id": "28",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 29,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "29/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 30
+      },
+      "config_hash": "643324e02d56e7485ac56cce45c3ec971596baf8cb18c9ec1afc36deb585cc37",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 29,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 58,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "29",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 30
+        },
+        "id": "29",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 30,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "3/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 4
+      },
+      "config_hash": "44cc2575f654f19ea33db0c0426fd0159db3f2218ab6a8c129ba5a9fe4fb73e6",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 3,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 6,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "3",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 4
+        },
+        "id": "3",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 4,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "30/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 31
+      },
+      "config_hash": "a012774cdef119faa0b5b32f7ec719db28e20919e225361d02f9d221adb764f7",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 30,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 60,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "30",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 31
+        },
+        "id": "30",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 31,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "31/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 32
+      },
+      "config_hash": "825d7b4b900862b66b3216c41c8834c80159326554ba37d1486a5fb129ba77a2",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 31,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 62,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "31",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 32
+        },
+        "id": "31",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 32,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "32/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 33
+      },
+      "config_hash": "8481b752663d7627ce3c84d43bcec303af7438f931184d7066e35d271439f0fd",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 32,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 64,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "32",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 33
+        },
+        "id": "32",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 33,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "33/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 34
+      },
+      "config_hash": "00383b210cdcead33e4c1d68b5240a91c335ffa6015b28cf29e4e021da19d4af",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 33,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 66,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "33",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 34
+        },
+        "id": "33",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 34,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "34/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 35
+      },
+      "config_hash": "501986133c8c05ba440757676ae4e706f2bb29ce9308cc709a07fcfc7d36418f",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 34,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 68,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "34",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 35
+        },
+        "id": "34",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 35,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "35/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 36
+      },
+      "config_hash": "ce23a3146cdd30b2d7e7677c272ad97282f7fff1dae7538c7709d20f3fa23ebd",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 35,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 70,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "35",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 36
+        },
+        "id": "35",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 36,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "36/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 37
+      },
+      "config_hash": "b112e3943d6755893f258cefc8c9af889b58732c72e396ef5bc74157a87c18e2",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 36,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 72,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "36",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 37
+        },
+        "id": "36",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 37,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "37/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 38
+      },
+      "config_hash": "3aaf11d2e741ca764a2d4094845deddd1feec5f7611c703d2e5c28217571b7ff",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 37,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 74,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "37",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 38
+        },
+        "id": "37",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 38,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "38/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 39
+      },
+      "config_hash": "49ee6322bfeb3fdaf69c1e0b9084c4c77dd7f81986abd01949dc4213cca0c7ac",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 38,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 76,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "38",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 39
+        },
+        "id": "38",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 39,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "39/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 40
+      },
+      "config_hash": "a7bddbb2c6a668fabd4725a3ce2f9e1043d857ea091e0776a2fce828cfc0f797",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 39,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 78,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "39",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 40
+        },
+        "id": "39",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 40,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "4/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 5
+      },
+      "config_hash": "96492e95167fec20265fbaeb4195522b706fd366dae6f4baf3ea62a0c4ef33bb",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 4,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 8,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "4",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 5
+        },
+        "id": "4",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 5,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "40/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 41
+      },
+      "config_hash": "c29480a584f13a0002d7fc8883892bb36d2b83c00ed3091b19a7aeb0d55a00f5",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 40,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 80,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "40",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 41
+        },
+        "id": "40",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 41,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "41/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 42
+      },
+      "config_hash": "6fb8523132441af000736fd501fc9491322d2cfef0802f4a985395d7742e7bc5",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 41,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 82,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "41",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 42
+        },
+        "id": "41",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 42,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "42/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 43
+      },
+      "config_hash": "f7364df50309e9c7b564f8d73d054ea52d8ccec301d7d3e5c1d30ab93072fa00",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 42,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 84,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "42",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 43
+        },
+        "id": "42",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 43,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "43/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 44
+      },
+      "config_hash": "f75c5da010d03b31be8599eeb6b5326e31364bf8763e01aa2505f6b6981d9c1c",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 43,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 86,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "43",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 44
+        },
+        "id": "43",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 44,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "44/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 45
+      },
+      "config_hash": "cf481a49c111efbc144e96439e2c2db28537c914b31606951ab90d078c961516",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 44,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 88,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "44",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 45
+        },
+        "id": "44",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 45,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "45/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 46
+      },
+      "config_hash": "63078abda6d1f9f8007428e66afe237cfc7d762c8a77f09f1a42f521bf329487",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 45,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 90,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "45",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 46
+        },
+        "id": "45",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 46,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "46/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 47
+      },
+      "config_hash": "e34211c41de5c302c211464aa30e61f88c1c06df380474dd60fe0af071a08e96",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 46,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 92,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "46",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 47
+        },
+        "id": "46",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 47,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "47/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 48
+      },
+      "config_hash": "35cd0ac584240d131a57637b548c29c5c6df89bdaf388e3ff47d5aa842678f60",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 47,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 94,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "47",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 48
+        },
+        "id": "47",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 48,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "48/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 49
+      },
+      "config_hash": "c80227ff13efc600e9b59a983a3516ff7c76bfb3c9ab53ab6f7b9d936e3df4b1",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 48,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 96,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "48",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 49
+        },
+        "id": "48",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 49,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "49/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 50
+      },
+      "config_hash": "1bc9098f52f4584c8a0df42d05888d60441b66eafaa0008b0f1db79fa21762b6",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 49,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 98,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "49",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 50
+        },
+        "id": "49",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 50,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "5/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 6
+      },
+      "config_hash": "169890503cda7c3253f6922394005af5c42defc1099a50efa9f257d86bd5471c",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 5,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 10,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "5",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 6
+        },
+        "id": "5",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 6,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "50/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 51
+      },
+      "config_hash": "1d1cfa8b481c957453d3310e5feefb8f0adb3c594f3e3b2fa1c897149b71023d",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 50,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 100,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "50",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 51
+        },
+        "id": "50",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 51,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "51/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 52
+      },
+      "config_hash": "debf72fcfe8fb3c6cde9d5639e2a03743fca6a0d6116425c444254c3ff134544",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 51,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 102,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "51",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 52
+        },
+        "id": "51",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 52,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "52/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 53
+      },
+      "config_hash": "5e874da5ba9a1db0e2dc24febf6a24b91654e32912444f39e86141d0e1adbe35",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 52,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 104,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "52",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 53
+        },
+        "id": "52",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 53,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "53/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 54
+      },
+      "config_hash": "77f62fc1b647ed3cfac025334834afdeca6ffd983edaa2c426ee80e91f89bb18",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 53,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 106,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "53",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 54
+        },
+        "id": "53",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 54,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "54/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 55
+      },
+      "config_hash": "b9c909df1c61a938b1202adede50ba102dd966e4f444f67ed7384eb2a0d9c97e",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 54,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 108,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "54",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 55
+        },
+        "id": "54",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 55,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "55/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 56
+      },
+      "config_hash": "7d39fd96f63f785790e2ed2189a5b4c2a6bf0cf84bda0ae15513e930d25b86a9",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 55,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 110,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "55",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 56
+        },
+        "id": "55",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 56,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "56/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 57
+      },
+      "config_hash": "d90dad4f48381386efc5abe51c7296106d7ad9dfd894573c364d308b21316e37",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 56,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 112,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "56",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 57
+        },
+        "id": "56",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 57,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "57/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 58
+      },
+      "config_hash": "5f41c8439a121bf08d1c3979ab18f3adff35e38d3f5fae6dcf7ae9ebd9ceaf37",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 57,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 114,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "57",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 58
+        },
+        "id": "57",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 58,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "58/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 59
+      },
+      "config_hash": "384fa33579ddbe3b10aebb35b6b25c68551df7d4f02dece2da050b1b57e69eb8",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 58,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 116,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "58",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 59
+        },
+        "id": "58",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 59,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "59/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 60
+      },
+      "config_hash": "4f93699bf2c300033c2f35032694ef96310637360a8ee7f5e32c9d63ada2f46a",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 59,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 118,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "59",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 60
+        },
+        "id": "59",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 60,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "6/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 7
+      },
+      "config_hash": "b34938dd61e9414810075ffefb4d6a6dc3edf7360fdfb530ca53436b4d6a8f8c",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 6,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 12,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "6",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 7
+        },
+        "id": "6",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 7,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "60/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 61
+      },
+      "config_hash": "fc4199b2aa73e69be9cd703a1de3181d367eaed5e1e25d2c21c40b28110dfa89",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 60,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 120,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "60",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 61
+        },
+        "id": "60",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 61,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "61/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 62
+      },
+      "config_hash": "623f4b017288e25d68924106e671271e92f4ef4b398e5159bfff537d08a4358b",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 61,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 122,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "61",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 62
+        },
+        "id": "61",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 62,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "62/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 63
+      },
+      "config_hash": "5f53e497ce12a8380837794e2b66281baf0f38524372927940e4c08bfe2feda1",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 62,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 124,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "62",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 63
+        },
+        "id": "62",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 63,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "63/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 64
+      },
+      "config_hash": "194ac87e7e61034591448ddc9dae1634cee7ec308720b28d742f162d6913c8ed",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 63,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 126,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "63",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 64
+        },
+        "id": "63",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 64,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "64/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 65
+      },
+      "config_hash": "850f8dbec140ee60a38928f6e6f3f05faeafefdc7569fbd6d7f9d74e39ce21b8",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 64,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 128,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "64",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 65
+        },
+        "id": "64",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 65,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "65/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 66
+      },
+      "config_hash": "79242845377d62e2577fd181fa39c9a76dc2d4dfe110fdc78d60721d13efb3e4",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 65,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 130,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "65",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 66
+        },
+        "id": "65",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 66,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "66/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 67
+      },
+      "config_hash": "ac8c44a25baad7e7023a6cc23131be5ad1629c715014be8bfb7ac997f356eaed",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 66,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 132,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "66",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 67
+        },
+        "id": "66",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 67,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "67/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 68
+      },
+      "config_hash": "e87a5cdc8e475d36b0e94fa25c5655288959fbfd0794de17454aa1f280bc2ea6",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 67,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 134,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "67",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 68
+        },
+        "id": "67",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 68,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "68/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 69
+      },
+      "config_hash": "0790326f3daeaf22a2bd83b28e9ea4dfdb7811552fbdd1b44a733dca64f27d56",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 68,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 136,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "68",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 69
+        },
+        "id": "68",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 69,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "69/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 70
+      },
+      "config_hash": "c3f52271ceed8540ef689ebf047a4bc3c0c4d7071ab5f12862f6bbadee2d7bc5",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 69,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 138,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "69",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 70
+        },
+        "id": "69",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 70,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "7/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 8
+      },
+      "config_hash": "06c76043bc57693f76529d05791fd023c99679ed3133e2c6f7b497db64fc5e8b",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 7,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 14,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "7",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 8
+        },
+        "id": "7",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 8,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "70/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 71
+      },
+      "config_hash": "ae93cad8b674f127935c04e79117db65dca583642f138b23c62762a03d7fc948",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 70,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 140,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "70",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 71
+        },
+        "id": "70",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 71,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "71/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 72
+      },
+      "config_hash": "07cff2ebe9bafdb258d4f197d61efd8c602bdef848ef7a3a4ed5e43c973cc322",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 71,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 142,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "71",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 72
+        },
+        "id": "71",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 72,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "72/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 73
+      },
+      "config_hash": "1cdcc450785cbcf4a1fe9868bdaadf4bd554ae0dc221c27b0ab9140bb4babce9",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 72,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 144,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "72",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 73
+        },
+        "id": "72",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 73,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "73/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 74
+      },
+      "config_hash": "212deae938d1d08296f4033f4dc5c37f11cbb147ff561dd5b6e269f69dc2dbcd",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 73,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 146,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "73",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 74
+        },
+        "id": "73",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 74,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "74/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 75
+      },
+      "config_hash": "e375d19ab8dcc9ad1d15e2bca02e18d1692480cee54f311863c7f1e372a0edf9",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 74,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 148,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "74",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 75
+        },
+        "id": "74",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 75,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "75/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 76
+      },
+      "config_hash": "6d64644cb4928844abaea39ef80856e73722a4794804f7209efe3e217502c0ad",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 75,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 150,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "75",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 76
+        },
+        "id": "75",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 76,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "76/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 77
+      },
+      "config_hash": "f6da2c6c18d699fa1811eb29860cbc700812cb53950d5931d938ed04660ee403",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 76,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 152,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "76",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 77
+        },
+        "id": "76",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 77,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "77/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 78
+      },
+      "config_hash": "bdd0c13adc165242e827c85135f672255cdabdf9767999991e752585e2fcd67d",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 77,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 154,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "77",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 78
+        },
+        "id": "77",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 78,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "78/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 79
+      },
+      "config_hash": "7ec9ce88f28833760ebef848aa72006c65d56c090dae6171259f600fad6f6639",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 78,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 156,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "78",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 79
+        },
+        "id": "78",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 79,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "79/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 80
+      },
+      "config_hash": "6d3f9f462dbe4f94a8e3e465bf6cb5c4194fffc8cd6f2cbdf4810d08db3923da",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 79,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 158,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "79",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 80
+        },
+        "id": "79",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 80,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "8/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 9
+      },
+      "config_hash": "72e445ada2729aa125b2fd2ff5ef87f067901c706b02d2af2d3b561923753857",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 8,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 16,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "8",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 9
+        },
+        "id": "8",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 9,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "80/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 81
+      },
+      "config_hash": "a9b3acfb509358378bd982f9b3021e6822630a9ec219b45a827124cc0ae92c27",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 80,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 160,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "80",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 81
+        },
+        "id": "80",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 81,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "81/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 82
+      },
+      "config_hash": "4272a38867413c973667d982f5b97a51bb06d188ac346b7467525cd5b01d4c8d",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 81,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 162,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "81",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 82
+        },
+        "id": "81",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 82,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "82/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 83
+      },
+      "config_hash": "a940b5d18cf1c9a773d158f13beff741b11e2e34acedc718089a5892ebf8ff15",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 82,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 164,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "82",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 83
+        },
+        "id": "82",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 83,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "83/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 84
+      },
+      "config_hash": "e551bcfed1c0f7b0af1d0172fe718d1560d614802f8cd7f0fe914107c7b841ac",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 83,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 166,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "83",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 84
+        },
+        "id": "83",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 84,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "84/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 85
+      },
+      "config_hash": "0cacc1907ff7cdb834ca164c02b866341815f2f211304b713e793ef400cbac38",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 84,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 168,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "84",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 85
+        },
+        "id": "84",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 85,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "85/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 86
+      },
+      "config_hash": "aca6fa13e6387bc86b0958a8135c041ecae74145c9188b80f495bc03736df79a",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 85,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 170,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "85",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 86
+        },
+        "id": "85",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 86,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "86/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 87
+      },
+      "config_hash": "29b883da3cfcd85abf300095cb54dc6730e159f6c9eda9401ff8c346790c569f",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 86,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 172,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "86",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 87
+        },
+        "id": "86",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 87,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "87/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 88
+      },
+      "config_hash": "89b5e5b8cadd9fb09e94be8d0279d5edbac0359f0e81aae04d67e16396dea422",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 87,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 174,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "87",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 88
+        },
+        "id": "87",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 88,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "88/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 89
+      },
+      "config_hash": "c7f3446e60ff916b38dc6f96dbb8fd2542f554df09d2e7a5b126187b2ac35ce6",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 88,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 176,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "88",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 89
+        },
+        "id": "88",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 89,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "89/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 90
+      },
+      "config_hash": "4e5a16958a593afa6f8fab62372392eefa0b033f70b73488f82fac39c0637857",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 89,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 178,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "89",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 90
+        },
+        "id": "89",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 90,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "9/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 10
+      },
+      "config_hash": "d7890d6f27330bd848ddc8f77b0b0dc49886a11b7f369b89cb5efd921fb88d91",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 9,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 18,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "9",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 10
+        },
+        "id": "9",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 10,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "90/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 91
+      },
+      "config_hash": "2a313738dd0a30fc3b16a07c8d858e561ac642dfd88bb4e750bdfa86812a1c1b",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 90,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 180,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "90",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 91
+        },
+        "id": "90",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 91,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "91/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 92
+      },
+      "config_hash": "929277ffa30ecc5c37bb9f82e6b2aa38f3cb487de905eef29afef47320f8ca34",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 91,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 182,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "91",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 92
+        },
+        "id": "91",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 92,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "92/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 93
+      },
+      "config_hash": "76a525743d5b5a18adccc8be03c7408e97da20cfe08ab45f36fa8099bfc760de",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 92,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 184,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "92",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 93
+        },
+        "id": "92",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 93,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "93/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 94
+      },
+      "config_hash": "82311104ebcb157929508fe9dfec520438db0ba9d4acaa18be4bf183c7a679df",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 93,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 186,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "93",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 94
+        },
+        "id": "93",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 94,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "94/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 95
+      },
+      "config_hash": "99e6e75443d778243be618d031b24c43913c5928408ee11d6ce77b1de35e3c43",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 94,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 188,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "94",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 95
+        },
+        "id": "94",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 95,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "95/metadata.json",
+      "campaign": "exp96",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 96
+      },
+      "config_hash": "86c5a6a855b465b0b066950e68f436ccaf621a611505c14930f4623e4c457f82",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 95,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 190,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "95",
+      "metadata": {
+        "campaign": "exp96",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 96
+        },
+        "id": "95",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 96,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "96/metadata.json",
+      "campaign": "pilot",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 97
+      },
+      "config_hash": "69d46c79593e6ca6dbf430ab4b38fbd5fd813685d8b44f8fc3c5e0d98c6a5a44",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 96,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 192,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "96",
+      "metadata": {
+        "campaign": "pilot",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 97
+        },
+        "id": "96",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 97,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "97/metadata.json",
+      "campaign": "pilot",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 98
+      },
+      "config_hash": "8005c3d267ad4e08b0867875e6fa2e9c4be8e72ca3916a6be2e49c1ff496d0b6",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 97,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 194,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "97",
+      "metadata": {
+        "campaign": "pilot",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 98
+        },
+        "id": "97",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 98,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "98/metadata.json",
+      "campaign": "pilot",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 99
+      },
+      "config_hash": "3fe6d13cc9354621891efc96ec6e19336003933f08ccf648d5660459e7cd985a",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 98,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 196,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "98",
+      "metadata": {
+        "campaign": "pilot",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 99
+        },
+        "id": "98",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 99,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    },
+    {
+      "architecture": "D2W4",
+      "archive_member": "99/metadata.json",
+      "campaign": "pilot",
+      "config": {
+        "architecture": "D2W4",
+        "env_name": "toy",
+        "num_interaction_steps": 10,
+        "seed": 100
+      },
+      "config_hash": "c7cae099afc60ab72e4246510ff89171aaef8ed190616959f222a93ecd44a88e",
+      "environment": "toy",
+      "history": [
+        {
+          "eval/avg_return": 0,
+          "interaction_step": 0
+        },
+        {
+          "eval/avg_return": 99,
+          "interaction_step": 5
+        },
+        {
+          "eval/avg_return": 198,
+          "interaction_step": 10
+        }
+      ],
+      "horizon": 10,
+      "id": "99",
+      "metadata": {
+        "campaign": "pilot",
+        "code": {
+          "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "dirty": false
+        },
+        "config": {
+          "architecture": "D2W4",
+          "env_name": "toy",
+          "num_interaction_steps": 10,
+          "seed": 100
+        },
+        "id": "99",
+        "name": "same display name",
+        "state": "finished"
+      },
+      "name": "same display name",
+      "seed": 100,
+      "source": {
+        "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "dirty": false
+      },
+      "status": "finished",
+      "step_key": "interaction_step"
+    }
+  ],
+  "relationships": [],
+  "schema": 1
+}

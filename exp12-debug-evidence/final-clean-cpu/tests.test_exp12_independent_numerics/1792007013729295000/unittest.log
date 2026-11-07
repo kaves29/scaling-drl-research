@@ -1,0 +1,11 @@
+test_literal_positive_and_negative_entropy_targets_have_opposite_updates (tests.test_exp12_independent_numerics.IndependentEntropyTest.test_literal_positive_and_negative_entropy_targets_have_opposite_updates) ... ok
+test_polyak_update_matches_independent_equation_and_preserves_optimizer (tests.test_exp12_independent_numerics.IndependentEntropyTest.test_polyak_update_matches_independent_equation_and_preserves_optimizer) ... ok
+test_tanh_log_density_matches_independent_change_of_variables (tests.test_exp12_independent_numerics.IndependentEntropyTest.test_tanh_log_density_matches_independent_change_of_variables) ... ok
+test_every_minibatch_loss_final_full_pool_and_offset_match_analytic_adamw (tests.test_exp12_independent_numerics.IndependentFittingTest.test_every_minibatch_loss_final_full_pool_and_offset_match_analytic_adamw) ... ok
+test_offset_is_fixed_prefit_mean_not_a_learned_or_recentered_target (tests.test_exp12_independent_numerics.IndependentFittingTest.test_offset_is_fixed_prefit_mean_not_a_learned_or_recentered_target) ... ok
+test_probe_streams_are_distinct_and_reconstructible (tests.test_exp12_independent_numerics.IndependentFittingTest.test_probe_streams_are_distinct_and_reconstructible) ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 2.635s
+
+OK

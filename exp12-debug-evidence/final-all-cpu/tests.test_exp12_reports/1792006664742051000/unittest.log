@@ -1,0 +1,12 @@
+test_a_size_below_0_9_or_missing_fails (tests.test_exp12_reports.RangeCriterionTest.test_a_size_below_0_9_or_missing_fails) ... ok
+test_block_a_values_pass_the_new_criterion_and_fail_the_old_rule (tests.test_exp12_reports.RangeCriterionTest.test_block_a_values_pass_the_new_criterion_and_fail_the_old_rule) ... ok
+test_every_test_and_every_failing_subtest_is_listed_with_its_status (tests.test_exp12_reports.UnittestLogTest.test_every_test_and_every_failing_subtest_is_listed_with_its_status) ... ok
+test_missing_statuses_are_flagged_not_guessed (tests.test_exp12_reports.UnittestLogTest.test_missing_statuses_are_flagged_not_guessed) ... ok
+test_the_block_a_shape_failures_counted_per_subtest (tests.test_exp12_reports.UnittestLogTest.test_the_block_a_shape_failures_counted_per_subtest) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.034s
+
+OK
+range criterion (w): P/b >= 0.9 at the configured pool: {'D2W512': True, 'D4W1024': False, 'D6W1536': True} -> FAIL; superseded 10-90% rule (information): {'D2W512': False, 'D4W1024': True, 'D6W1536': False}
+range criterion (w): P/b >= 0.9 at the configured pool: {'D2W512': True, 'D4W1024': True, 'D6W1536': True} -> PASS; superseded 10-90% rule (information): {'D2W512': False, 'D4W1024': False, 'D6W1536': False}

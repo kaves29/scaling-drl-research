@@ -1,0 +1,18 @@
+test_cpu_cannot_enter_full_setting_gpu_capture (tests.test_exp12_range_capture.RangeCaptureTest.test_cpu_cannot_enter_full_setting_gpu_capture) ... usage: run_exp12_cpu_validation.py [-h] --out-dir OUT_DIR --arch
+                                   {D2W512,D4W1024,D4W1536} --expected-commit
+                                   EXPECTED_COMMIT
+run_exp12_cpu_validation.py: error: full-setting capture requires an A100; CPU tests verify the observer only
+ok
+test_delegates_once_and_returns_the_identical_result (tests.test_exp12_range_capture.RangeCaptureTest.test_delegates_once_and_returns_the_identical_result) ... ok
+test_live_cpu_probe_arrays_are_unchanged_by_retention (tests.test_exp12_range_capture.RangeCaptureTest.test_live_cpu_probe_arrays_are_unchanged_by_retention) ... ok
+test_method_c_base_config_is_refused_as_historical_capture (tests.test_exp12_range_capture.RangeCaptureTest.test_method_c_base_config_is_refused_as_historical_capture)
+This tool re-captures the historical 1,000-step range case (job 22817406). Under the ... ok
+test_mocked_full_workflow_preserves_the_approved_case_and_checksums (tests.test_exp12_range_capture.RangeCaptureTest.test_mocked_full_workflow_preserves_the_approved_case_and_checksums) ... {"arch": "D4W1536", "env": "hopper-hop", "seed": 990, "pool_size": 25600, "is_configured_pool": true, "score_rounds": [0.4749999940395355, 0.4749999940395355, 0.4749999940395355, 0.4749999940395355, 0.4749999940395355], "b_rounds": [0.5, 0.5, 0.5, 0.5, 0.5], "final_loss_rounds": [0.02500000037252903, 0.02500000037252903, 0.02500000037252903, 0.02500000037252903, 0.02500000037252903], "score_iqm": 0.4749999940395355, "b_iqm": 0.5, "score_over_b": 0.949999988079071, "score_std": 0.0, "score_range": 0.0, "within_10_90_pct_of_b": false}
+ok
+test_probe_failure_is_not_converted_to_a_result (tests.test_exp12_range_capture.RangeCaptureTest.test_probe_failure_is_not_converted_to_a_result) ... ok
+test_refuses_to_replace_retained_curves (tests.test_exp12_range_capture.RangeCaptureTest.test_refuses_to_replace_retained_curves) ... ok
+
+----------------------------------------------------------------------
+Ran 7 tests in 1.872s
+
+OK

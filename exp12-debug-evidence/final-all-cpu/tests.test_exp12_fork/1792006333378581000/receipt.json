@@ -1,0 +1,45 @@
+{
+  "module": "tests.test_exp12_fork",
+  "source_hash": "52468342b4543cf79e93cc96c34167ddc17c8dd811e7e45949cacf4b5cee0c6b",
+  "success": true,
+  "tests_run": 28,
+  "test_ids": [
+    "tests.test_exp12_fork.ForkEndToEndTest.test_arm_rechecks_original_panel_for_existing_forks",
+    "tests.test_exp12_fork.ForkEndToEndTest.test_arm_records",
+    "tests.test_exp12_fork.ForkEndToEndTest.test_arm_refuses_bad_inputs",
+    "tests.test_exp12_fork.ForkEndToEndTest.test_arm_stops_before_training_when_check1_fails",
+    "tests.test_exp12_fork.ForkEndToEndTest.test_check1",
+    "tests.test_exp12_fork.ForkEndToEndTest.test_check2_written_and_paired_with_the_exp1_check",
+    "tests.test_exp12_fork.ForkEndToEndTest.test_control_stops_before_ready_if_restore_changes_panel",
+    "tests.test_exp12_fork.ForkEndToEndTest.test_delayed_arms_preserve_complete_trigger_checkpoint",
+    "tests.test_exp12_fork.ForkEndToEndTest.test_exp1_ledger_records_fork_and_control_completes",
+    "tests.test_exp12_fork.ForkEndToEndTest.test_exp2_analysis_runs_on_the_real_outputs",
+    "tests.test_exp12_fork.ForkEndToEndTest.test_fork_is_invisible_to_the_exp1_trajectory",
+    "tests.test_exp12_fork.ForkEndToEndTest.test_fork_plan_and_files",
+    "tests.test_exp12_fork.ForkEndToEndTest.test_identity_fork_is_bit_identical",
+    "tests.test_exp12_fork.ForkEndToEndTest.test_injected_arm_frozen_head_unchanged_and_new_head_trained",
+    "tests.test_exp12_fork.ForkUnitTest.test_both_arms_must_run_on_the_fork_device_model",
+    "tests.test_exp12_fork.ForkUnitTest.test_check1_compares_values_and_action_gradients",
+    "tests.test_exp12_fork.ForkUnitTest.test_check1_control_and_identity_must_be_bit_exact",
+    "tests.test_exp12_fork.ForkUnitTest.test_check1_fails_when_the_injection_construction_is_broken",
+    "tests.test_exp12_fork.ForkUnitTest.test_fork_plan",
+    "tests.test_exp12_fork.ForkUnitTest.test_post_fork_eval_leaves_training_state_untouched",
+    "tests.test_exp12_fork.HumanoidBenchReachEvalSeedingTest.test_reach_eval_seeding_saves_and_restores_the_training_rng",
+    "tests.test_exp12_fork.IdentityValidationTest.test_compare_script_passes_and_detects_a_difference",
+    "tests.test_exp12_fork.IdentityValidationTest.test_flag_refused_outside_dev",
+    "tests.test_exp12_fork.IdentityValidationTest.test_jobs_stop_at_the_snapshot",
+    "tests.test_exp12_fork.KillMatrixTest.test_at_and_after_the_fork",
+    "tests.test_exp12_fork.KillMatrixTest.test_exp1_before_the_fork",
+    "tests.test_exp12_fork.KillMatrixTest.test_killed_before_the_first_checkpoint_restarts_from_scratch_identically",
+    "tests.test_exp12_fork.KillMatrixTest.test_late_fork_control_resume_keeps_checks_past_the_budget"
+  ],
+  "failures": 0,
+  "errors": 0,
+  "skips": [
+    {
+      "test": "tests.test_exp12_fork.HumanoidBenchReachEvalSeedingTest.test_reach_eval_seeding_saves_and_restores_the_training_rng",
+      "reason": "needs humanoid_bench (venv_hb)"
+    }
+  ],
+  "unexpected_successes": 0
+}

@@ -1,0 +1,11 @@
+# Versioned ten-target CPU qualification candidate. The five-target base_exp12
+# remains the archived pilot protocol. Official use requires scientific freeze.
+defaults:
+- base_exp12
+- _self_
+
+project_name: echocritic_method_c_ten_96
+
+probe:
+  rounds: 10
+  checks: 50

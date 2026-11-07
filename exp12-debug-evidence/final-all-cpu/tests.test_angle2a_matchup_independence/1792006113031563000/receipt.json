@@ -1,0 +1,22 @@
+{
+  "module": "tests.test_angle2a_matchup_independence",
+  "source_hash": "52468342b4543cf79e93cc96c34167ddc17c8dd811e7e45949cacf4b5cee0c6b",
+  "success": true,
+  "tests_run": 10,
+  "test_ids": [
+    "tests.test_angle2a_matchup_independence.TestMatchupIndependence.test_all_agents_are_closed_even_on_downstream_failure",
+    "tests.test_angle2a_matchup_independence.TestMatchupIndependence.test_d_and_r_within_a_matchup_do_not_share_state",
+    "tests.test_angle2a_matchup_independence.TestMatchupIndependence.test_four_independent_agents_across_two_matchups",
+    "tests.test_angle2a_matchup_independence.TestMatchupIndependence.test_matchup_2_reference_is_not_matchup_1_reference",
+    "tests.test_angle2a_matchup_independence.TestMatchupWithSharedReferenceHandle.test_both_matchups_use_the_same_shared_reference_object",
+    "tests.test_angle2a_matchup_independence.TestMatchupWithSharedReferenceHandle.test_matchup_1_and_matchup_2_record_their_own_snapshot_step",
+    "tests.test_angle2a_matchup_independence.TestMatchupWithSharedReferenceHandle.test_null_baseline_path_is_unaffected_no_reference_handle",
+    "tests.test_angle2a_matchup_independence.TestMatchupWithSharedReferenceHandle.test_reference_handle_survives_a_downstream_failure_in_the_first_matchup",
+    "tests.test_angle2a_matchup_independence.TestMatchupWithSharedReferenceHandle.test_run_matchup_never_closes_a_supplied_reference_handle",
+    "tests.test_angle2a_matchup_independence.TestMatchupWithSharedReferenceHandle.test_supplying_reference_handle_skips_training_a_second_reference"
+  ],
+  "failures": 0,
+  "errors": 0,
+  "skips": [],
+  "unexpected_successes": 0
+}

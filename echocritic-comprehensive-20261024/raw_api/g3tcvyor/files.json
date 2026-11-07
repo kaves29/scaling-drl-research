@@ -1,0 +1,27 @@
+[
+  {
+    "name": "config.yaml",
+    "size": 11485,
+    "md5": "Nsu96LknEQzQ9wh6jtYHCA=="
+  },
+  {
+    "name": "output.log",
+    "size": 113300,
+    "md5": "oJMPm3TohkTdOjcNx99GBg=="
+  },
+  {
+    "name": "requirements.txt",
+    "size": 2350,
+    "md5": "F5Ehgu0UZUaIpzgvYIK0wA=="
+  },
+  {
+    "name": "wandb-metadata.json",
+    "size": 5567,
+    "md5": "1O08VNZlTg/xa09m4dTjdw=="
+  },
+  {
+    "name": "wandb-summary.json",
+    "size": 2829,
+    "md5": "7P+bnNvClxmf9OGKfEU6BA=="
+  }
+]

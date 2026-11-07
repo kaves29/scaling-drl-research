@@ -1,0 +1,23 @@
+{
+  "module": "tests.test_angle2a_r_calibration",
+  "source_hash": "52468342b4543cf79e93cc96c34167ddc17c8dd811e7e45949cacf4b5cee0c6b",
+  "success": true,
+  "tests_run": 11,
+  "test_ids": [
+    "tests.test_angle2a_r_calibration.TestCalibrateRRealEnvironment.test_load_or_calibrate_caches_and_is_keyed_per_environment",
+    "tests.test_angle2a_r_calibration.TestCalibrateRRealEnvironment.test_real_calibration_produces_sensible_structure",
+    "tests.test_angle2a_r_calibration.TestCalibrateRRealEnvironment.test_save_and_load_round_trip",
+    "tests.test_angle2a_r_calibration.TestSigmaRolloutNotPooled.test_single_pair_still_works",
+    "tests.test_angle2a_r_calibration.TestSigmaRolloutNotPooled.test_within_pair_std_used_not_pooled_across_pairs",
+    "tests.test_angle2a_r_calibration.TestSolveCalibratedR.test_cap_binds_and_flags_underpowered",
+    "tests.test_angle2a_r_calibration.TestSolveCalibratedR.test_cap_does_not_bind_when_unnecessary",
+    "tests.test_angle2a_r_calibration.TestSolveCalibratedR.test_larger_sigma_requires_larger_r",
+    "tests.test_angle2a_r_calibration.TestSolveCalibratedR.test_matches_closed_form",
+    "tests.test_angle2a_r_calibration.TestSolveCalibratedR.test_nonpositive_threshold_raises",
+    "tests.test_angle2a_r_calibration.TestSolveCalibratedR.test_smaller_threshold_requires_larger_r"
+  ],
+  "failures": 0,
+  "errors": 0,
+  "skips": [],
+  "unexpected_successes": 0
+}

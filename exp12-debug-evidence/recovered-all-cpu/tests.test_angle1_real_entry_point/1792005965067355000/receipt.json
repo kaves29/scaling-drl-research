@@ -1,0 +1,29 @@
+{
+  "module": "tests.test_angle1_real_entry_point",
+  "source_hash": "c07ca4fb99dc3308d1e6fed0f827f0bebd6442ded04ccc6e755cbde6ba77c455",
+  "success": false,
+  "tests_run": 17,
+  "test_ids": [
+    "tests.test_angle1_real_entry_point.ActorGradCosineCadenceTest.test_cadence_and_window_average",
+    "tests.test_angle1_real_entry_point.ActorGradCosineCadenceTest.test_cosine_branch_executes_only_on_cadence_steps",
+    "tests.test_angle1_real_entry_point.Angle1RealEntryPointTest.test_completed_run_refuses_to_run_again",
+    "tests.test_angle1_real_entry_point.Angle1RealEntryPointTest.test_critic_degradation_onset_detection_writes_a_real_ledger_row",
+    "tests.test_angle1_real_entry_point.Angle1RealEntryPointTest.test_deferred_update_metrics_are_bit_identical_to_eager",
+    "tests.test_angle1_real_entry_point.Angle1RealEntryPointTest.test_multienv_variant_preserves_utd_and_leaves_defaults_alone",
+    "tests.test_angle1_real_entry_point.Angle1RealEntryPointTest.test_multienv_variant_rejects_save_probe_capture_snapshot",
+    "tests.test_angle1_real_entry_point.Angle1RealEntryPointTest.test_plain_run_completes_and_logs_csv",
+    "tests.test_angle1_real_entry_point.Angle1RealEntryPointTest.test_pool_root_is_absolute_and_repo_anchored",
+    "tests.test_angle1_real_entry_point.Angle1RealEntryPointTest.test_pool_seed_run_writes_only_under_the_pool_experiment",
+    "tests.test_angle1_real_entry_point.Angle1RealEntryPointTest.test_pool_snapshots_are_keyed_by_architecture",
+    "tests.test_angle1_real_entry_point.Angle1RealEntryPointTest.test_resumed_run_continues_the_replay_sampling_rng_stream",
+    "tests.test_angle1_real_entry_point.Angle1RealEntryPointTest.test_run_killed_after_a_checkpoint_resumes_and_marks_done",
+    "tests.test_angle1_real_entry_point.Angle1RealEntryPointTest.test_save_probe_capture_snapshot_produces_a_loadable_pool_snapshot",
+    "tests.test_angle1_real_entry_point.Angle1RealEntryPointTest.test_snapshot_run_killed_and_resumed_keeps_the_whole_runs_probe_data",
+    "tests.test_angle1_real_entry_point.Angle1RealEntryPointTest.test_snapshot_run_refuses_to_resume_a_checkpoint_without_probe_data",
+    "tests.test_angle1_real_entry_point.ScanFusionEquivalenceTest.test_fused_update_matches_sequential_per_call"
+  ],
+  "failures": 0,
+  "errors": 15,
+  "skips": [],
+  "unexpected_successes": 0
+}

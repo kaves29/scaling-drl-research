@@ -1,0 +1,537 @@
+test_dmc (tests.test_exp12_pipeline.PipelinePerSuiteTest.test_dmc) ... /Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/matplotlib/_fontconfig_pattern.py:64: PyparsingDeprecationWarning: 'oneOf' deprecated - use 'one_of'
+  prop = Group((name + Suppress("=") + comma_separated(value)) | oneOf(_CONSTANTS))
+/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/matplotlib/_fontconfig_pattern.py:85: PyparsingDeprecationWarning: 'parseString' deprecated - use 'parse_string'
+  parse = parser.parseString(pattern)
+/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/matplotlib/_fontconfig_pattern.py:89: PyparsingDeprecationWarning: 'resetCache' deprecated - use 'reset_cache'
+  parser.resetCache()
+/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/matplotlib/_fontconfig_pattern.py:85: PyparsingDeprecationWarning: 'parseString' deprecated - use 'parse_string'
+  parse = parser.parseString(pattern)
+/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/matplotlib/_fontconfig_pattern.py:89: PyparsingDeprecationWarning: 'resetCache' deprecated - use 'reset_cache'
+  parser.resetCache()
+/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/matplotlib/_fontconfig_pattern.py:85: PyparsingDeprecationWarning: 'parseString' deprecated - use 'parse_string'
+  parse = parser.parseString(pattern)
+/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/matplotlib/_fontconfig_pattern.py:89: PyparsingDeprecationWarning: 'resetCache' deprecated - use 'reset_cache'
+  parser.resetCache()
+/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/matplotlib/_fontconfig_pattern.py:85: PyparsingDeprecationWarning: 'parseString' deprecated - use 'parse_string'
+  parse = parser.parseString(pattern)
+/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/matplotlib/_fontconfig_pattern.py:89: PyparsingDeprecationWarning: 'resetCache' deprecated - use 'reset_cache'
+  parser.resetCache()
+/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/matplotlib/_fontconfig_pattern.py:85: PyparsingDeprecationWarning: 'parseString' deprecated - use 'parse_string'
+  parse = parser.parseString(pattern)
+/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/matplotlib/_fontconfig_pattern.py:89: PyparsingDeprecationWarning: 'resetCache' deprecated - use 'reset_cache'
+  parser.resetCache()
+/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/matplotlib/_fontconfig_pattern.py:85: PyparsingDeprecationWarning: 'parseString' deprecated - use 'parse_string'
+  parse = parser.parseString(pattern)
+/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/matplotlib/_fontconfig_pattern.py:89: PyparsingDeprecationWarning: 'resetCache' deprecated - use 'reset_cache'
+  parser.resetCache()
+/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/matplotlib/_mathtext.py:45: PyparsingDeprecationWarning: 'enablePackrat' deprecated - use 'enable_packrat'
+  ParserElement.enablePackrat()
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+ total params: 1.54K
+ total params: 3.31K
+[exp1] fork state saved at interaction_step 100 in 0.2 s
+/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/orbax/checkpoint/type_handlers.py:1475: UserWarning: Couldn't find sharding info under RestoreArgs. Populating sharding info from sharding file. Please note restoration time will be slightly increased due to reading from file instead of directly from RestoreArgs.
+  warnings.warn(
+ total params: 3.31K
+[exp1] restored interaction_step 100 from /var/folders/ms/h3zjmq652jvg08wcslr2z3t80000gn/T/tmpjjxhaa22/scaled/fork/state/step_000000100_cda19456 in 0.1 s
+[control] post-fork evaluation 0: 0.2 s for 1 episodes
+[control] post-fork evaluation 1: 0.0 s for 1 episodes
+[control] post-fork evaluation 2: 0.0 s for 1 episodes
+[control] post-fork evaluation 3: 0.0 s for 1 episodes
+[control] post-fork evaluation 4: 0.0 s for 1 episodes
+[control] post-fork evaluation 5: 0.0 s for 1 episodes
+[control] post-fork evaluation 6: 0.0 s for 1 episodes
+[control] post-fork evaluation 7: 0.0 s for 1 episodes
+[control] post-fork evaluation 8: 0.0 s for 1 episodes
+[control] post-fork evaluation 9: 0.0 s for 1 episodes
+[control] post-fork evaluation 10: 0.0 s for 1 episodes
+[control] post-fork evaluation 11: 0.0 s for 1 episodes
+[control] post-fork evaluation 12: 0.0 s for 1 episodes
+[control] post-fork evaluation 13: 0.0 s for 1 episodes
+[control] post-fork evaluation 14: 0.0 s for 1 episodes
+[control] post-fork evaluation 15: 0.0 s for 1 episodes
+[control] post-fork evaluation 16: 0.0 s for 1 episodes
+[control] post-fork evaluation 17: 0.0 s for 1 episodes
+[control] post-fork evaluation 18: 0.0 s for 1 episodes
+[control] post-fork evaluation 19: 0.0 s for 1 episodes
+[control] post-fork evaluation 20: 0.0 s for 1 episodes
+[control] post-fork evaluation 21: 0.0 s for 1 episodes
+[control] post-fork evaluation 22: 0.0 s for 1 episodes
+[control] post-fork evaluation 23: 0.0 s for 1 episodes
+[control] post-fork evaluation 24: 0.0 s for 1 episodes
+[control] post-fork evaluation 25: 0.0 s for 1 episodes
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/orbax/checkpoint/type_handlers.py:1475: UserWarning: Couldn't find sharding info under RestoreArgs. Populating sharding info from sharding file. Please note restoration time will be slightly increased due to reading from file instead of directly from RestoreArgs.
+  warnings.warn(
+ total params: 3.31K
+[exp2_arm] fork state restored in 0.1 s
+[injected] post-fork evaluation 0: 0.2 s for 1 episodes
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+[injected] post-fork evaluation 1: 0.0 s for 1 episodes
+[injected] post-fork evaluation 2: 0.0 s for 1 episodes
+[injected] post-fork evaluation 3: 0.0 s for 1 episodes
+[injected] post-fork evaluation 4: 0.0 s for 1 episodes
+[injected] post-fork evaluation 5: 0.0 s for 1 episodes
+[injected] post-fork evaluation 6: 0.0 s for 1 episodes
+[injected] post-fork evaluation 7: 0.0 s for 1 episodes
+[injected] post-fork evaluation 8: 0.0 s for 1 episodes
+[injected] post-fork evaluation 9: 0.1 s for 1 episodes
+[injected] post-fork evaluation 10: 0.0 s for 1 episodes
+[injected] post-fork evaluation 11: 0.0 s for 1 episodes
+[injected] post-fork evaluation 12: 0.0 s for 1 episodes
+[injected] post-fork evaluation 13: 0.0 s for 1 episodes
+[injected] post-fork evaluation 14: 0.0 s for 1 episodes
+[injected] post-fork evaluation 15: 0.0 s for 1 episodes
+[injected] post-fork evaluation 16: 0.0 s for 1 episodes
+[injected] post-fork evaluation 17: 0.0 s for 1 episodes
+[injected] post-fork evaluation 18: 0.0 s for 1 episodes
+[injected] post-fork evaluation 19: 0.0 s for 1 episodes
+[injected] post-fork evaluation 20: 0.0 s for 1 episodes
+[injected] post-fork evaluation 21: 0.0 s for 1 episodes
+[injected] post-fork evaluation 22: 0.0 s for 1 episodes
+[injected] post-fork evaluation 23: 0.0 s for 1 episodes
+[injected] post-fork evaluation 24: 0.1 s for 1 episodes
+[injected] post-fork evaluation 25: 0.0 s for 1 episodes
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+WARNING:matplotlib.style.core:In /Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/matplotlib/mpl-data/stylelib/classic.mplstyle: 'parseString' deprecated - use 'parse_string'
+WARNING:matplotlib.style.core:In /Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/matplotlib/mpl-data/stylelib/classic.mplstyle: 'resetCache' deprecated - use 'reset_cache'
+WARNING:matplotlib.style.core:In /Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/matplotlib/mpl-data/stylelib/classic.mplstyle: 'parseString' deprecated - use 'parse_string'
+WARNING:matplotlib.style.core:In /Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/matplotlib/mpl-data/stylelib/classic.mplstyle: 'resetCache' deprecated - use 'reset_cache'
+WARNING:matplotlib.style.core:In /Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/matplotlib/mpl-data/stylelib/classic.mplstyle: 'parseString' deprecated - use 'parse_string'
+WARNING:matplotlib.style.core:In /Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/matplotlib/mpl-data/stylelib/classic.mplstyle: 'resetCache' deprecated - use 'reset_cache'
+WARNING:matplotlib.style.core:In /Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/matplotlib/mpl-data/stylelib/classic.mplstyle: 'parseString' deprecated - use 'parse_string'
+WARNING:matplotlib.style.core:In /Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/matplotlib/mpl-data/stylelib/classic.mplstyle: 'resetCache' deprecated - use 'reset_cache'
+ok
+test_humanoid_bench (tests.test_exp12_pipeline.PipelinePerSuiteTest.test_humanoid_bench) ... skipped 'needs humanoid_bench (venv_hb; MUJOCO_GL=PYOPENGL_PLATFORM=egl or osmesa)'
+test_myosuite (tests.test_exp12_pipeline.PipelinePerSuiteTest.test_myosuite) ... /Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/gymnasium/spaces/box.py:234: UserWarning: [33mWARN: Box low's precision lowered by casting to float32, current low.dtype=float64[0m
+  gym.logger.warn(
+/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/gymnasium/spaces/box.py:304: UserWarning: [33mWARN: Box high's precision lowered by casting to float32, current high.dtype=float64[0m
+  gym.logger.warn(
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/gymnasium/spaces/box.py:234: UserWarning: [33mWARN: Box low's precision lowered by casting to float32, current low.dtype=float64[0m
+  gym.logger.warn(
+/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/gymnasium/spaces/box.py:304: UserWarning: [33mWARN: Box high's precision lowered by casting to float32, current high.dtype=float64[0m
+  gym.logger.warn(
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+MyoSuite:> Registering Myo Envs
+    MyoSuite: A contact-rich simulation suite for musculoskeletal motor control
+        Vittorio Caggiano, Huawei Wang, Guillaume Durandau, Massimo Sartori, Vikash Kumar
+        L4DC-2019 | https://sites.google.com/view/myosuite
+    
+ total params: 4.05K
+ total params: 6.90K
+[exp1] fork state saved at interaction_step 100 in 0.2 s
+/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/gymnasium/spaces/box.py:234: UserWarning: [33mWARN: Box low's precision lowered by casting to float32, current low.dtype=float64[0m
+  gym.logger.warn(
+/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/gymnasium/spaces/box.py:304: UserWarning: [33mWARN: Box high's precision lowered by casting to float32, current high.dtype=float64[0m
+  gym.logger.warn(
+/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/orbax/checkpoint/type_handlers.py:1475: UserWarning: Couldn't find sharding info under RestoreArgs. Populating sharding info from sharding file. Please note restoration time will be slightly increased due to reading from file instead of directly from RestoreArgs.
+  warnings.warn(
+ total params: 6.90K
+[exp1] restored interaction_step 100 from /var/folders/ms/h3zjmq652jvg08wcslr2z3t80000gn/T/tmpjeizg5g5/scaled/fork/state/step_000000100_b7e3f293 in 0.1 s
+/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/gymnasium/spaces/box.py:234: UserWarning: [33mWARN: Box low's precision lowered by casting to float32, current low.dtype=float64[0m
+  gym.logger.warn(
+/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/gymnasium/spaces/box.py:304: UserWarning: [33mWARN: Box high's precision lowered by casting to float32, current high.dtype=float64[0m
+  gym.logger.warn(
+[control] post-fork evaluation 0: 0.3 s for 1 episodes
+/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/gymnasium/spaces/box.py:234: UserWarning: [33mWARN: Box low's precision lowered by casting to float32, current low.dtype=float64[0m
+  gym.logger.warn(
+/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/gymnasium/spaces/box.py:304: UserWarning: [33mWARN: Box high's precision lowered by casting to float32, current high.dtype=float64[0m
+  gym.logger.warn(
+[control] post-fork evaluation 1: 0.1 s for 1 episodes
+[control] post-fork evaluation 2: 0.0 s for 1 episodes
+[control] post-fork evaluation 3: 0.0 s for 1 episodes
+[control] post-fork evaluation 4: 0.0 s for 1 episodes
+/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/gymnasium/spaces/box.py:234: UserWarning: [33mWARN: Box low's precision lowered by casting to float32, current low.dtype=float64[0m
+  gym.logger.warn(
+/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/gymnasium/spaces/box.py:304: UserWarning: [33mWARN: Box high's precision lowered by casting to float32, current high.dtype=float64[0m
+  gym.logger.warn(
+[control] post-fork evaluation 5: 0.0 s for 1 episodes
+[control] post-fork evaluation 6: 0.0 s for 1 episodes
+[control] post-fork evaluation 7: 0.0 s for 1 episodes
+[control] post-fork evaluation 8: 0.0 s for 1 episodes
+[control] post-fork evaluation 9: 0.1 s for 1 episodes
+/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/gymnasium/spaces/box.py:234: UserWarning: [33mWARN: Box low's precision lowered by casting to float32, current low.dtype=float64[0m
+  gym.logger.warn(
+/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/gymnasium/spaces/box.py:304: UserWarning: [33mWARN: Box high's precision lowered by casting to float32, current high.dtype=float64[0m
+  gym.logger.warn(
+[control] post-fork evaluation 10: 0.0 s for 1 episodes
+[control] post-fork evaluation 11: 0.1 s for 1 episodes
+[control] post-fork evaluation 12: 0.0 s for 1 episodes
+[control] post-fork evaluation 13: 0.0 s for 1 episodes
+[control] post-fork evaluation 14: 0.0 s for 1 episodes
+/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/gymnasium/spaces/box.py:234: UserWarning: [33mWARN: Box low's precision lowered by casting to float32, current low.dtype=float64[0m
+  gym.logger.warn(
+/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/gymnasium/spaces/box.py:304: UserWarning: [33mWARN: Box high's precision lowered by casting to float32, current high.dtype=float64[0m
+  gym.logger.warn(
+[control] post-fork evaluation 15: 0.0 s for 1 episodes
+[control] post-fork evaluation 16: 0.0 s for 1 episodes
+[control] post-fork evaluation 17: 0.0 s for 1 episodes
+[control] post-fork evaluation 18: 0.0 s for 1 episodes
+[control] post-fork evaluation 19: 0.0 s for 1 episodes
+/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/gymnasium/spaces/box.py:234: UserWarning: [33mWARN: Box low's precision lowered by casting to float32, current low.dtype=float64[0m
+  gym.logger.warn(
+/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/gymnasium/spaces/box.py:304: UserWarning: [33mWARN: Box high's precision lowered by casting to float32, current high.dtype=float64[0m
+  gym.logger.warn(
+[control] post-fork evaluation 20: 0.0 s for 1 episodes
+[control] post-fork evaluation 21: 0.0 s for 1 episodes
+[control] post-fork evaluation 22: 0.1 s for 1 episodes
+[control] post-fork evaluation 23: 0.0 s for 1 episodes
+[control] post-fork evaluation 24: 0.0 s for 1 episodes
+/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/gymnasium/spaces/box.py:234: UserWarning: [33mWARN: Box low's precision lowered by casting to float32, current low.dtype=float64[0m
+  gym.logger.warn(
+/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/gymnasium/spaces/box.py:304: UserWarning: [33mWARN: Box high's precision lowered by casting to float32, current high.dtype=float64[0m
+  gym.logger.warn(
+[control] post-fork evaluation 25: 0.0 s for 1 episodes
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/gymnasium/spaces/box.py:234: UserWarning: [33mWARN: Box low's precision lowered by casting to float32, current low.dtype=float64[0m
+  gym.logger.warn(
+/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/gymnasium/spaces/box.py:304: UserWarning: [33mWARN: Box high's precision lowered by casting to float32, current high.dtype=float64[0m
+  gym.logger.warn(
+/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/orbax/checkpoint/type_handlers.py:1475: UserWarning: Couldn't find sharding info under RestoreArgs. Populating sharding info from sharding file. Please note restoration time will be slightly increased due to reading from file instead of directly from RestoreArgs.
+  warnings.warn(
+ total params: 6.90K
+[exp2_arm] fork state restored in 0.1 s
+/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/gymnasium/spaces/box.py:234: UserWarning: [33mWARN: Box low's precision lowered by casting to float32, current low.dtype=float64[0m
+  gym.logger.warn(
+/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/gymnasium/spaces/box.py:304: UserWarning: [33mWARN: Box high's precision lowered by casting to float32, current high.dtype=float64[0m
+  gym.logger.warn(
+[injected] post-fork evaluation 0: 0.4 s for 1 episodes
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/gymnasium/spaces/box.py:234: UserWarning: [33mWARN: Box low's precision lowered by casting to float32, current low.dtype=float64[0m
+  gym.logger.warn(
+/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/gymnasium/spaces/box.py:304: UserWarning: [33mWARN: Box high's precision lowered by casting to float32, current high.dtype=float64[0m
+  gym.logger.warn(
+[injected] post-fork evaluation 1: 0.1 s for 1 episodes
+[injected] post-fork evaluation 2: 0.1 s for 1 episodes
+[injected] post-fork evaluation 3: 0.0 s for 1 episodes
+[injected] post-fork evaluation 4: 0.0 s for 1 episodes
+/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/gymnasium/spaces/box.py:234: UserWarning: [33mWARN: Box low's precision lowered by casting to float32, current low.dtype=float64[0m
+  gym.logger.warn(
+/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/gymnasium/spaces/box.py:304: UserWarning: [33mWARN: Box high's precision lowered by casting to float32, current high.dtype=float64[0m
+  gym.logger.warn(
+[injected] post-fork evaluation 5: 0.0 s for 1 episodes
+[injected] post-fork evaluation 6: 0.0 s for 1 episodes
+[injected] post-fork evaluation 7: 0.0 s for 1 episodes
+[injected] post-fork evaluation 8: 0.0 s for 1 episodes
+[injected] post-fork evaluation 9: 0.0 s for 1 episodes
+/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/gymnasium/spaces/box.py:234: UserWarning: [33mWARN: Box low's precision lowered by casting to float32, current low.dtype=float64[0m
+  gym.logger.warn(
+/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/gymnasium/spaces/box.py:304: UserWarning: [33mWARN: Box high's precision lowered by casting to float32, current high.dtype=float64[0m
+  gym.logger.warn(
+[injected] post-fork evaluation 10: 0.0 s for 1 episodes
+[injected] post-fork evaluation 11: 0.0 s for 1 episodes
+[injected] post-fork evaluation 12: 0.0 s for 1 episodes
+[injected] post-fork evaluation 13: 0.0 s for 1 episodes
+[injected] post-fork evaluation 14: 0.0 s for 1 episodes
+/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/gymnasium/spaces/box.py:234: UserWarning: [33mWARN: Box low's precision lowered by casting to float32, current low.dtype=float64[0m
+  gym.logger.warn(
+/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/gymnasium/spaces/box.py:304: UserWarning: [33mWARN: Box high's precision lowered by casting to float32, current high.dtype=float64[0m
+  gym.logger.warn(
+[injected] post-fork evaluation 15: 0.0 s for 1 episodes
+[injected] post-fork evaluation 16: 0.1 s for 1 episodes
+[injected] post-fork evaluation 17: 0.1 s for 1 episodes
+[injected] post-fork evaluation 18: 0.0 s for 1 episodes
+[injected] post-fork evaluation 19: 0.0 s for 1 episodes
+/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/gymnasium/spaces/box.py:234: UserWarning: [33mWARN: Box low's precision lowered by casting to float32, current low.dtype=float64[0m
+  gym.logger.warn(
+/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/gymnasium/spaces/box.py:304: UserWarning: [33mWARN: Box high's precision lowered by casting to float32, current high.dtype=float64[0m
+  gym.logger.warn(
+[injected] post-fork evaluation 20: 0.0 s for 1 episodes
+[injected] post-fork evaluation 21: 0.0 s for 1 episodes
+[injected] post-fork evaluation 22: 0.0 s for 1 episodes
+[injected] post-fork evaluation 23: 0.0 s for 1 episodes
+[injected] post-fork evaluation 24: 0.0 s for 1 episodes
+/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/gymnasium/spaces/box.py:234: UserWarning: [33mWARN: Box low's precision lowered by casting to float32, current low.dtype=float64[0m
+  gym.logger.warn(
+/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/gymnasium/spaces/box.py:304: UserWarning: [33mWARN: Box high's precision lowered by casting to float32, current high.dtype=float64[0m
+  gym.logger.warn(
+[injected] post-fork evaluation 25: 0.0 s for 1 episodes
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/lib/python3.12/site-packages/arch/bootstrap/base.py:402: FutureWarning: random_state is deprecated and will be removed in a future version. The default random number generator is changing to a NumPy Generator. To continue using RandomState, please directly pass a RandomState instance using the ``generator`` keyword argument.
+  warnings.warn(
+ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 58.695s
+
+OK (skipped=1)

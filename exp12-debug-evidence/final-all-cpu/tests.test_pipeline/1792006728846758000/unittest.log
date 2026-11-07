@@ -1,0 +1,20 @@
+test_disabled_flags_write_nothing (tests.test_pipeline.TestPostHocPipeline.test_disabled_flags_write_nothing) ... ok
+test_end_to_end_success_path (tests.test_pipeline.TestPostHocPipeline.test_end_to_end_success_path) ... /Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/utils/run_metadata.py:231: UserWarning: onset analysis of angle_1_D2W512_reacher-hard_seed42: no run metadata for ['angle_1_D2W512_reacher-hard_seed1', 'angle_1_D2W512_reacher-hard_seed2', 'angle_1_D2W512_reacher-hard_seed3', 'angle_1_D2W512_reacher-hard_seed4', 'angle_1_D2W512_reacher-hard_seed42', 'angle_1_D2W512_reacher-hard_seed5'] (produced before run metadata was recorded); their settings are not machine-verified.
+  warnings.warn(
+ok
+test_missing_baseline_produces_needs_manual_review_not_crash (tests.test_pipeline.TestPostHocPipeline.test_missing_baseline_produces_needs_manual_review_not_crash) ... /Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/utils/run_metadata.py:231: UserWarning: onset analysis of angle_1_D2W512_reacher-hard_seed99: no run metadata for ['angle_1_D2W512_reacher-hard_seed1', 'angle_1_D2W512_reacher-hard_seed2', 'angle_1_D2W512_reacher-hard_seed3', 'angle_1_D2W512_reacher-hard_seed4', 'angle_1_D2W512_reacher-hard_seed5', 'angle_1_D2W512_reacher-hard_seed99'] (produced before run metadata was recorded); their settings are not machine-verified.
+  warnings.warn(
+/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/analysis/pipeline.py:138: UserWarning: Critic degradation onset analysis failed for angle_1_D2W512_reacher-hard_seed99: No persisted 'td_error_variance' metrics found for baseline run 'angle_1_D2W512_reacher-hard_seed1'. Did training run with critic_degradation=true (or pathology_prop=true) for this baseline seed?
+  warnings.warn(f"Critic degradation onset analysis failed for {run_identity.run_key}: {e}")
+ok
+test_no_persisted_metrics_produces_needs_manual_review (tests.test_pipeline.TestPostHocPipeline.test_no_persisted_metrics_produces_needs_manual_review) ... /Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/utils/run_metadata.py:231: UserWarning: onset analysis of angle_1_D2W512_reacher-hard_seed123: no run metadata for ['angle_1_D2W512_reacher-hard_seed1', 'angle_1_D2W512_reacher-hard_seed123', 'angle_1_D2W512_reacher-hard_seed2', 'angle_1_D2W512_reacher-hard_seed3', 'angle_1_D2W512_reacher-hard_seed4', 'angle_1_D2W512_reacher-hard_seed5'] (produced before run metadata was recorded); their settings are not machine-verified.
+  warnings.warn(
+ok
+test_pathology_prop_without_critic_degradation_flag_is_needs_manual_review (tests.test_pipeline.TestPostHocPipeline.test_pathology_prop_without_critic_degradation_flag_is_needs_manual_review) ... /Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/utils/run_metadata.py:231: UserWarning: onset analysis of angle_1_D2W512_reacher-hard_seed7: no run metadata for ['angle_1_D2W512_reacher-hard_seed1', 'angle_1_D2W512_reacher-hard_seed2', 'angle_1_D2W512_reacher-hard_seed3', 'angle_1_D2W512_reacher-hard_seed4', 'angle_1_D2W512_reacher-hard_seed5', 'angle_1_D2W512_reacher-hard_seed7'] (produced before run metadata was recorded); their settings are not machine-verified.
+  warnings.warn(
+ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.038s
+
+OK

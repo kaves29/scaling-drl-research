@@ -1,0 +1,22 @@
+test_calibrate_accepts_matching_logging_interval (tests.test_baseline_calibration.TestBaselineCalibration.test_calibrate_accepts_matching_logging_interval) ... ok
+test_calibrate_aligns_on_intersection_of_steps_only (tests.test_baseline_calibration.TestBaselineCalibration.test_calibrate_aligns_on_intersection_of_steps_only) ... ok
+test_calibrate_computes_percentile_at_each_aligned_step (tests.test_baseline_calibration.TestBaselineCalibration.test_calibrate_computes_percentile_at_each_aligned_step) ... ok
+test_calibrate_raises_clear_error_when_a_seed_has_no_metrics (tests.test_baseline_calibration.TestBaselineCalibration.test_calibrate_raises_clear_error_when_a_seed_has_no_metrics) ... ok
+test_calibrate_rejects_mismatched_logging_interval (tests.test_baseline_calibration.TestBaselineCalibration.test_calibrate_rejects_mismatched_logging_interval) ... ok
+test_calibrate_rejects_mixed_environments (tests.test_baseline_calibration.TestBaselineCalibration.test_calibrate_rejects_mixed_environments) ... ok
+test_calibrate_requires_exactly_five_seeds_rejects_four (tests.test_baseline_calibration.TestBaselineCalibration.test_calibrate_requires_exactly_five_seeds_rejects_four) ... ok
+test_calibrate_requires_exactly_five_seeds_rejects_one (tests.test_baseline_calibration.TestBaselineCalibration.test_calibrate_requires_exactly_five_seeds_rejects_one) ... ok
+test_calibrate_requires_exactly_five_seeds_rejects_six (tests.test_baseline_calibration.TestBaselineCalibration.test_calibrate_requires_exactly_five_seeds_rejects_six) ... ok
+test_force_recompute_bypasses_cache_even_if_fresh (tests.test_baseline_calibration.TestBaselineCalibration.test_force_recompute_bypasses_cache_even_if_fresh) ... ok
+test_load_baseline_returns_none_when_not_yet_calibrated (tests.test_baseline_calibration.TestBaselineCalibration.test_load_baseline_returns_none_when_not_yet_calibrated) ... ok
+test_load_or_calibrate_recomputes_when_source_metrics_change (tests.test_baseline_calibration.TestBaselineCalibration.test_load_or_calibrate_recomputes_when_source_metrics_change) ... /Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/analysis/baseline_calibration.py:290: UserWarning: Cached baseline for architecture='D2W512', metric='td_error_variance' is stale (underlying baseline seed metrics changed since it was computed); recalibrating automatically.
+  warnings.warn(
+ok
+test_load_or_calibrate_uses_cache_when_source_unchanged (tests.test_baseline_calibration.TestBaselineCalibration.test_load_or_calibrate_uses_cache_when_source_unchanged) ... ok
+test_save_and_load_baseline_round_trip (tests.test_baseline_calibration.TestBaselineCalibration.test_save_and_load_baseline_round_trip) ... ok
+test_two_environments_get_distinct_not_pooled_thresholds (tests.test_baseline_calibration.TestBaselineCalibration.test_two_environments_get_distinct_not_pooled_thresholds) ... ok
+
+----------------------------------------------------------------------
+Ran 15 tests in 0.080s
+
+OK

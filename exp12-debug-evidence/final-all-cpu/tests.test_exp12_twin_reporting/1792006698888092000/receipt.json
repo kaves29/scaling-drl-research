@@ -1,0 +1,14 @@
+{
+  "module": "tests.test_exp12_twin_reporting",
+  "source_hash": "52468342b4543cf79e93cc96c34167ddc17c8dd811e7e45949cacf4b5cee0c6b",
+  "success": true,
+  "tests_run": 2,
+  "test_ids": [
+    "tests.test_exp12_twin_reporting.TwinReportingTest.test_legacy_single_header_loads_without_invented_q_measurements",
+    "tests.test_exp12_twin_reporting.TwinReportingTest.test_per_q_csv_and_individual_curve_values"
+  ],
+  "failures": 0,
+  "errors": 0,
+  "skips": [],
+  "unexpected_successes": 0
+}

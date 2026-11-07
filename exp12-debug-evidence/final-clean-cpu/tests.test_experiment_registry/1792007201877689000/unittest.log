@@ -1,0 +1,14 @@
+test_angle_2_a_entry_point_module_is_not_named_angle_2a (tests.test_experiment_registry.TestExperimentPackageImports.test_angle_2_a_entry_point_module_is_not_named_angle_2a) ... ok
+test_baseline_calibration_pool_runs_angle_1 (tests.test_experiment_registry.TestExperimentPackageImports.test_baseline_calibration_pool_runs_angle_1) ... ok
+test_both_angle_1_and_angle_2_a_are_registered_after_import (tests.test_experiment_registry.TestExperimentPackageImports.test_both_angle_1_and_angle_2_a_are_registered_after_import) ... ok
+test_experiments_package_imports_without_error (tests.test_experiment_registry.TestExperimentPackageImports.test_experiments_package_imports_without_error) ... ok
+test_future_experiment_is_trivially_addable (tests.test_experiment_registry.TestExperimentRegistry.test_future_experiment_is_trivially_addable) ... ok
+test_known_experiments_are_registered (tests.test_experiment_registry.TestExperimentRegistry.test_known_experiments_are_registered) ... ok
+test_re_registering_same_function_is_idempotent (tests.test_experiment_registry.TestExperimentRegistry.test_re_registering_same_function_is_idempotent) ... ok
+test_registering_same_name_twice_with_different_fn_raises (tests.test_experiment_registry.TestExperimentRegistry.test_registering_same_name_twice_with_different_fn_raises) ... ok
+test_unknown_experiment_raises_with_available_list (tests.test_experiment_registry.TestExperimentRegistry.test_unknown_experiment_raises_with_available_list) ... ok
+
+----------------------------------------------------------------------
+Ran 9 tests in 0.001s
+
+OK

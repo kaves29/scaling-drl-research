@@ -1,0 +1,24 @@
+{
+  "module": "tests.test_angle2a_probes",
+  "source_hash": "c07ca4fb99dc3308d1e6fed0f827f0bebd6442ded04ccc6e755cbde6ba77c455",
+  "success": true,
+  "tests_run": 12,
+  "test_ids": [
+    "tests.test_angle2a_probes.TestCriticEvaluation.test_both_critics_evaluated_on_every_probe",
+    "tests.test_angle2a_probes.TestCriticEvaluation.test_off_diagonal_values_are_retained_not_discarded",
+    "tests.test_angle2a_probes.TestDiagonalErrors.test_error_calculation_matches_synthetic_values",
+    "tests.test_angle2a_probes.TestDiagonalErrors.test_error_never_crosses_actor_critic_pairing",
+    "tests.test_angle2a_probes.TestDiagonalErrors.test_missing_prerequisites_raises",
+    "tests.test_angle2a_probes.TestMonteCarloRollouts.test_continuation_uses_source_agents_actor_only",
+    "tests.test_angle2a_probes.TestMonteCarloRollouts.test_exactly_fifteen_rollouts_per_probe",
+    "tests.test_angle2a_probes.TestMonteCarloRollouts.test_forced_first_action_is_used",
+    "tests.test_angle2a_probes.TestProbeSampling.test_exactly_ten_probes_per_source",
+    "tests.test_angle2a_probes.TestProbeSampling.test_insufficient_transitions_raises_instead_of_sampling_with_replacement",
+    "tests.test_angle2a_probes.TestProbeSampling.test_probes_never_mix_sources_buffers",
+    "tests.test_angle2a_probes.TestProbeSampling.test_source_labels_correct_and_states_actions_preserved"
+  ],
+  "failures": 0,
+  "errors": 0,
+  "skips": [],
+  "unexpected_successes": 0
+}

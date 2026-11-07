@@ -1,0 +1,17 @@
+{
+  "module": "tests.test_angle2a_resumability",
+  "source_hash": "c07ca4fb99dc3308d1e6fed0f827f0bebd6442ded04ccc6e755cbde6ba77c455",
+  "success": false,
+  "tests_run": 5,
+  "test_ids": [
+    "tests.test_angle2a_resumability.TestMonteCarloValidationResumability.test_already_fully_done_probe_is_not_recomputed_on_resume",
+    "tests.test_angle2a_resumability.TestMonteCarloValidationResumability.test_partially_done_probe_resumes_from_the_exact_interrupted_rollout",
+    "tests.test_angle2a_resumability.TestTrainingResumability.test_no_checkpoint_dir_means_no_checkpoint_written",
+    "tests.test_angle2a_resumability.TestTrainingResumability.test_partial_run_then_resume_reaches_correct_final_step_and_preserves_earlier_state",
+    "tests.test_angle2a_resumability.TestTrainingResumability.test_resuming_an_already_fully_trained_checkpoint_is_a_no_op"
+  ],
+  "failures": 0,
+  "errors": 5,
+  "skips": [],
+  "unexpected_successes": 0
+}

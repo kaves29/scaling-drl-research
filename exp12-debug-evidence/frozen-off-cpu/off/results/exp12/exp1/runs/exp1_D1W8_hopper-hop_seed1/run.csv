@@ -1,0 +1,2 @@
+run_key,experiment,run_role,architecture,environment,seed,budget_env_steps,num_interaction_steps,num_checks,status,initial_fresh_score_iqm,final_loss_iqm,f_star_check,f_star_interaction_step,f_star_fraction,fork_interaction_step,code_commit
+exp1_D1W8_hopper-hop_seed1,exp1,confirmatory,D1W8,hopper-hop,1,800,400,20,complete,-0.2603156765302022,-0.44655366738637287,,,,,087feab341b9be1f377697668f2d1c750ec0467f

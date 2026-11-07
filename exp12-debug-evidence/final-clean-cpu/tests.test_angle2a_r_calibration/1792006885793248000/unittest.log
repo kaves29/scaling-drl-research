@@ -1,0 +1,18 @@
+test_load_or_calibrate_caches_and_is_keyed_per_environment (tests.test_angle2a_r_calibration.TestCalibrateRRealEnvironment.test_load_or_calibrate_caches_and_is_keyed_per_environment) ... ok
+test_real_calibration_produces_sensible_structure (tests.test_angle2a_r_calibration.TestCalibrateRRealEnvironment.test_real_calibration_produces_sensible_structure) ... ok
+test_save_and_load_round_trip (tests.test_angle2a_r_calibration.TestCalibrateRRealEnvironment.test_save_and_load_round_trip) ... ok
+test_single_pair_still_works (tests.test_angle2a_r_calibration.TestSigmaRolloutNotPooled.test_single_pair_still_works) ... ok
+test_within_pair_std_used_not_pooled_across_pairs (tests.test_angle2a_r_calibration.TestSigmaRolloutNotPooled.test_within_pair_std_used_not_pooled_across_pairs) ... ok
+test_cap_binds_and_flags_underpowered (tests.test_angle2a_r_calibration.TestSolveCalibratedR.test_cap_binds_and_flags_underpowered) ... ok
+test_cap_does_not_bind_when_unnecessary (tests.test_angle2a_r_calibration.TestSolveCalibratedR.test_cap_does_not_bind_when_unnecessary) ... ok
+test_larger_sigma_requires_larger_r (tests.test_angle2a_r_calibration.TestSolveCalibratedR.test_larger_sigma_requires_larger_r) ... ok
+test_matches_closed_form (tests.test_angle2a_r_calibration.TestSolveCalibratedR.test_matches_closed_form) ... ok
+test_nonpositive_threshold_raises (tests.test_angle2a_r_calibration.TestSolveCalibratedR.test_nonpositive_threshold_raises) ... ok
+test_smaller_threshold_requires_larger_r (tests.test_angle2a_r_calibration.TestSolveCalibratedR.test_smaller_threshold_requires_larger_r) ... ok
+
+----------------------------------------------------------------------
+Ran 11 tests in 26.898s
+
+OK
+[angle_2a_r_calibration] environment=cheetah-run: sigma_rollout=0.0759 threshold_95=1.0624 -> ideal_R=1 calibrated_R=1
+[angle_2a_r_calibration] environment=walker-walk: sigma_rollout=0.1268 threshold_95=2.4137 -> ideal_R=1 calibrated_R=1

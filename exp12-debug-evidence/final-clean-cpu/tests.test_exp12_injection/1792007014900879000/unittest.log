@@ -1,0 +1,13 @@
+test_gradients_reach_earlier_blocks_through_the_frozen_head (tests.test_exp12_injection.InjectionInvariantsTest.test_gradients_reach_earlier_blocks_through_the_frozen_head) ... ok
+test_head_boundary_per_label (tests.test_exp12_injection.InjectionInvariantsTest.test_head_boundary_per_label) ... ok
+test_new_copies_identical_and_freshly_initialised (tests.test_exp12_injection.InjectionInvariantsTest.test_new_copies_identical_and_freshly_initialised) ... ok
+test_optimizer_state_rules (tests.test_exp12_injection.InjectionInvariantsTest.test_optimizer_state_rules) ... ok
+test_parameter_counts (tests.test_exp12_injection.InjectionInvariantsTest.test_parameter_counts) ... ok
+test_predictions_unchanged_bit_for_bit_and_action_gradients_within_dtype_tolerance (tests.test_exp12_injection.InjectionInvariantsTest.test_predictions_unchanged_bit_for_bit_and_action_gradients_within_dtype_tolerance) ... ok
+test_target_injection_and_polyak (tests.test_exp12_injection.InjectionInvariantsTest.test_target_injection_and_polyak) ... ok
+test_training_keeps_frozen_heads_bit_identical_and_moves_trainable_parts (tests.test_exp12_injection.InjectionInvariantsTest.test_training_keeps_frozen_heads_bit_identical_and_moves_trainable_parts) ... ok
+
+----------------------------------------------------------------------
+Ran 8 tests in 13.036s
+
+OK

@@ -1,0 +1,238 @@
+test_load_or_calibrate_caches_and_is_keyed_per_environment (tests.test_angle2a_r_calibration.TestCalibrateRRealEnvironment.test_load_or_calibrate_caches_and_is_keyed_per_environment) ... ERROR
+test_real_calibration_produces_sensible_structure (tests.test_angle2a_r_calibration.TestCalibrateRRealEnvironment.test_real_calibration_produces_sensible_structure) ... ERROR
+test_save_and_load_round_trip (tests.test_angle2a_r_calibration.TestCalibrateRRealEnvironment.test_save_and_load_round_trip) ... ERROR
+test_single_pair_still_works (tests.test_angle2a_r_calibration.TestSigmaRolloutNotPooled.test_single_pair_still_works) ... ok
+test_within_pair_std_used_not_pooled_across_pairs (tests.test_angle2a_r_calibration.TestSigmaRolloutNotPooled.test_within_pair_std_used_not_pooled_across_pairs) ... ok
+test_cap_binds_and_flags_underpowered (tests.test_angle2a_r_calibration.TestSolveCalibratedR.test_cap_binds_and_flags_underpowered) ... ok
+test_cap_does_not_bind_when_unnecessary (tests.test_angle2a_r_calibration.TestSolveCalibratedR.test_cap_does_not_bind_when_unnecessary) ... ok
+test_larger_sigma_requires_larger_r (tests.test_angle2a_r_calibration.TestSolveCalibratedR.test_larger_sigma_requires_larger_r) ... ok
+test_matches_closed_form (tests.test_angle2a_r_calibration.TestSolveCalibratedR.test_matches_closed_form) ... ok
+test_nonpositive_threshold_raises (tests.test_angle2a_r_calibration.TestSolveCalibratedR.test_nonpositive_threshold_raises) ... ok
+test_smaller_threshold_requires_larger_r (tests.test_angle2a_r_calibration.TestSolveCalibratedR.test_smaller_threshold_requires_larger_r) ... ok
+
+======================================================================
+ERROR: test_load_or_calibrate_caches_and_is_keyed_per_environment (tests.test_angle2a_r_calibration.TestCalibrateRRealEnvironment.test_load_or_calibrate_caches_and_is_keyed_per_environment)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/tests/test_angle2a_r_calibration.py", line 164, in test_load_or_calibrate_caches_and_is_keyed_per_environment
+    result_a = load_or_calibrate_r(
+               ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/experiments/angle_2a/r_calibration.py", line 274, in load_or_calibrate_r
+    result = calibrate_r(
+             ^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/experiments/angle_2a/r_calibration.py", line 175, in calibrate_r
+    a_train_env, a_eval_env, a_single_env, a_buffer, a_agent, obs_space, act_space = build_agent_and_env(
+                                                                                     ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/experiments/angle_2a/agent_runner.py", line 365, in build_agent_and_env
+    agent = create_agent(
+            ^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/scale_rl/agents/__init__.py", line 25, in create_agent
+    agent = SACAgent(observation_space, action_space, cfg)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/scale_rl/agents/sac/sac_agent.py", line 458, in __init__
+    self._init_network()
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/scale_rl/agents/sac/sac_agent.py", line 471, in _init_network
+    ) = _init_sac_networks(self._observation_dim, self._action_dim, self._cfg)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/scale_rl/agents/sac/sac_agent.py", line 113, in _init_sac_networks
+    _fake_actor_variables = actor_network_def.init(rng, fake_observations)
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/scale_rl/agents/sac/sac_network.py", line 62, in __call__
+    dist = self.predictor(z, temperature)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/scale_rl/networks/policies.py", line 54, in __call__
+    dist = tfd.MultivariateNormalDiag(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<decorator-gen-324>", line 2, in __init__
+  File "/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/distribution.py", line 342, in wrapped_init
+    default_init(self_, *args, **kwargs)
+  File "/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/mvn_diag.py", line 209, in __init__
+    super(MultivariateNormalDiag, self).__init__(
+  File "<decorator-gen-234>", line 2, in __init__
+  File "/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/distribution.py", line 342, in wrapped_init
+    default_init(self_, *args, **kwargs)
+  File "/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/mvn_linear_operator.py", line 205, in __init__
+    super(MultivariateNormalLinearOperator, self).__init__(
+  File "<decorator-gen-186>", line 2, in __init__
+  File "/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/distribution.py", line 342, in wrapped_init
+    default_init(self_, *args, **kwargs)
+  File "/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/transformed_distribution.py", line 244, in __init__
+    dtype = self.bijector.forward_dtype(self.distribution.dtype)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/bijectors/bijector.py", line 1705, in forward_dtype
+    input_dtype = nest.map_structure_up_to(
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/tensorflow_probability/python/internal/backend/jax/nest.py", line 324, in map_structure_up_to
+    return map_structure_with_tuple_paths_up_to(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/tensorflow_probability/python/internal/backend/jax/nest.py", line 353, in map_structure_with_tuple_paths_up_to
+    return dm_tree.map_structure_with_path_up_to(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/tree/__init__.py", line 771, in map_structure_with_path_up_to
+    results.append(func(*path_and_values))
+                   ^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/tensorflow_probability/python/internal/backend/jax/nest.py", line 326, in <lambda>
+    lambda _, *args: func(*args),  # Discards path.
+                     ^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/bijectors/bijector.py", line 1707, in <lambda>
+    lambda x: dtype_util.convert_to_dtype(x, dtype=self.dtype),
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/internal/dtype_util.py", line 247, in convert_to_dtype
+    elif np.issctype(tensor_or_dtype):
+         ^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/numpy/__init__.py", line 763, in __getattr__
+    raise AttributeError(
+AttributeError: `np.issctype` was removed in the NumPy 2.0 release. Use `issubclass(rep, np.generic)` instead.
+--------------------
+For simplicity, JAX has removed its internal frames from the traceback of the following exception. Set JAX_TRACEBACK_FILTERING=off to include these.
+
+======================================================================
+ERROR: test_real_calibration_produces_sensible_structure (tests.test_angle2a_r_calibration.TestCalibrateRRealEnvironment.test_real_calibration_produces_sensible_structure)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/tests/test_angle2a_r_calibration.py", line 148, in test_real_calibration_produces_sensible_structure
+    result = calibrate_r(
+             ^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/experiments/angle_2a/r_calibration.py", line 175, in calibrate_r
+    a_train_env, a_eval_env, a_single_env, a_buffer, a_agent, obs_space, act_space = build_agent_and_env(
+                                                                                     ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/experiments/angle_2a/agent_runner.py", line 365, in build_agent_and_env
+    agent = create_agent(
+            ^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/scale_rl/agents/__init__.py", line 25, in create_agent
+    agent = SACAgent(observation_space, action_space, cfg)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/scale_rl/agents/sac/sac_agent.py", line 458, in __init__
+    self._init_network()
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/scale_rl/agents/sac/sac_agent.py", line 471, in _init_network
+    ) = _init_sac_networks(self._observation_dim, self._action_dim, self._cfg)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/scale_rl/agents/sac/sac_agent.py", line 113, in _init_sac_networks
+    _fake_actor_variables = actor_network_def.init(rng, fake_observations)
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/scale_rl/agents/sac/sac_network.py", line 62, in __call__
+    dist = self.predictor(z, temperature)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/scale_rl/networks/policies.py", line 54, in __call__
+    dist = tfd.MultivariateNormalDiag(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<decorator-gen-324>", line 2, in __init__
+  File "/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/distribution.py", line 342, in wrapped_init
+    default_init(self_, *args, **kwargs)
+  File "/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/mvn_diag.py", line 209, in __init__
+    super(MultivariateNormalDiag, self).__init__(
+  File "<decorator-gen-234>", line 2, in __init__
+  File "/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/distribution.py", line 342, in wrapped_init
+    default_init(self_, *args, **kwargs)
+  File "/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/mvn_linear_operator.py", line 205, in __init__
+    super(MultivariateNormalLinearOperator, self).__init__(
+  File "<decorator-gen-186>", line 2, in __init__
+  File "/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/distribution.py", line 342, in wrapped_init
+    default_init(self_, *args, **kwargs)
+  File "/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/transformed_distribution.py", line 244, in __init__
+    dtype = self.bijector.forward_dtype(self.distribution.dtype)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/bijectors/bijector.py", line 1705, in forward_dtype
+    input_dtype = nest.map_structure_up_to(
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/tensorflow_probability/python/internal/backend/jax/nest.py", line 324, in map_structure_up_to
+    return map_structure_with_tuple_paths_up_to(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/tensorflow_probability/python/internal/backend/jax/nest.py", line 353, in map_structure_with_tuple_paths_up_to
+    return dm_tree.map_structure_with_path_up_to(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/tree/__init__.py", line 771, in map_structure_with_path_up_to
+    results.append(func(*path_and_values))
+                   ^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/tensorflow_probability/python/internal/backend/jax/nest.py", line 326, in <lambda>
+    lambda _, *args: func(*args),  # Discards path.
+                     ^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/bijectors/bijector.py", line 1707, in <lambda>
+    lambda x: dtype_util.convert_to_dtype(x, dtype=self.dtype),
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/internal/dtype_util.py", line 247, in convert_to_dtype
+    elif np.issctype(tensor_or_dtype):
+         ^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/numpy/__init__.py", line 763, in __getattr__
+    raise AttributeError(
+AttributeError: `np.issctype` was removed in the NumPy 2.0 release. Use `issubclass(rep, np.generic)` instead.
+--------------------
+For simplicity, JAX has removed its internal frames from the traceback of the following exception. Set JAX_TRACEBACK_FILTERING=off to include these.
+
+======================================================================
+ERROR: test_save_and_load_round_trip (tests.test_angle2a_r_calibration.TestCalibrateRRealEnvironment.test_save_and_load_round_trip)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/tests/test_angle2a_r_calibration.py", line 208, in test_save_and_load_round_trip
+    result = calibrate_r(
+             ^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/experiments/angle_2a/r_calibration.py", line 175, in calibrate_r
+    a_train_env, a_eval_env, a_single_env, a_buffer, a_agent, obs_space, act_space = build_agent_and_env(
+                                                                                     ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/experiments/angle_2a/agent_runner.py", line 365, in build_agent_and_env
+    agent = create_agent(
+            ^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/scale_rl/agents/__init__.py", line 25, in create_agent
+    agent = SACAgent(observation_space, action_space, cfg)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/scale_rl/agents/sac/sac_agent.py", line 458, in __init__
+    self._init_network()
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/scale_rl/agents/sac/sac_agent.py", line 471, in _init_network
+    ) = _init_sac_networks(self._observation_dim, self._action_dim, self._cfg)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/scale_rl/agents/sac/sac_agent.py", line 113, in _init_sac_networks
+    _fake_actor_variables = actor_network_def.init(rng, fake_observations)
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/scale_rl/agents/sac/sac_network.py", line 62, in __call__
+    dist = self.predictor(z, temperature)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/scale_rl/networks/policies.py", line 54, in __call__
+    dist = tfd.MultivariateNormalDiag(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<decorator-gen-324>", line 2, in __init__
+  File "/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/distribution.py", line 342, in wrapped_init
+    default_init(self_, *args, **kwargs)
+  File "/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/mvn_diag.py", line 209, in __init__
+    super(MultivariateNormalDiag, self).__init__(
+  File "<decorator-gen-234>", line 2, in __init__
+  File "/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/distribution.py", line 342, in wrapped_init
+    default_init(self_, *args, **kwargs)
+  File "/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/mvn_linear_operator.py", line 205, in __init__
+    super(MultivariateNormalLinearOperator, self).__init__(
+  File "<decorator-gen-186>", line 2, in __init__
+  File "/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/distribution.py", line 342, in wrapped_init
+    default_init(self_, *args, **kwargs)
+  File "/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/distributions/transformed_distribution.py", line 244, in __init__
+    dtype = self.bijector.forward_dtype(self.distribution.dtype)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/bijectors/bijector.py", line 1705, in forward_dtype
+    input_dtype = nest.map_structure_up_to(
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/tensorflow_probability/python/internal/backend/jax/nest.py", line 324, in map_structure_up_to
+    return map_structure_with_tuple_paths_up_to(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/tensorflow_probability/python/internal/backend/jax/nest.py", line 353, in map_structure_with_tuple_paths_up_to
+    return dm_tree.map_structure_with_path_up_to(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/tree/__init__.py", line 771, in map_structure_with_path_up_to
+    results.append(func(*path_and_values))
+                   ^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/tensorflow_probability/python/internal/backend/jax/nest.py", line 326, in <lambda>
+    lambda _, *args: func(*args),  # Discards path.
+                     ^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/bijectors/bijector.py", line 1707, in <lambda>
+    lambda x: dtype_util.convert_to_dtype(x, dtype=self.dtype),
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/tensorflow_probability/substrates/jax/internal/dtype_util.py", line 247, in convert_to_dtype
+    elif np.issctype(tensor_or_dtype):
+         ^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/numpy/__init__.py", line 763, in __getattr__
+    raise AttributeError(
+AttributeError: `np.issctype` was removed in the NumPy 2.0 release. Use `issubclass(rep, np.generic)` instead.
+--------------------
+For simplicity, JAX has removed its internal frames from the traceback of the following exception. Set JAX_TRACEBACK_FILTERING=off to include these.
+
+----------------------------------------------------------------------
+Ran 11 tests in 0.755s
+
+FAILED (errors=3)

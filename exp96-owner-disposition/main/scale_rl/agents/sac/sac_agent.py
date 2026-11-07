@@ -1,0 +1,736 @@
+import contextlib
+import functools
+from dataclasses import dataclass
+from typing import Dict, List, Optional, Tuple
+import os
+from pathlib import Path
+import orbax.checkpoint
+
+import gymnasium as gym
+import jax
+import jax.numpy as jnp
+import numpy as np
+import optax
+from flax.training import dynamic_scale
+
+from scale_rl.agents.base_agent import BaseAgent
+from scale_rl.agents.sac.sac_network import (
+    SACActor,
+    SACClippedDoubleCritic,
+    SACCritic,
+    SACTemperature,
+)
+from scale_rl.agents.sac.sac_update import (
+    update_actor,
+    update_critic,
+    update_target_network,
+    update_temperature,
+    get_actor_with_metrics,
+    get_critic_with_metrics,
+    compute_actor_gradient_cosine,
+)
+from scale_rl.buffers.base_buffer import Batch
+from scale_rl.networks.trainer import PRNGKey, Trainer
+from scale_rl.agents.sparse import get_sparsities_erdos_renyi,get_var_shape_dict,create_random_mask
+from scale_rl.networks.metrics import print_num_parameters,flatten_dict,format_params_str
+from utils.paths import require_absolute
+"""
+The @dataclass decorator must have `frozen=True` to ensure the instance is immutable,
+allowing it to be treated as a static variable in JAX.
+"""
+
+
+@dataclass(frozen=True)
+class SACConfig:
+    seed: int
+    num_train_envs: int
+    max_episode_steps: int
+    normalize_observation: bool
+
+    actor_block_type: str
+    actor_num_blocks: int
+    actor_hidden_dim: int
+    actor_learning_rate: float
+    actor_weight_decay: float
+
+    critic_block_type: str
+    critic_num_blocks: int
+    critic_hidden_dim: int
+    critic_learning_rate: float
+    critic_weight_decay: float
+    critic_use_cdq: bool
+
+    temp_target_entropy: float
+    temp_target_entropy_coef: float
+    temp_initial_value: float
+    temp_learning_rate: float
+    temp_weight_decay: float
+
+    target_tau: float
+    gamma: float
+    n_step: int
+
+    mixed_precision: bool
+
+    actor_sparsity: float
+    critic_sparsity: float
+
+
+# @functools.partial(
+#     jax.jit,
+#     static_argnames=(
+#         "observation_dim",
+#         "action_dim",
+#         "cfg",
+#     ),
+# )
+def _init_sac_networks(
+    observation_dim: int,
+    action_dim: int,
+    cfg: SACConfig,
+) -> Tuple[PRNGKey, Trainer, Trainer, Trainer, Trainer]:
+    fake_observations = jnp.zeros((1, observation_dim))
+    fake_actions = jnp.zeros((1, action_dim))
+
+    rng = jax.random.PRNGKey(cfg.seed)
+    rng, actor_key, critic_key, temp_key = jax.random.split(rng, 4)
+    compute_dtype = jnp.float16 if cfg.mixed_precision else jnp.float32
+
+    if cfg.actor_sparsity > 0.0:
+        actor_sparse = True
+    else:
+       actor_sparse = False
+
+    # When initializing the network in the flax.nn.Module class, rng_key should be passed as rngs.
+    actor_network_def=SACActor(
+            block_type=cfg.actor_block_type,
+            num_blocks=cfg.actor_num_blocks,
+            hidden_dim=cfg.actor_hidden_dim,
+            action_dim=action_dim,
+            dtype=compute_dtype,
+        )
+    with jax.default_device(jax.local_devices(backend="cpu")[0]):
+        _fake_actor_variables = actor_network_def.init(rng, fake_observations)
+    fake_actor_params = jax.device_put(_fake_actor_variables['params'])  # A FrozenDict of parameters
+    if actor_sparse:
+        actor_network_parm_dict = get_var_shape_dict(fake_actor_params)
+        actor_network_sparse = get_sparsities_erdos_renyi(actor_network_parm_dict, default_sparsity=float(cfg.actor_sparsity))
+        mask_rng = jax.random.PRNGKey(cfg.seed)
+        actor_network_mask = create_random_mask(fake_actor_params, actor_network_sparse, mask_rng)
+    else:
+        actor_network_mask = None
+
+    actor = Trainer.create(
+        network_def=actor_network_def,
+        network_inputs={"rngs": actor_key, "observations": fake_observations},
+        tx=optax.adamw(
+            learning_rate=cfg.actor_learning_rate,
+            weight_decay=cfg.actor_weight_decay,
+        ),
+        dynamic_scale=dynamic_scale.DynamicScale() if cfg.mixed_precision else None,
+        sparse = actor_sparse,
+        network_mask = actor_network_mask
+    )
+
+
+    if cfg.critic_use_cdq:
+        critic_network_def = SACClippedDoubleCritic(
+            block_type=cfg.critic_block_type,
+            num_blocks=cfg.critic_num_blocks,
+            hidden_dim=cfg.critic_hidden_dim,
+            dtype=compute_dtype,
+        )
+    else:
+        critic_network_def = SACCritic(
+            block_type=cfg.critic_block_type,
+            num_blocks=cfg.critic_num_blocks,
+            hidden_dim=cfg.critic_hidden_dim,
+            dtype=compute_dtype,
+        )
+    with jax.default_device(jax.local_devices(backend="cpu")[0]):
+        _fake_critic_variables = critic_network_def.init(rng, observations=fake_observations, actions=fake_actions)
+    fake_critic_params = jax.device_put(_fake_critic_variables['params'])  # A FrozenDict of parameters
+    if cfg.critic_sparsity > 0.0:
+        critic_sparse = True
+    else:
+       critic_sparse = False
+    if critic_sparse:
+        critic_network_parm_dict = get_var_shape_dict(fake_critic_params)
+        critic_network_sparse = get_sparsities_erdos_renyi(critic_network_parm_dict, default_sparsity=float(cfg.critic_sparsity))
+        mask_rng = jax.random.PRNGKey(cfg.seed)
+        critic_network_mask = create_random_mask(fake_critic_params, critic_network_sparse, mask_rng)
+    else:
+        critic_network_mask = None
+
+    critic = Trainer.create(
+        network_def=critic_network_def,
+        network_inputs={
+            "rngs": critic_key,
+            "observations": fake_observations,
+            "actions": fake_actions,
+        },
+        tx=optax.adamw(
+            learning_rate=cfg.critic_learning_rate,
+            weight_decay=cfg.critic_weight_decay,
+        ),
+        dynamic_scale=dynamic_scale.DynamicScale() if cfg.mixed_precision else None,
+        sparse = critic_sparse,
+        network_mask = critic_network_mask,
+    )
+
+    # we set target critic's parameters identical to critic by using same rng.
+    target_network_def = critic_network_def
+    target_critic = Trainer.create(
+        network_def=target_network_def,
+        network_inputs={
+            "rngs": critic_key,
+            "observations": fake_observations,
+            "actions": fake_actions,
+        },
+        tx=None,
+        sparse = critic_sparse,
+        network_mask = critic_network_mask,
+    )
+
+    temperature = Trainer.create(
+        network_def=SACTemperature(cfg.temp_initial_value),
+        network_inputs={
+            "rngs": temp_key,
+        },
+        tx=optax.adamw(
+            learning_rate=cfg.temp_learning_rate,
+            weight_decay=cfg.temp_weight_decay,
+        ),
+        sparse=False,
+        network_mask=None,
+    )
+
+    actor_loss_buffer = []
+    actor_entropy_buffer = []
+    churn_buffer = []
+    churn_ref_batch = None
+    return rng, actor, critic, target_critic, temperature, actor_loss_buffer, actor_entropy_buffer, churn_buffer, churn_ref_batch
+
+
+# Matmul precision of the Exp 1/2 actor-diagnostic forward passes (churn reference, policy KL).
+DIAGNOSTICS_PRECISION = "highest"
+
+
+@jax.jit
+def _sample_sac_actions(
+    rng: PRNGKey,
+    actor: Trainer,
+    observations: jnp.ndarray,
+    temperature: float = 1.0,
+) -> Tuple[PRNGKey, jnp.ndarray]:
+    rng, key = jax.random.split(rng)
+    dist = actor(observations=observations, temperature=temperature)
+    actions = dist.sample(seed=key)
+
+    return rng, actions
+
+
+def _sac_update(
+    actor_key: PRNGKey,
+    critic_key: PRNGKey,
+    actor: Trainer,
+    critic: Trainer,
+    target_critic: Trainer,
+    temperature: Trainer,
+    batch: Batch,
+    gamma: float,
+    n_step: int,
+    critic_use_cdq: bool,
+    target_tau: float,
+    temp_target_entropy: float,
+    churn_ref_batch: dict,
+    saturation_threshold: Optional[float] = None,
+    kl_ref_observations: Optional[jnp.ndarray] = None,
+) -> Tuple[Trainer, Trainer, Trainer, Trainer, Dict[str, float]]:
+    # Exp 1/2 (diagnostics on): the churn and KL forward passes run in full FP32, not TF32 (amendment (x));
+    # the training computation and the Angle 1 path (no kl_ref_observations) are unchanged.
+    def diagnostics_precision():
+        if kl_ref_observations is None:
+            return contextlib.nullcontext()  # leaves the job's setting alone (None would reset it to DEFAULT)
+        return jax.default_matmul_precision(DIAGNOSTICS_PRECISION)
+
+    def get_deterministic_actions(actor_params, actor, observations):
+        with diagnostics_precision():
+            dist = actor.apply(variables={"params": actor_params}, observations=observations)
+        pre_squash_mean = dist.distribution.mean()
+        return jnp.tanh(pre_squash_mean)
+
+    a_prev = get_deterministic_actions(actor.params, actor, churn_ref_batch["observation"])
+    new_actor, actor_info = update_actor(
+        key=actor_key,
+        actor=actor,
+        critic=critic,
+        temperature=temperature,
+        batch=batch,
+        critic_use_cdq=critic_use_cdq,
+        saturation_threshold=saturation_threshold,
+    )
+    a_curr = get_deterministic_actions(new_actor.params, new_actor, churn_ref_batch["observation"])
+    churn = jnp.mean(jnp.linalg.norm(a_curr - a_prev, axis=-1))
+    if kl_ref_observations is not None:
+        # Tang & Berseth's SAC churn, KL(pi_t || pi_{t-1}) per update. Tanh is a bijection, so this
+        # equals the KL of the pre-tanh diagonal Gaussians (Exp 1/2 diagnostic I1).
+        pre_tanh = lambda a: a.apply(variables={"params": a.params}, observations=kl_ref_observations).distribution
+        with diagnostics_precision():
+            new_dist, old_dist = pre_tanh(new_actor), pre_tanh(actor)
+        actor_info["train/policy_kl"] = jnp.mean(new_dist.kl_divergence(old_dist))
+
+    new_temperature, temperature_info = update_temperature(
+        temperature=temperature,
+        entropy=actor_info["train/entropy"],
+        target_entropy=temp_target_entropy,
+    )
+
+    new_critic, critic_info = update_critic(
+        key=critic_key,
+        actor=new_actor,
+        critic=critic,
+        target_critic=target_critic,
+        temperature=new_temperature,
+        batch=batch,
+        gamma=gamma,
+        n_step=n_step,
+        critic_use_cdq=critic_use_cdq,
+    )
+
+    new_target_critic, target_critic_info = update_target_network(
+        network=new_critic,
+        target_network=target_critic,
+        target_tau=target_tau,
+    )
+
+    info = {
+        **actor_info,
+        **critic_info,
+        **target_critic_info,
+        **temperature_info,
+        "train/policy_churn": churn,
+    }
+
+    return new_actor, new_critic, new_target_critic, new_temperature, info
+
+
+@functools.partial(
+    jax.jit,
+    static_argnames=(
+        "gamma",
+        "n_step",
+        "critic_use_cdq",
+        "target_tau",
+        "temp_target_entropy",
+        "compute_actor_grad_cosine",
+    ),
+)
+def _update_sac_networks(
+    rng: PRNGKey,
+    actor: Trainer,
+    critic: Trainer,
+    target_critic: Trainer,
+    temperature: Trainer,
+    batch: Batch,
+    gamma: float,
+    n_step: int,
+    critic_use_cdq: bool,
+    target_tau: float,
+    temp_target_entropy: float,
+    churn_ref_batch: dict,
+    compute_actor_grad_cosine: bool = True,
+) -> Tuple[PRNGKey, Trainer, Trainer, Trainer, Trainer, Dict[str, float]]:
+    rng, actor_key, critic_key = jax.random.split(rng, 3)
+    new_actor, new_critic, new_target_critic, new_temperature, info = _sac_update(
+        actor_key, critic_key, actor, critic, target_critic, temperature, batch,
+        gamma, n_step, critic_use_cdq, target_tau, temp_target_entropy, churn_ref_batch,
+    )
+    if compute_actor_grad_cosine:
+        info["train/actor_grad_cosine"] = compute_actor_gradient_cosine(
+            key=actor_key,
+            actor=actor,
+            critic=critic,
+            temperature=temperature,
+            batch=batch,
+            critic_use_cdq=critic_use_cdq,
+        )
+
+    return (rng, new_actor, new_critic, new_target_critic, new_temperature, info)
+
+
+@functools.partial(
+    jax.jit,
+    static_argnames=(
+        "gamma",
+        "n_step",
+        "critic_use_cdq",
+        "target_tau",
+        "temp_target_entropy",
+        "actor_grad_cosine_every",
+        "saturation_threshold",
+    ),
+)
+def _update_sac_networks_scan(
+    rng: PRNGKey,
+    actor: Trainer,
+    critic: Trainer,
+    target_critic: Trainer,
+    temperature: Trainer,
+    batches: Batch,
+    first_update_step: int,
+    gamma: float,
+    n_step: int,
+    critic_use_cdq: bool,
+    target_tau: float,
+    temp_target_entropy: float,
+    churn_ref_batch: dict,
+    actor_grad_cosine_every: int,
+    saturation_threshold: Optional[float] = None,
+    kl_ref_observations: Optional[jnp.ndarray] = None,
+) -> Tuple[PRNGKey, Trainer, Trainer, Trainer, Trainer, Dict[str, jnp.ndarray]]:
+    """_update_sac_networks scanned over the leading axis of `batches`. The two optional
+    diagnostics (Exp 1/2 only) add outputs and never change the updates."""
+
+    def body(carry, xs):
+        rng, actor, critic, target_critic, temperature = carry
+        batch, update_step = xs
+        rng, actor_key, critic_key = jax.random.split(rng, 3)
+        new_actor, new_critic, new_target_critic, new_temperature, info = _sac_update(
+            actor_key, critic_key, actor, critic, target_critic, temperature, batch,
+            gamma, n_step, critic_use_cdq, target_tau, temp_target_entropy, churn_ref_batch,
+            saturation_threshold, kl_ref_observations,
+        )
+        info["train/actor_grad_cosine"] = jax.lax.cond(
+            update_step % actor_grad_cosine_every == 0,
+            lambda: compute_actor_gradient_cosine(
+                key=actor_key,
+                actor=actor,
+                critic=critic,
+                temperature=temperature,
+                batch=batch,
+                critic_use_cdq=critic_use_cdq,
+            ),
+            lambda: jnp.float32(jnp.nan),
+        )
+        return (rng, new_actor, new_critic, new_target_critic, new_temperature), info
+
+    num_updates = batches["observation"].shape[0]
+    update_steps = first_update_step + jnp.arange(num_updates)
+    carry, info = jax.lax.scan(
+        body, (rng, actor, critic, target_critic, temperature), (batches, update_steps)
+    )
+
+    return (*carry, info)
+
+
+def _concat_scalars_or_vectors(values: List[jnp.ndarray]) -> jnp.ndarray:
+    """update() appends scalars, update_many() appends (n,) arrays."""
+    return jnp.concatenate([jnp.ravel(v) for v in values])
+
+
+class SACAgent(BaseAgent):
+    def __init__(
+        self,
+        observation_space: gym.spaces.Space,
+        action_space: gym.spaces.Space,
+        cfg: SACConfig,
+    ):
+        """
+        An agent that randomly selects actions without training.
+        Useful for collecting baseline results and for debugging purposes.
+        """
+
+        self._observation_dim = observation_space.shape[-1]
+        self._action_dim = action_space.shape[-1]
+
+        cfg["temp_target_entropy"] = cfg["temp_target_entropy_coef"] * self._action_dim
+
+        super(SACAgent, self).__init__(
+            observation_space,
+            action_space,
+            cfg,
+        )
+
+        # map dictionary to dataclass
+        self._cfg = SACConfig(**cfg)
+
+        self._init_network()
+
+    def _init_network(self):
+        (
+            self._rng,
+            self._actor,
+            self._critic,
+            self._target_critic,
+            self._temperature,
+            self.actor_loss_buffer,
+            self.actor_entropy_buffer,
+            self.churn_buffer,
+            self.churn_ref_batch
+        ) = _init_sac_networks(self._observation_dim, self._action_dim, self._cfg)
+
+    def sample_actions(
+        self,
+        interaction_step: int,
+        prev_timestep: Dict[str, np.ndarray],
+        training: bool,
+    ) -> np.ndarray:
+        if training:
+            temperature = 1.0
+        else:
+            temperature = 0.0
+
+        # current timestep observation is "next" observations from the previous timestep
+        observations = jnp.asarray(prev_timestep["next_observation"])
+
+        self._rng, actions = _sample_sac_actions(
+            self._rng, self._actor, observations, temperature
+        )
+        actions = np.array(actions)
+
+        return actions
+    
+    def update(
+        self,
+        update_step: int,
+        batch: Dict[str, np.ndarray],
+        compute_actor_grad_cosine: bool = True,
+    ) -> Dict:
+        update_info = self._update_on_device(batch, compute_actor_grad_cosine)
+        for key, value in update_info.items():
+            update_info[key] = float(value)
+
+        return update_info
+
+    def update_many(
+        self,
+        update_step: int,
+        batches: Dict[str, np.ndarray],
+        actor_grad_cosine_every: int,
+        saturation_threshold: Optional[float] = None,
+        kl_ref_observations: Optional[np.ndarray] = None,
+    ) -> Dict[str, jnp.ndarray]:
+        """Runs one update per leading-axis slice of `batches` in a single
+        compiled call, starting at `update_step`. Returns per-update device
+        arrays of shape (n,), with train/actor_grad_cosine NaN on steps where
+        it was not computed. saturation_threshold / kl_ref_observations add the
+        Exp 1/2 actor diagnostics train/actor_saturation / train/policy_kl."""
+        batches = {key: jnp.asarray(value) for key, value in batches.items()}
+
+        if self.churn_ref_batch is None:
+            self.churn_ref_batch = {k: jnp.array(v[0]) for k, v in batches.items()}
+        (
+            self._rng,
+            self._actor,
+            self._critic,
+            self._target_critic,
+            self._temperature,
+            update_info,
+        ) = _update_sac_networks_scan(
+            rng=self._rng,
+            actor=self._actor,
+            critic=self._critic,
+            target_critic=self._target_critic,
+            temperature=self._temperature,
+            batches=batches,
+            first_update_step=update_step,
+            gamma=self._cfg.gamma,
+            n_step=self._cfg.n_step,
+            critic_use_cdq=self._cfg.critic_use_cdq,
+            target_tau=self._cfg.target_tau,
+            temp_target_entropy=self._cfg.temp_target_entropy,
+            churn_ref_batch=self.churn_ref_batch,
+            actor_grad_cosine_every=actor_grad_cosine_every,
+            saturation_threshold=saturation_threshold,
+            kl_ref_observations=None if kl_ref_observations is None else jnp.asarray(kl_ref_observations),
+        )
+
+        self.actor_entropy_buffer.append(update_info["train/entropy"])
+        self.churn_buffer.append(update_info["train/policy_churn"])
+        self.actor_loss_buffer.append(update_info["train/actor_loss"])
+
+        return update_info
+
+    def _update_on_device(
+        self, batch: Dict[str, np.ndarray], compute_actor_grad_cosine: bool
+    ) -> Dict[str, jnp.ndarray]:
+        for key, value in batch.items():
+            batch[key] = jnp.asarray(value)
+
+        if self.churn_ref_batch is None:
+            self.churn_ref_batch = {k: jnp.array(v) for k, v in batch.items()}
+        (
+            self._rng,
+            self._actor,
+            self._critic,
+            self._target_critic,
+            self._temperature,
+            update_info,
+        ) = _update_sac_networks(
+            rng=self._rng,
+            actor=self._actor,
+            critic=self._critic,
+            target_critic=self._target_critic,
+            temperature=self._temperature,
+            batch=batch,
+            gamma=self._cfg.gamma,
+            n_step=self._cfg.n_step,
+            critic_use_cdq=self._cfg.critic_use_cdq,
+            target_tau=self._cfg.target_tau,
+            temp_target_entropy=self._cfg.temp_target_entropy,
+            churn_ref_batch=self.churn_ref_batch,
+            compute_actor_grad_cosine=compute_actor_grad_cosine,
+        )
+
+        self.actor_entropy_buffer.append(update_info["train/entropy"])
+        self.churn_buffer.append(update_info["train/policy_churn"])
+        self.actor_loss_buffer.append(update_info["train/actor_loss"])
+
+        return update_info
+
+    def flush_actor_loss_var(self):
+        if len(self.actor_loss_buffer) == 0:
+            return None
+        losses = _concat_scalars_or_vectors(self.actor_loss_buffer)
+        var = float(jnp.var(losses))
+        self.actor_loss_buffer = []
+        return var
+
+    def flush_policy_churn(self):
+        if len(self.churn_buffer) == 0:
+            return None
+        val = float(jnp.mean(_concat_scalars_or_vectors(self.churn_buffer)))
+        self.churn_buffer = []
+        return val
+
+    def mean_entropy(self):
+        if len(self.actor_entropy_buffer) == 0:
+            return None
+        entropy = _concat_scalars_or_vectors(self.actor_entropy_buffer)
+        mean = float(jnp.mean(entropy))
+        self.actor_entropy_buffer = []
+        return mean
+    
+    def get_metrics(self, update_step: int, batch: Dict[str, np.ndarray]):
+        for key, value in batch.items():
+            batch[key] = jnp.asarray(value)
+        actor_metrics_info = get_actor_with_metrics(actor=self._actor,batch=batch)
+        critic_metrics_info = get_critic_with_metrics(key=self._rng,actor=self._actor,critic=self._critic,batch=batch,critic_use_cdq=self._cfg.critic_use_cdq)
+        actor_loss_var = self.flush_actor_loss_var()
+        actor_mean_entropy = self.mean_entropy()
+        policy_churn = self.flush_policy_churn()
+        combined_metric_info = {**actor_metrics_info, 
+                                **critic_metrics_info,
+                                "train/actor_loss_var": actor_loss_var,
+                                "train/entropy": actor_mean_entropy,
+                                "train/churn": policy_churn
+                                }
+        return combined_metric_info
+
+    def get_q_value(self, observations: np.ndarray, actions: np.ndarray) -> np.ndarray:
+        """Raw critic Q-value estimate for (observation, action) pairs.
+
+        Uses the same critic-invocation convention as the actor loss
+        (min(q1, q2) under clipped double-Q; see update_actor in
+        sac_update.py) so this is consistent with how the critic is already
+        used everywhere else in this codebase, not a new estimator.
+
+        Callers must pass already-preprocessed observations (e.g. already
+        normalized if this agent is wrapped by ObservationNormalizer) since
+        this method operates on the raw SACAgent only. Prefer calling
+        `agent.get_q_value(...)` on the (possibly wrapped) agent object
+        returned by create_agent so normalization happens automatically.
+        """
+        observations = jnp.asarray(observations)
+        actions = jnp.asarray(actions)
+
+        if self._cfg.critic_use_cdq:
+            q1, q2 = self._critic(observations=observations, actions=actions)
+            q = jnp.minimum(q1, q2)
+        else:
+            q = self._critic(observations=observations, actions=actions)
+
+        return np.array(q).reshape(-1)
+
+    @property
+    def actor(self) -> Trainer:
+        """Read-only access to the frozen actor Trainer (params + network_def),
+        for callers that need the raw JAX pytree directly (e.g. Angle 2B's
+        counterfactual actor-gradient measurement) rather than going through
+        sample_actions/update."""
+        return self._actor
+
+    @property
+    def critic(self) -> Trainer:
+        """Read-only access to the frozen critic Trainer. See `actor`."""
+        return self._critic
+
+    @property
+    def temperature(self) -> Trainer:
+        """Read-only access to the frozen temperature (entropy coefficient)
+        Trainer. See `actor`."""
+        return self._temperature
+
+    def get_num_parameters(self):
+        actor_num_params = print_num_parameters(flatten_dict(self._actor.params),network_type='actor_simba')
+        critic_num_params = print_num_parameters(flatten_dict(self._critic.params),network_type='critic_simba')
+        total_params = actor_num_params + critic_num_params
+
+        num_str = format_params_str(total_params)
+        num_str_actor = format_params_str(actor_num_params)
+        num_str_critic = format_params_str(critic_num_params)
+        print(f" total params:",num_str)
+
+        return  total_params, num_str, num_str_actor, num_str_critic
+    
+    def save_checkpoint(self, checkpoint_dir: str):
+        """Saves the agent's JAX PyTree state (networks, optimizers, PRNG key, churn batch) using Orbax."""
+        require_absolute(checkpoint_dir, "checkpoint_dir")
+        os.makedirs(checkpoint_dir, exist_ok=True)
+        ckpt_path = os.path.join(checkpoint_dir, "agent_ckpt")
+
+        state = {
+            "rng": self._rng,
+            "actor": self._actor,
+            "critic": self._critic,
+            "target_critic": self._target_critic,
+            "temperature": self._temperature,
+            "churn_ref_batch": self.churn_ref_batch,
+        }
+
+        checkpointer = orbax.checkpoint.PyTreeCheckpointer()
+        checkpointer.save(ckpt_path, state, force=True)
+
+    def load_checkpoint(self, checkpoint_dir: str):
+        """Restores the agent's JAX PyTree state back into their exact Flax TrainState structures."""
+        require_absolute(checkpoint_dir, "checkpoint_dir")
+        ckpt_path = os.path.join(checkpoint_dir, "agent_ckpt")
+
+        if not os.path.exists(ckpt_path):
+            raise FileNotFoundError(f"No checkpoint found at {ckpt_path}")
+
+        checkpointer = orbax.checkpoint.PyTreeCheckpointer()
+
+        # A fresh agent's None reference would discard the saved batch. Read
+        # its shape from metadata so the large agent payload is restored once.
+        reference = jax.tree_util.tree_map(
+            orbax.checkpoint.utils.to_shape_dtype_struct,
+            checkpointer.metadata(ckpt_path)["churn_ref_batch"],
+        )
+        target_state = {
+            "rng": self._rng,
+            "actor": self._actor,
+            "critic": self._critic,
+            "target_critic": self._target_critic,
+            "temperature": self._temperature,
+            "churn_ref_batch": reference,
+        }
+        restored = checkpointer.restore(ckpt_path, args=orbax.checkpoint.args.PyTreeRestore(item=target_state))
+        self._rng = restored["rng"]
+        self._actor = restored["actor"]
+        self._critic = restored["critic"]
+        self._target_critic = restored["target_critic"]
+        self._temperature = restored["temperature"]
+
+        self.churn_ref_batch = restored["churn_ref_batch"]

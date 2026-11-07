@@ -1,0 +1,17 @@
+{
+  "module": "tests.test_angle2a_storage",
+  "source_hash": "c07ca4fb99dc3308d1e6fed0f827f0bebd6442ded04ccc6e755cbde6ba77c455",
+  "success": true,
+  "tests_run": 5,
+  "test_ids": [
+    "tests.test_angle2a_storage.TestAngle2AStorage.test_does_not_reproduce_a_previous_matchups_data",
+    "tests.test_angle2a_storage.TestAngle2AStorage.test_round_trip_preserves_high_dimensional_arrays_exactly",
+    "tests.test_angle2a_storage.TestAngle2AStorage.test_round_trip_preserves_metadata_and_probe_scalars",
+    "tests.test_angle2a_storage.TestSaveFrozenAgentSnapshotCheckpointDirIsAlwaysAbsolute.test_already_absolute_root_is_left_correct",
+    "tests.test_angle2a_storage.TestSaveFrozenAgentSnapshotCheckpointDirIsAlwaysAbsolute.test_relative_root_still_produces_an_absolute_save_checkpoint_call"
+  ],
+  "failures": 0,
+  "errors": 0,
+  "skips": [],
+  "unexpected_successes": 0
+}

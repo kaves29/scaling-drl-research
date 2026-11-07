@@ -1,0 +1,15 @@
+run_key,arm,median_amplification,max_amplification,median_final_pool,median_peak_index
+exp1_D2W512_dog-run_seed1,current,1.0,1.2141062,0.0509774,0.0
+exp1_D2W512_dog-run_seed1,fresh,1.7819318,4.730617,0.010193745,2.0
+exp1_D2W512_myo-key-turn_seed1,current,1.1430905,1.8214769,0.57585335,2.0
+exp1_D2W512_myo-key-turn_seed1,fresh,1.3658154,5.8888955,0.063421726,2.0
+exp1_D4W1024_dog-run_seed1,current,1.0,1.3517617,0.005087622,0.0
+exp1_D4W1024_dog-run_seed1,fresh,31.526655,69.00778,0.019305358,2.0
+exp1_D4W1024_humanoid-run_seed1,current,1.0096564,1.3200654,0.0070477063,1.0
+exp1_D4W1024_humanoid-run_seed1,fresh,18.756504,46.98257,0.049720917,2.0
+exp1_D4W1024_myo-key-turn_seed1,current,1.1279801,2.256575,0.529822,1.0
+exp1_D4W1024_myo-key-turn_seed1,fresh,29.353558,76.13102,0.08497616,1.0
+exp1_D4W1536_dog-run_seed1,current,1.5230125,4.7651525,0.005126712,10.5
+exp1_D4W1536_dog-run_seed1,fresh,101.86913,322.01605,0.029729333,2.0
+exp1_D4W1536_myo-key-turn_seed1,current,1.0589744,1.9386538,0.6790842,1.0
+exp1_D4W1536_myo-key-turn_seed1,fresh,88.40151,308.67865,0.1428349,2.0

@@ -1,0 +1,17 @@
+[
+  {
+    "name": "artifact/4131021716/wandb_manifest.json",
+    "size": 0,
+    "md5": null
+  },
+  {
+    "name": "requirements.txt",
+    "size": 2350,
+    "md5": "F5Ehgu0UZUaIpzgvYIK0wA=="
+  },
+  {
+    "name": "wandb-metadata.json",
+    "size": 5587,
+    "md5": "2QSIC29U96fibq7zwgRz1A=="
+  }
+]

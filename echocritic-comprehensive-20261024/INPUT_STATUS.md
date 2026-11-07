@@ -1,0 +1,9 @@
+# Full investigation input audit — 24 October 2026
+
+The new request authorizes the full scientific investigation, but the complete attached archive is not visible in the local attachment directory. A search of attachments, Downloads, the project directories and local home-level exports recovered `/Users/shouryakaveti/echocritic_wandb_export/full_export` with nine metadata/history pairs only.
+
+The available metadata marks all nine records finished. Seven configure `echocritic_official_exp1`, five repetitions and 20 probe checks, dated October 15. Two configure `echocritic_method_c_ten_96`, ten repetitions and 50 probe checks, dated October 21. Their configured identities are retained in available_records.csv; membership remains provisional pending complete export/source reconciliation. There are no crashed records in the available subset. Ninety-four of the owner-reported 103 records are absent.
+
+Record 1ygj8vna's local history has 87 rows and ends at W&B `_step` 344000, despite finished metadata. This must be treated as incomplete history/export coverage, not evidence that the experiment crashed or stopped training. The remaining eight histories have 251 rows. Existing source trainer.py logs using env_step, so `_step` must not be interpreted as an optimizer-update or interaction counter without source-bound verification. Probe measurements merged into logger rows also have explicit probe counters; do not blindly assign the W&B row step to their measurement time.
+
+Input bytes remain unchanged. coverage_audit.py reproduces available_records.csv, coverage.json and SHA256 input_hashes.json. No multi-seed inference or new full-campaign report has been generated from this incomplete subset. The earlier pilot report remains preliminary. The full export's filename/path was requested in the chat; analysis dependent on missing records awaits that evidence.

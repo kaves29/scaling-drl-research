@@ -1,0 +1,25 @@
+                        run_key  environment architecture  seed  eval_count  final_return  final_window_mean  peak_return  peak_step  peak_to_final  late_to_peak_ratio  observed_auc  observed_end  initial_fresh  final_deficit
+      exp1_D2W512_dog-run_seed1      dog-run       D2W512     1          11    612.644276         589.674614   612.644276   500000.0       0.000000            0.962507  1.701768e+08      500000.0       0.492995       0.241108
+ exp1_D2W512_myo-key-turn_seed1 myo-key-turn       D2W512     1          11   1038.869804        1036.885465  1041.574581   400000.0       2.704777            0.995498  4.508975e+08      500000.0       0.497350       0.488478
+     exp1_D4W1024_dog-run_seed1      dog-run      D4W1024     1          11    446.436760         428.842934   446.436760   500000.0       0.000000            0.960591  1.363472e+08      500000.0       0.493449      -0.013502
+exp1_D4W1024_humanoid-run_seed1 humanoid-run      D4W1024     1          11    190.204159         185.522869   190.204159   500000.0       0.000000            0.975388  6.140044e+07      500000.0       0.495260      -0.054776
+exp1_D4W1024_myo-key-turn_seed1 myo-key-turn      D4W1024     1          11   1007.481874        1024.942913  1042.403953   450000.0      34.922080            0.983249  4.518179e+08      500000.0       0.490133       0.432483
+     exp1_D4W1536_dog-run_seed1      dog-run      D4W1536     1          11    468.989995         443.843272   468.989995   500000.0       0.000000            0.946381  1.327372e+08      500000.0       0.495572      -0.021949
+exp1_D4W1536_myo-key-turn_seed1 myo-key-turn      D4W1536     1          11    544.394138         913.287733  1285.470516   400000.0     741.076378            0.710470  5.275494e+08      500000.0       0.494999       0.598475
+run_key                          arm    
+exp1_D2W512_dog-run_seed1        current      1.000000
+                                 fresh        1.781932
+exp1_D2W512_myo-key-turn_seed1   current      1.143090
+                                 fresh        1.365815
+exp1_D4W1024_dog-run_seed1       current      1.000000
+                                 fresh       31.526655
+exp1_D4W1024_humanoid-run_seed1  current      1.009656
+                                 fresh       18.756504
+exp1_D4W1024_myo-key-turn_seed1  current      1.127980
+                                 fresh       29.353558
+exp1_D4W1536_dog-run_seed1       current      1.523013
+                                 fresh      101.869133
+exp1_D4W1536_myo-key-turn_seed1  current      1.058974
+                                 fresh       88.401512
+Manifest True
+Report saved

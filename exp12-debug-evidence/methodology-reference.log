@@ -1,0 +1,12 @@
+{
+  "temperature_gradient_H0_target-1": 0.009999999776482582,
+  "temperature_gradient_H0_target+1": -0.009999999776482582,
+  "paired_iqm_percentile_reference": [
+    -0.12000000228484471,
+    1.0366666515668232
+  ],
+  "binomial_illustration_p_ge13_n100_p05": 0.0014643480080344517,
+  "parent_commands": 195,
+  "architecture_environment_configs": 39,
+  "eligibility_candidates": 130
+}

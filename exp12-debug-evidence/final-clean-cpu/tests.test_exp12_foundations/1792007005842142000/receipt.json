@@ -1,0 +1,24 @@
+{
+  "module": "tests.test_exp12_foundations",
+  "source_hash": "427ac810143706c21cde9966a51d62940d777afd96197166c657d661be5830a6",
+  "success": true,
+  "tests_run": 12,
+  "test_ids": [
+    "tests.test_exp12_foundations.Angle1ParityTest.test_same_params_optimizer_state_rng_and_metrics",
+    "tests.test_exp12_foundations.DiscountAndHorizonTest.test_gamma_per_suite",
+    "tests.test_exp12_foundations.DiscountAndHorizonTest.test_keyturn_is_truncated_at_100_raw_steps",
+    "tests.test_exp12_foundations.DiscountAndHorizonTest.test_pen_twirl_keeps_its_registered_50_step_limit_as_in_simba",
+    "tests.test_exp12_foundations.DiscountAndHorizonTest.test_truncation_bootstraps_and_termination_does_not",
+    "tests.test_exp12_foundations.EnvRestoreAcrossProcessesTest.test_every_environment_replays_bit_exactly_in_a_new_process",
+    "tests.test_exp12_foundations.EnvRestoreBreakTest.test_restore_is_exact_and_each_component_is_necessary",
+    "tests.test_exp12_foundations.KillAndResumeEntryPointTest.test_kill_points",
+    "tests.test_exp12_foundations.MyoSuiteSeedingTest.test_seeded_factory_is_reproducible_and_repo_factory_is_not",
+    "tests.test_exp12_foundations.ResumeExactnessTest.test_breaking_each_restored_component_is_detected",
+    "tests.test_exp12_foundations.ResumeExactnessTest.test_resume_is_bit_exact_for_each_suite",
+    "tests.test_exp12_foundations.SimbaRandomWarmupTest.test_random_until_min_length_then_policy"
+  ],
+  "failures": 0,
+  "errors": 0,
+  "skips": [],
+  "unexpected_successes": 0
+}

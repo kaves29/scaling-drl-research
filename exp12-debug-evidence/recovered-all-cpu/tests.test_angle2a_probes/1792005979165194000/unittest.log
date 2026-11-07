@@ -1,0 +1,17 @@
+test_both_critics_evaluated_on_every_probe (tests.test_angle2a_probes.TestCriticEvaluation.test_both_critics_evaluated_on_every_probe) ... ok
+test_off_diagonal_values_are_retained_not_discarded (tests.test_angle2a_probes.TestCriticEvaluation.test_off_diagonal_values_are_retained_not_discarded) ... ok
+test_error_calculation_matches_synthetic_values (tests.test_angle2a_probes.TestDiagonalErrors.test_error_calculation_matches_synthetic_values) ... ok
+test_error_never_crosses_actor_critic_pairing (tests.test_angle2a_probes.TestDiagonalErrors.test_error_never_crosses_actor_critic_pairing) ... ok
+test_missing_prerequisites_raises (tests.test_angle2a_probes.TestDiagonalErrors.test_missing_prerequisites_raises) ... ok
+test_continuation_uses_source_agents_actor_only (tests.test_angle2a_probes.TestMonteCarloRollouts.test_continuation_uses_source_agents_actor_only) ... ok
+test_exactly_fifteen_rollouts_per_probe (tests.test_angle2a_probes.TestMonteCarloRollouts.test_exactly_fifteen_rollouts_per_probe) ... ok
+test_forced_first_action_is_used (tests.test_angle2a_probes.TestMonteCarloRollouts.test_forced_first_action_is_used) ... ok
+test_exactly_ten_probes_per_source (tests.test_angle2a_probes.TestProbeSampling.test_exactly_ten_probes_per_source) ... ok
+test_insufficient_transitions_raises_instead_of_sampling_with_replacement (tests.test_angle2a_probes.TestProbeSampling.test_insufficient_transitions_raises_instead_of_sampling_with_replacement) ... ok
+test_probes_never_mix_sources_buffers (tests.test_angle2a_probes.TestProbeSampling.test_probes_never_mix_sources_buffers) ... ok
+test_source_labels_correct_and_states_actions_preserved (tests.test_angle2a_probes.TestProbeSampling.test_source_labels_correct_and_states_actions_preserved) ... ok
+
+----------------------------------------------------------------------
+Ran 12 tests in 0.002s
+
+OK

@@ -1,0 +1,10 @@
+test_does_not_reproduce_a_previous_matchups_data (tests.test_angle2a_storage.TestAngle2AStorage.test_does_not_reproduce_a_previous_matchups_data) ... ok
+test_round_trip_preserves_high_dimensional_arrays_exactly (tests.test_angle2a_storage.TestAngle2AStorage.test_round_trip_preserves_high_dimensional_arrays_exactly) ... ok
+test_round_trip_preserves_metadata_and_probe_scalars (tests.test_angle2a_storage.TestAngle2AStorage.test_round_trip_preserves_metadata_and_probe_scalars) ... ok
+test_already_absolute_root_is_left_correct (tests.test_angle2a_storage.TestSaveFrozenAgentSnapshotCheckpointDirIsAlwaysAbsolute.test_already_absolute_root_is_left_correct) ... ok
+test_relative_root_still_produces_an_absolute_save_checkpoint_call (tests.test_angle2a_storage.TestSaveFrozenAgentSnapshotCheckpointDirIsAlwaysAbsolute.test_relative_root_still_produces_an_absolute_save_checkpoint_call) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.021s
+
+OK

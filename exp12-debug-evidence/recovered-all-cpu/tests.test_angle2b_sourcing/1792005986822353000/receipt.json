@@ -1,0 +1,15 @@
+{
+  "module": "tests.test_angle2b_sourcing",
+  "source_hash": "c07ca4fb99dc3308d1e6fed0f827f0bebd6442ded04ccc6e755cbde6ba77c455",
+  "success": false,
+  "tests_run": 3,
+  "test_ids": [
+    "tests.test_angle2b_sourcing.EndToEndSourcingTest.test_primary_and_secondary_each_use_only_their_own_actors_buffer",
+    "tests.test_angle2b_sourcing.SampleStateBatchUnitTest.test_returned_states_are_a_subset_of_the_single_source_array",
+    "tests.test_angle2b_sourcing.SampleStateBatchUnitTest.test_signature_takes_exactly_one_source_array"
+  ],
+  "failures": 0,
+  "errors": 1,
+  "skips": [],
+  "unexpected_successes": 0
+}

@@ -1,0 +1,14 @@
+{"training_runs": 96, "checks": 4738, "max_anchored_decomposition_error": 2.1649348980190553e-15, "all_initial_checks_at_5000": true, "all_checks_on_10000_interaction_grid": true, "score_iqm_definition": "source fractional IQM over ten rounds", "no_new_fits": true}
+  environment architecture  n_seeds  initial_fresh_score  trained_score  contemporaneous_fresh_score  anchored_deficit  anchored_deficit_ci_low  anchored_deficit_ci_high
+      dog-run       D2W512        8             0.495211       0.367695                     0.488917          0.127517                 0.101321                  0.154802
+      dog-run      D4W1024        8             0.494277       0.492169                     0.479586          0.002107                -0.000056                  0.004538
+      dog-run      D4W1536        8             0.495087       0.492613                     0.462574          0.002473                 0.000075                  0.004996
+ humanoid-run       D2W512        8             0.494839       0.485186                     0.462669          0.009653                 0.005048                  0.014487
+ humanoid-run      D4W1024        8             0.492836       0.489199                     0.436833          0.003637                 0.000124                  0.007588
+ humanoid-run      D4W1536        8             0.490453       0.487996                     0.337007          0.002457                -0.001887                  0.007040
+ myo-key-turn       D2W512        8             0.496346      -0.157765                     0.434413          0.654111                 0.601795                  0.706937
+ myo-key-turn      D4W1024        8             0.494356      -0.034953                     0.424140          0.529309                 0.519736                  0.539631
+ myo-key-turn      D4W1536        8             0.493662      -0.114481                     0.350514          0.608143                 0.553110                  0.663590
+myo-pen-twirl       D2W512        8             0.496410      -7.029489                     0.406838          7.525899                 4.316946                 10.396089
+myo-pen-twirl      D4W1024        8             0.492373      -0.362643                     0.335362          0.855016                 0.479173                  1.576102
+myo-pen-twirl      D4W1536        8             0.489806      -2.596413                     0.243355          3.086220                 1.118993                  5.052920

@@ -1,0 +1,7 @@
+test_one_claim_and_link_preserve_old_owner_on_recovery (tests.test_exp12_dynamic_delta_preflight.DeltaPreflightVerifierTest.test_one_claim_and_link_preserve_old_owner_on_recovery) ... ok
+test_same_node_or_two_winners_fails_closed (tests.test_exp12_dynamic_delta_preflight.DeltaPreflightVerifierTest.test_same_node_or_two_winners_fails_closed) ... ok
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.005s
+
+OK

@@ -1,0 +1,28 @@
+{
+  "module": "tests.test_exp12_qualification_evidence",
+  "source_hash": "427ac810143706c21cde9966a51d62940d777afd96197166c657d661be5830a6",
+  "success": true,
+  "tests_run": 16,
+  "test_ids": [
+    "tests.test_exp12_qualification_evidence.CalibrationPopulationTest.test_all_sizes_100_pairs_and_5pct_boundary_are_preserved",
+    "tests.test_exp12_qualification_evidence.CalibrationPopulationTest.test_block_b_range_cannot_infer_its_population_from_present_files",
+    "tests.test_exp12_qualification_evidence.CalibrationPopulationTest.test_invalid_pair_acceptance_rule_is_not_silently_selected",
+    "tests.test_exp12_qualification_evidence.CalibrationPopulationTest.test_missing_duplicate_small_and_contradictory_summaries_cannot_pass",
+    "tests.test_exp12_qualification_evidence.Check1EvidenceTest.test_broadcastable_shape_corruption_is_rejected",
+    "tests.test_exp12_qualification_evidence.Check1EvidenceTest.test_nonfinite_empty_and_non_fp32_panels_are_rejected",
+    "tests.test_exp12_qualification_evidence.Check1EvidenceTest.test_valid_fp32_report_preserves_64_eps_and_exact_identity",
+    "tests.test_exp12_qualification_evidence.NullEvidenceTest.test_nonfinite_original_evidence_stays_invalid_and_never_fires",
+    "tests.test_exp12_qualification_evidence.NullEvidenceTest.test_pairing_statistics_and_protocol_corruption_are_rejected",
+    "tests.test_exp12_qualification_evidence.NullEvidenceTest.test_resume_recomputes_contradictory_firing",
+    "tests.test_exp12_qualification_evidence.PositiveControlEvidenceTest.test_bad_fork_is_rejected_before_agent_creation_or_loading",
+    "tests.test_exp12_qualification_evidence.PositiveControlEvidenceTest.test_corrupt_records_state_and_horizons_are_rejected",
+    "tests.test_exp12_qualification_evidence.PositiveControlEvidenceTest.test_existing_evidence_is_never_overwritten",
+    "tests.test_exp12_qualification_evidence.PositiveControlEvidenceTest.test_false_fork_at_a_nonfiring_check_is_rejected",
+    "tests.test_exp12_qualification_evidence.PositiveControlEvidenceTest.test_full_settings_natural_first_trigger_is_cpu_verifiable",
+    "tests.test_exp12_qualification_evidence.PositiveControlEvidenceTest.test_late_and_nonfirst_forks_are_rejected"
+  ],
+  "failures": 0,
+  "errors": 0,
+  "skips": [],
+  "unexpected_successes": 0
+}

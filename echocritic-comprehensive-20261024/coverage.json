@@ -1,0 +1,13 @@
+{
+  "available_records": 9,
+  "expected_owner_reported_records": 103,
+  "missing_relative_to_reported_count": 94,
+  "states": {
+    "finished": 9
+  },
+  "configured_projects": {
+    "echocritic_method_c_ten_96": 2,
+    "echocritic_official_exp1": 7
+  },
+  "status": "INCOMPLETE_INPUT_CANNOT_EXECUTE_FULL_CAMPAIGN_INFERENCE"
+}

@@ -1,0 +1,24 @@
+test_constant_seeds_give_a_degenerate_band (tests.test_exp12_exp2_analysis.BandTest.test_constant_seeds_give_a_degenerate_band) ... ok
+test_iqm_is_the_default_and_unknown_statistics_are_refused (tests.test_exp12_exp2_analysis.BandTest.test_iqm_is_the_default_and_unknown_statistics_are_refused) ... ok
+test_point_is_the_statistic_over_seeds_and_the_band_contains_it (tests.test_exp12_exp2_analysis.BandTest.test_point_is_the_statistic_over_seeds_and_the_band_contains_it) ... ok
+test_reproducible_and_iqm_resists_an_outlier (tests.test_exp12_exp2_analysis.BandTest.test_reproducible_and_iqm_resists_an_outlier) ... ok
+test_resampled_seed_sets_are_shared_across_points (tests.test_exp12_exp2_analysis.BandTest.test_resampled_seed_sets_are_shared_across_points) ... ok
+WARNING:matplotlib.style.core:In /Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/matplotlib/mpl-data/stylelib/classic.mplstyle: 'parseString' deprecated - use 'parse_string'
+WARNING:matplotlib.style.core:In /Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/matplotlib/mpl-data/stylelib/classic.mplstyle: 'resetCache' deprecated - use 'reset_cache'
+WARNING:matplotlib.style.core:In /Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/matplotlib/mpl-data/stylelib/classic.mplstyle: 'parseString' deprecated - use 'parse_string'
+WARNING:matplotlib.style.core:In /Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/matplotlib/mpl-data/stylelib/classic.mplstyle: 'resetCache' deprecated - use 'reset_cache'
+WARNING:matplotlib.style.core:In /Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/matplotlib/mpl-data/stylelib/classic.mplstyle: 'parseString' deprecated - use 'parse_string'
+WARNING:matplotlib.style.core:In /Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/matplotlib/mpl-data/stylelib/classic.mplstyle: 'resetCache' deprecated - use 'reset_cache'
+WARNING:matplotlib.style.core:In /Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/matplotlib/mpl-data/stylelib/classic.mplstyle: 'parseString' deprecated - use 'parse_string'
+WARNING:matplotlib.style.core:In /Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/matplotlib/mpl-data/stylelib/classic.mplstyle: 'resetCache' deprecated - use 'reset_cache'
+test_band_per_environment_over_complete_confirmatory_forks (tests.test_exp12_exp2_analysis.SyntheticResultsTest.test_band_per_environment_over_complete_confirmatory_forks) ... ok
+test_dev_included_on_request (tests.test_exp12_exp2_analysis.SyntheticResultsTest.test_dev_included_on_request) ... ok
+test_normalize_hook_is_applied_per_environment (tests.test_exp12_exp2_analysis.SyntheticResultsTest.test_normalize_hook_is_applied_per_environment) ... ok
+test_paired_difference_is_injected_minus_control_mean_return (tests.test_exp12_exp2_analysis.SyntheticResultsTest.test_paired_difference_is_injected_minus_control_mean_return) ... ok
+test_secondary_is_the_check2_success_subset (tests.test_exp12_exp2_analysis.SyntheticResultsTest.test_secondary_is_the_check2_success_subset) ... ok
+test_tables_and_files (tests.test_exp12_exp2_analysis.SyntheticResultsTest.test_tables_and_files) ... ok
+
+----------------------------------------------------------------------
+Ran 11 tests in 0.841s
+
+OK

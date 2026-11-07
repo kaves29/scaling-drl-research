@@ -1,0 +1,58 @@
+{
+  "implementation_commit": "2dc8734fc79c04d44d5072644e9eb45f8389f90f",
+  "backend": "CPU only; HumanoidBench integration skipped, no CUDA workload or Delta job",
+  "python": "3.12.13 (main, Mar  3 2026, 12:39:30) [Clang 21.0.0 (clang-2100.0.123.102)]",
+  "platform": "macOS-26.6.2-arm64-arm-64bit",
+  "packages": {
+    "jax": "0.4.34",
+    "jaxlib": "0.4.34",
+    "flax": "0.8.4",
+    "optax": "0.2.3",
+    "orbax-checkpoint": "0.5.3",
+    "numpy": "1.26.4",
+    "pandas": "2.1.4",
+    "mujoco": "3.6.0",
+    "dm-control": "1.0.38",
+    "myosuite": "2.12.2"
+  },
+  "analysis_overlay": "/tmp/exp12-validation-deps: rliable 1.2.0, arch 7.2.0; research environment unchanged",
+  "older": {
+    "run": 262,
+    "passed": 262,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "exp12": {
+    "run": 180,
+    "passed": 177,
+    "failed": 1,
+    "errors": 0,
+    "skipped": 2
+  },
+  "new_exp12": {
+    "completeness": 19,
+    "hb_plumbing": 8,
+    "oracle_arithmetic": 2,
+    "twin_reporting": 2,
+    "all_passed": true
+  },
+  "mutations": {
+    "run": 72,
+    "OK": 71,
+    "PROBLEM": 1,
+    "unresolved": "min-gradient panel restored test remains numerically red"
+  },
+  "commands": {
+    "exp12": "env JAX_PLATFORMS=cpu MUJOCO_GL=disable EXP12_JAX_CACHE_DIR=off PYTHONPATH=/tmp/exp12-validation-deps MPLCONFIGDIR=/tmp/exp12-mpl .venv/bin/python -m unittest discover -s main/tests -t main -p test_exp12_*.py -v",
+    "mutations": "from main/: same environment, ../.venv/bin/python -m tests.exp12_break_checks",
+    "characterization": "same environment, .venv/bin/python main/scripts/characterize_exp12_twin_numerics.py --out /tmp/exp12-twin-characterization.json"
+  },
+  "pending": [
+    "one-seed uncertainty",
+    "CPU semantic oracle bound",
+    "CUDA helper/mask/discrete coverage",
+    "additional CUDA/cache/mode plan",
+    "four CUDA bounds after measurement"
+  ]
+}

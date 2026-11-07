@@ -1,0 +1,21 @@
+{
+  "module": "tests.test_angle2a_onset_lookup",
+  "source_hash": "c07ca4fb99dc3308d1e6fed0f827f0bebd6442ded04ccc6e755cbde6ba77c455",
+  "success": true,
+  "tests_run": 9,
+  "test_ids": [
+    "tests.test_angle2a_onset_lookup.TestAngle2AOnsetLookup.test_ambiguous_is_no_longer_a_valid_status_at_all",
+    "tests.test_angle2a_onset_lookup.TestAngle2AOnsetLookup.test_correct_onset_selected_for_5x768",
+    "tests.test_angle2a_onset_lookup.TestAngle2AOnsetLookup.test_correct_onset_selected_for_7x1024_is_independent_from_5x768",
+    "tests.test_angle2a_onset_lookup.TestAngle2AOnsetLookup.test_lookup_is_seed_specific",
+    "tests.test_angle2a_onset_lookup.TestAngle2AOnsetLookup.test_missing_entry_raises",
+    "tests.test_angle2a_onset_lookup.TestAngle2AOnsetLookup.test_needs_manual_review_status_is_rejected",
+    "tests.test_angle2a_onset_lookup.TestAngle2AOnsetLookup.test_never_falls_back_to_another_seed",
+    "tests.test_angle2a_onset_lookup.TestAngle2AOnsetLookup.test_no_onset_detected_status_is_rejected",
+    "tests.test_angle2a_onset_lookup.TestAngle2AOnsetLookup.test_wrong_environment_is_not_matched"
+  ],
+  "failures": 0,
+  "errors": 0,
+  "skips": [],
+  "unexpected_successes": 0
+}

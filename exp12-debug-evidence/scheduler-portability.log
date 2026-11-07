@@ -1,0 +1,22 @@
+test_arm_identity_has_separate_source_m_and_destination (tests.test_exp12_dynamic_scheduler.DurableLedgerTest.test_arm_identity_has_separate_source_m_and_destination) ... ok
+test_completed_row_never_reclaimed_and_tampering_blocks (tests.test_exp12_dynamic_scheduler.DurableLedgerTest.test_completed_row_never_reclaimed_and_tampering_blocks) ... ok
+test_concurrent_claims_have_one_owner (tests.test_exp12_dynamic_scheduler.DurableLedgerTest.test_concurrent_claims_have_one_owner) ... ok
+test_deferred_arm_discovery_after_parent_completion_is_idempotent (tests.test_exp12_dynamic_scheduler.DurableLedgerTest.test_deferred_arm_discovery_after_parent_completion_is_idempotent) ... ok
+test_injected_arm_completion_requires_full_eval_schedule (tests.test_exp12_dynamic_scheduler.DurableLedgerTest.test_injected_arm_completion_requires_full_eval_schedule) ... ok
+test_one_immutable_queue_per_campaign_root (tests.test_exp12_dynamic_scheduler.DurableLedgerTest.test_one_immutable_queue_per_campaign_root) ... ok
+test_parent_recovers_from_committed_natural_fork_state (tests.test_exp12_dynamic_scheduler.DurableLedgerTest.test_parent_recovers_from_committed_natural_fork_state) ... ok
+test_partial_claim_or_guard_never_stolen (tests.test_exp12_dynamic_scheduler.DurableLedgerTest.test_partial_claim_or_guard_never_stolen) ... ok
+test_resume_refuses_missing_checkpoint_and_wrong_source (tests.test_exp12_dynamic_scheduler.DurableLedgerTest.test_resume_refuses_missing_checkpoint_and_wrong_source) ... ok
+test_reviewed_retry_preserves_failure_and_requires_valid_checkpoint (tests.test_exp12_dynamic_scheduler.DurableLedgerTest.test_reviewed_retry_preserves_failure_and_requires_valid_checkpoint) ... ok
+test_separate_processes_cannot_claim_same_run (tests.test_exp12_dynamic_scheduler.DurableLedgerTest.test_separate_processes_cannot_claim_same_run) ... ok
+test_stale_claim_recovery_preserves_old_owner_and_attempt (tests.test_exp12_dynamic_scheduler.DurableLedgerTest.test_stale_claim_recovery_preserves_old_owner_and_attempt) ... ok
+test_valid_done_reconciles_and_invalid_done_blocks (tests.test_exp12_dynamic_scheduler.DurableLedgerTest.test_valid_done_reconciles_and_invalid_done_blocks) ... ok
+test_actual_two_node_allocation_must_match_approved_resources (tests.test_exp12_dynamic_scheduler.ResourceAdmissionTest.test_actual_two_node_allocation_must_match_approved_resources) ... ok
+test_allocation_shape_and_positive_control_fail_closed (tests.test_exp12_dynamic_scheduler.ResourceAdmissionTest.test_allocation_shape_and_positive_control_fail_closed) ... ok
+test_mixed_packing_waits_for_real_throughput_and_enforces_limits (tests.test_exp12_dynamic_scheduler.ResourceAdmissionTest.test_mixed_packing_waits_for_real_throughput_and_enforces_limits) ... ok
+test_seven_four_two_are_ceilings_not_launch_targets (tests.test_exp12_dynamic_scheduler.ResourceAdmissionTest.test_seven_four_two_are_ceilings_not_launch_targets) ... ok
+
+----------------------------------------------------------------------
+Ran 17 tests in 2.127s
+
+OK

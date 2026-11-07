@@ -1,0 +1,21 @@
+{
+  "module": "tests.test_exp12_validation_checkout",
+  "source_hash": "427ac810143706c21cde9966a51d62940d777afd96197166c657d661be5830a6",
+  "success": true,
+  "tests_run": 9,
+  "test_ids": [
+    "tests.test_exp12_validation_checkout.ValidationCheckoutTest.test_detached_spool_uses_submission_checkout_before_setup",
+    "tests.test_exp12_validation_checkout.ValidationCheckoutTest.test_missing_required_file_rejected",
+    "tests.test_exp12_validation_checkout.ValidationCheckoutTest.test_opened_slurm_logs_allowed_but_tracked_logs_still_checked",
+    "tests.test_exp12_validation_checkout.ValidationCheckoutTest.test_requires_full_expected_commit",
+    "tests.test_exp12_validation_checkout.ValidationCheckoutTest.test_requires_submission_directory",
+    "tests.test_exp12_validation_checkout.ValidationCheckoutTest.test_root_untracked_source_rejected",
+    "tests.test_exp12_validation_checkout.ValidationCheckoutTest.test_test_hooks_rejected_before_setup",
+    "tests.test_exp12_validation_checkout.ValidationCheckoutTest.test_tracked_and_staged_changes_rejected",
+    "tests.test_exp12_validation_checkout.ValidationCheckoutTest.test_wrong_commit_rejected"
+  ],
+  "failures": 0,
+  "errors": 0,
+  "skips": [],
+  "unexpected_successes": 0
+}

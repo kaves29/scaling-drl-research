@@ -1,0 +1,13 @@
+{
+  "module": "tests.test_angle2a_reference_independence",
+  "source_hash": "c07ca4fb99dc3308d1e6fed0f827f0bebd6442ded04ccc6e755cbde6ba77c455",
+  "success": true,
+  "tests_run": 1,
+  "test_ids": [
+    "tests.test_angle2a_reference_independence.ReferenceIndependenceOrchestrationTest.test_both_real_matchups_get_independent_reference_training_no_shared_handle"
+  ],
+  "failures": 0,
+  "errors": 0,
+  "skips": [],
+  "unexpected_successes": 0
+}

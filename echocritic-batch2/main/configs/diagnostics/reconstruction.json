@@ -1,0 +1,22 @@
+{
+  "schema": 1,
+  "description": "Configuration template only; owner must approve the scientific experiment and allocation before execution.",
+  "conditions": [
+    {
+      "id": "pen5_original",
+      "type": "original",
+      "environment": "myo-pen-twirl",
+      "architecture": "D2W512",
+      "seed": 5,
+      "round": 0
+    },
+    {
+      "id": "humanoid1_original",
+      "type": "original",
+      "environment": "humanoid-run",
+      "architecture": "D4W1536",
+      "seed": 1,
+      "round": 0
+    }
+  ]
+}

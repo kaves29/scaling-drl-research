@@ -1,0 +1,100 @@
+test_evaluate_chooses_m (tests.test_exp12_positive_control.MSelectionArithmeticTest.test_evaluate_chooses_m) ... ok
+test_evaluate_stops_on_noise (tests.test_exp12_positive_control.MSelectionArithmeticTest.test_evaluate_stops_on_noise) ... ok
+test_evaluate_stops_when_l_trigger_is_not_positive (tests.test_exp12_positive_control.MSelectionArithmeticTest.test_evaluate_stops_when_l_trigger_is_not_positive) ... ok
+test_loss_rounds_ordered_numerically (tests.test_exp12_positive_control.MSelectionArithmeticTest.test_loss_rounds_ordered_numerically) ... ok
+test_noise_exactly_at_the_threshold_stops (tests.test_exp12_positive_control.MSelectionArithmeticTest.test_noise_exactly_at_the_threshold_stops) ... ok
+test_pooled_sd (tests.test_exp12_positive_control.MSelectionArithmeticTest.test_pooled_sd) ... ok
+test_recovery_toward_the_fresh_critic (tests.test_exp12_positive_control.MSelectionArithmeticTest.test_recovery_toward_the_fresh_critic) ... ok
+test_select_smallest_m_within_tolerance (tests.test_exp12_positive_control.MSelectionArithmeticTest.test_select_smallest_m_within_tolerance) ... ok
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+ total params: 1.54K
+[exp1] fork state saved at interaction_step 100 in 0.1 s
+/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/orbax/checkpoint/type_handlers.py:1475: UserWarning: Couldn't find sharding info under RestoreArgs. Populating sharding info from sharding file. Please note restoration time will be slightly increased due to reading from file instead of directly from RestoreArgs.
+  warnings.warn(
+ total params: 1.54K
+[exp1] restored interaction_step 100 from /var/folders/ms/h3zjmq652jvg08wcslr2z3t80000gn/T/tmp1zmj3fp7/dev_run/fork/state/step_000000100_d4aacd6f in 0.1 s
+[control] post-fork evaluation 0: 0.2 s for 1 episodes
+[control] post-fork evaluation 1: 0.0 s for 1 episodes
+[control] post-fork evaluation 2: 0.0 s for 1 episodes
+[control] post-fork evaluation 3: 0.0 s for 1 episodes
+[control] post-fork evaluation 4: 0.0 s for 1 episodes
+[control] post-fork evaluation 5: 0.1 s for 1 episodes
+[control] post-fork evaluation 6: 0.0 s for 1 episodes
+[control] post-fork evaluation 7: 0.0 s for 1 episodes
+[control] post-fork evaluation 8: 0.1 s for 1 episodes
+[control] post-fork evaluation 9: 0.1 s for 1 episodes
+[control] post-fork evaluation 10: 0.0 s for 1 episodes
+[control] post-fork evaluation 11: 0.0 s for 1 episodes
+[control] post-fork evaluation 12: 0.0 s for 1 episodes
+[control] post-fork evaluation 13: 0.0 s for 1 episodes
+[control] post-fork evaluation 14: 0.0 s for 1 episodes
+[control] post-fork evaluation 15: 0.0 s for 1 episodes
+[control] post-fork evaluation 16: 0.0 s for 1 episodes
+[control] post-fork evaluation 17: 0.0 s for 1 episodes
+[control] post-fork evaluation 18: 0.0 s for 1 episodes
+[control] post-fork evaluation 19: 0.0 s for 1 episodes
+[control] post-fork evaluation 20: 0.0 s for 1 episodes
+[control] post-fork evaluation 21: 0.0 s for 1 episodes
+[control] post-fork evaluation 22: 0.0 s for 1 episodes
+[control] post-fork evaluation 23: 0.0 s for 1 episodes
+[control] post-fork evaluation 24: 0.0 s for 1 episodes
+[control] post-fork evaluation 25: 0.0 s for 1 episodes
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+test_cli_needs_no_definition_flags (tests.test_exp12_positive_control.PositiveControlEndToEndTest.test_cli_needs_no_definition_flags) ... usage: run_exp12_cpu_validation.py [-h] --run_dir RUN_DIR --out_dir OUT_DIR
+                                   [--allow_any_setting]
+run_exp12_cpu_validation.py: error: unrecognized arguments: --healthy_reference last_pre_trigger
+ok
+test_full_report (tests.test_exp12_positive_control.PositiveControlEndToEndTest.test_full_report) ... /Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/orbax/checkpoint/type_handlers.py:1475: UserWarning: Couldn't find sharding info under RestoreArgs. Populating sharding info from sharding file. Please note restoration time will be slightly increased due to reading from file instead of directly from RestoreArgs.
+  warnings.warn(
+ total params: 1.54K
+ total params: 1.54K
+{"status": "stop", "stop": "test-only or forced evidence cannot qualify m; consult the project lead", "chosen_m": null}
+ok
+test_injection_does_not_change_predictions_before_the_probe (tests.test_exp12_positive_control.PositiveControlEndToEndTest.test_injection_does_not_change_predictions_before_the_probe) ... /Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/orbax/checkpoint/type_handlers.py:1475: UserWarning: Couldn't find sharding info under RestoreArgs. Populating sharding info from sharding file. Please note restoration time will be slightly increased due to reading from file instead of directly from RestoreArgs.
+  warnings.warn(
+
+[positive control, tiny forced run] status=stop stop=test-only or forced evidence cannot qualify m; consult the project lead
+ total params: 1.54K
+{"status": "stop", "stop": "test-only or forced evidence cannot qualify m; consult the project lead", "chosen_m": null}
+ok
+test_never_triggered_run_stops (tests.test_exp12_positive_control.PositiveControlEndToEndTest.test_never_triggered_run_stops) ... {"status": "stop", "stop": "the development run has no fork (it never triggered); consult the project lead, the trigger is never loosened", "chosen_m": null}
+ok
+test_refuses_wrong_setting (tests.test_exp12_positive_control.PositiveControlEndToEndTest.test_refuses_wrong_setting) ... ok
+test_default_is_each_critics_own_offset (tests.test_exp12_positive_control.SharedOffsetTest.test_default_is_each_critics_own_offset) ... ok
+test_shared_offset_modes (tests.test_exp12_positive_control.SharedOffsetTest.test_shared_offset_modes) ... ok
+
+----------------------------------------------------------------------
+Ran 15 tests in 21.235s
+
+OK

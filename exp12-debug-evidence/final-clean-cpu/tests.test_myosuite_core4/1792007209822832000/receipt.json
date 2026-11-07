@@ -1,0 +1,22 @@
+{
+  "module": "tests.test_myosuite_core4",
+  "source_hash": "427ac810143706c21cde9966a51d62940d777afd96197166c657d661be5830a6",
+  "success": true,
+  "tests_run": 10,
+  "test_ids": [
+    "tests.test_myosuite_core4.TestAngle2AAcceptsMyosuiteEnvs.test_core4_myosuite_env_passes",
+    "tests.test_myosuite_core4.TestAngle2AAcceptsMyosuiteEnvs.test_heldout2_myosuite_env_is_rejected",
+    "tests.test_myosuite_core4.TestAngle2AAcceptsMyosuiteEnvs.test_still_enforces_num_train_envs_one_after_the_core4_check",
+    "tests.test_myosuite_core4.TestMyosuiteCore4HeldOut2Lists.test_core4_and_heldout2_are_disjoint",
+    "tests.test_myosuite_core4.TestMyosuiteCore4HeldOut2Lists.test_core4_has_exactly_four_and_heldout2_has_exactly_two",
+    "tests.test_myosuite_core4.TestMyosuiteCore4HeldOut2Lists.test_every_core4_and_heldout2_alias_is_a_real_registered_myosuite_env",
+    "tests.test_myosuite_core4.TestMyosuiteCore4Validation.test_core4_myosuite_envs_are_accepted",
+    "tests.test_myosuite_core4.TestMyosuiteCore4Validation.test_dmc_env_type_is_always_a_no_op",
+    "tests.test_myosuite_core4.TestMyosuiteCore4Validation.test_heldout2_myosuite_envs_are_rejected_with_a_clear_message",
+    "tests.test_myosuite_core4.TestMyosuiteCore4Validation.test_unknown_myosuite_env_name_is_rejected"
+  ],
+  "failures": 0,
+  "errors": 0,
+  "skips": [],
+  "unexpected_successes": 0
+}

@@ -1,0 +1,23 @@
+{
+  "module": "tests.test_exp12_exp2_analysis",
+  "source_hash": "52468342b4543cf79e93cc96c34167ddc17c8dd811e7e45949cacf4b5cee0c6b",
+  "success": true,
+  "tests_run": 11,
+  "test_ids": [
+    "tests.test_exp12_exp2_analysis.BandTest.test_constant_seeds_give_a_degenerate_band",
+    "tests.test_exp12_exp2_analysis.BandTest.test_iqm_is_the_default_and_unknown_statistics_are_refused",
+    "tests.test_exp12_exp2_analysis.BandTest.test_point_is_the_statistic_over_seeds_and_the_band_contains_it",
+    "tests.test_exp12_exp2_analysis.BandTest.test_reproducible_and_iqm_resists_an_outlier",
+    "tests.test_exp12_exp2_analysis.BandTest.test_resampled_seed_sets_are_shared_across_points",
+    "tests.test_exp12_exp2_analysis.SyntheticResultsTest.test_band_per_environment_over_complete_confirmatory_forks",
+    "tests.test_exp12_exp2_analysis.SyntheticResultsTest.test_dev_included_on_request",
+    "tests.test_exp12_exp2_analysis.SyntheticResultsTest.test_normalize_hook_is_applied_per_environment",
+    "tests.test_exp12_exp2_analysis.SyntheticResultsTest.test_paired_difference_is_injected_minus_control_mean_return",
+    "tests.test_exp12_exp2_analysis.SyntheticResultsTest.test_secondary_is_the_check2_success_subset",
+    "tests.test_exp12_exp2_analysis.SyntheticResultsTest.test_tables_and_files"
+  ],
+  "failures": 0,
+  "errors": 0,
+  "skips": [],
+  "unexpected_successes": 0
+}

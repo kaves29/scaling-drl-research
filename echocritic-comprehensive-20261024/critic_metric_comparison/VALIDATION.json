@@ -1,0 +1,9 @@
+{
+  "campaign_runs": 96,
+  "metric_rows": 23800,
+  "aligned_probe_checks": 4738,
+  "duplicate_probe_rows": 0,
+  "all_DR02_at_least_DR01": true,
+  "all_rank_between_1_and_256": true,
+  "no_new_fits": true
+}

@@ -1,0 +1,8 @@
+test_identity_arm_restored_in_a_new_process_matches_the_control (tests.test_exp12_hb_cpu_restore.HumanoidBenchCpuRestoreTest.test_identity_arm_restored_in_a_new_process_matches_the_control) ... skipped 'needs humanoid_bench (MUJOCO_GL=osmesa on CPU hosts)'
+test_killed_jobs_resume_bit_identically_in_a_new_process (tests.test_exp12_hb_cpu_restore.HumanoidBenchCpuRestoreTest.test_killed_jobs_resume_bit_identically_in_a_new_process) ... skipped 'needs humanoid_bench (MUJOCO_GL=osmesa on CPU hosts)'
+test_the_suite_configures_the_twin_critic (tests.test_exp12_hb_cpu_restore.HumanoidBenchCpuRestoreTest.test_the_suite_configures_the_twin_critic) ... skipped 'needs humanoid_bench (MUJOCO_GL=osmesa on CPU hosts)'
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.000s
+
+OK (skipped=3)

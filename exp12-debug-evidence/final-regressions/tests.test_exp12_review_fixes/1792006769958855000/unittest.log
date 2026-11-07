@@ -1,0 +1,18 @@
+test_ended_owner_is_recovered (tests.test_exp12_review_fixes.ClaimContainmentTest.test_ended_owner_is_recovered) ... ok
+test_orphaned_transition_guard_is_reported_once (tests.test_exp12_review_fixes.ClaimContainmentTest.test_orphaned_transition_guard_is_reported_once) ... ok
+test_unknown_liveness_skips_the_row_without_killing_the_worker (tests.test_exp12_review_fixes.ClaimContainmentTest.test_unknown_liveness_skips_the_row_without_killing_the_worker) ... [scheduler] WARNING: claim of exp1_D4W1536_hopper-hop_seed1 refused: RuntimeError: squeue and sacct failed; claim recovery refused; retrying in 300 s
+ok
+test_save_npz_replaces_atomically (tests.test_exp12_review_fixes.DurableStateAndAtomicNpzTest.test_save_npz_replaces_atomically) ... ok
+test_state_is_flushed_before_latest_names_it (tests.test_exp12_review_fixes.DurableStateAndAtomicNpzTest.test_state_is_flushed_before_latest_names_it) ... ok
+test_every_manifest_group_has_an_estimate_slot_and_is_admissible (tests.test_exp12_review_fixes.EnvironmentGroupsTest.test_every_manifest_group_has_an_estimate_slot_and_is_admissible) ... ok
+test_prepare_creates_submission_and_log_directories (tests.test_exp12_review_fixes.EnvironmentGroupsTest.test_prepare_creates_submission_and_log_directories) ... ok
+test_listed_terminal_jobs_are_ended (tests.test_exp12_review_fixes.SlurmLivenessTest.test_listed_terminal_jobs_are_ended) ... ok
+test_purged_job_id_is_ended_not_a_crash (tests.test_exp12_review_fixes.SlurmLivenessTest.test_purged_job_id_is_ended_not_a_crash) ... ok
+test_running_and_pending_jobs_are_alive (tests.test_exp12_review_fixes.SlurmLivenessTest.test_running_and_pending_jobs_are_alive) ... ok
+test_squeue_failure_falls_back_to_sacct_and_refuses_when_unknown (tests.test_exp12_review_fixes.SlurmLivenessTest.test_squeue_failure_falls_back_to_sacct_and_refuses_when_unknown) ... ok
+test_unrecognised_state_is_treated_as_alive (tests.test_exp12_review_fixes.SlurmLivenessTest.test_unrecognised_state_is_treated_as_alive) ... ok
+
+----------------------------------------------------------------------
+Ran 12 tests in 1.449s
+
+OK

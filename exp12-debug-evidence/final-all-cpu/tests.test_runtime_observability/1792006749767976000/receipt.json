@@ -1,0 +1,23 @@
+{
+  "module": "tests.test_runtime_observability",
+  "source_hash": "52468342b4543cf79e93cc96c34167ddc17c8dd811e7e45949cacf4b5cee0c6b",
+  "success": true,
+  "tests_run": 11,
+  "test_ids": [
+    "tests.test_runtime_observability.RuntimeObservabilityTest.test_boundary_detail_is_limited_to_training_window",
+    "tests.test_runtime_observability.RuntimeObservabilityTest.test_full_trace_analyzer_exposes_unmatched_and_malformed_records",
+    "tests.test_runtime_observability.RuntimeObservabilityTest.test_metric_payload_sizes_use_real_flush_and_original_row_order",
+    "tests.test_runtime_observability.RuntimeObservabilityTest.test_pending_transfer_and_replay_preserve_metrics_and_add_no_waits",
+    "tests.test_runtime_observability.RuntimeObservabilityTest.test_post_call_sync_failure_reports_phase_and_preserves_call",
+    "tests.test_runtime_observability.RuntimeObservabilityTest.test_pre_call_sync_failure_has_flushed_begin_and_matching_error",
+    "tests.test_runtime_observability.RuntimeObservabilityTest.test_slow_and_failed_trace_writes_are_not_hidden",
+    "tests.test_runtime_observability.RuntimeObservabilityTest.test_startup_import_failure_is_flushed_before_jax_trace_import",
+    "tests.test_runtime_observability.RuntimeObservabilityTest.test_transfer_failure_is_recorded_without_consuming_pending_rows",
+    "tests.test_runtime_observability.RuntimeObservabilityTest.test_wrapper_captures_stacks_and_preserves_entrypoint_error",
+    "tests.test_runtime_observability.RuntimeObservabilityTest.test_wrapper_rejects_invalid_watchdog_and_preserves_existing_stack_file"
+  ],
+  "failures": 0,
+  "errors": 0,
+  "skips": [],
+  "unexpected_successes": 0
+}

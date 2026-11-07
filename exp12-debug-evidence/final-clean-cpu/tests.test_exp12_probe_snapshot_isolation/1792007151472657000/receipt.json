@@ -1,0 +1,13 @@
+{
+  "module": "tests.test_exp12_probe_snapshot_isolation",
+  "source_hash": "427ac810143706c21cde9966a51d62940d777afd96197166c657d661be5830a6",
+  "success": true,
+  "tests_run": 1,
+  "test_ids": [
+    "tests.test_exp12_probe_snapshot_isolation.ProbeSnapshotIsolationTest.test_fresh_and_trained_probe_leave_live_state_unchanged"
+  ],
+  "failures": 0,
+  "errors": 0,
+  "skips": [],
+  "unexpected_successes": 0
+}

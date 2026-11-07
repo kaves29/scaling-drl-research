@@ -1,0 +1,25 @@
+{
+  "module": "tests.test_exp12_campaign_inventory",
+  "source_hash": "427ac810143706c21cde9966a51d62940d777afd96197166c657d661be5830a6",
+  "success": true,
+  "tests_run": 13,
+  "test_ids": [
+    "tests.test_exp12_campaign_inventory.CampaignInventoryTest.test_claims_are_not_queried_or_deleted",
+    "tests.test_exp12_campaign_inventory.CampaignInventoryTest.test_done_with_an_unready_fork_is_blocked",
+    "tests.test_exp12_campaign_inventory.CampaignInventoryTest.test_file_root_is_not_misreported_as195_fresh_runs",
+    "tests.test_exp12_campaign_inventory.CampaignInventoryTest.test_independent_full_population_and_budgets",
+    "tests.test_exp12_campaign_inventory.CampaignInventoryTest.test_late_control_horizon_matches_the_approved_marker",
+    "tests.test_exp12_campaign_inventory.CampaignInventoryTest.test_latest_escape_and_missing_payload_are_blocked",
+    "tests.test_exp12_campaign_inventory.CampaignInventoryTest.test_malformed_done_preserved_and_blocked",
+    "tests.test_exp12_campaign_inventory.CampaignInventoryTest.test_missing_launch_history_is_blocked",
+    "tests.test_exp12_campaign_inventory.CampaignInventoryTest.test_mixed_resume_source_is_blocked",
+    "tests.test_exp12_campaign_inventory.CampaignInventoryTest.test_parent_aliases_do_not_duplicate_identity",
+    "tests.test_exp12_campaign_inventory.CampaignInventoryTest.test_ready_marker_without_fork_header_is_blocked",
+    "tests.test_exp12_campaign_inventory.CampaignInventoryTest.test_stale_done_cannot_silently_suppress_a_parent",
+    "tests.test_exp12_campaign_inventory.CampaignInventoryTest.test_structure_never_certifies_the_payload"
+  ],
+  "failures": 0,
+  "errors": 0,
+  "skips": [],
+  "unexpected_successes": 0
+}

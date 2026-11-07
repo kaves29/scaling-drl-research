@@ -1,0 +1,49 @@
+{
+  "source_commit": "723da0d1c0c6f95910468a4aae9c94f1c40f60ed",
+  "harness_commit": "723da0d1c0c6f95910468a4aae9c94f1c40f60ed",
+  "harness_sha256": "0880e7be8fa83a5e42249391f21bd7a5e4ac82004128528b94b040800fbe0c42",
+  "gpu": "cpu",
+  "backend": "cpu",
+  "jax_version": "0.4.34",
+  "steps": 12,
+  "precision": "production_tf32",
+  "measurement_mode": "recording_isolation",
+  "slurm_job_id": null,
+  "xla_flags": null,
+  "arms": [
+    "off_a",
+    "on",
+    "off_b"
+  ],
+  "verdict": "INCOMPLETE",
+  "off_a": {
+    "overrides": [
+      "env_name=hopper-hop",
+      "env=dmc_medium",
+      "seed=1",
+      "actor_num_blocks=1",
+      "actor_hidden_dim=8",
+      "critic_num_blocks=1",
+      "critic_hidden_dim=8",
+      "env.num_env_steps=24",
+      "buffer.min_length=10",
+      "buffer.max_length=1000",
+      "buffer.sample_batch_size=8",
+      "evaluation_per_interaction_step=100",
+      "logging_per_interaction_step=20",
+      "num_eval_episodes=1",
+      "probe.steps=20",
+      "probe.pool_size=64",
+      "probe.batch_size=16",
+      "probe.eval_chunk=32",
+      "diagnostics.enabled=false",
+      "results_root=/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/extended-qualification/original-precision-defect/off_a/results",
+      "probe.enabled=false"
+    ],
+    "status": "FAILED",
+    "error": {
+      "type": "ValueError",
+      "message": "precision changed during the training run"
+    }
+  }
+}

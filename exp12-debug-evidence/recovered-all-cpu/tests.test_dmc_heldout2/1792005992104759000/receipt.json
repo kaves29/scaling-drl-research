@@ -1,0 +1,21 @@
+{
+  "module": "tests.test_dmc_heldout2",
+  "source_hash": "c07ca4fb99dc3308d1e6fed0f827f0bebd6442ded04ccc6e755cbde6ba77c455",
+  "success": true,
+  "tests_run": 9,
+  "test_ids": [
+    "tests.test_dmc_heldout2.TestAngle2ARejectsHeldoutDmcEnvs.test_core_dmc_env_passes",
+    "tests.test_dmc_heldout2.TestAngle2ARejectsHeldoutDmcEnvs.test_heldout2_dmc_env_is_rejected",
+    "tests.test_dmc_heldout2.TestAngle2ARejectsHeldoutDmcEnvs.test_still_enforces_num_train_envs_one_after_the_heldout_check",
+    "tests.test_dmc_heldout2.TestDmcHeldOut2List.test_core_and_heldout2_are_disjoint",
+    "tests.test_dmc_heldout2.TestDmcHeldOut2List.test_every_heldout2_env_is_a_real_dm_control_task",
+    "tests.test_dmc_heldout2.TestDmcHeldOut2List.test_heldout2_has_exactly_two",
+    "tests.test_dmc_heldout2.TestDmcNotHeldoutValidation.test_core_dmc_envs_are_accepted",
+    "tests.test_dmc_heldout2.TestDmcNotHeldoutValidation.test_heldout2_dmc_envs_are_rejected_with_a_clear_message",
+    "tests.test_dmc_heldout2.TestDmcNotHeldoutValidation.test_myosuite_env_type_is_always_a_no_op"
+  ],
+  "failures": 0,
+  "errors": 0,
+  "skips": [],
+  "unexpected_successes": 0
+}

@@ -1,0 +1,187 @@
+test_complete_keys_with_shortened_methodology_are_rejected (tests.test_exp12_completeness.CompletenessTest.test_complete_keys_with_shortened_methodology_are_rejected) ... ok
+test_confirmatory_output_contains_full_population_certificate (tests.test_exp12_completeness.CompletenessTest.test_confirmatory_output_contains_full_population_certificate) ... ERROR
+test_control_original_panel_change_is_rejected_in_exp1 (tests.test_exp12_completeness.CompletenessTest.test_control_original_panel_change_is_rejected_in_exp1) ... ERROR
+test_directory_addition_prevents_publication (tests.test_exp12_completeness.CompletenessTest.test_directory_addition_prevents_publication) ... ok
+test_episode_grid_breaks_and_early_termination (tests.test_exp12_completeness.CompletenessTest.test_episode_grid_breaks_and_early_termination) ... ERROR
+test_full_population_and_b5_invalids_pass (tests.test_exp12_completeness.CompletenessTest.test_full_population_and_b5_invalids_pass) ... ERROR
+test_independent_population_cannot_shrink_to_observed (tests.test_exp12_completeness.CompletenessTest.test_independent_population_cannot_shrink_to_observed) ... ok
+test_last_eligible_check_keeps_full_horizon_and_nominal_endpoint (tests.test_exp12_completeness.CompletenessTest.test_last_eligible_check_keeps_full_horizon_and_nominal_endpoint) ... ERROR
+test_missing_and_wrong_per_q_curve_rejected (tests.test_exp12_completeness.CompletenessTest.test_missing_and_wrong_per_q_curve_rejected) ... ok
+test_missing_endpoints_duplicates_times_and_provenance (tests.test_exp12_completeness.CompletenessTest.test_missing_endpoints_duplicates_times_and_provenance) ... FAIL
+test_missing_fork_arm_check1_and_check2_evidence (tests.test_exp12_completeness.CompletenessTest.test_missing_fork_arm_check1_and_check2_evidence) ... ERROR
+test_missing_seed_environment_and_architecture_rejected (tests.test_exp12_completeness.CompletenessTest.test_missing_seed_environment_and_architecture_rejected) ... ok
+test_one_seed_reporting_is_blocked_pending_decision (tests.test_exp12_completeness.CompletenessTest.test_one_seed_reporting_is_blocked_pending_decision) ... ERROR
+test_primary_contains_check2_failure (tests.test_exp12_completeness.CompletenessTest.test_primary_contains_check2_failure) ... ERROR
+test_routine_pruned_checkpoints_not_required (tests.test_exp12_completeness.CompletenessTest.test_routine_pruned_checkpoints_not_required) ... ERROR
+test_snapshot_change_and_exploratory_atomic_markers (tests.test_exp12_completeness.CompletenessTest.test_snapshot_change_and_exploratory_atomic_markers) ... ok
+test_terminal_episode_loss_and_nonfinite_return_rejected (tests.test_exp12_completeness.CompletenessTest.test_terminal_episode_loss_and_nonfinite_return_rejected) ... ERROR
+test_twin_aggregate_cannot_disagree_with_individual_measurements (tests.test_exp12_completeness.CompletenessTest.test_twin_aggregate_cannot_disagree_with_individual_measurements) ... ok
+test_zero_eligible_is_explicit (tests.test_exp12_completeness.CompletenessTest.test_zero_eligible_is_explicit) ... ERROR
+
+======================================================================
+ERROR: test_confirmatory_output_contains_full_population_certificate (tests.test_exp12_completeness.CompletenessTest.test_confirmatory_output_contains_full_population_certificate)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/tests/test_exp12_completeness.py", line 356, in test_confirmatory_output_contains_full_population_certificate
+    from analysis import exp1_analysis as a1, exp2_analysis as a2
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/analysis/exp1_analysis.py", line 21, in <module>
+    from rliable import library as rly
+ImportError: cannot import name 'library' from 'rliable' (unknown location)
+
+======================================================================
+ERROR: test_control_original_panel_change_is_rejected_in_exp1 (tests.test_exp12_completeness.CompletenessTest.test_control_original_panel_change_is_rejected_in_exp1)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/tests/test_exp12_completeness.py", line 280, in test_control_original_panel_change_is_rejected_in_exp1
+    source = self.item()["source"]
+             ^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/tests/test_exp12_completeness.py", line 35, in item
+    return v._parent(v.Snapshot(), directory, a, e, s, self.study)[2]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/analysis/exp12_validation.py", line 435, in _parent
+    require(row.code_commit == study["code_commit"], f"{key}: ledger revision mismatch")
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/analysis/exp12_validation.py", line 60, in require
+    raise ValueError(message)
+ValueError: exp1_D4W1024_dog-run_seed1: ledger revision mismatch
+
+======================================================================
+ERROR: test_episode_grid_breaks_and_early_termination (tests.test_exp12_completeness.CompletenessTest.test_episode_grid_breaks_and_early_termination)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/tests/test_exp12_completeness.py", line 168, in test_episode_grid_breaks_and_early_termination
+    item = self.item()
+           ^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/tests/test_exp12_completeness.py", line 35, in item
+    return v._parent(v.Snapshot(), directory, a, e, s, self.study)[2]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/analysis/exp12_validation.py", line 435, in _parent
+    require(row.code_commit == study["code_commit"], f"{key}: ledger revision mismatch")
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/analysis/exp12_validation.py", line 60, in require
+    raise ValueError(message)
+ValueError: exp1_D4W1024_dog-run_seed1: ledger revision mismatch
+
+======================================================================
+ERROR: test_full_population_and_b5_invalids_pass (tests.test_exp12_completeness.CompletenessTest.test_full_population_and_b5_invalids_pass)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/tests/test_exp12_completeness.py", line 48, in test_full_population_and_b5_invalids_pass
+    _, cert = v.validate(
+              ^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/analysis/exp12_validation.py", line 1077, in validate
+    raise ValidationError(errors, census)
+analysis.exp12_validation.ValidationError: Confirmatory analysis refused: exp1_D2W512_dog-run_seed1: exp1_D2W512_dog-run_seed1: ledger revision mismatch; exp1_D2W512_dog-run_seed2: exp1_D2W512_dog-run_seed2: ledger revision mismatch; exp1_D2W512_dog-run_seed3: exp1_D2W512_dog-run_seed3: ledger revision mismatch; exp1_D2W512_dog-run_seed4: exp1_D2W512_dog-run_seed4: ledger revision mismatch; exp1_D2W512_dog-run_seed5: exp1_D2W512_dog-run_seed5: ledger revision mismatch; exp1_D2W512_dog-trot_seed1: exp1_D2W512_dog-trot_seed1: ledger revision mismatch; exp1_D2W512_dog-trot_seed2: exp1_D2W512_dog-trot_seed2: ledger revision mismatch; exp1_D2W512_dog-trot_seed3: exp1_D2W512_dog-trot_seed3: ledger revision mismatch; exp1_D2W512_dog-trot_seed4: exp1_D2W512_dog-trot_seed4: ledger revision mismatch; exp1_D2W512_dog-trot_seed5: exp1_D2W512_dog-trot_seed5: ledger revision mismatch; exp1_D2W512_humanoid-run_seed1: exp1_D2W512_humanoid-run_seed1: ledger revision mismatch; exp1_D2W512_humanoid-run_seed2: exp1_D2W512_humanoid-run_seed2: ledger revision mismatch; exp1_D2W512_humanoid-run_seed3: exp1_D2W512_humanoid-run_seed3: ledger revision mismatch; exp1_D2W512_humanoid-run_seed4: exp1_D2W512_humanoid-run_seed4: ledger revision mismatch; exp1_D2W512_humanoid-run_seed5: exp1_D2W512_humanoid-run_seed5: ledger revision mismatch; exp1_D2W512_humanoid-walk_seed1: exp1_D2W512_humanoid-walk_seed1: ledger revision mismatch; exp1_D2W512_humanoid-walk_seed2: exp1_D2W512_humanoid-walk_seed2: ledger revision mismatch; exp1_D2W512_humanoid-walk_seed3: exp1_D2W512_humanoid-walk_seed3: ledger revision mismatch; exp1_D2W512_humanoid-walk_seed4: exp1_D2W512_humanoid-walk_seed4: ledger revision mismatch; exp1_D2W512_humanoid-walk_seed5: exp1_D2W512_humanoid-walk_seed5: ledger revision mismatch; exp1_D2W512_humanoid-stand_seed1: exp1_D2W512_humanoid-stand_seed1: ledger revision mismatch; exp1_D2W512_humanoid-stand_seed2: exp1_D2W512_humanoid-stand_seed2: ledger revision mismatch; exp1_D2W512_humanoid-stand_seed3: exp1_D2W512_humanoid-stand_seed3: ledger revision mismatch; exp1_D2W512_humanoid-stand_seed4: exp1_D2W512_humanoid-stand_seed4: ledger revision mismatch; exp1_D2W512_humanoid-stand_seed5: exp1_D2W512_humanoid-stand_seed5: ledger revision mismatch; exp1_D2W512_swimmer-swimmer15_seed1: exp1_D2W512_swimmer-swimmer15_seed1: ledger revision mismatch; exp1_D2W512_swimmer-swimmer15_seed2: exp1_D2W512_swimmer-swimmer15_seed2: ledger revision mismatch; exp1_D2W512_swimmer-swimmer15_seed3: exp1_D2W512_swimmer-swimmer15_seed3: ledger revision mismatch; exp1_D2W512_swimmer-swimmer15_seed4: exp1_D2W512_swimmer-swimmer15_seed4: ledger revision mismatch; exp1_D2W512_swimmer-swimmer15_seed5: exp1_D2W512_swimmer-swimmer15_seed5: ledger revision mismatch; exp1_D2W512_hopper-hop_seed1: exp1_D2W512_hopper-hop_seed1: ledger revision mismatch; exp1_D2W512_hopper-hop_seed2: exp1_D2W512_hopper-hop_seed2: ledger revision mismatch; exp1_D2W512_hopper-hop_seed3: exp1_D2W512_hopper-hop_seed3: ledger revision mismatch; exp1_D2W512_hopper-hop_seed4: exp1_D2W512_hopper-hop_seed4: ledger revision mismatch; exp1_D2W512_hopper-hop_seed5: exp1_D2W512_hopper-hop_seed5: ledger revision mismatch; exp1_D2W512_myo-key-turn_seed1: exp1_D2W512_myo-key-turn_seed1: ledger revision mismatch; exp1_D2W512_myo-key-turn_seed2: exp1_D2W512_myo-key-turn_seed2: ledger revision mismatch; exp1_D2W512_myo-key-turn_seed3: exp1_D2W512_myo-key-turn_seed3: ledger revision mismatch; exp1_D2W512_myo-key-turn_seed4: exp1_D2W512_myo-key-turn_seed4: ledger revision mismatch; exp1_D2W512_myo-key-turn_seed5: exp1_D2W512_myo-key-turn_seed5: ledger revision mismatch; exp1_D2W512_myo-pen-twirl_seed1: exp1_D2W512_myo-pen-twirl_seed1: ledger revision mismatch; exp1_D2W512_myo-pen-twirl_seed2: exp1_D2W512_myo-pen-twirl_seed2: ledger revision mismatch; exp1_D2W512_myo-pen-twirl_seed3: exp1_D2W512_myo-pen-twirl_seed3: ledger revision mismatch; exp1_D2W512_myo-pen-twirl_seed4: exp1_D2W512_myo-pen-twirl_seed4: ledger revision mismatch; exp1_D2W512_myo-pen-twirl_seed5: exp1_D2W512_myo-pen-twirl_seed5: ledger revision mismatch; exp1_D2W512_myo-pose-hard_seed1: exp1_D2W512_myo-pose-hard_seed1: ledger revision mismatch; exp1_D2W512_myo-pose-hard_seed2: exp1_D2W512_myo-pose-hard_seed2: ledger revision mismatch; exp1_D2W512_myo-pose-hard_seed3: exp1_D2W512_myo-pose-hard_seed3: ledger revision mismatch; exp1_D2W512_myo-pose-hard_seed4: exp1_D2W512_myo-pose-hard_seed4: ledger revision mismatch; exp1_D2W512_myo-pose-hard_seed5: exp1_D2W512_myo-pose-hard_seed5: ledger revision mismatch; exp1_D2W512_myo-reach_seed1: exp1_D2W512_myo-reach_seed1: ledger revision mismatch; exp1_D2W512_myo-reach_seed2: exp1_D2W512_myo-reach_seed2: ledger revision mismatch; exp1_D2W512_myo-reach_seed3: exp1_D2W512_myo-reach_seed3: ledger revision mismatch; exp1_D2W512_myo-reach_seed4: exp1_D2W512_myo-reach_seed4: ledger revision mismatch; exp1_D2W512_myo-reach_seed5: exp1_D2W512_myo-reach_seed5: ledger revision mismatch; exp1_D2W512_h1-run-v0_seed1: exp1_D2W512_h1-run-v0_seed1: ledger revision mismatch; exp1_D2W512_h1-run-v0_seed2: exp1_D2W512_h1-run-v0_seed2: ledger revision mismatch; exp1_D2W512_h1-run-v0_seed3: exp1_D2W512_h1-run-v0_seed3: ledger revision mismatch; exp1_D2W512_h1-run-v0_seed4: exp1_D2W512_h1-run-v0_seed4: ledger revision mismatch; exp1_D2W512_h1-run-v0_seed5: exp1_D2W512_h1-run-v0_seed5: ledger revision mismatch; exp1_D2W512_h1-reach-v0_seed1: exp1_D2W512_h1-reach-v0_seed1: ledger revision mismatch; exp1_D2W512_h1-reach-v0_seed2: exp1_D2W512_h1-reach-v0_seed2: ledger revision mismatch; exp1_D2W512_h1-reach-v0_seed3: exp1_D2W512_h1-reach-v0_seed3: ledger revision mismatch; exp1_D2W512_h1-reach-v0_seed4: exp1_D2W512_h1-reach-v0_seed4: ledger revision mismatch; exp1_D2W512_h1-reach-v0_seed5: exp1_D2W512_h1-reach-v0_seed5: ledger revision mismatch; exp1_D4W1024_dog-run_seed1: exp1_D4W1024_dog-run_seed1: ledger revision mismatch; exp1_D4W1024_dog-run_seed2: exp1_D4W1024_dog-run_seed2: ledger revision mismatch; exp1_D4W1024_dog-run_seed3: exp1_D4W1024_dog-run_seed3: ledger revision mismatch; exp1_D4W1024_dog-run_seed4: exp1_D4W1024_dog-run_seed4: ledger revision mismatch; exp1_D4W1024_dog-run_seed5: exp1_D4W1024_dog-run_seed5: ledger revision mismatch; exp1_D4W1024_dog-trot_seed1: exp1_D4W1024_dog-trot_seed1: ledger revision mismatch; exp1_D4W1024_dog-trot_seed2: exp1_D4W1024_dog-trot_seed2: ledger revision mismatch; exp1_D4W1024_dog-trot_seed3: exp1_D4W1024_dog-trot_seed3: ledger revision mismatch; exp1_D4W1024_dog-trot_seed4: exp1_D4W1024_dog-trot_seed4: ledger revision mismatch; exp1_D4W1024_dog-trot_seed5: exp1_D4W1024_dog-trot_seed5: ledger revision mismatch; exp1_D4W1024_humanoid-run_seed1: exp1_D4W1024_humanoid-run_seed1: ledger revision mismatch; exp1_D4W1024_humanoid-run_seed2: exp1_D4W1024_humanoid-run_seed2: ledger revision mismatch; exp1_D4W1024_humanoid-run_seed3: exp1_D4W1024_humanoid-run_seed3: ledger revision mismatch; exp1_D4W1024_humanoid-run_seed4: exp1_D4W1024_humanoid-run_seed4: ledger revision mismatch; exp1_D4W1024_humanoid-run_seed5: exp1_D4W1024_humanoid-run_seed5: ledger revision mismatch; exp1_D4W1024_humanoid-walk_seed1: exp1_D4W1024_humanoid-walk_seed1: ledger revision mismatch; exp1_D4W1024_humanoid-walk_seed2: exp1_D4W1024_humanoid-walk_seed2: ledger revision mismatch; exp1_D4W1024_humanoid-walk_seed3: exp1_D4W1024_humanoid-walk_seed3: ledger revision mismatch; exp1_D4W1024_humanoid-walk_seed4: exp1_D4W1024_humanoid-walk_seed4: ledger revision mismatch; exp1_D4W1024_humanoid-walk_seed5: exp1_D4W1024_humanoid-walk_seed5: ledger revision mismatch; exp1_D4W1024_humanoid-stand_seed1: exp1_D4W1024_humanoid-stand_seed1: ledger revision mismatch; exp1_D4W1024_humanoid-stand_seed2: exp1_D4W1024_humanoid-stand_seed2: ledger revision mismatch; exp1_D4W1024_humanoid-stand_seed3: exp1_D4W1024_humanoid-stand_seed3: ledger revision mismatch; exp1_D4W1024_humanoid-stand_seed4: exp1_D4W1024_humanoid-stand_seed4: ledger revision mismatch; exp1_D4W1024_humanoid-stand_seed5: exp1_D4W1024_humanoid-stand_seed5: ledger revision mismatch; exp1_D4W1024_swimmer-swimmer15_seed1: exp1_D4W1024_swimmer-swimmer15_seed1: ledger revision mismatch; exp1_D4W1024_swimmer-swimmer15_seed2: exp1_D4W1024_swimmer-swimmer15_seed2: ledger revision mismatch; exp1_D4W1024_swimmer-swimmer15_seed3: exp1_D4W1024_swimmer-swimmer15_seed3: ledger revision mismatch; exp1_D4W1024_swimmer-swimmer15_seed4: exp1_D4W1024_swimmer-swimmer15_seed4: ledger revision mismatch; exp1_D4W1024_swimmer-swimmer15_seed5: exp1_D4W1024_swimmer-swimmer15_seed5: ledger revision mismatch; exp1_D4W1024_hopper-hop_seed1: exp1_D4W1024_hopper-hop_seed1: ledger revision mismatch; exp1_D4W1024_hopper-hop_seed2: exp1_D4W1024_hopper-hop_seed2: ledger revision mismatch; exp1_D4W1024_hopper-hop_seed3: exp1_D4W1024_hopper-hop_seed3: ledger revision mismatch; exp1_D4W1024_hopper-hop_seed4: exp1_D4W1024_hopper-hop_seed4: ledger revision mismatch; exp1_D4W1024_hopper-hop_seed5: exp1_D4W1024_hopper-hop_seed5: ledger revision mismatch; exp1_D4W1024_myo-key-turn_seed1: exp1_D4W1024_myo-key-turn_seed1: ledger revision mismatch; exp1_D4W1024_myo-key-turn_seed2: exp1_D4W1024_myo-key-turn_seed2: ledger revision mismatch; exp1_D4W1024_myo-key-turn_seed3: exp1_D4W1024_myo-key-turn_seed3: ledger revision mismatch; exp1_D4W1024_myo-key-turn_seed4: exp1_D4W1024_myo-key-turn_seed4: ledger revision mismatch; exp1_D4W1024_myo-key-turn_seed5: exp1_D4W1024_myo-key-turn_seed5: ledger revision mismatch; exp1_D4W1024_myo-pen-twirl_seed1: exp1_D4W1024_myo-pen-twirl_seed1: ledger revision mismatch; exp1_D4W1024_myo-pen-twirl_seed2: exp1_D4W1024_myo-pen-twirl_seed2: ledger revision mismatch; exp1_D4W1024_myo-pen-twirl_seed3: exp1_D4W1024_myo-pen-twirl_seed3: ledger revision mismatch; exp1_D4W1024_myo-pen-twirl_seed4: exp1_D4W1024_myo-pen-twirl_seed4: ledger revision mismatch; exp1_D4W1024_myo-pen-twirl_seed5: exp1_D4W1024_myo-pen-twirl_seed5: ledger revision mismatch; exp1_D4W1024_myo-pose-hard_seed1: exp1_D4W1024_myo-pose-hard_seed1: ledger revision mismatch; exp1_D4W1024_myo-pose-hard_seed2: exp1_D4W1024_myo-pose-hard_seed2: ledger revision mismatch; exp1_D4W1024_myo-pose-hard_seed3: exp1_D4W1024_myo-pose-hard_seed3: ledger revision mismatch; exp1_D4W1024_myo-pose-hard_seed4: exp1_D4W1024_myo-pose-hard_seed4: ledger revision mismatch; exp1_D4W1024_myo-pose-hard_seed5: exp1_D4W1024_myo-pose-hard_seed5: ledger revision mismatch; exp1_D4W1024_myo-reach_seed1: exp1_D4W1024_myo-reach_seed1: ledger revision mismatch; exp1_D4W1024_myo-reach_seed2: exp1_D4W1024_myo-reach_seed2: ledger revision mismatch; exp1_D4W1024_myo-reach_seed3: exp1_D4W1024_myo-reach_seed3: ledger revision mismatch; exp1_D4W1024_myo-reach_seed4: exp1_D4W1024_myo-reach_seed4: ledger revision mismatch; exp1_D4W1024_myo-reach_seed5: exp1_D4W1024_myo-reach_seed5: ledger revision mismatch; exp1_D4W1024_h1-run-v0_seed1: exp1_D4W1024_h1-run-v0_seed1: ledger revision mismatch; exp1_D4W1024_h1-run-v0_seed2: exp1_D4W1024_h1-run-v0_seed2: ledger revision mismatch; exp1_D4W1024_h1-run-v0_seed3: exp1_D4W1024_h1-run-v0_seed3: ledger revision mismatch; exp1_D4W1024_h1-run-v0_seed4: exp1_D4W1024_h1-run-v0_seed4: ledger revision mismatch; exp1_D4W1024_h1-run-v0_seed5: exp1_D4W1024_h1-run-v0_seed5: ledger revision mismatch; exp1_D4W1024_h1-reach-v0_seed1: exp1_D4W1024_h1-reach-v0_seed1: ledger revision mismatch; exp1_D4W1024_h1-reach-v0_seed2: exp1_D4W1024_h1-reach-v0_seed2: ledger revision mismatch; exp1_D4W1024_h1-reach-v0_seed3: exp1_D4W1024_h1-reach-v0_seed3: ledger revision mismatch; exp1_D4W1024_h1-reach-v0_seed4: exp1_D4W1024_h1-reach-v0_seed4: ledger revision mismatch; exp1_D4W1024_h1-reach-v0_seed5: exp1_D4W1024_h1-reach-v0_seed5: ledger revision mismatch; exp1_D4W1536_dog-run_seed1: exp1_D4W1536_dog-run_seed1: ledger revision mismatch; exp1_D4W1536_dog-run_seed2: exp1_D4W1536_dog-run_seed2: ledger revision mismatch; exp1_D4W1536_dog-run_seed3: exp1_D4W1536_dog-run_seed3: ledger revision mismatch; exp1_D4W1536_dog-run_seed4: exp1_D4W1536_dog-run_seed4: ledger revision mismatch; exp1_D4W1536_dog-run_seed5: exp1_D4W1536_dog-run_seed5: ledger revision mismatch; exp1_D4W1536_dog-trot_seed1: exp1_D4W1536_dog-trot_seed1: ledger revision mismatch; exp1_D4W1536_dog-trot_seed2: exp1_D4W1536_dog-trot_seed2: ledger revision mismatch; exp1_D4W1536_dog-trot_seed3: exp1_D4W1536_dog-trot_seed3: ledger revision mismatch; exp1_D4W1536_dog-trot_seed4: exp1_D4W1536_dog-trot_seed4: ledger revision mismatch; exp1_D4W1536_dog-trot_seed5: exp1_D4W1536_dog-trot_seed5: ledger revision mismatch; exp1_D4W1536_humanoid-run_seed1: exp1_D4W1536_humanoid-run_seed1: ledger revision mismatch; exp1_D4W1536_humanoid-run_seed2: exp1_D4W1536_humanoid-run_seed2: ledger revision mismatch; exp1_D4W1536_humanoid-run_seed3: exp1_D4W1536_humanoid-run_seed3: ledger revision mismatch; exp1_D4W1536_humanoid-run_seed4: exp1_D4W1536_humanoid-run_seed4: ledger revision mismatch; exp1_D4W1536_humanoid-run_seed5: exp1_D4W1536_humanoid-run_seed5: ledger revision mismatch; exp1_D4W1536_humanoid-walk_seed1: exp1_D4W1536_humanoid-walk_seed1: ledger revision mismatch; exp1_D4W1536_humanoid-walk_seed2: exp1_D4W1536_humanoid-walk_seed2: ledger revision mismatch; exp1_D4W1536_humanoid-walk_seed3: exp1_D4W1536_humanoid-walk_seed3: ledger revision mismatch; exp1_D4W1536_humanoid-walk_seed4: exp1_D4W1536_humanoid-walk_seed4: ledger revision mismatch; exp1_D4W1536_humanoid-walk_seed5: exp1_D4W1536_humanoid-walk_seed5: ledger revision mismatch; exp1_D4W1536_humanoid-stand_seed1: exp1_D4W1536_humanoid-stand_seed1: ledger revision mismatch; exp1_D4W1536_humanoid-stand_seed2: exp1_D4W1536_humanoid-stand_seed2: ledger revision mismatch; exp1_D4W1536_humanoid-stand_seed3: exp1_D4W1536_humanoid-stand_seed3: ledger revision mismatch; exp1_D4W1536_humanoid-stand_seed4: exp1_D4W1536_humanoid-stand_seed4: ledger revision mismatch; exp1_D4W1536_humanoid-stand_seed5: exp1_D4W1536_humanoid-stand_seed5: ledger revision mismatch; exp1_D4W1536_swimmer-swimmer15_seed1: exp1_D4W1536_swimmer-swimmer15_seed1: ledger revision mismatch; exp1_D4W1536_swimmer-swimmer15_seed2: exp1_D4W1536_swimmer-swimmer15_seed2: ledger revision mismatch; exp1_D4W1536_swimmer-swimmer15_seed3: exp1_D4W1536_swimmer-swimmer15_seed3: ledger revision mismatch; exp1_D4W1536_swimmer-swimmer15_seed4: exp1_D4W1536_swimmer-swimmer15_seed4: ledger revision mismatch; exp1_D4W1536_swimmer-swimmer15_seed5: exp1_D4W1536_swimmer-swimmer15_seed5: ledger revision mismatch; exp1_D4W1536_hopper-hop_seed1: exp1_D4W1536_hopper-hop_seed1: ledger revision mismatch; exp1_D4W1536_hopper-hop_seed2: exp1_D4W1536_hopper-hop_seed2: ledger revision mismatch; exp1_D4W1536_hopper-hop_seed3: exp1_D4W1536_hopper-hop_seed3: ledger revision mismatch; exp1_D4W1536_hopper-hop_seed4: exp1_D4W1536_hopper-hop_seed4: ledger revision mismatch; exp1_D4W1536_hopper-hop_seed5: exp1_D4W1536_hopper-hop_seed5: ledger revision mismatch; exp1_D4W1536_myo-key-turn_seed1: exp1_D4W1536_myo-key-turn_seed1: ledger revision mismatch; exp1_D4W1536_myo-key-turn_seed2: exp1_D4W1536_myo-key-turn_seed2: ledger revision mismatch; exp1_D4W1536_myo-key-turn_seed3: exp1_D4W1536_myo-key-turn_seed3: ledger revision mismatch; exp1_D4W1536_myo-key-turn_seed4: exp1_D4W1536_myo-key-turn_seed4: ledger revision mismatch; exp1_D4W1536_myo-key-turn_seed5: exp1_D4W1536_myo-key-turn_seed5: ledger revision mismatch; exp1_D4W1536_myo-pen-twirl_seed1: exp1_D4W1536_myo-pen-twirl_seed1: ledger revision mismatch; exp1_D4W1536_myo-pen-twirl_seed2: exp1_D4W1536_myo-pen-twirl_seed2: ledger revision mismatch; exp1_D4W1536_myo-pen-twirl_seed3: exp1_D4W1536_myo-pen-twirl_seed3: ledger revision mismatch; exp1_D4W1536_myo-pen-twirl_seed4: exp1_D4W1536_myo-pen-twirl_seed4: ledger revision mismatch; exp1_D4W1536_myo-pen-twirl_seed5: exp1_D4W1536_myo-pen-twirl_seed5: ledger revision mismatch; exp1_D4W1536_myo-pose-hard_seed1: exp1_D4W1536_myo-pose-hard_seed1: ledger revision mismatch; exp1_D4W1536_myo-pose-hard_seed2: exp1_D4W1536_myo-pose-hard_seed2: ledger revision mismatch; exp1_D4W1536_myo-pose-hard_seed3: exp1_D4W1536_myo-pose-hard_seed3: ledger revision mismatch; exp1_D4W1536_myo-pose-hard_seed4: exp1_D4W1536_myo-pose-hard_seed4: ledger revision mismatch; exp1_D4W1536_myo-pose-hard_seed5: exp1_D4W1536_myo-pose-hard_seed5: ledger revision mismatch; exp1_D4W1536_myo-reach_seed1: exp1_D4W1536_myo-reach_seed1: ledger revision mismatch; exp1_D4W1536_myo-reach_seed2: exp1_D4W1536_myo-reach_seed2: ledger revision mismatch; exp1_D4W1536_myo-reach_seed3: exp1_D4W1536_myo-reach_seed3: ledger revision mismatch; exp1_D4W1536_myo-reach_seed4: exp1_D4W1536_myo-reach_seed4: ledger revision mismatch; exp1_D4W1536_myo-reach_seed5: exp1_D4W1536_myo-reach_seed5: ledger revision mismatch; exp1_D4W1536_h1-run-v0_seed1: exp1_D4W1536_h1-run-v0_seed1: ledger revision mismatch; exp1_D4W1536_h1-run-v0_seed2: exp1_D4W1536_h1-run-v0_seed2: ledger revision mismatch; exp1_D4W1536_h1-run-v0_seed3: exp1_D4W1536_h1-run-v0_seed3: ledger revision mismatch; exp1_D4W1536_h1-run-v0_seed4: exp1_D4W1536_h1-run-v0_seed4: ledger revision mismatch; exp1_D4W1536_h1-run-v0_seed5: exp1_D4W1536_h1-run-v0_seed5: ledger revision mismatch; exp1_D4W1536_h1-reach-v0_seed1: exp1_D4W1536_h1-reach-v0_seed1: ledger revision mismatch; exp1_D4W1536_h1-reach-v0_seed2: exp1_D4W1536_h1-reach-v0_seed2: ledger revision mismatch; exp1_D4W1536_h1-reach-v0_seed3: exp1_D4W1536_h1-reach-v0_seed3: ledger revision mismatch; exp1_D4W1536_h1-reach-v0_seed4: exp1_D4W1536_h1-reach-v0_seed4: ledger revision mismatch; exp1_D4W1536_h1-reach-v0_seed5: exp1_D4W1536_h1-reach-v0_seed5: ledger revision mismatch
+
+======================================================================
+ERROR: test_last_eligible_check_keeps_full_horizon_and_nominal_endpoint (tests.test_exp12_completeness.CompletenessTest.test_last_eligible_check_keeps_full_horizon_and_nominal_endpoint)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/tests/test_exp12_completeness.py", line 422, in test_last_eligible_check_keeps_full_horizon_and_nominal_endpoint
+    row, checks, item = v._parent(
+                        ^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/analysis/exp12_validation.py", line 435, in _parent
+    require(row.code_commit == study["code_commit"], f"{key}: ledger revision mismatch")
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/analysis/exp12_validation.py", line 60, in require
+    raise ValueError(message)
+ValueError: exp1_D4W1536_dog-run_seed1: ledger revision mismatch
+
+======================================================================
+ERROR: test_missing_fork_arm_check1_and_check2_evidence (tests.test_exp12_completeness.CompletenessTest.test_missing_fork_arm_check1_and_check2_evidence)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/tests/test_exp12_completeness.py", line 192, in test_missing_fork_arm_check1_and_check2_evidence
+    item = self.item()
+           ^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/tests/test_exp12_completeness.py", line 35, in item
+    return v._parent(v.Snapshot(), directory, a, e, s, self.study)[2]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/analysis/exp12_validation.py", line 435, in _parent
+    require(row.code_commit == study["code_commit"], f"{key}: ledger revision mismatch")
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/analysis/exp12_validation.py", line 60, in require
+    raise ValueError(message)
+ValueError: exp1_D4W1024_dog-run_seed1: ledger revision mismatch
+
+======================================================================
+ERROR: test_one_seed_reporting_is_blocked_pending_decision (tests.test_exp12_completeness.CompletenessTest.test_one_seed_reporting_is_blocked_pending_decision)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/tests/test_exp12_completeness.py", line 394, in test_one_seed_reporting_is_blocked_pending_decision
+    from analysis.exp2_analysis import run_analysis
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/analysis/exp2_analysis.py", line 31, in <module>
+    from analysis.exp1_analysis import _plot_setup
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/analysis/exp1_analysis.py", line 21, in <module>
+    from rliable import library as rly
+ImportError: cannot import name 'library' from 'rliable' (unknown location)
+
+======================================================================
+ERROR: test_primary_contains_check2_failure (tests.test_exp12_completeness.CompletenessTest.test_primary_contains_check2_failure)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/tests/test_exp12_completeness.py", line 346, in test_primary_contains_check2_failure
+    from analysis.exp2_analysis import load, paired_returns
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/analysis/exp2_analysis.py", line 31, in <module>
+    from analysis.exp1_analysis import _plot_setup
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/analysis/exp1_analysis.py", line 21, in <module>
+    from rliable import library as rly
+ImportError: cannot import name 'library' from 'rliable' (unknown location)
+
+======================================================================
+ERROR: test_routine_pruned_checkpoints_not_required (tests.test_exp12_completeness.CompletenessTest.test_routine_pruned_checkpoints_not_required)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/tests/test_exp12_completeness.py", line 233, in test_routine_pruned_checkpoints_not_required
+    source = self.item()["source"]
+             ^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/tests/test_exp12_completeness.py", line 35, in item
+    return v._parent(v.Snapshot(), directory, a, e, s, self.study)[2]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/analysis/exp12_validation.py", line 435, in _parent
+    require(row.code_commit == study["code_commit"], f"{key}: ledger revision mismatch")
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/analysis/exp12_validation.py", line 60, in require
+    raise ValueError(message)
+ValueError: exp1_D4W1024_dog-run_seed1: ledger revision mismatch
+
+======================================================================
+ERROR: test_terminal_episode_loss_and_nonfinite_return_rejected (tests.test_exp12_completeness.CompletenessTest.test_terminal_episode_loss_and_nonfinite_return_rejected)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/tests/test_exp12_completeness.py", line 294, in test_terminal_episode_loss_and_nonfinite_return_rejected
+    source = self.item()["source"]
+             ^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/tests/test_exp12_completeness.py", line 35, in item
+    return v._parent(v.Snapshot(), directory, a, e, s, self.study)[2]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/analysis/exp12_validation.py", line 435, in _parent
+    require(row.code_commit == study["code_commit"], f"{key}: ledger revision mismatch")
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/analysis/exp12_validation.py", line 60, in require
+    raise ValueError(message)
+ValueError: exp1_D4W1024_dog-run_seed1: ledger revision mismatch
+
+======================================================================
+ERROR: test_zero_eligible_is_explicit (tests.test_exp12_completeness.CompletenessTest.test_zero_eligible_is_explicit)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/tests/test_exp12_completeness.py", line 466, in test_zero_eligible_is_explicit
+    from analysis.exp2_analysis import _write_analysis
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/analysis/exp2_analysis.py", line 31, in <module>
+    from analysis.exp1_analysis import _plot_setup
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/analysis/exp1_analysis.py", line 21, in <module>
+    from rliable import library as rly
+ImportError: cannot import name 'library' from 'rliable' (unknown location)
+
+======================================================================
+FAIL: test_missing_endpoints_duplicates_times_and_provenance (tests.test_exp12_completeness.CompletenessTest.test_missing_endpoints_duplicates_times_and_provenance)
+----------------------------------------------------------------------
+ValueError: exp1_D4W1024_dog-run_seed1: ledger revision mismatch
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/tests/test_exp12_completeness.py", line 162, in test_missing_endpoints_duplicates_times_and_provenance
+    with self.assertRaisesRegex(ValueError, "runtime mismatch"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: "runtime mismatch" does not match "exp1_D4W1024_dog-run_seed1: ledger revision mismatch"
+
+----------------------------------------------------------------------
+Ran 19 tests in 11.337s
+
+FAILED (failures=1, errors=11)

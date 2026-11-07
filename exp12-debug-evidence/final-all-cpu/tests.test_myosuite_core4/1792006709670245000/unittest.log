@@ -1,0 +1,16 @@
+test_core4_myosuite_env_passes (tests.test_myosuite_core4.TestAngle2AAcceptsMyosuiteEnvs.test_core4_myosuite_env_passes) ... ok
+test_heldout2_myosuite_env_is_rejected (tests.test_myosuite_core4.TestAngle2AAcceptsMyosuiteEnvs.test_heldout2_myosuite_env_is_rejected) ... ok
+test_still_enforces_num_train_envs_one_after_the_core4_check (tests.test_myosuite_core4.TestAngle2AAcceptsMyosuiteEnvs.test_still_enforces_num_train_envs_one_after_the_core4_check) ... ok
+test_core4_and_heldout2_are_disjoint (tests.test_myosuite_core4.TestMyosuiteCore4HeldOut2Lists.test_core4_and_heldout2_are_disjoint) ... ok
+test_core4_has_exactly_four_and_heldout2_has_exactly_two (tests.test_myosuite_core4.TestMyosuiteCore4HeldOut2Lists.test_core4_has_exactly_four_and_heldout2_has_exactly_two) ... ok
+test_every_core4_and_heldout2_alias_is_a_real_registered_myosuite_env (tests.test_myosuite_core4.TestMyosuiteCore4HeldOut2Lists.test_every_core4_and_heldout2_alias_is_a_real_registered_myosuite_env) ... ok
+test_core4_myosuite_envs_are_accepted (tests.test_myosuite_core4.TestMyosuiteCore4Validation.test_core4_myosuite_envs_are_accepted) ... ok
+test_dmc_env_type_is_always_a_no_op (tests.test_myosuite_core4.TestMyosuiteCore4Validation.test_dmc_env_type_is_always_a_no_op) ... ok
+test_heldout2_myosuite_envs_are_rejected_with_a_clear_message (tests.test_myosuite_core4.TestMyosuiteCore4Validation.test_heldout2_myosuite_envs_are_rejected_with_a_clear_message) ... ok
+test_unknown_myosuite_env_name_is_rejected (tests.test_myosuite_core4.TestMyosuiteCore4Validation.test_unknown_myosuite_env_name_is_rejected) ... ok
+
+----------------------------------------------------------------------
+Ran 10 tests in 0.019s
+
+OK
+MyoSuite:> Registering Myo Envs

@@ -1,0 +1,14 @@
+{
+  "module": "tests.test_angle2a_pool_null_baseline",
+  "source_hash": "427ac810143706c21cde9966a51d62940d777afd96197166c657d661be5830a6",
+  "success": true,
+  "tests_run": 2,
+  "test_ids": [
+    "tests.test_angle2a_pool_null_baseline.TestPoolNullBaseline.test_all_pairs_evaluated_with_real_diagonal_errors",
+    "tests.test_angle2a_pool_null_baseline.TestPoolNullBaseline.test_load_or_compute_caches_and_reuses"
+  ],
+  "failures": 0,
+  "errors": 0,
+  "skips": [],
+  "unexpected_successes": 0
+}

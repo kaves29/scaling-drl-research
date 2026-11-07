@@ -1,0 +1,17 @@
+{
+  "module": "tests.test_exp12_recording_qualification",
+  "source_hash": "52468342b4543cf79e93cc96c34167ddc17c8dd811e7e45949cacf4b5cee0c6b",
+  "success": true,
+  "tests_run": 5,
+  "test_ids": [
+    "tests.test_exp12_recording_qualification.RecordingQualificationPrecisionTest.test_both_precision_triples_reach_comparison",
+    "tests.test_exp12_recording_qualification.RecordingQualificationPrecisionTest.test_cpu_is_rejected_by_production_backend_guard",
+    "tests.test_exp12_recording_qualification.RecordingQualificationPrecisionTest.test_only_declared_recording_meters_are_excluded",
+    "tests.test_exp12_recording_qualification.RecordingQualificationPrecisionTest.test_precision_drift_fails_and_restores_training_hook",
+    "tests.test_exp12_recording_qualification.RecordingQualificationPrecisionTest.test_stale_checkpoint_cannot_pass_complete_fingerprints"
+  ],
+  "failures": 0,
+  "errors": 0,
+  "skips": [],
+  "unexpected_successes": 0
+}

@@ -1,0 +1,92 @@
+[
+  {
+    "rank": "1",
+    "finding": "Capacity-dependent probe rankings do not map monotonically to policy utility",
+    "quantitative_evidence": "At 70%, scaled-minus-small mean deficits are negative in all eight environment/size contrasts, robust to every leave-one-seed-out analysis. Dog medium-minus-small final return \u221274.36 [\u2212126.83, \u221219.10], while final deficit difference \u2212.22875 [\u2212.26892, \u2212.19012], eight paired seeds",
+    "counterexamples": "Humanoid policy differences uncertain; large terminal n=6. Not every individual seed follows every policy ranking",
+    "mechanisms": "Reference difficulty, useful representation differences, visitation and optimization",
+    "confidence_and_type": "High descriptive; no causal attribution",
+    "significance_and_test": "Strongest defensible protocol-specific contribution. Test a critic intervention that changes the isolated phenotype and matched policy outcomes"
+  },
+  {
+    "rank": "2",
+    "finding": "Fresh-reference deterioration replicates throughout the grid",
+    "quantitative_evidence": "Initial-to-70% fresh score falls in 96/96 conditions; eight seeds in each of 12 cells. Mean declines .00629\u2192.03251 across dog sizes, .03217\u2192.15345 humanoid, .06193\u2192.14315 key, .08957\u2192.24645 pen",
+    "counterexamples": "Teachers/pools/normalizers change; fixed initialization is reused. This is not proof of replay-only causation",
+    "mechanisms": "Changing task/reference difficulty and architecture-dependent optimizer sensitivity",
+    "confidence_and_type": "High descriptive",
+    "significance_and_test": "A longitudinal probe needs reference decomposition. Hold replay, teacher, normalization and minibatch sequence fixed across checkpoints"
+  },
+  {
+    "rank": "3",
+    "finding": "A negative deficit can be driven primarily by a worsening reference",
+    "quantitative_evidence": "Large humanoid: check1\u219235 fresh score \u2212.14726, current \u2212.00350, arithmetic mean deficit \u2212.14375; eight training seeds. Arithmetic paired decomposition is exact",
+    "counterexamples": "Pen small trained score \u22128.53232 versus fresh \u2212.08151, so reference drift cannot explain all large deficits",
+    "mechanisms": "Reference difficulty versus genuine trained adaptation change",
+    "confidence_and_type": "High descriptive",
+    "significance_and_test": "Demonstrates why one deficit trajectory is mechanistically ambiguous. Crossed replay/teacher/learner controls distinguish components"
+  },
+  {
+    "rank": "4",
+    "finding": "Myo Q signals predict return changes more reliably than deficit alone",
+    "quantitative_evidence": "Excluding pilot seed1: Q-only held-out MSE reductions 5.83% key and 23.61% pen; combined 5.29%/23.30%. Seven held-out seed groups, three architectures per environment",
+    "counterexamples": "Deficit-only gains uncertain; humanoid added predictors worsen results; no independent prospective test",
+    "mechanisms": "Reward/visitation state, value scale, value error or actor exploitation",
+    "confidence_and_type": "Moderate predictive association",
+    "significance_and_test": "Does not establish plasticity propagation. Retain fixed model and assess newly independent seeds or calibrated value errors"
+  },
+  {
+    "rank": "5",
+    "finding": "Large Myo deficits can coexist with useful actors; low errors can coexist with nonlearning",
+    "quantitative_evidence": "Pen small final return 1571.02 (n=8), final deficit 8.39523; medium 750.79 and 1.29615 (n=8). Near 60\u201370% median reward/Q: small 60.48/2097.60 versus medium 1.01/26.40",
+    "counterexamples": "Small pen seed4 temporarily has large deficit and low return; wide seed variability. High deficit is not beneficial by itself",
+    "mechanisms": "Easy low-reward replay versus harder high-value functions; representation and optimization",
+    "confidence_and_type": "High descriptive, moderate interpretation",
+    "significance_and_test": "Avoid treating low TD/probe error as an architecture success criterion. Compare identical replay/task supports"
+  },
+  {
+    "rank": "6",
+    "finding": "Most operational policy drops are transient or persistence-uncertain",
+    "quantitative_evidence": "20/17/12 runs meet 20/30/50% definitions after progress/skill gates; only 3/2/0 have two consecutive qualifying evaluations. All 96 campaign runs remain in denominator",
+    "counterexamples": "Five-episode intermediate evaluations; final 50 episodes; low-peak run makes percentages misleading; crash censoring",
+    "mechanisms": "Evaluation variability, policy/replay feedback, temporary critic exploitation",
+    "confidence_and_type": "High descriptive",
+    "significance_and_test": "Study skill acquisition, recoverable instability and sustained degradation separately. Recover episode distributions first"
+  },
+  {
+    "rank": "7",
+    "finding": "Crashed records share a common wall-clock stopping pattern",
+    "quantitative_evidence": "Eight D4W1536 records, seeds7\u20138, all same host; last histories within351.68s despite two start-time groups and differing progress",
+    "counterexamples": "No output logs or scheduler cause; cannot certify timeout or exclude numerical problems",
+    "mechanisms": "Common allocation/node event versus independent numerical failure",
+    "confidence_and_type": "High timing observation; moderate external-event hypothesis",
+    "significance_and_test": "Prevent crash labels from becoming scientific instability labels. Retrieve read-only scheduler/node logs"
+  },
+  {
+    "rank": "8",
+    "finding": "Pilot and campaign seed1 are observationally identical in training metrics",
+    "quantitative_evidence": "Seven counterpart pairs, 7,989 exact shared training/evaluation values each; 55,923/55,923 matches",
+    "counterexamples": "Source/probe protocol and launch dates differ; exact values alone do not prove checkpoint reuse",
+    "mechanisms": "Deterministic same-seed rerun or shared underlying trajectory evidence",
+    "confidence_and_type": "High descriptive",
+    "significance_and_test": "Those records are not independent replication. Main conclusions tested again without seed1"
+  },
+  {
+    "rank": "9",
+    "finding": "Original archived pen-small probe has a large trained fitting gap despite major progress",
+    "quantitative_evidence": "Seed5 check50, ten paired rounds: median current initial minibatch MSE164001.53 and final pool14.8014; fresh .87561 and .14227; exact W&B score binding",
+    "counterexamples": "One training seed and one architecture; initial minibatch and final pool losses differ; no universal spike test",
+    "mechanisms": "Initial centered output variation, conditioning, finite budget, representation change",
+    "confidence_and_type": "High within-case observation",
+    "significance_and_test": "Recover full independent curves before claiming architecture-dependent transients"
+  },
+  {
+    "rank": "10",
+    "finding": "Important source/logging distinctions change analysis validity",
+    "quantitative_evidence": "Ten-round fractional IQM reproduces all4,738 nonzero-check deficits exactly. Fresh IQM logged only initially; later values reconstructed from rounds. Terminal evaluations use50 episodes versus5 earlier",
+    "counterexamples": "Reconstructed scores remain conditional measurements; no episode-level uncertainty",
+    "mechanisms": "Implementation semantics and aggregation artifacts",
+    "confidence_and_type": "High implementation fact",
+    "significance_and_test": "Metric names alone are insufficient. Freeze source equations and counters alongside data"
+  }
+]

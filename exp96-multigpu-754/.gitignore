@@ -1,0 +1,13 @@
+# Root-level .gitignore. SparseNetwork4DRL/.gitignore covers everything
+# inside that subdirectory (wandb/, check_points/, __pycache__/, etc.) but
+# does not reach paths at the repo root - this covers those.
+
+# exea's checkpoint_dir (see exea.md): large binary agent/buffer state,
+# snapshotted by the exea runner at 13:00 PST, never meant to be committed -
+# a stale checkpoint here could get silently resumed-from unexpectedly.
+/checkpoints/
+
+.DS_Store
+__pycache__/
+*.py[cod]
+.venv/

@@ -1,0 +1,349 @@
+_wandb:
+    value:
+        cli_version: 0.28.1
+        e:
+            vdj5p07a8r87r9qzkqf7sccoqvnf1tdv:
+                args:
+                    - --experiment
+                    - exp1
+                    - --config_name
+                    - base_exp12_ten
+                    - --overrides
+                    - critic_num_blocks=2
+                    - --overrides
+                    - critic_hidden_dim=512
+                    - --overrides
+                    - env_name=myo-key-turn
+                    - --overrides
+                    - env=myosuite_simba
+                    - --overrides
+                    - seed=4
+                    - --overrides
+                    - results_root=/projects/biqc/skaveti1/exp96/campaign_owner_f597ee9_20261019T230748Z/campaign/results
+                    - --overrides
+                    - env.num_env_steps=1000000
+                    - --checkpoint_dir
+                    - /projects/biqc/skaveti1/exp96/campaign_owner_f597ee9_20261019T230748Z/campaign/checkpoints/exp1/D2W512/myo-key-turn/seed_4
+                    - --checkpoint_interval
+                    - "10000"
+                    - --checkpoint_start_frac
+                    - "0.0"
+                codePath: main/run.py
+                codePathLocal: run.py
+                cpu_count: 128
+                cpu_count_logical: 128
+                cudaVersion: "13.2"
+                disk:
+                    /:
+                        total: "1082113728512"
+                        used: "12429783040"
+                executable: /u/skaveti1/.conda/envs/scaling-drl-py31213/bin/python
+                git:
+                    commit: f597ee9898e4d401912092c336c3e5330cf2fda1
+                    remote: /projects/biqc/skaveti1/exp96/checkouts/qualification_driver_bab8d8d_20261019T213816Z
+                gpu: NVIDIA A100-SXM4-40GB
+                gpu_count: 8
+                gpu_nvidia:
+                    - architecture: Ampere
+                      cudaCores: 6912
+                      memoryTotal: "42949672960"
+                      name: NVIDIA A100-SXM4-40GB
+                      uuid: GPU-2c54feaf-6202-3f6b-e792-23103d41df3a
+                    - architecture: Ampere
+                      cudaCores: 6912
+                      memoryTotal: "42949672960"
+                      name: NVIDIA A100-SXM4-40GB
+                      uuid: GPU-2305caa0-d8f4-48b8-d56e-8af5fc9207c9
+                    - architecture: Ampere
+                      cudaCores: 6912
+                      memoryTotal: "42949672960"
+                      name: NVIDIA A100-SXM4-40GB
+                      uuid: GPU-81b87c16-cb1a-fce3-fbc6-b371c8f4cc0c
+                    - architecture: Ampere
+                      cudaCores: 6912
+                      memoryTotal: "42949672960"
+                      name: NVIDIA A100-SXM4-40GB
+                      uuid: GPU-b5fc36ac-c194-456b-a25f-db875cf105fb
+                    - architecture: Ampere
+                      cudaCores: 6912
+                      memoryTotal: "42949672960"
+                      name: NVIDIA A100-SXM4-40GB
+                      uuid: GPU-e8043cf9-95e7-8cd0-d792-cba7b125fc1a
+                    - architecture: Ampere
+                      cudaCores: 6912
+                      memoryTotal: "42949672960"
+                      name: NVIDIA A100-SXM4-40GB
+                      uuid: GPU-02b71183-9da4-da3c-7858-ad73ae6ea74f
+                    - architecture: Ampere
+                      cudaCores: 6912
+                      memoryTotal: "42949672960"
+                      name: NVIDIA A100-SXM4-40GB
+                      uuid: GPU-a6d47325-3130-f9a7-7623-4d91ff2b2075
+                    - architecture: Ampere
+                      cudaCores: 6912
+                      memoryTotal: "42949672960"
+                      name: NVIDIA A100-SXM4-40GB
+                      uuid: GPU-0d92c9f6-e047-bea9-50a6-ef5036d96559
+                host: gpuc05.delta.ncsa.illinois.edu
+                memory:
+                    total: "2164227457024"
+                os: Linux-5.14.0-570.144.1.el9_6.x86_64-x86_64-with-glibc2.34
+                program: /projects/biqc/skaveti1/exp96/checkouts/campaign_owner_f597ee9_20261019T230748Z/main/run.py
+                python: CPython 3.12.13
+                root: /projects/biqc/skaveti1/exp96/campaign_owner_f597ee9_20261019T230748Z/queue/attempts/exp1/c129c0d6a94053c5b8fa1423a653009afdd047744e502f00a438df322a0b247b/0e58452ee63a48a680db616726a24682
+                slurm:
+                    cluster_name: delta
+                    conf: /var/spool/slurmd/conf-cache/slurm.conf
+                    cpu_bind: quiet,mask_cpu:0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+                    cpu_bind_list: 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+                    cpu_bind_type: 'mask_cpu:'
+                    cpu_bind_verbose: quiet
+                    cpus_on_node: "128"
+                    cpus_per_task: "128"
+                    distribution: cyclic
+                    gpus_on_node: "8"
+                    gtids: "0"
+                    job_account: biqc-delta-gpu
+                    job_cpus_per_node: "128"
+                    job_end_time: "1792729756"
+                    job_gid: "202"
+                    job_gpus: 0,1,2,3,4,5,6,7
+                    job_group: grp_202
+                    job_id: "23023494"
+                    job_name: exp96-campaign-72472780
+                    job_nodelist: gpuc05
+                    job_num_nodes: "1"
+                    job_partition: gpuA100x8
+                    job_qos: biqc-delta-gpu
+                    job_start_time: "1792556956"
+                    job_uid: "97950"
+                    job_user: skaveti1
+                    jobid: "23023494"
+                    launch_node_ipaddr: 141.142.254.205
+                    localid: "0"
+                    mem_per_node: "2055168"
+                    mpi_type: cray_shasta
+                    nnodes: "1"
+                    nodeid: "0"
+                    nodelist: gpuc05
+                    nprocs: "1"
+                    ntasks: "1"
+                    oom_kill_step: "0"
+                    prio_process: "0"
+                    procid: "0"
+                    srun_comm_host: 141.142.254.205
+                    srun_comm_port: "46055"
+                    step_gpus: 0,1,2,3,4,5,6,7
+                    step_id: "0"
+                    step_launcher_port: "46055"
+                    step_nodelist: gpuc05
+                    step_num_nodes: "1"
+                    step_num_tasks: "1"
+                    step_resv_ports: 31403-31404
+                    step_tasks_per_node: "1"
+                    stepid: "0"
+                    submit_dir: /projects/biqc/skaveti1/exp96/checkouts/campaign_owner_f597ee9_20261019T230748Z/main
+                    submit_host: dt-login04.delta.ncsa.illinois.edu
+                    task_pid: "3413373"
+                    tasks_per_node: "1"
+                    topology_addr: ss00.ss05.gpuc05
+                    topology_addr_pattern: switch.switch.node
+                    tres_bind: gres/gpu:per_task:8
+                    tres_per_task: gres/gpu=8,cpu=128
+                    umask: "0077"
+                startedAt: "2026-10-21T04:32:31.391032Z"
+                writerId: 8b2tb1c0bcumy714l1biar1rkekm9mte
+        m:
+            - "2": probe/*
+              "5": 2
+              "6":
+                - 1
+              "7": []
+            - "1": probe/interaction_step
+              "6": []
+              "7": []
+        python_version: 3.12.13
+        t:
+            "1":
+                - 12
+                - 45
+                - 50
+            "2":
+                - 12
+                - 45
+                - 50
+            "3":
+                - 4
+                - 7
+                - 13
+                - 16
+                - 76
+                - 61
+            "4": 3.12.13
+            "5": 0.28.1
+            "12": 0.28.1
+            "13": linux-x86_64
+action_repeat:
+    value: 2
+actor_grad_cosine_every:
+    value: 30
+actor_hidden_dim:
+    value: 128
+actor_num_blocks:
+    value: 1
+actor_num_params:
+    value: 154.32K
+actor_sparsity:
+    value: 0
+agent:
+    value:
+        actor_block_type: residual
+        actor_hidden_dim: 128
+        actor_learning_rate: 0.0001
+        actor_num_blocks: 1
+        actor_sparsity: 0
+        actor_weight_decay: 0.01
+        agent_type: sac
+        critic_block_type: residual
+        critic_hidden_dim: 512
+        critic_learning_rate: 0.0001
+        critic_num_blocks: 2
+        critic_sparsity: 0
+        critic_use_cdq: false
+        critic_weight_decay: 0.01
+        gamma: 0.95
+        max_episode_steps: 100
+        mixed_precision: false
+        n_step: 1
+        normalize_observation: true
+        num_train_envs: 1
+        seed: 4
+        target_tau: 0.005
+        temp_initial_value: 0.01
+        temp_learning_rate: 0.0001
+        temp_target_entropy: null
+        temp_target_entropy_coef: -0.5
+        temp_weight_decay: 0
+buffer:
+    value:
+        add_batch_size: 1
+        buffer_class_type: numpy
+        buffer_type: uniform
+        gamma: 0.95
+        max_length: 1000000
+        min_length: 5000
+        n_step: 1
+        sample_batch_size: 256
+checks:
+    value:
+        check1_tolerance_eps: 64
+critic_hidden_dim:
+    value: 512
+critic_num_blocks:
+    value: 2
+critic_num_params:
+    value: 4.27M
+critic_sparsity:
+    value: 0
+diagnostics:
+    value:
+        enabled: true
+        kl_reference_size: 256
+        saturation_threshold: 0.99
+eff_episode_len:
+    value: 50
+env:
+    value:
+        action_repeat: 2
+        env_name: myo-key-turn
+        env_type: myosuite
+        episodic: false
+        max_episode_steps: 100
+        no_termination: false
+        num_env_steps: 1000000
+        num_eval_envs: 1
+        num_train_envs: 1
+        rescale_action: true
+        reward_scale: 1
+        seed: 4
+env_name:
+    value: myo-key-turn
+evaluation_per_interaction_step:
+    value: 50000
+exp_name:
+    value: exp12
+fork:
+    value:
+        architectures:
+            - D4W1024
+            - D4W1536
+        arm: null
+        enabled: true
+        eval_episodes: 10
+        eval_every_fraction: 0.01
+        horizon_fraction: 0.25
+        identity_snapshot_steps: null
+        max_total_fraction: 1.2
+        source: null
+gamma:
+    value: 0.95
+injection:
+    value:
+        m: null
+logging_per_interaction_step:
+    value: 2000
+n_step:
+    value: 1
+num_env_steps:
+    value: 1000000
+num_eval_episodes:
+    value: 5
+num_interaction_steps:
+    value: 500000
+num_params:
+    value: 4.43M
+num_record_episodes:
+    value: 0
+num_train_envs:
+    value: 1
+positive_control:
+    value:
+        architecture: D4W1536
+        env_name: dog-run
+        noise_threshold: 0.1
+        similar_within: 0.1
+probe:
+    value:
+        batch_size: 256
+        checks: 50
+        enabled: true
+        eval_chunk: 2560
+        pool_size: 25600
+        rounds: 10
+        steps: 2000
+        target_scale: 100000
+project_name:
+    value: echocritic_method_c_ten_96
+recording_per_interaction_step:
+    value: 500000
+results_root:
+    value: /projects/biqc/skaveti1/exp96/campaign_owner_f597ee9_20261019T230748Z/campaign/results
+run_role:
+    value: confirmatory
+seed:
+    value: 4
+server:
+    value: local
+testing:
+    value:
+        force_trigger_check: null
+        stop_after_identity_snapshot: false
+trigger:
+    value:
+        confidence: 0.95
+        consecutive_checks: 2
+        eligible_fraction: 0.95
+        null_threshold: 0
+        resamples: 10000
+updates_per_interaction_step:
+    value: 2

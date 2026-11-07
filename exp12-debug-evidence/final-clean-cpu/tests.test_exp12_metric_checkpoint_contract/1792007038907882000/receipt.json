@@ -1,0 +1,15 @@
+{
+  "module": "tests.test_exp12_metric_checkpoint_contract",
+  "source_hash": "427ac810143706c21cde9966a51d62940d777afd96197166c657d661be5830a6",
+  "success": true,
+  "tests_run": 3,
+  "test_ids": [
+    "tests.test_exp12_metric_checkpoint_contract.MetricCheckpointContractTest.test_checkpoint_flushes_full_payload_once_and_restores_window_exactly",
+    "tests.test_exp12_metric_checkpoint_contract.MetricCheckpointContractTest.test_failed_transfer_does_not_publish_a_checkpoint_or_consume_update_rows",
+    "tests.test_exp12_metric_checkpoint_contract.MetricCheckpointContractTest.test_training_and_resumed_continuation_match_bulk_for_single_twin_and_injected"
+  ],
+  "failures": 0,
+  "errors": 0,
+  "skips": [],
+  "unexpected_successes": 0
+}

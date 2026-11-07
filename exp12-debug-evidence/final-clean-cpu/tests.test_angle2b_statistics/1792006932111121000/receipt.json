@@ -1,0 +1,16 @@
+{
+  "module": "tests.test_angle2b_statistics",
+  "source_hash": "427ac810143706c21cde9966a51d62940d777afd96197166c657d661be5830a6",
+  "success": true,
+  "tests_run": 4,
+  "test_ids": [
+    "tests.test_angle2b_statistics.TestCompareToNull.test_threshold_is_mean_plus_two_std",
+    "tests.test_angle2b_statistics.TestCompareToNull.test_value_above_threshold_exceeds_null",
+    "tests.test_angle2b_statistics.TestCompareToNull.test_value_below_threshold_does_not_exceed_null",
+    "tests.test_angle2b_statistics.TestCompareToNull.test_value_exactly_at_threshold_does_not_exceed_null"
+  ],
+  "failures": 0,
+  "errors": 0,
+  "skips": [],
+  "unexpected_successes": 0
+}

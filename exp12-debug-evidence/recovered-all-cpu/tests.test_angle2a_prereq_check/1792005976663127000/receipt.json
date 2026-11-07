@@ -1,0 +1,18 @@
+{
+  "module": "tests.test_angle2a_prereq_check",
+  "source_hash": "c07ca4fb99dc3308d1e6fed0f827f0bebd6442ded04ccc6e755cbde6ba77c455",
+  "success": false,
+  "tests_run": 6,
+  "test_ids": [
+    "tests.test_angle2a_prereq_check.TestAngle2APrereqCheck.test_checkpoints_are_persisted_and_reloadable",
+    "tests.test_angle2a_prereq_check.TestAngle2APrereqCheck.test_pre_and_post_probes_use_different_derived_seeds_and_differ",
+    "tests.test_angle2a_prereq_check.TestAngle2APrereqCheck.test_pre_and_post_steps_computed_correctly",
+    "tests.test_angle2a_prereq_check.TestAngle2APrereqCheck.test_run_prereq_check_covers_every_architecture_and_seed",
+    "tests.test_angle2a_prereq_check.TestAngle2APrereqCheck.test_summary_is_descriptive_not_a_pass_fail_gate",
+    "tests.test_angle2a_prereq_check.TestAngle2APrereqCheck.test_training_continues_unperturbed_after_pre_checkpoint_evaluation"
+  ],
+  "failures": 0,
+  "errors": 6,
+  "skips": [],
+  "unexpected_successes": 0
+}

@@ -1,0 +1,27 @@
+test_absolute_paths_still_round_trip (tests.test_output_paths.CheckpointBoundaryRejectsRelativePathsTest.test_absolute_paths_still_round_trip) ... WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+WARNING:absl:SaveArgs.aggregate is deprecated, please use custom TypeHandler (https://orbax.readthedocs.io/en/latest/custom_handlers.html#typehandler) or contact Orbax team to migrate before May 1st, 2024.
+/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/orbax/checkpoint/type_handlers.py:1475: UserWarning: Couldn't find sharding info under RestoreArgs. Populating sharding info from sharding file. Please note restoration time will be slightly increased due to reading from file instead of directly from RestoreArgs.
+  warnings.warn(
+ok
+test_save_and_load_reject_relative_paths_before_touching_disk (tests.test_output_paths.CheckpointBoundaryRejectsRelativePathsTest.test_save_and_load_reject_relative_paths_before_touching_disk) ... ok
+test_angle_1_rejects_a_relative_results_root_before_training (tests.test_output_paths.ConfigurableRootsTest.test_angle_1_rejects_a_relative_results_root_before_training) ... ok
+test_default_roots_are_absolute_and_under_the_repo_results (tests.test_output_paths.ConfigurableRootsTest.test_default_roots_are_absolute_and_under_the_repo_results) ... ok
+test_manifest_default_commands_are_unchanged_and_relative_root_is_rejected (tests.test_output_paths.ConfigurableRootsTest.test_manifest_default_commands_are_unchanged_and_relative_root_is_rejected) ... ok
+test_relative_roots_are_rejected_at_startup (tests.test_output_paths.ConfigurableRootsTest.test_relative_roots_are_rejected_at_startup) ... ok
+test_results_root_and_explicit_roots_are_honored (tests.test_output_paths.ConfigurableRootsTest.test_results_root_and_explicit_roots_are_honored) ... ok
+test_outputs_do_not_depend_on_the_launch_directory (tests.test_output_paths.LaunchDirectoryIndependenceTest.test_outputs_do_not_depend_on_the_launch_directory) ... ok
+
+----------------------------------------------------------------------
+Ran 8 tests in 20.534s
+
+OK

@@ -1,0 +1,288 @@
+_wandb:
+    value:
+        cli_version: 0.28.1
+        e:
+            a7q415bv1uuhqjkdmxrrdtpyvp4luzws:
+                args:
+                    - --experiment
+                    - exp1
+                    - --config_name
+                    - base_exp12
+                    - --overrides
+                    - critic_num_blocks=2
+                    - --overrides
+                    - critic_hidden_dim=512
+                    - --overrides
+                    - env_name=dog-run
+                    - --overrides
+                    - env=dmc_hard
+                    - --overrides
+                    - seed=1
+                    - --overrides
+                    - results_root=/work/hdd/biqc/skaveti1/exp12_prod_pilot7_20261014T213210Z/results
+                    - --checkpoint_dir
+                    - /work/hdd/biqc/skaveti1/exp12_prod_pilot7_20261014T213210Z/checkpoints/run1_D2W512_dog-run_seed1
+                    - --checkpoint_interval
+                    - "25000"
+                    - --checkpoint_start_frac
+                    - "0.0"
+                codePath: main/run.py
+                codePathLocal: run.py
+                cpu_count: 64
+                cpu_count_logical: 64
+                cudaVersion: "13.2"
+                disk:
+                    /:
+                        total: "135085137920"
+                        used: "12529459200"
+                email: shourya23.kaveti@gmail.com
+                executable: /u/skaveti1/.conda/envs/scaling-drl-py31213/bin/python
+                git:
+                    commit: f8619dd5f494399d9febc79fc9092010234c714d
+                    remote: https://github.com/kaves29/scaling-drl-research.git
+                gpu: NVIDIA A100-SXM4-40GB
+                gpu_count: 2
+                gpu_nvidia:
+                    - architecture: Ampere
+                      cudaCores: 6912
+                      memoryTotal: "42949672960"
+                      name: NVIDIA A100-SXM4-40GB
+                      uuid: GPU-c0f03290-4297-1984-85d4-584dbfc09c99
+                    - architecture: Ampere
+                      cudaCores: 6912
+                      memoryTotal: "42949672960"
+                      name: NVIDIA A100-SXM4-40GB
+                      uuid: GPU-046e912e-f6fe-b828-3928-4150c2d55364
+                host: gpua056.delta.ncsa.illinois.edu
+                memory:
+                    total: "270170275840"
+                os: Linux-5.14.0-570.144.1.el9_6.x86_64-x86_64-with-glibc2.34
+                program: /work/hdd/biqc/skaveti1/exp12_qualification_debug_20261014/main/run.py
+                python: CPython 3.12.13
+                root: /work/hdd/biqc/skaveti1/exp12_prod_pilot7_20261014T213210Z/wandb
+                slurm:
+                    cluster_name: delta
+                    conf: /var/spool/slurmd/conf-cache/slurm.conf
+                    cpus_on_node: "32"
+                    cpus_per_task: "32"
+                    gpus: "2"
+                    gpus_on_node: "2"
+                    gtids: "0"
+                    job_account: biqc-delta-gpu
+                    job_cpus_per_node: "32"
+                    job_end_time: "1792084469"
+                    job_gid: "202"
+                    job_gpus: 1,2
+                    job_id: "22911482"
+                    job_name: exp12_pilot7
+                    job_nodelist: gpua056
+                    job_num_nodes: "1"
+                    job_partition: gpuA100x4
+                    job_qos: biqc-delta-gpu
+                    job_start_time: "1792048469"
+                    job_uid: "97950"
+                    job_user: skaveti1
+                    jobid: "22911482"
+                    localid: "0"
+                    mem_per_node: "131072"
+                    mpi_type: cray_shasta
+                    nnodes: "1"
+                    nodeid: "0"
+                    nodelist: gpua056
+                    nprocs: "1"
+                    ntasks: "1"
+                    oom_kill_step: "0"
+                    prio_process: "0"
+                    procid: "0"
+                    submit_dir: /work/hdd/biqc/skaveti1/exp12_qualification_debug_20261014/main
+                    submit_host: dt-login03.delta.ncsa.illinois.edu
+                    task_pid: "1648906"
+                    tasks_per_node: "1"
+                    topology_addr: ss00.ss07.gpua056
+                    topology_addr_pattern: switch.switch.node
+                    tres_per_task: cpu=32
+                startedAt: "2026-10-15T07:15:20.842726Z"
+                writerId: a7q415bv1uuhqjkdmxrrdtpyvp4luzws
+        m: []
+        python_version: 3.12.13
+        t:
+            "1":
+                - 12
+                - 45
+                - 50
+            "2":
+                - 12
+                - 45
+                - 50
+            "3":
+                - 13
+                - 16
+                - 61
+            "4": 3.12.13
+            "5": 0.28.1
+            "12": 0.28.1
+            "13": linux-x86_64
+action_repeat:
+    value: 2
+actor_grad_cosine_every:
+    value: 30
+actor_hidden_dim:
+    value: 128
+actor_num_blocks:
+    value: 1
+actor_num_params:
+    value: 170.70K
+actor_sparsity:
+    value: 0
+agent:
+    value:
+        actor_block_type: residual
+        actor_hidden_dim: 128
+        actor_learning_rate: 0.0001
+        actor_num_blocks: 1
+        actor_sparsity: 0
+        actor_weight_decay: 0.01
+        agent_type: sac
+        critic_block_type: residual
+        critic_hidden_dim: 512
+        critic_learning_rate: 0.0001
+        critic_num_blocks: 2
+        critic_sparsity: 0
+        critic_use_cdq: false
+        critic_weight_decay: 0.01
+        gamma: 0.99
+        max_episode_steps: 1000
+        mixed_precision: false
+        n_step: 1
+        normalize_observation: true
+        num_train_envs: 1
+        seed: 1
+        target_tau: 0.005
+        temp_initial_value: 0.01
+        temp_learning_rate: 0.0001
+        temp_target_entropy: null
+        temp_target_entropy_coef: -0.5
+        temp_weight_decay: 0
+buffer:
+    value:
+        add_batch_size: 1
+        buffer_class_type: numpy
+        buffer_type: uniform
+        gamma: 0.99
+        max_length: 1000000
+        min_length: 5000
+        n_step: 1
+        sample_batch_size: 256
+checks:
+    value:
+        check1_tolerance_eps: 64
+critic_hidden_dim:
+    value: 512
+critic_num_blocks:
+    value: 2
+critic_num_params:
+    value: 4.34M
+critic_sparsity:
+    value: 0
+diagnostics:
+    value:
+        enabled: true
+        kl_reference_size: 256
+        saturation_threshold: 0.99
+eff_episode_len:
+    value: 500
+env:
+    value:
+        action_repeat: 2
+        env_name: dog-run
+        env_type: dmc
+        episodic: false
+        max_episode_steps: 1000
+        no_termination: false
+        num_env_steps: 1000000
+        num_eval_envs: 1
+        num_train_envs: 1
+        rescale_action: true
+        reward_scale: 1
+        seed: 1
+env_name:
+    value: dog-run
+evaluation_per_interaction_step:
+    value: 50000
+exp_name:
+    value: exp12
+fork:
+    value:
+        architectures:
+            - D4W1024
+            - D4W1536
+        arm: null
+        enabled: true
+        eval_episodes: 10
+        eval_every_fraction: 0.01
+        horizon_fraction: 0.25
+        identity_snapshot_steps: null
+        max_total_fraction: 1.2
+        source: null
+gamma:
+    value: 0.99
+injection:
+    value:
+        m: null
+logging_per_interaction_step:
+    value: 2000
+n_step:
+    value: 1
+num_env_steps:
+    value: 1000000
+num_eval_episodes:
+    value: 5
+num_interaction_steps:
+    value: 500000
+num_params:
+    value: 4.51M
+num_record_episodes:
+    value: 0
+num_train_envs:
+    value: 1
+positive_control:
+    value:
+        architecture: D4W1536
+        env_name: dog-run
+        noise_threshold: 0.1
+        similar_within: 0.1
+probe:
+    value:
+        batch_size: 256
+        checks: 20
+        enabled: true
+        eval_chunk: 2560
+        pool_size: 25600
+        rounds: 5
+        steps: 2000
+        target_scale: 100000
+project_name:
+    value: echocritic_official_exp1
+recording_per_interaction_step:
+    value: 500000
+results_root:
+    value: /work/hdd/biqc/skaveti1/exp12_prod_pilot7_20261014T213210Z/results
+run_role:
+    value: confirmatory
+seed:
+    value: 1
+server:
+    value: local
+testing:
+    value:
+        force_trigger_check: null
+        stop_after_identity_snapshot: false
+trigger:
+    value:
+        confidence: 0.95
+        consecutive_checks: 2
+        eligible_fraction: 0.95
+        null_threshold: 0
+        resamples: 10000
+updates_per_interaction_step:
+    value: 2

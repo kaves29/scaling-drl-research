@@ -1,0 +1,24 @@
+{
+  "cpu_only": true,
+  "backend": "cpu",
+  "head": "723da0d1c0c6f95910468a4aae9c94f1c40f60ed",
+  "diff_sha256": "69a46b6ec452af8b59270d2bf5dbd8e2b095575734709964b10d3f813d18ee70",
+  "harness_sha256": "0880e7be8fa83a5e42249391f21bd7a5e4ac82004128528b94b040800fbe0c42",
+  "runs": {
+    "highest": {
+      "verdict": "PASS_EXACT_ISOLATION_AT_TESTED_CONFIGURATION",
+      "steps": 400,
+      "receipt_sha256": "7336c4d79062981f87c96a2e8a7a01843fa43656753873a1f8596d71eb3b75dd"
+    },
+    "production_tf32": {
+      "verdict": "PASS_EXACT_ISOLATION_AT_TESTED_CONFIGURATION",
+      "steps": 400,
+      "receipt_sha256": "6c3a186ed87add3ba20f177958267b02d038a54e3e019b66dfe55a15d7529825"
+    }
+  },
+  "mutations": {
+    "original_precision_assertion": "EXPECTED_FAILURE",
+    "original_meter_comparator": "EXPECTED_FAILURE"
+  },
+  "restored": "PASS"
+}

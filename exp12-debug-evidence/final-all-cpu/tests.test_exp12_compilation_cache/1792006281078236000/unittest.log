@@ -1,0 +1,14 @@
+test_concurrent_reader_never_sees_a_truncated_entry (tests.test_exp12_compilation_cache.AtomicCacheWriteTest.test_concurrent_reader_never_sees_a_truncated_entry) ... ok
+test_concurrent_writers_publish_only_complete_payloads (tests.test_exp12_compilation_cache.AtomicCacheWriteTest.test_concurrent_writers_publish_only_complete_payloads) ... ok
+test_configure_installs_once_and_a_cached_executable_gives_identical_results (tests.test_exp12_compilation_cache.AtomicCacheWriteTest.test_configure_installs_once_and_a_cached_executable_gives_identical_results) ... ok
+test_empty_key_retains_jax_error (tests.test_exp12_compilation_cache.AtomicCacheWriteTest.test_empty_key_retains_jax_error) ... ok
+test_entry_bytes_and_layout_unchanged (tests.test_exp12_compilation_cache.AtomicCacheWriteTest.test_entry_bytes_and_layout_unchanged) ... ok
+test_entry_is_invisible_until_publication (tests.test_exp12_compilation_cache.AtomicCacheWriteTest.test_entry_is_invisible_until_publication) ... ok
+test_eviction_cache_keeps_jax_put (tests.test_exp12_compilation_cache.AtomicCacheWriteTest.test_eviction_cache_keeps_jax_put) ... skipped 'jax needs filelock for an evicting cache; not installed here'
+test_failed_publication_leaves_no_visible_or_temporary_entry (tests.test_exp12_compilation_cache.AtomicCacheWriteTest.test_failed_publication_leaves_no_visible_or_temporary_entry) ... ok
+
+----------------------------------------------------------------------
+Ran 8 tests in 2.337s
+
+OK (skipped=1)
+[exp12] persistent compilation cache None: hits 1, misses 4

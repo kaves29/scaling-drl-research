@@ -1,0 +1,2335 @@
+{
+  "id": "5u5uambc",
+  "name": "myo-pen-twirl_D4W1024_UTD2_CD4_CW1024_AD1_AW128_seed2",
+  "state": "finished",
+  "config": {
+    "env": {
+      "seed": 2,
+      "env_name": "myo-pen-twirl",
+      "env_type": "myosuite",
+      "episodic": false,
+      "reward_scale": 1,
+      "action_repeat": 2,
+      "num_env_steps": 1000000,
+      "num_eval_envs": 1,
+      "no_termination": false,
+      "num_train_envs": 1,
+      "rescale_action": true,
+      "max_episode_steps": 100
+    },
+    "fork": {
+      "arm": null,
+      "source": null,
+      "enabled": true,
+      "architectures": [
+        "D4W1024",
+        "D4W1536"
+      ],
+      "eval_episodes": 10,
+      "horizon_fraction": 0.25,
+      "max_total_fraction": 1.2,
+      "eval_every_fraction": 0.01,
+      "identity_snapshot_steps": null
+    },
+    "seed": 2,
+    "agent": {
+      "seed": 2,
+      "gamma": 0.95,
+      "n_step": 1,
+      "agent_type": "sac",
+      "target_tau": 0.005,
+      "actor_sparsity": 0,
+      "critic_use_cdq": false,
+      "num_train_envs": 1,
+      "critic_sparsity": 0,
+      "mixed_precision": false,
+      "actor_block_type": "residual",
+      "actor_hidden_dim": 128,
+      "actor_num_blocks": 1,
+      "critic_block_type": "residual",
+      "critic_hidden_dim": 1024,
+      "critic_num_blocks": 4,
+      "max_episode_steps": 100,
+      "temp_weight_decay": 0,
+      "actor_weight_decay": 0.01,
+      "temp_initial_value": 0.01,
+      "temp_learning_rate": 0.0001,
+      "actor_learning_rate": 0.0001,
+      "critic_weight_decay": 0.01,
+      "temp_target_entropy": null,
+      "critic_learning_rate": 0.0001,
+      "normalize_observation": true,
+      "temp_target_entropy_coef": -0.5
+    },
+    "gamma": 0.95,
+    "probe": {
+      "steps": 2000,
+      "checks": 50,
+      "rounds": 10,
+      "enabled": true,
+      "pool_size": 25600,
+      "batch_size": 256,
+      "eval_chunk": 2560,
+      "target_scale": 100000
+    },
+    "buffer": {
+      "gamma": 0.95,
+      "n_step": 1,
+      "max_length": 1000000,
+      "min_length": 5000,
+      "buffer_type": "uniform",
+      "add_batch_size": 1,
+      "buffer_class_type": "numpy",
+      "sample_batch_size": 256
+    },
+    "checks": {
+      "check1_tolerance_eps": 64
+    },
+    "n_step": 1,
+    "server": "local",
+    "testing": {
+      "force_trigger_check": null,
+      "stop_after_identity_snapshot": false
+    },
+    "trigger": {
+      "resamples": 10000,
+      "confidence": 0.95,
+      "null_threshold": 0,
+      "eligible_fraction": 0.95,
+      "consecutive_checks": 2
+    },
+    "env_name": "myo-pen-twirl",
+    "exp_name": "exp12",
+    "run_role": "confirmatory",
+    "injection": {
+      "m": null
+    },
+    "num_params": "33.87M",
+    "diagnostics": {
+      "enabled": true,
+      "kl_reference_size": 256,
+      "saturation_threshold": 0.99
+    },
+    "project_name": "echocritic_method_c_ten_96",
+    "results_root": "/projects/biqc/skaveti1/exp96/campaign_owner_f597ee9_20261019T230748Z/campaign/results",
+    "action_repeat": 2,
+    "num_env_steps": 1000000,
+    "actor_sparsity": 0,
+    "num_train_envs": 1,
+    "critic_sparsity": 0,
+    "eff_episode_len": 50,
+    "actor_hidden_dim": 128,
+    "actor_num_blocks": 1,
+    "actor_num_params": "153.04K",
+    "positive_control": {
+      "env_name": "dog-run",
+      "architecture": "D4W1536",
+      "similar_within": 0.1,
+      "noise_threshold": 0.1
+    },
+    "critic_hidden_dim": 1024,
+    "critic_num_blocks": 4,
+    "critic_num_params": "33.71M",
+    "num_eval_episodes": 5,
+    "num_record_episodes": 0,
+    "num_interaction_steps": 500000,
+    "actor_grad_cosine_every": 30,
+    "logging_per_interaction_step": 2000,
+    "updates_per_interaction_step": 2,
+    "recording_per_interaction_step": 500000,
+    "evaluation_per_interaction_step": 50000
+  },
+  "summary": {
+    "_runtime": 48523,
+    "_step": 1000000,
+    "_timestamp": 1792605652.148012,
+    "_wandb.runtime": 48523,
+    "eval/avg_length": 25,
+    "eval/avg_return": 348.6566665742483,
+    "eval/avg_success": 0,
+    "probe/check_index": 50,
+    "probe/ci_high": 0.30103454291820525,
+    "probe/ci_low": 0.25022026240825657,
+    "probe/env_step": 1000000,
+    "probe/interaction_step": 500000,
+    "probe/loss_iqm": 0.27444154024124146,
+    "probe/loss_r0": 0.271517813205719,
+    "probe/loss_r1": 0.291446715593338,
+    "probe/loss_r2": 0.29466143250465393,
+    "probe/loss_r3": 0.2370409369468689,
+    "probe/loss_r4": 0.26279792189598083,
+    "probe/loss_r5": 0.32169660925865173,
+    "probe/loss_r6": 0.250777930021286,
+    "probe/loss_r7": 0.20771363377571103,
+    "probe/loss_r8": 0.27372556924819946,
+    "probe/loss_r9": 0.33081769943237305,
+    "probe/score_current_r0": -0.10015597939491272,
+    "probe/score_current_r1": -0.10492542386054993,
+    "probe/score_current_r2": -0.1392463743686676,
+    "probe/score_current_r3": -0.10580581426620483,
+    "probe/score_current_r4": -0.12751436233520508,
+    "probe/score_current_r5": -0.12172582745552064,
+    "probe/score_current_r6": -0.09895950555801392,
+    "probe/score_current_r7": -0.11517861485481262,
+    "probe/score_current_r8": -0.12210500240325928,
+    "probe/score_current_r9": -0.13683253526687622,
+    "probe/score_fresh_iqm": 0.4892789512872696,
+    "probe/score_fresh_r0": 0.17136183381080627,
+    "probe/score_fresh_r1": 0.18652129173278809,
+    "probe/score_fresh_r2": 0.15541505813598633,
+    "probe/score_fresh_r3": 0.13123512268066406,
+    "probe/score_fresh_r4": 0.13528355956077576,
+    "probe/score_fresh_r5": 0.1999707818031311,
+    "probe/score_fresh_r6": 0.1518184244632721,
+    "probe/score_fresh_r7": 0.09253501892089844,
+    "probe/score_fresh_r8": 0.1516205668449402,
+    "probe/score_fresh_r9": 0.19398516416549683,
+    "probe/triggered": 1,
+    "train/actor_DR0.1": 0,
+    "train/actor_DR0.2": 0,
+    "train/actor_action": 0.6411161928325891,
+    "train/actor_fnorm": 3.685746908187866,
+    "train/actor_gnorm": 8.133408229708671,
+    "train/actor_gnorm_std": 1.8511870605331575,
+    "train/actor_grad_cosine": 0.00415851766201876,
+    "train/actor_loss": -330.4628370742798,
+    "train/actor_loss_var": 14.598684310913086,
+    "train/actor_pnorm": 51.23741792869568,
+    "train/actor_saturation": 0.020620968809584157,
+    "train/actor_srank": 111,
+    "train/actor_wnorm": 51.26459884643555,
+    "train/churn": 0.011244134977459908,
+    "train/critic_DR0.1": 0.4092262089252472,
+    "train/critic_DR0.2": 3.134300470352173,
+    "train/critic_fnorm": 28.949670791625977,
+    "train/critic_gnorm": 199.6295106716156,
+    "train/critic_loss": 10.73969482719898,
+    "train/critic_pnorm": 418.566147857666,
+    "train/critic_srank": 101,
+    "train/critic_wnorm": 418.4454345703125,
+    "train/entropy": -19.34326322064999,
+    "train/policy_churn": 0.01124413516081404,
+    "train/policy_kl": 0.007064133362087887,
+    "train/q1_mean": 318.0799440383911,
+    "train/q2_mean": 318.0799440383911,
+    "train/rew_mean": 2.403129437625408,
+    "train/td_error_var": 10.563696004629136,
+    "train/temperature": 0.1835993633307517,
+    "train/temperature_gnorm": 0.13951304416178756,
+    "train/temperature_loss": 0.028868947817536537
+  },
+  "attrs": {
+    "projectId": "45278843",
+    "id": "UnVuOnYxOjV1NXVhbWJjOmVjaG9jcml0aWNfb2ZmaWNpYWxfZXhwMTpzX2thdmV0aTIzLXNlY2tpbmdlcg==",
+    "tags": [],
+    "name": "5u5uambc",
+    "displayName": "myo-pen-twirl_D4W1024_UTD2_CD4_CW1024_AD1_AW128_seed2",
+    "sweepName": null,
+    "state": "finished",
+    "config": {
+      "env": {
+        "seed": 2,
+        "env_name": "myo-pen-twirl",
+        "env_type": "myosuite",
+        "episodic": false,
+        "reward_scale": 1,
+        "action_repeat": 2,
+        "num_env_steps": 1000000,
+        "num_eval_envs": 1,
+        "no_termination": false,
+        "num_train_envs": 1,
+        "rescale_action": true,
+        "max_episode_steps": 100
+      },
+      "fork": {
+        "arm": null,
+        "source": null,
+        "enabled": true,
+        "architectures": [
+          "D4W1024",
+          "D4W1536"
+        ],
+        "eval_episodes": 10,
+        "horizon_fraction": 0.25,
+        "max_total_fraction": 1.2,
+        "eval_every_fraction": 0.01,
+        "identity_snapshot_steps": null
+      },
+      "seed": 2,
+      "agent": {
+        "seed": 2,
+        "gamma": 0.95,
+        "n_step": 1,
+        "agent_type": "sac",
+        "target_tau": 0.005,
+        "actor_sparsity": 0,
+        "critic_use_cdq": false,
+        "num_train_envs": 1,
+        "critic_sparsity": 0,
+        "mixed_precision": false,
+        "actor_block_type": "residual",
+        "actor_hidden_dim": 128,
+        "actor_num_blocks": 1,
+        "critic_block_type": "residual",
+        "critic_hidden_dim": 1024,
+        "critic_num_blocks": 4,
+        "max_episode_steps": 100,
+        "temp_weight_decay": 0,
+        "actor_weight_decay": 0.01,
+        "temp_initial_value": 0.01,
+        "temp_learning_rate": 0.0001,
+        "actor_learning_rate": 0.0001,
+        "critic_weight_decay": 0.01,
+        "temp_target_entropy": null,
+        "critic_learning_rate": 0.0001,
+        "normalize_observation": true,
+        "temp_target_entropy_coef": -0.5
+      },
+      "gamma": 0.95,
+      "probe": {
+        "steps": 2000,
+        "checks": 50,
+        "rounds": 10,
+        "enabled": true,
+        "pool_size": 25600,
+        "batch_size": 256,
+        "eval_chunk": 2560,
+        "target_scale": 100000
+      },
+      "buffer": {
+        "gamma": 0.95,
+        "n_step": 1,
+        "max_length": 1000000,
+        "min_length": 5000,
+        "buffer_type": "uniform",
+        "add_batch_size": 1,
+        "buffer_class_type": "numpy",
+        "sample_batch_size": 256
+      },
+      "checks": {
+        "check1_tolerance_eps": 64
+      },
+      "n_step": 1,
+      "server": "local",
+      "testing": {
+        "force_trigger_check": null,
+        "stop_after_identity_snapshot": false
+      },
+      "trigger": {
+        "resamples": 10000,
+        "confidence": 0.95,
+        "null_threshold": 0,
+        "eligible_fraction": 0.95,
+        "consecutive_checks": 2
+      },
+      "env_name": "myo-pen-twirl",
+      "exp_name": "exp12",
+      "run_role": "confirmatory",
+      "injection": {
+        "m": null
+      },
+      "num_params": "33.87M",
+      "diagnostics": {
+        "enabled": true,
+        "kl_reference_size": 256,
+        "saturation_threshold": 0.99
+      },
+      "project_name": "echocritic_method_c_ten_96",
+      "results_root": "/projects/biqc/skaveti1/exp96/campaign_owner_f597ee9_20261019T230748Z/campaign/results",
+      "action_repeat": 2,
+      "num_env_steps": 1000000,
+      "actor_sparsity": 0,
+      "num_train_envs": 1,
+      "critic_sparsity": 0,
+      "eff_episode_len": 50,
+      "actor_hidden_dim": 128,
+      "actor_num_blocks": 1,
+      "actor_num_params": "153.04K",
+      "positive_control": {
+        "env_name": "dog-run",
+        "architecture": "D4W1536",
+        "similar_within": 0.1,
+        "noise_threshold": 0.1
+      },
+      "critic_hidden_dim": 1024,
+      "critic_num_blocks": 4,
+      "critic_num_params": "33.71M",
+      "num_eval_episodes": 5,
+      "num_record_episodes": 0,
+      "num_interaction_steps": 500000,
+      "actor_grad_cosine_every": 30,
+      "logging_per_interaction_step": 2000,
+      "updates_per_interaction_step": 2,
+      "recording_per_interaction_step": 500000,
+      "evaluation_per_interaction_step": 50000
+    },
+    "group": "myo-pen-twirl_D4W1024_UTD2",
+    "jobType": "D4W1024",
+    "commit": "f597ee9898e4d401912092c336c3e5330cf2fda1",
+    "readOnly": false,
+    "createdAt": "2026-10-21T04:34:34Z",
+    "heartbeatAt": "2026-10-21T18:00:59Z",
+    "description": "myo-pen-twirl_D4W1024_UTD2_CD4_CW1024_AD1_AW128_seed2",
+    "notes": null,
+    "systemMetrics": {
+      "system.cpu": 26.431431279109876,
+      "system.disk./.usageGB": 11.58917999267578,
+      "system.disk./.usagePercent": 1.1499518891707698,
+      "system.disk.nvme0c0n1.in": 2.5,
+      "system.disk.nvme0c0n1.out": 11.85546875,
+      "system.disk.nvme0n1.in": 2.5,
+      "system.disk.nvme0n1.out": 11.85546875,
+      "system.gpu.0.correctedMemoryErrors": 0,
+      "system.gpu.0.enforcedPowerLimitWatts": 400,
+      "system.gpu.0.gpu": 100,
+      "system.gpu.0.memory": 64,
+      "system.gpu.0.memoryAllocated": 45.257720947265625,
+      "system.gpu.0.memoryAllocatedBytes": 19438043136,
+      "system.gpu.0.memoryClock": 1215,
+      "system.gpu.0.powerPercent": 73.61175,
+      "system.gpu.0.powerWatts": 294.447,
+      "system.gpu.0.smClock": 1410,
+      "system.gpu.0.temp": 45,
+      "system.gpu.0.uncorrectedMemoryErrors": 0,
+      "system.gpu.1.correctedMemoryErrors": 0,
+      "system.gpu.1.enforcedPowerLimitWatts": 400,
+      "system.gpu.1.gpu": 100,
+      "system.gpu.1.memory": 54,
+      "system.gpu.1.memoryAllocated": 31.516571044921875,
+      "system.gpu.1.memoryAllocatedBytes": 13536264192,
+      "system.gpu.1.memoryClock": 1215,
+      "system.gpu.1.powerPercent": 66.8995,
+      "system.gpu.1.powerWatts": 267.598,
+      "system.gpu.1.smClock": 1410,
+      "system.gpu.1.temp": 42,
+      "system.gpu.1.uncorrectedMemoryErrors": 0,
+      "system.gpu.2.correctedMemoryErrors": 0,
+      "system.gpu.2.enforcedPowerLimitWatts": 400,
+      "system.gpu.2.gpu": 100,
+      "system.gpu.2.memory": 64,
+      "system.gpu.2.memoryAllocated": 45.252838134765625,
+      "system.gpu.2.memoryAllocatedBytes": 19435945984,
+      "system.gpu.2.memoryClock": 1215,
+      "system.gpu.2.powerPercent": 72.36525,
+      "system.gpu.2.powerWatts": 289.461,
+      "system.gpu.2.smClock": 1410,
+      "system.gpu.2.temp": 48,
+      "system.gpu.2.uncorrectedMemoryErrors": 0,
+      "system.gpu.3.correctedMemoryErrors": 0,
+      "system.gpu.3.enforcedPowerLimitWatts": 400,
+      "system.gpu.3.gpu": 100,
+      "system.gpu.3.memory": 50,
+      "system.gpu.3.memoryAllocated": 31.54586791992188,
+      "system.gpu.3.memoryAllocatedBytes": 13548847104,
+      "system.gpu.3.memoryClock": 1215,
+      "system.gpu.3.powerPercent": 61.223499999999994,
+      "system.gpu.3.powerWatts": 244.894,
+      "system.gpu.3.smClock": 1410,
+      "system.gpu.3.temp": 40,
+      "system.gpu.3.uncorrectedMemoryErrors": 0,
+      "system.gpu.4.correctedMemoryErrors": 0,
+      "system.gpu.4.enforcedPowerLimitWatts": 400,
+      "system.gpu.4.gpu": 100,
+      "system.gpu.4.memory": 53,
+      "system.gpu.4.memoryAllocated": 31.531219482421875,
+      "system.gpu.4.memoryAllocatedBytes": 13542555648,
+      "system.gpu.4.memoryClock": 1215,
+      "system.gpu.4.powerPercent": 65.15075,
+      "system.gpu.4.powerWatts": 260.603,
+      "system.gpu.4.smClock": 1410,
+      "system.gpu.4.temp": 47,
+      "system.gpu.4.uncorrectedMemoryErrors": 0,
+      "system.gpu.5.correctedMemoryErrors": 0,
+      "system.gpu.5.enforcedPowerLimitWatts": 400,
+      "system.gpu.5.gpu": 100,
+      "system.gpu.5.memory": 72,
+      "system.gpu.5.memoryAllocated": 45.252838134765625,
+      "system.gpu.5.memoryAllocatedBytes": 19435945984,
+      "system.gpu.5.memoryClock": 1215,
+      "system.gpu.5.powerPercent": 77.82975,
+      "system.gpu.5.powerWatts": 311.319,
+      "system.gpu.5.smClock": 1410,
+      "system.gpu.5.temp": 44,
+      "system.gpu.5.uncorrectedMemoryErrors": 0,
+      "system.gpu.6.correctedMemoryErrors": 0,
+      "system.gpu.6.enforcedPowerLimitWatts": 400,
+      "system.gpu.6.gpu": 100,
+      "system.gpu.6.memory": 71,
+      "system.gpu.6.memoryAllocated": 45.257720947265625,
+      "system.gpu.6.memoryAllocatedBytes": 19438043136,
+      "system.gpu.6.memoryClock": 1215,
+      "system.gpu.6.powerPercent": 77.9915,
+      "system.gpu.6.powerWatts": 311.966,
+      "system.gpu.6.smClock": 1410,
+      "system.gpu.6.temp": 46,
+      "system.gpu.6.uncorrectedMemoryErrors": 0,
+      "system.gpu.7.correctedMemoryErrors": 0,
+      "system.gpu.7.enforcedPowerLimitWatts": 400,
+      "system.gpu.7.gpu": 100,
+      "system.gpu.7.memory": 55,
+      "system.gpu.7.memoryAllocated": 31.516571044921875,
+      "system.gpu.7.memoryAllocatedBytes": 13536264192,
+      "system.gpu.7.memoryClock": 1215,
+      "system.gpu.7.powerPercent": 69.5275,
+      "system.gpu.7.powerWatts": 278.11,
+      "system.gpu.7.smClock": 1410,
+      "system.gpu.7.temp": 43,
+      "system.gpu.7.uncorrectedMemoryErrors": 0,
+      "system.memory_percent": 11.942064482417935,
+      "system.network.recv": 11370512003.0,
+      "system.network.sent": 1653550409913.0,
+      "system.proc.cpu.threads": 28,
+      "system.proc.memory.availableMB": 1817487.734375,
+      "system.proc.memory.percent": 0.3491968872066755,
+      "system.proc.memory.rssMB": 7207.3125
+    },
+    "summaryMetrics": {
+      "_runtime": 48523,
+      "_step": 1000000,
+      "_timestamp": 1792605652.148012,
+      "_wandb.runtime": 48523,
+      "eval/avg_length": 25,
+      "eval/avg_return": 348.6566665742483,
+      "eval/avg_success": 0,
+      "probe/check_index": 50,
+      "probe/ci_high": 0.30103454291820525,
+      "probe/ci_low": 0.25022026240825657,
+      "probe/env_step": 1000000,
+      "probe/interaction_step": 500000,
+      "probe/loss_iqm": 0.27444154024124146,
+      "probe/loss_r0": 0.271517813205719,
+      "probe/loss_r1": 0.291446715593338,
+      "probe/loss_r2": 0.29466143250465393,
+      "probe/loss_r3": 0.2370409369468689,
+      "probe/loss_r4": 0.26279792189598083,
+      "probe/loss_r5": 0.32169660925865173,
+      "probe/loss_r6": 0.250777930021286,
+      "probe/loss_r7": 0.20771363377571103,
+      "probe/loss_r8": 0.27372556924819946,
+      "probe/loss_r9": 0.33081769943237305,
+      "probe/score_current_r0": -0.10015597939491272,
+      "probe/score_current_r1": -0.10492542386054993,
+      "probe/score_current_r2": -0.1392463743686676,
+      "probe/score_current_r3": -0.10580581426620483,
+      "probe/score_current_r4": -0.12751436233520508,
+      "probe/score_current_r5": -0.12172582745552064,
+      "probe/score_current_r6": -0.09895950555801392,
+      "probe/score_current_r7": -0.11517861485481262,
+      "probe/score_current_r8": -0.12210500240325928,
+      "probe/score_current_r9": -0.13683253526687622,
+      "probe/score_fresh_iqm": 0.4892789512872696,
+      "probe/score_fresh_r0": 0.17136183381080627,
+      "probe/score_fresh_r1": 0.18652129173278809,
+      "probe/score_fresh_r2": 0.15541505813598633,
+      "probe/score_fresh_r3": 0.13123512268066406,
+      "probe/score_fresh_r4": 0.13528355956077576,
+      "probe/score_fresh_r5": 0.1999707818031311,
+      "probe/score_fresh_r6": 0.1518184244632721,
+      "probe/score_fresh_r7": 0.09253501892089844,
+      "probe/score_fresh_r8": 0.1516205668449402,
+      "probe/score_fresh_r9": 0.19398516416549683,
+      "probe/triggered": 1,
+      "train/actor_DR0.1": 0,
+      "train/actor_DR0.2": 0,
+      "train/actor_action": 0.6411161928325891,
+      "train/actor_fnorm": 3.685746908187866,
+      "train/actor_gnorm": 8.133408229708671,
+      "train/actor_gnorm_std": 1.8511870605331575,
+      "train/actor_grad_cosine": 0.00415851766201876,
+      "train/actor_loss": -330.4628370742798,
+      "train/actor_loss_var": 14.598684310913086,
+      "train/actor_pnorm": 51.23741792869568,
+      "train/actor_saturation": 0.020620968809584157,
+      "train/actor_srank": 111,
+      "train/actor_wnorm": 51.26459884643555,
+      "train/churn": 0.011244134977459908,
+      "train/critic_DR0.1": 0.4092262089252472,
+      "train/critic_DR0.2": 3.134300470352173,
+      "train/critic_fnorm": 28.949670791625977,
+      "train/critic_gnorm": 199.6295106716156,
+      "train/critic_loss": 10.73969482719898,
+      "train/critic_pnorm": 418.566147857666,
+      "train/critic_srank": 101,
+      "train/critic_wnorm": 418.4454345703125,
+      "train/entropy": -19.34326322064999,
+      "train/policy_churn": 0.01124413516081404,
+      "train/policy_kl": 0.007064133362087887,
+      "train/q1_mean": 318.0799440383911,
+      "train/q2_mean": 318.0799440383911,
+      "train/rew_mean": 2.403129437625408,
+      "train/td_error_var": 10.563696004629136,
+      "train/temperature": 0.1835993633307517,
+      "train/temperature_gnorm": 0.13951304416178756,
+      "train/temperature_loss": 0.028868947817536537
+    },
+    "historyLineCount": 251,
+    "user": {
+      "name": "Shourya",
+      "username": "s_kaveti23"
+    },
+    "historyKeys": {
+      "keys": {
+        "_runtime": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 251
+            }
+          ],
+          "monotonic": true,
+          "previousValue": 48516.606884781
+        },
+        "_step": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 251
+            }
+          ],
+          "monotonic": true,
+          "previousValue": 1000000
+        },
+        "_timestamp": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 251
+            }
+          ],
+          "monotonic": true,
+          "previousValue": 1792605652.148012
+        },
+        "eval/avg_length": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 11
+            }
+          ],
+          "monotonic": true,
+          "previousValue": 25
+        },
+        "eval/avg_return": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 11
+            }
+          ],
+          "monotonic": true,
+          "previousValue": 348.6566665742483
+        },
+        "eval/avg_success": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 11
+            }
+          ],
+          "monotonic": true,
+          "previousValue": 0
+        },
+        "probe/check_index": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 51
+            }
+          ],
+          "monotonic": true,
+          "previousValue": 50
+        },
+        "probe/ci_high": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 50
+            }
+          ],
+          "previousValue": 0.30103454291820525
+        },
+        "probe/ci_low": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 50
+            }
+          ],
+          "previousValue": 0.25022026240825657
+        },
+        "probe/env_step": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 51
+            }
+          ],
+          "monotonic": true,
+          "previousValue": 1000000
+        },
+        "probe/interaction_step": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 51
+            }
+          ],
+          "monotonic": true,
+          "previousValue": 500000
+        },
+        "probe/loss_iqm": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 50
+            }
+          ],
+          "previousValue": 0.27444154024124146
+        },
+        "probe/loss_r0": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 50
+            }
+          ],
+          "previousValue": 0.271517813205719
+        },
+        "probe/loss_r1": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 50
+            }
+          ],
+          "previousValue": 0.291446715593338
+        },
+        "probe/loss_r2": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 50
+            }
+          ],
+          "previousValue": 0.29466143250465393
+        },
+        "probe/loss_r3": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 50
+            }
+          ],
+          "previousValue": 0.2370409369468689
+        },
+        "probe/loss_r4": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 50
+            }
+          ],
+          "previousValue": 0.26279792189598083
+        },
+        "probe/loss_r5": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 50
+            }
+          ],
+          "previousValue": 0.32169660925865173
+        },
+        "probe/loss_r6": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 50
+            }
+          ],
+          "previousValue": 0.250777930021286
+        },
+        "probe/loss_r7": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 50
+            }
+          ],
+          "previousValue": 0.20771363377571103
+        },
+        "probe/loss_r8": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 50
+            }
+          ],
+          "previousValue": 0.27372556924819946
+        },
+        "probe/loss_r9": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 50
+            }
+          ],
+          "previousValue": 0.33081769943237305
+        },
+        "probe/score_current_r0": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 50
+            }
+          ],
+          "previousValue": -0.10015597939491272
+        },
+        "probe/score_current_r1": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 50
+            }
+          ],
+          "previousValue": -0.10492542386054993
+        },
+        "probe/score_current_r2": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 50
+            }
+          ],
+          "previousValue": -0.1392463743686676
+        },
+        "probe/score_current_r3": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 50
+            }
+          ],
+          "previousValue": -0.10580581426620483
+        },
+        "probe/score_current_r4": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 50
+            }
+          ],
+          "previousValue": -0.12751436233520508
+        },
+        "probe/score_current_r5": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 50
+            }
+          ],
+          "previousValue": -0.12172582745552064
+        },
+        "probe/score_current_r6": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 50
+            }
+          ],
+          "previousValue": -0.09895950555801392
+        },
+        "probe/score_current_r7": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 50
+            }
+          ],
+          "previousValue": -0.11517861485481262
+        },
+        "probe/score_current_r8": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 50
+            }
+          ],
+          "previousValue": -0.12210500240325928
+        },
+        "probe/score_current_r9": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 50
+            }
+          ],
+          "previousValue": -0.13683253526687622
+        },
+        "probe/score_fresh_iqm": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 1
+            }
+          ],
+          "monotonic": true,
+          "previousValue": 0.4892789512872696
+        },
+        "probe/score_fresh_r0": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 51
+            }
+          ],
+          "previousValue": 0.17136183381080627
+        },
+        "probe/score_fresh_r1": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 51
+            }
+          ],
+          "previousValue": 0.18652129173278809
+        },
+        "probe/score_fresh_r2": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 51
+            }
+          ],
+          "previousValue": 0.15541505813598633
+        },
+        "probe/score_fresh_r3": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 51
+            }
+          ],
+          "previousValue": 0.13123512268066406
+        },
+        "probe/score_fresh_r4": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 51
+            }
+          ],
+          "previousValue": 0.13528355956077576
+        },
+        "probe/score_fresh_r5": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 51
+            }
+          ],
+          "previousValue": 0.1999707818031311
+        },
+        "probe/score_fresh_r6": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 51
+            }
+          ],
+          "previousValue": 0.1518184244632721
+        },
+        "probe/score_fresh_r7": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 51
+            }
+          ],
+          "previousValue": 0.09253501892089844
+        },
+        "probe/score_fresh_r8": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 51
+            }
+          ],
+          "previousValue": 0.1516205668449402
+        },
+        "probe/score_fresh_r9": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 51
+            }
+          ],
+          "previousValue": 0.19398516416549683
+        },
+        "probe/triggered": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 50
+            }
+          ],
+          "monotonic": true,
+          "previousValue": 1
+        },
+        "system/cpu": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/disk./.usageGB": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/disk./.usagePercent": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/disk.nvme0c0n1.in": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/disk.nvme0c0n1.out": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/disk.nvme0n1.in": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/disk.nvme0n1.out": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.0.correctedMemoryErrors": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.0.enforcedPowerLimitWatts": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.0.gpu": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.0.memory": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.0.memoryAllocated": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.0.memoryAllocatedBytes": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.0.memoryClock": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.0.powerPercent": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.0.powerWatts": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.0.smClock": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.0.temp": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.0.uncorrectedMemoryErrors": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.1.correctedMemoryErrors": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.1.enforcedPowerLimitWatts": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.1.gpu": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.1.memory": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.1.memoryAllocated": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.1.memoryAllocatedBytes": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.1.memoryClock": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.1.powerPercent": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.1.powerWatts": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.1.smClock": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.1.temp": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.1.uncorrectedMemoryErrors": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.2.correctedMemoryErrors": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.2.enforcedPowerLimitWatts": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.2.gpu": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.2.memory": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.2.memoryAllocated": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.2.memoryAllocatedBytes": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.2.memoryClock": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.2.powerPercent": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.2.powerWatts": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.2.smClock": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.2.temp": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.2.uncorrectedMemoryErrors": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.3.correctedMemoryErrors": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.3.enforcedPowerLimitWatts": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.3.gpu": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.3.memory": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.3.memoryAllocated": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.3.memoryAllocatedBytes": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.3.memoryClock": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.3.powerPercent": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.3.powerWatts": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.3.smClock": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.3.temp": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.3.uncorrectedMemoryErrors": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.4.correctedMemoryErrors": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.4.enforcedPowerLimitWatts": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.4.gpu": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.4.memory": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.4.memoryAllocated": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.4.memoryAllocatedBytes": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.4.memoryClock": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.4.powerPercent": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.4.powerWatts": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.4.smClock": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.4.temp": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.4.uncorrectedMemoryErrors": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.5.correctedMemoryErrors": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.5.enforcedPowerLimitWatts": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.5.gpu": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.5.memory": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.5.memoryAllocated": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.5.memoryAllocatedBytes": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.5.memoryClock": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.5.powerPercent": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.5.powerWatts": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.5.smClock": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.5.temp": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.5.uncorrectedMemoryErrors": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.6.correctedMemoryErrors": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.6.enforcedPowerLimitWatts": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.6.gpu": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.6.memory": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.6.memoryAllocated": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.6.memoryAllocatedBytes": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.6.memoryClock": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.6.powerPercent": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.6.powerWatts": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.6.smClock": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.6.temp": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.6.uncorrectedMemoryErrors": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.7.correctedMemoryErrors": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.7.enforcedPowerLimitWatts": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.7.gpu": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.7.memory": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.7.memoryAllocated": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.7.memoryAllocatedBytes": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.7.memoryClock": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.7.powerPercent": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.7.powerWatts": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.7.smClock": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.7.temp": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/gpu.7.uncorrectedMemoryErrors": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/memory_percent": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/network.recv": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/network.sent": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/proc.cpu.threads": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/proc.memory.availableMB": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/proc.memory.percent": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "system/proc.memory.rssMB": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 6468
+            }
+          ]
+        },
+        "train/actor_DR0.1": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 250
+            }
+          ],
+          "monotonic": true,
+          "previousValue": 0
+        },
+        "train/actor_DR0.2": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 250
+            }
+          ],
+          "previousValue": 0
+        },
+        "train/actor_action": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 248
+            }
+          ],
+          "previousValue": 0.6411161928325891
+        },
+        "train/actor_fnorm": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 250
+            }
+          ],
+          "previousValue": 3.685746908187866
+        },
+        "train/actor_gnorm": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 248
+            }
+          ],
+          "previousValue": 8.133408229708671
+        },
+        "train/actor_gnorm_std": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 248
+            }
+          ],
+          "previousValue": 1.8511870605331575
+        },
+        "train/actor_grad_cosine": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 248
+            }
+          ],
+          "previousValue": 0.00415851766201876
+        },
+        "train/actor_loss": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 248
+            }
+          ],
+          "previousValue": -330.4628370742798
+        },
+        "train/actor_loss_var": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 248
+            }
+          ],
+          "previousValue": 14.598684310913086
+        },
+        "train/actor_pnorm": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 248
+            }
+          ],
+          "previousValue": 51.23741792869568
+        },
+        "train/actor_saturation": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 248
+            }
+          ],
+          "previousValue": 0.020620968809584157
+        },
+        "train/actor_srank": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 250
+            }
+          ],
+          "previousValue": 111
+        },
+        "train/actor_wnorm": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 250
+            }
+          ],
+          "previousValue": 51.26459884643555
+        },
+        "train/churn": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 248
+            }
+          ],
+          "previousValue": 0.011244134977459908
+        },
+        "train/critic_DR0.1": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 250
+            }
+          ],
+          "previousValue": 0.4092262089252472
+        },
+        "train/critic_DR0.2": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 250
+            }
+          ],
+          "previousValue": 3.134300470352173
+        },
+        "train/critic_fnorm": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 250
+            }
+          ],
+          "previousValue": 28.949670791625977
+        },
+        "train/critic_gnorm": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 248
+            }
+          ],
+          "previousValue": 199.6295106716156
+        },
+        "train/critic_loss": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 248
+            }
+          ],
+          "previousValue": 10.73969482719898
+        },
+        "train/critic_pnorm": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 248
+            }
+          ],
+          "previousValue": 418.566147857666
+        },
+        "train/critic_srank": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 250
+            }
+          ],
+          "previousValue": 101
+        },
+        "train/critic_wnorm": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 250
+            }
+          ],
+          "previousValue": 418.4454345703125
+        },
+        "train/entropy": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 248
+            }
+          ],
+          "previousValue": -19.34326322064999
+        },
+        "train/policy_churn": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 248
+            }
+          ],
+          "previousValue": 0.01124413516081404
+        },
+        "train/policy_kl": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 248
+            }
+          ],
+          "previousValue": 0.007064133362087887
+        },
+        "train/q1_mean": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 248
+            }
+          ],
+          "previousValue": 318.0799440383911
+        },
+        "train/q2_mean": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 248
+            }
+          ],
+          "previousValue": 318.0799440383911
+        },
+        "train/rew_mean": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 248
+            }
+          ],
+          "previousValue": 2.403129437625408
+        },
+        "train/td_error_var": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 248
+            }
+          ],
+          "previousValue": 10.563696004629136
+        },
+        "train/temperature": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 248
+            }
+          ],
+          "previousValue": 0.1835993633307517
+        },
+        "train/temperature_gnorm": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 248
+            }
+          ],
+          "previousValue": 0.13951304416178756
+        },
+        "train/temperature_loss": {
+          "typeCounts": [
+            {
+              "type": "number",
+              "count": 248
+            }
+          ],
+          "previousValue": 0.028868947817536537
+        }
+      },
+      "lastStep": 1000000,
+      "sets": []
+    },
+    "rawconfig": {
+      "_wandb": {
+        "m": [
+          {
+            "2": "probe/*",
+            "5": 2,
+            "6": [
+              1
+            ],
+            "7": []
+          },
+          {
+            "1": "probe/interaction_step",
+            "6": [],
+            "7": []
+          }
+        ],
+        "t": {
+          "1": [
+            12,
+            45,
+            50
+          ],
+          "2": [
+            12,
+            45,
+            50
+          ],
+          "3": [
+            4,
+            7,
+            13,
+            16,
+            24,
+            76,
+            61
+          ],
+          "4": "3.12.13",
+          "5": "0.28.1",
+          "12": "0.28.1",
+          "13": "linux-x86_64"
+        },
+        "cli_version": "0.28.1",
+        "python_version": "3.12.13"
+      },
+      "env": {
+        "seed": 2,
+        "env_name": "myo-pen-twirl",
+        "env_type": "myosuite",
+        "episodic": false,
+        "reward_scale": 1,
+        "action_repeat": 2,
+        "num_env_steps": 1000000,
+        "num_eval_envs": 1,
+        "no_termination": false,
+        "num_train_envs": 1,
+        "rescale_action": true,
+        "max_episode_steps": 100
+      },
+      "fork": {
+        "arm": null,
+        "source": null,
+        "enabled": true,
+        "architectures": [
+          "D4W1024",
+          "D4W1536"
+        ],
+        "eval_episodes": 10,
+        "horizon_fraction": 0.25,
+        "max_total_fraction": 1.2,
+        "eval_every_fraction": 0.01,
+        "identity_snapshot_steps": null
+      },
+      "seed": 2,
+      "agent": {
+        "seed": 2,
+        "gamma": 0.95,
+        "n_step": 1,
+        "agent_type": "sac",
+        "target_tau": 0.005,
+        "actor_sparsity": 0,
+        "critic_use_cdq": false,
+        "num_train_envs": 1,
+        "critic_sparsity": 0,
+        "mixed_precision": false,
+        "actor_block_type": "residual",
+        "actor_hidden_dim": 128,
+        "actor_num_blocks": 1,
+        "critic_block_type": "residual",
+        "critic_hidden_dim": 1024,
+        "critic_num_blocks": 4,
+        "max_episode_steps": 100,
+        "temp_weight_decay": 0,
+        "actor_weight_decay": 0.01,
+        "temp_initial_value": 0.01,
+        "temp_learning_rate": 0.0001,
+        "actor_learning_rate": 0.0001,
+        "critic_weight_decay": 0.01,
+        "temp_target_entropy": null,
+        "critic_learning_rate": 0.0001,
+        "normalize_observation": true,
+        "temp_target_entropy_coef": -0.5
+      },
+      "gamma": 0.95,
+      "probe": {
+        "steps": 2000,
+        "checks": 50,
+        "rounds": 10,
+        "enabled": true,
+        "pool_size": 25600,
+        "batch_size": 256,
+        "eval_chunk": 2560,
+        "target_scale": 100000
+      },
+      "buffer": {
+        "gamma": 0.95,
+        "n_step": 1,
+        "max_length": 1000000,
+        "min_length": 5000,
+        "buffer_type": "uniform",
+        "add_batch_size": 1,
+        "buffer_class_type": "numpy",
+        "sample_batch_size": 256
+      },
+      "checks": {
+        "check1_tolerance_eps": 64
+      },
+      "n_step": 1,
+      "server": "local",
+      "testing": {
+        "force_trigger_check": null,
+        "stop_after_identity_snapshot": false
+      },
+      "trigger": {
+        "resamples": 10000,
+        "confidence": 0.95,
+        "null_threshold": 0,
+        "eligible_fraction": 0.95,
+        "consecutive_checks": 2
+      },
+      "env_name": "myo-pen-twirl",
+      "exp_name": "exp12",
+      "run_role": "confirmatory",
+      "injection": {
+        "m": null
+      },
+      "num_params": "33.87M",
+      "diagnostics": {
+        "enabled": true,
+        "kl_reference_size": 256,
+        "saturation_threshold": 0.99
+      },
+      "project_name": "echocritic_method_c_ten_96",
+      "results_root": "/projects/biqc/skaveti1/exp96/campaign_owner_f597ee9_20261019T230748Z/campaign/results",
+      "action_repeat": 2,
+      "num_env_steps": 1000000,
+      "actor_sparsity": 0,
+      "num_train_envs": 1,
+      "critic_sparsity": 0,
+      "eff_episode_len": 50,
+      "actor_hidden_dim": 128,
+      "actor_num_blocks": 1,
+      "actor_num_params": "153.04K",
+      "positive_control": {
+        "env_name": "dog-run",
+        "architecture": "D4W1536",
+        "similar_within": 0.1,
+        "noise_threshold": 0.1
+      },
+      "critic_hidden_dim": 1024,
+      "critic_num_blocks": 4,
+      "critic_num_params": "33.71M",
+      "num_eval_episodes": 5,
+      "num_record_episodes": 0,
+      "num_interaction_steps": 500000,
+      "actor_grad_cosine_every": 30,
+      "logging_per_interaction_step": 2000,
+      "updates_per_interaction_step": 2,
+      "recording_per_interaction_step": 500000,
+      "evaluation_per_interaction_step": 50000
+    }
+  },
+  "url": "https://forge.coreweave.com/wandb/s_kaveti23-seckinger/echocritic_official_exp1/runs/5u5uambc"
+}

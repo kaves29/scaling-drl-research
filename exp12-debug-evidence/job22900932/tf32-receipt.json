@@ -1,0 +1,43 @@
+{
+  "source_commit": "12839f656e53b00a3327384f2cb4fc1be47e73fe",
+  "harness_commit": "12839f656e53b00a3327384f2cb4fc1be47e73fe",
+  "harness_sha256": "80e1e4ab06530e6b2c031423d6817c4075c336b712d863381d5a36939b6c0ed4",
+  "gpu": "NVIDIA A100-SXM4-40GB",
+  "jax_version": "0.4.34",
+  "steps": 400,
+  "precision": "production_tf32",
+  "measurement_mode": "recording_isolation",
+  "slurm_job_id": "22900932",
+  "xla_flags": "--xla_gpu_deterministic_ops=true",
+  "arms": [
+    "off_a",
+    "on",
+    "off_b"
+  ],
+  "verdict": "INCOMPLETE",
+  "off_a": {
+    "overrides": [
+      "env_name=hopper-hop",
+      "env=dmc_medium",
+      "seed=1",
+      "actor_num_blocks=1",
+      "actor_hidden_dim=8",
+      "critic_num_blocks=1",
+      "critic_hidden_dim=8",
+      "env.num_env_steps=800",
+      "buffer.min_length=10",
+      "buffer.max_length=1000",
+      "buffer.sample_batch_size=8",
+      "evaluation_per_interaction_step=100",
+      "logging_per_interaction_step=20",
+      "num_eval_episodes=1",
+      "probe.steps=20",
+      "probe.pool_size=64",
+      "probe.batch_size=16",
+      "probe.eval_chunk=32",
+      "diagnostics.enabled=false",
+      "results_root=/work/hdd/biqc/skaveti1/exp12_recording_qualification_20261014T182709Z/run/evidence/candidate_recording_tf32/off_a/results"
+    ],
+    "status": "RUNNING"
+  }
+}

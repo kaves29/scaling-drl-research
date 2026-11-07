@@ -1,0 +1,20 @@
+{
+  "module": "tests.test_output_paths",
+  "source_hash": "52468342b4543cf79e93cc96c34167ddc17c8dd811e7e45949cacf4b5cee0c6b",
+  "success": true,
+  "tests_run": 8,
+  "test_ids": [
+    "tests.test_output_paths.CheckpointBoundaryRejectsRelativePathsTest.test_absolute_paths_still_round_trip",
+    "tests.test_output_paths.CheckpointBoundaryRejectsRelativePathsTest.test_save_and_load_reject_relative_paths_before_touching_disk",
+    "tests.test_output_paths.ConfigurableRootsTest.test_angle_1_rejects_a_relative_results_root_before_training",
+    "tests.test_output_paths.ConfigurableRootsTest.test_default_roots_are_absolute_and_under_the_repo_results",
+    "tests.test_output_paths.ConfigurableRootsTest.test_manifest_default_commands_are_unchanged_and_relative_root_is_rejected",
+    "tests.test_output_paths.ConfigurableRootsTest.test_relative_roots_are_rejected_at_startup",
+    "tests.test_output_paths.ConfigurableRootsTest.test_results_root_and_explicit_roots_are_honored",
+    "tests.test_output_paths.LaunchDirectoryIndependenceTest.test_outputs_do_not_depend_on_the_launch_directory"
+  ],
+  "failures": 0,
+  "errors": 0,
+  "skips": [],
+  "unexpected_successes": 0
+}

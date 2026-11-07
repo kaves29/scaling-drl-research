@@ -1,0 +1,24 @@
+{
+  "module": "tests.test_exp12_orchestration",
+  "source_hash": "52468342b4543cf79e93cc96c34167ddc17c8dd811e7e45949cacf4b5cee0c6b",
+  "success": true,
+  "tests_run": 12,
+  "test_ids": [
+    "tests.test_exp12_orchestration.BlockBParentStatusTest.test_completed_parent_without_fork_retains_operational_skip",
+    "tests.test_exp12_orchestration.BlockBParentStatusTest.test_existing_ready_fork_preserves_execution",
+    "tests.test_exp12_orchestration.BlockBParentStatusTest.test_incomplete_parents_are_not_no_trigger_results",
+    "tests.test_exp12_orchestration.ClaimOwnershipTest.test_failed_owner_inspection_releases_transition_guard",
+    "tests.test_exp12_orchestration.ClaimOwnershipTest.test_foreign_release_preserves_new_owner",
+    "tests.test_exp12_orchestration.ClaimOwnershipTest.test_legacy_claim_refuses_dynamic_campaign_root",
+    "tests.test_exp12_orchestration.ClaimOwnershipTest.test_live_or_unpublished_owner_is_not_stolen",
+    "tests.test_exp12_orchestration.ClaimOwnershipTest.test_orphan_transition_guard_blocks_without_deleting_evidence",
+    "tests.test_exp12_orchestration.ClaimOwnershipTest.test_own_release_removes_only_owned_claim",
+    "tests.test_exp12_orchestration.ClaimOwnershipTest.test_single_stale_claim_is_still_recoverable",
+    "tests.test_exp12_orchestration.ClaimOwnershipTest.test_stale_contenders_cannot_both_own_the_claim",
+    "tests.test_exp12_orchestration.ClaimOwnershipTest.test_stale_recovery_is_exclusive_across_processes"
+  ],
+  "failures": 0,
+  "errors": 0,
+  "skips": [],
+  "unexpected_successes": 0
+}

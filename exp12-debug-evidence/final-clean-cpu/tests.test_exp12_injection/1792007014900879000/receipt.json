@@ -1,0 +1,20 @@
+{
+  "module": "tests.test_exp12_injection",
+  "source_hash": "427ac810143706c21cde9966a51d62940d777afd96197166c657d661be5830a6",
+  "success": true,
+  "tests_run": 8,
+  "test_ids": [
+    "tests.test_exp12_injection.InjectionInvariantsTest.test_gradients_reach_earlier_blocks_through_the_frozen_head",
+    "tests.test_exp12_injection.InjectionInvariantsTest.test_head_boundary_per_label",
+    "tests.test_exp12_injection.InjectionInvariantsTest.test_new_copies_identical_and_freshly_initialised",
+    "tests.test_exp12_injection.InjectionInvariantsTest.test_optimizer_state_rules",
+    "tests.test_exp12_injection.InjectionInvariantsTest.test_parameter_counts",
+    "tests.test_exp12_injection.InjectionInvariantsTest.test_predictions_unchanged_bit_for_bit_and_action_gradients_within_dtype_tolerance",
+    "tests.test_exp12_injection.InjectionInvariantsTest.test_target_injection_and_polyak",
+    "tests.test_exp12_injection.InjectionInvariantsTest.test_training_keeps_frozen_heads_bit_identical_and_moves_trainable_parts"
+  ],
+  "failures": 0,
+  "errors": 0,
+  "skips": [],
+  "unexpected_successes": 0
+}

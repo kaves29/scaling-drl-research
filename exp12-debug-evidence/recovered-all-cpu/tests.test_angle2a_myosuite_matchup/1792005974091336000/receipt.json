@@ -1,0 +1,13 @@
+{
+  "module": "tests.test_angle2a_myosuite_matchup",
+  "source_hash": "c07ca4fb99dc3308d1e6fed0f827f0bebd6442ded04ccc6e755cbde6ba77c455",
+  "success": false,
+  "tests_run": 1,
+  "test_ids": [
+    "tests.test_angle2a_myosuite_matchup.TestAngle2AMyosuiteMatchupEndToEnd.test_real_matchup_trains_evaluates_and_computes_diagonal_errors_on_myosuite"
+  ],
+  "failures": 0,
+  "errors": 1,
+  "skips": [],
+  "unexpected_successes": 0
+}

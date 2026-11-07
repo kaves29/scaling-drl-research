@@ -1,0 +1,131 @@
+test_reservations_from_another_commit_fail_closed (tests.test_exp12_review_blockers.CrossCommitReservationTest.test_reservations_from_another_commit_fail_closed) ... FAIL
+test_a_receipt_without_validated_evidence_is_refused (tests.test_exp12_review_blockers.EvidenceBindingTest.test_a_receipt_without_validated_evidence_is_refused) ... ok
+test_evidence_changed_while_a_finish_waited_is_blocked_not_certified (tests.test_exp12_review_blockers.EvidenceBindingTest.test_evidence_changed_while_a_finish_waited_is_blocked_not_certified) ... ok
+test_evidence_changing_during_validation_is_blocked (tests.test_exp12_review_blockers.EvidenceBindingTest.test_evidence_changing_during_validation_is_blocked) ... ok
+test_receipt_changed_after_validation_is_blocked (tests.test_exp12_review_blockers.EvidenceBindingTest.test_receipt_changed_after_validation_is_blocked) ... ok
+test_reconciliation_does_not_certify_evidence_that_changed_during_it (tests.test_exp12_review_blockers.EvidenceBindingTest.test_reconciliation_does_not_certify_evidence_that_changed_during_it) ... ok
+test_unchanged_evidence_is_completed_with_the_validated_digests (tests.test_exp12_review_blockers.EvidenceBindingTest.test_unchanged_evidence_is_completed_with_the_validated_digests) ... ok
+test_malformed_records_block_the_row (tests.test_exp12_review_blockers.MalformedUnrecordedFailureTest.test_malformed_records_block_the_row) ... ok
+test_verify_twice_gives_the_same_report_and_leaves_the_evidence_untouched (tests.test_exp12_review_blockers.RepeatableVerifyTest.test_verify_twice_gives_the_same_report_and_leaves_the_evidence_untouched) ... ok
+test_a_json_array_does_not_count (tests.test_exp12_review_blockers.ReservationMetadataTest.test_a_json_array_does_not_count) ... ok
+test_a_nested_occurrence_of_the_commit_does_not_count (tests.test_exp12_review_blockers.ReservationMetadataTest.test_a_nested_occurrence_of_the_commit_does_not_count) ... ok
+test_a_reservation_for_another_name_does_not_count (tests.test_exp12_review_blockers.ReservationMetadataTest.test_a_reservation_for_another_name_does_not_count) ... ok
+test_a_valid_reservation_is_still_skipped (tests.test_exp12_review_blockers.ReservationMetadataTest.test_a_valid_reservation_is_still_skipped) ... FAIL
+test_malformed_or_missing_metadata_fails_closed (tests.test_exp12_review_blockers.ReservationMetadataTest.test_malformed_or_missing_metadata_fails_closed) ... ok
+test_missing_reservation_metadata_fails_closed (tests.test_exp12_review_blockers.ReservationMetadataTest.test_missing_reservation_metadata_fails_closed) ... ok
+test_a_job_from_another_commit_is_rejected (tests.test_exp12_review_blockers.SourceBoundNumericsTest.test_a_job_from_another_commit_is_rejected) ... ok
+test_a_record_in_the_wrong_mode_file_is_rejected (tests.test_exp12_review_blockers.SourceBoundNumericsTest.test_a_record_in_the_wrong_mode_file_is_rejected) ... ok
+test_cpu_backend_or_wrong_device_is_rejected (tests.test_exp12_review_blockers.SourceBoundNumericsTest.test_cpu_backend_or_wrong_device_is_rejected) ... ok
+test_missing_or_extra_records_are_rejected (tests.test_exp12_review_blockers.SourceBoundNumericsTest.test_missing_or_extra_records_are_rejected) ... ok
+test_mixed_record_commits_are_rejected (tests.test_exp12_review_blockers.SourceBoundNumericsTest.test_mixed_record_commits_are_rejected) ... ok
+test_negative_nonfinite_and_nonnumeric_deviations_are_rejected (tests.test_exp12_review_blockers.SourceBoundNumericsTest.test_negative_nonfinite_and_nonnumeric_deviations_are_rejected) ... ok
+test_records_carry_their_provenance (tests.test_exp12_review_blockers.SourceBoundNumericsTest.test_records_carry_their_provenance) ... NUMERICS {"name": "diagnostics_update/tf32", "deviation": 1e-07, "commit": "0123456789abcdef0123456789abcdef01234567", "backend": "cpu", "device_kind": "cpu", "mode": "cpu"}
+ok
+test_valid_measurements_are_proposed_and_bound_to_the_source (tests.test_exp12_review_blockers.SourceBoundNumericsTest.test_valid_measurements_are_proposed_and_bound_to_the_source) ... ok
+test_a_partial_submission_requires_explicit_reconciliation (tests.test_exp12_review_blockers.SubmissionReservationTest.test_a_partial_submission_requires_explicit_reconciliation) ... FAIL
+test_a_repeated_run_never_resubmits (tests.test_exp12_review_blockers.SubmissionReservationTest.test_a_repeated_run_never_resubmits) ... FAIL
+test_concurrent_runs_submit_each_job_once (tests.test_exp12_review_blockers.SubmissionReservationTest.test_concurrent_runs_submit_each_job_once) ... FAIL
+test_reconcile_can_record_a_job_found_in_slurm_and_refuses_bad_ids (tests.test_exp12_review_blockers.SubmissionReservationTest.test_reconcile_can_record_a_job_found_in_slurm_and_refuses_bad_ids) ... ok
+test_a_nonzero_exit_without_a_finish_record_is_also_blocked (tests.test_exp12_review_blockers.UnrecordedFailureRecoveryTest.test_a_nonzero_exit_without_a_finish_record_is_also_blocked) ... ok
+test_an_unrecorded_failure_is_blocked_for_review_retry (tests.test_exp12_review_blockers.UnrecordedFailureRecoveryTest.test_an_unrecorded_failure_is_blocked_for_review_retry) ... [scheduler] ERROR: outcome of exp1_D4W1536_1 could not be recorded before the allocation ended; claim left for reconciliation
+ok
+test_an_unrecorded_success_is_still_reconciled_from_its_evidence (tests.test_exp12_review_blockers.UnrecordedFailureRecoveryTest.test_an_unrecorded_success_is_still_reconciled_from_its_evidence) ... [scheduler] ERROR: outcome of exp1_D4W1536_1 could not be recorded before the allocation ended; claim left for reconciliation
+ok
+test_a_job_is_abandoned_after_its_bounded_finish_attempts (tests.test_exp12_review_blockers.UnrecordedFinishDoesNotIdleTheAllocationTest.test_a_job_is_abandoned_after_its_bounded_finish_attempts) ... [scheduler] WARNING: busy; retrying in 60 s
+[scheduler] WARNING: busy; retrying in 60 s
+[scheduler] WARNING: busy; retrying in 60 s
+[scheduler] WARNING: busy; retrying in 60 s
+[scheduler] ERROR: outcome of a could not be recorded before the allocation ended; claim left for reconciliation
+ok
+test_an_idle_allocation_does_not_wait_for_unrecorded_outcomes (tests.test_exp12_review_blockers.UnrecordedFinishDoesNotIdleTheAllocationTest.test_an_idle_allocation_does_not_wait_for_unrecorded_outcomes) ... ok
+
+======================================================================
+FAIL: test_reservations_from_another_commit_fail_closed (tests.test_exp12_review_blockers.CrossCommitReservationTest.test_reservations_from_another_commit_fail_closed)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/tests/test_exp12_review_blockers.py", line 410, in test_reservations_from_another_commit_fail_closed
+    self.assertEqual(first.returncode, 0, first.stderr)
+AssertionError: 3 != 0 : /var/folders/ms/h3zjmq652jvg08wcslr2z3t80000gn/T/tmprp293znd/bin/sbatch: line 7: flock: command not found
+sbatch failed for identity_D4W1536_dog-run; the reservation is kept: reconcile before rerunning
+
+
+======================================================================
+FAIL: test_a_valid_reservation_is_still_skipped (tests.test_exp12_review_blockers.ReservationMetadataTest.test_a_valid_reservation_is_still_skipped)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/tests/test_exp12_review_blockers.py", line 532, in test_a_valid_reservation_is_still_skipped
+    self.assertEqual(result.returncode, 0, result.stderr)
+AssertionError: 3 != 0 : /var/folders/ms/h3zjmq652jvg08wcslr2z3t80000gn/T/tmp5fk0yzhs/bin/sbatch: line 7: flock: command not found
+sbatch failed for identity_D4W1536_h1-run-v0; the reservation is kept: reconcile before rerunning
+
+
+======================================================================
+FAIL: test_a_partial_submission_requires_explicit_reconciliation (tests.test_exp12_review_blockers.SubmissionReservationTest.test_a_partial_submission_requires_explicit_reconciliation)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/tests/test_exp12_review_blockers.py", line 214, in test_a_partial_submission_requires_explicit_reconciliation
+    self.assertEqual(len(self._calls()), 2)
+AssertionError: 0 != 2
+
+======================================================================
+FAIL: test_a_repeated_run_never_resubmits (tests.test_exp12_review_blockers.SubmissionReservationTest.test_a_repeated_run_never_resubmits)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/tests/test_exp12_review_blockers.py", line 192, in test_a_repeated_run_never_resubmits
+    self.assertEqual(first.returncode, 0, first.stderr)
+AssertionError: 3 != 0 : /var/folders/ms/h3zjmq652jvg08wcslr2z3t80000gn/T/tmpbumv3e7r/bin/sbatch: line 7: flock: command not found
+sbatch failed for identity_D4W1536_dog-run; the reservation is kept: reconcile before rerunning
+
+
+======================================================================
+FAIL: test_concurrent_runs_submit_each_job_once (tests.test_exp12_review_blockers.SubmissionReservationTest.test_concurrent_runs_submit_each_job_once)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/tests/test_exp12_review_blockers.py", line 207, in test_concurrent_runs_submit_each_job_once
+    self.assertEqual(len(self._calls()), 7)
+AssertionError: 0 != 7
+
+----------------------------------------------------------------------
+Ran 32 tests in 7.373s
+
+FAILED (failures=5)
+{
+  "verdict": "PASS",
+  "scope": "cpu_shared_filesystem_claims",
+  "hosts": [
+    "Shouryas-MacBook-Pro.local",
+    "Shouryas-MacBook-Pro.local"
+  ],
+  "items": 60,
+  "race_overlap_seconds": 0.05207180976867676,
+  "handoff_rows": 12,
+  "recovery": {
+    "recovered": true,
+    "preserved": true
+  },
+  "handoff_attempts": [
+    25,
+    20
+  ],
+  "finish_guard_conflicts": [
+    0,
+    0
+  ],
+  "mounts": [
+    null,
+    null
+  ],
+  "fs_minus_host_seconds": [
+    1.3113021850585938e-05,
+    -3.337860107421875e-06
+  ],
+  "warnings": [
+    "mount information unavailable on a host"
+  ],
+  "failures": [],
+  "not_covered": [
+    "GPU/CPU binding (checked when each production allocation starts)",
+    "multi-node srun task placement and scontrol parsing of a two-node allocation",
+    "compute-node mount options, unless both workers ran on compute nodes"
+  ]
+}

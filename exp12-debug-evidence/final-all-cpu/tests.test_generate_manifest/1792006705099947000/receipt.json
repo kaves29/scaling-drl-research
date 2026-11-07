@@ -1,0 +1,16 @@
+{
+  "module": "tests.test_generate_manifest",
+  "source_hash": "52468342b4543cf79e93cc96c34167ddc17c8dd811e7e45949cacf4b5cee0c6b",
+  "success": true,
+  "tests_run": 4,
+  "test_ids": [
+    "tests.test_generate_manifest.GenerateManifestTest.test_backfill_writes_done_only_for_verified_legacy_runs",
+    "tests.test_generate_manifest.GenerateManifestTest.test_done_marker_and_unstarted_dirs",
+    "tests.test_generate_manifest.GenerateManifestTest.test_finished_run_missing_an_artifact_is_never_resumed",
+    "tests.test_generate_manifest.GenerateManifestTest.test_official_angle_1_replica"
+  ],
+  "failures": 0,
+  "errors": 0,
+  "skips": [],
+  "unexpected_successes": 0
+}

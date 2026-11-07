@@ -1,0 +1,19 @@
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/tests/exp12_break_checks.py", line 245, in <module>
+    from analysis import exp2_analysis  # noqa: E402
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/analysis/exp2_analysis.py", line 31, in <module>
+    from analysis.exp1_analysis import _plot_setup
+  File "/Users/shouryakaveti/VS_Projects/scaling_rl_research/echocritic-batch2/main/analysis/exp1_analysis.py", line 21, in <module>
+    from rliable import library as rly
+  File "/tmp/echocritic-batch2-deps/rliable/library.py", line 18, in <module>
+    import arch.bootstrap as arch_bs
+  File "/tmp/echocritic-batch2-deps/arch/__init__.py", line 2, in <module>
+    from .univariate.mean import arch_model
+  File "/tmp/echocritic-batch2-deps/arch/univariate/__init__.py", line 11, in <module>
+    from arch.univariate.mean import (
+  File "/tmp/echocritic-batch2-deps/arch/univariate/mean.py", line 13, in <module>
+    from statsmodels.tsa.tsatools import lagmat
+ModuleNotFoundError: No module named 'statsmodels'

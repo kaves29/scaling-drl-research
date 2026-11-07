@@ -1,0 +1,38 @@
+{"campaign_runs": 96, "metric_rows": 23800, "aligned_probe_checks": 4738, "duplicate_probe_rows": 0, "all_DR02_at_least_DR01": true, "all_rank_between_1_and_256": true, "no_new_fits": true}
+  environment architecture             metric        early     common70       change  change_ci_low  change_ci_high       ratio
+      dog-run       D2W512 train/critic_DR0.2     0.086559     0.002219    -0.084339      -0.125400       -0.049938    0.025000
+      dog-run       D2W512 train/critic_srank   236.375000   234.875000    -1.500000      -3.001562       -0.187500    0.993658
+      dog-run       D2W512 train/critic_gnorm     0.367846     1.036459     0.668613       0.589961        0.758273    2.864329
+      dog-run      D4W1024 train/critic_DR0.2     0.319708     0.081671    -0.238037      -0.279025       -0.194143    0.254974
+      dog-run      D4W1024 train/critic_srank   238.062500   229.500000    -8.562500     -14.937500       -3.187500    0.963907
+      dog-run      D4W1024 train/critic_gnorm     0.722123     1.328134     0.606010       0.489240        0.720190    1.856422
+      dog-run      D4W1536 train/critic_DR0.2     1.485189     0.678556    -0.806633      -1.031204       -0.530899    0.465811
+      dog-run      D4W1536 train/critic_srank   231.875000   237.812500     5.937500       4.062500        7.875000    1.025642
+      dog-run      D4W1536 train/critic_gnorm     1.024253     1.325226     0.300973       0.176372        0.414277    1.298552
+ humanoid-run       D2W512 train/critic_DR0.2     4.327948     0.357333    -3.970614      -5.154697       -2.636719    0.161256
+ humanoid-run       D2W512 train/critic_srank   207.625000   230.687500    23.062500      19.875000       26.187500    1.111663
+ humanoid-run       D2W512 train/critic_gnorm     0.089815     0.334221     0.244406       0.223839        0.264220    4.052347
+ humanoid-run      D4W1024 train/critic_DR0.2     4.030355     2.101353    -1.929002      -2.629743       -1.134673    0.496960
+ humanoid-run      D4W1024 train/critic_srank   206.937500   219.937500    13.000000       1.812500       21.375000    1.062022
+ humanoid-run      D4W1024 train/critic_gnorm     0.133397     0.406584     0.273188       0.224884        0.338806    3.271847
+ humanoid-run      D4W1536 train/critic_DR0.2     5.068631     1.594083    -3.474547      -4.713857       -2.219112    0.340045
+ humanoid-run      D4W1536 train/critic_srank   202.312500   201.750000    -0.562500     -10.812500        9.000000    0.998738
+ humanoid-run      D4W1536 train/critic_gnorm     0.157263     0.533128     0.375865       0.331826        0.420883    3.880208
+ myo-key-turn       D2W512 train/critic_DR0.2     0.056596     0.018865    -0.037731      -0.086559        0.005549    0.980114
+ myo-key-turn       D2W512 train/critic_srank   213.500000   200.750000   -12.750000     -14.875000      -10.250000    0.940162
+ myo-key-turn       D2W512 train/critic_gnorm    70.021192    85.294452    15.273260      -3.375692       34.768547    1.274112
+ myo-key-turn      D4W1024 train/critic_DR0.2     0.380162     0.528971     0.148810      -0.074427        0.377837    1.935006
+ myo-key-turn      D4W1024 train/critic_srank   189.500000   172.875000   -16.625000     -22.250000      -10.312500    0.912963
+ myo-key-turn      D4W1024 train/critic_gnorm    69.811484    66.204408    -3.607075     -17.530320       11.853800    0.936313
+ myo-key-turn      D4W1536 train/critic_DR0.2     0.694444     1.266044     0.571599       0.076342        1.086620    1.896661
+ myo-key-turn      D4W1536 train/critic_srank   182.312500   167.000000   -15.312500     -20.750000      -10.062500    0.916185
+ myo-key-turn      D4W1536 train/critic_gnorm    63.622668    56.121383    -7.501285     -14.435156        1.044839    0.872797
+myo-pen-twirl       D2W512 train/critic_DR0.2     0.126509     0.301847     0.175337      -0.113192        0.491610    5.011879
+myo-pen-twirl       D2W512 train/critic_srank   223.000000   190.312500   -32.687500     -39.062500      -26.500000    0.853458
+myo-pen-twirl       D2W512 train/critic_gnorm  9712.431471 22030.932763 12318.501292    5595.459353    18912.362036 1494.183471
+myo-pen-twirl      D4W1024 train/critic_DR0.2     2.829997     2.960496     0.130499      -0.008727        0.268845    1.034457
+myo-pen-twirl      D4W1024 train/critic_srank   171.125000   109.625000   -61.500000     -70.375000      -53.062500    0.639504
+myo-pen-twirl      D4W1024 train/critic_gnorm  3815.258009  4502.474749   687.216741      -1.908587     2041.202104    5.944519
+myo-pen-twirl      D4W1536 train/critic_DR0.2     3.133526     2.193972    -0.939554      -1.757256       -0.055997    0.627900
+myo-pen-twirl      D4W1536 train/critic_srank   141.125000    94.687500   -46.437500     -68.001563      -24.875000    0.689067
+myo-pen-twirl      D4W1536 train/critic_gnorm 14235.035944 25846.174351 11611.138407    1416.251352    23837.391370    1.408284

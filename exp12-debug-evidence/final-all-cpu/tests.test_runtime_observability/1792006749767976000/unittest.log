@@ -1,0 +1,36 @@
+test_boundary_detail_is_limited_to_training_window (tests.test_runtime_observability.RuntimeObservabilityTest.test_boundary_detail_is_limited_to_training_window) ... ok
+test_full_trace_analyzer_exposes_unmatched_and_malformed_records (tests.test_runtime_observability.RuntimeObservabilityTest.test_full_trace_analyzer_exposes_unmatched_and_malformed_records) ... ok
+test_metric_payload_sizes_use_real_flush_and_original_row_order (tests.test_runtime_observability.RuntimeObservabilityTest.test_metric_payload_sizes_use_real_flush_and_original_row_order) ... ok
+test_pending_transfer_and_replay_preserve_metrics_and_add_no_waits (tests.test_runtime_observability.RuntimeObservabilityTest.test_pending_transfer_and_replay_preserve_metrics_and_add_no_waits) ... ok
+test_post_call_sync_failure_reports_phase_and_preserves_call (tests.test_runtime_observability.RuntimeObservabilityTest.test_post_call_sync_failure_reports_phase_and_preserves_call) ... ok
+test_pre_call_sync_failure_has_flushed_begin_and_matching_error (tests.test_runtime_observability.RuntimeObservabilityTest.test_pre_call_sync_failure_has_flushed_begin_and_matching_error) ... ok
+test_slow_and_failed_trace_writes_are_not_hidden (tests.test_runtime_observability.RuntimeObservabilityTest.test_slow_and_failed_trace_writes_are_not_hidden) ... ok
+test_startup_import_failure_is_flushed_before_jax_trace_import (tests.test_runtime_observability.RuntimeObservabilityTest.test_startup_import_failure_is_flushed_before_jax_trace_import) ... ok
+test_transfer_failure_is_recorded_without_consuming_pending_rows (tests.test_runtime_observability.RuntimeObservabilityTest.test_transfer_failure_is_recorded_without_consuming_pending_rows) ... ok
+test_wrapper_captures_stacks_and_preserves_entrypoint_error (tests.test_runtime_observability.RuntimeObservabilityTest.test_wrapper_captures_stacks_and_preserves_entrypoint_error) ... ok
+test_wrapper_rejects_invalid_watchdog_and_preserves_existing_stack_file (tests.test_runtime_observability.RuntimeObservabilityTest.test_wrapper_rejects_invalid_watchdog_and_preserves_existing_stack_file) ... usage: trace_exp12_runtime.py [-h] --out OUT [--synchronize]
+                              [--progress-every PROGRESS_EVERY]
+                              [--boundary-detail] [--stack-after STACK_AFTER]
+                              ...
+trace_exp12_runtime.py: error: --stack-after must be finite and positive
+usage: trace_exp12_runtime.py [-h] --out OUT [--synchronize]
+                              [--progress-every PROGRESS_EVERY]
+                              [--boundary-detail] [--stack-after STACK_AFTER]
+                              ...
+trace_exp12_runtime.py: error: --stack-after must be finite and positive
+usage: trace_exp12_runtime.py [-h] --out OUT [--synchronize]
+                              [--progress-every PROGRESS_EVERY]
+                              [--boundary-detail] [--stack-after STACK_AFTER]
+                              ...
+trace_exp12_runtime.py: error: --stack-after must be finite and positive
+usage: trace_exp12_runtime.py [-h] --out OUT [--synchronize]
+                              [--progress-every PROGRESS_EVERY]
+                              [--boundary-detail] [--stack-after STACK_AFTER]
+                              ...
+trace_exp12_runtime.py: error: --stack-after must be finite and positive
+ok
+
+----------------------------------------------------------------------
+Ran 11 tests in 2.445s
+
+OK

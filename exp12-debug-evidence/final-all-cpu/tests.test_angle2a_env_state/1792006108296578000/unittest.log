@@ -1,0 +1,22 @@
+test_dmc_is_accepted (tests.test_angle2a_env_state.TestAssertSupportedEnvType.test_dmc_is_accepted) ... ok
+test_myosuite_is_accepted (tests.test_angle2a_env_state.TestAssertSupportedEnvType.test_myosuite_is_accepted) ... ok
+test_other_env_types_are_rejected (tests.test_angle2a_env_state.TestAssertSupportedEnvType.test_other_env_types_are_rejected) ... ok
+test_capture_reads_physics_state_and_elapsed_steps (tests.test_angle2a_env_state.TestCaptureRestoreDmcEnvState.test_capture_reads_physics_state_and_elapsed_steps) ... ok
+test_capture_then_restore_round_trip_is_exact (tests.test_angle2a_env_state.TestCaptureRestoreDmcEnvState.test_capture_then_restore_round_trip_is_exact) ... ok
+test_missing_physics_raises_clear_error (tests.test_angle2a_env_state.TestCaptureRestoreDmcEnvState.test_missing_physics_raises_clear_error) ... ok
+test_restore_sets_physics_state_and_calls_forward (tests.test_angle2a_env_state.TestCaptureRestoreDmcEnvState.test_restore_sets_physics_state_and_calls_forward) ... ok
+test_capture_reads_from_robot_mj_data_not_env_mj_data (tests.test_angle2a_env_state.TestCaptureRestoreMyosuiteEnvState.test_capture_reads_from_robot_mj_data_not_env_mj_data)
+The specific regression the robot.mj_data dispatch exists to ... ok
+test_capture_reads_mj_data_fields_and_elapsed_steps (tests.test_angle2a_env_state.TestCaptureRestoreMyosuiteEnvState.test_capture_reads_mj_data_fields_and_elapsed_steps) ... ok
+test_capture_then_restore_round_trip_is_exact (tests.test_angle2a_env_state.TestCaptureRestoreMyosuiteEnvState.test_capture_then_restore_round_trip_is_exact) ... ok
+test_legacy_capture_missing_required_counter_is_refused_before_mutation (tests.test_angle2a_env_state.TestCaptureRestoreMyosuiteEnvState.test_legacy_capture_missing_required_counter_is_refused_before_mutation) ... ok
+test_missing_mj_data_raises_clear_error (tests.test_angle2a_env_state.TestCaptureRestoreMyosuiteEnvState.test_missing_mj_data_raises_clear_error) ... ok
+test_restore_does_not_advance_time_or_qpos_past_captured_values (tests.test_angle2a_env_state.TestCaptureRestoreMyosuiteEnvState.test_restore_does_not_advance_time_or_qpos_past_captured_values)
+The specific regression this dispatch exists to prevent: restoring ... ok
+test_task_counter_zero_is_restored_exactly (tests.test_angle2a_env_state.TestCaptureRestoreMyosuiteEnvState.test_task_counter_zero_is_restored_exactly) ... ok
+test_zero_actuator_env_captures_none_act (tests.test_angle2a_env_state.TestCaptureRestoreMyosuiteEnvState.test_zero_actuator_env_captures_none_act) ... ok
+
+----------------------------------------------------------------------
+Ran 15 tests in 0.010s
+
+OK

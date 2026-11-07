@@ -1,0 +1,1065 @@
+{"task": "dog-run", "seed": 1, "status": "PASS", "observation_shape": [1, 223], "action_shape": [1, 38], "raw_budget": 1000000, "action_repeat": 2, "next_transition_restore": "exact", "action_rng_restore": "exact"}
+{"task": "dog-run", "seed": 2, "status": "PASS", "observation_shape": [1, 223], "action_shape": [1, 38], "raw_budget": 1000000, "action_repeat": 2, "next_transition_restore": "exact", "action_rng_restore": "exact"}
+{"task": "dog-run", "seed": 3, "status": "PASS", "observation_shape": [1, 223], "action_shape": [1, 38], "raw_budget": 1000000, "action_repeat": 2, "next_transition_restore": "exact", "action_rng_restore": "exact"}
+{"task": "dog-run", "seed": 4, "status": "PASS", "observation_shape": [1, 223], "action_shape": [1, 38], "raw_budget": 1000000, "action_repeat": 2, "next_transition_restore": "exact", "action_rng_restore": "exact"}
+{"task": "dog-run", "seed": 5, "status": "PASS", "observation_shape": [1, 223], "action_shape": [1, 38], "raw_budget": 1000000, "action_repeat": 2, "next_transition_restore": "exact", "action_rng_restore": "exact"}
+{"task": "dog-trot", "seed": 1, "status": "PASS", "observation_shape": [1, 223], "action_shape": [1, 38], "raw_budget": 1000000, "action_repeat": 2, "next_transition_restore": "exact", "action_rng_restore": "exact"}
+{"task": "dog-trot", "seed": 2, "status": "PASS", "observation_shape": [1, 223], "action_shape": [1, 38], "raw_budget": 1000000, "action_repeat": 2, "next_transition_restore": "exact", "action_rng_restore": "exact"}
+{"task": "dog-trot", "seed": 3, "status": "PASS", "observation_shape": [1, 223], "action_shape": [1, 38], "raw_budget": 1000000, "action_repeat": 2, "next_transition_restore": "exact", "action_rng_restore": "exact"}
+{"task": "dog-trot", "seed": 4, "status": "PASS", "observation_shape": [1, 223], "action_shape": [1, 38], "raw_budget": 1000000, "action_repeat": 2, "next_transition_restore": "exact", "action_rng_restore": "exact"}
+{"task": "dog-trot", "seed": 5, "status": "PASS", "observation_shape": [1, 223], "action_shape": [1, 38], "raw_budget": 1000000, "action_repeat": 2, "next_transition_restore": "exact", "action_rng_restore": "exact"}
+{"task": "humanoid-run", "seed": 1, "status": "PASS", "observation_shape": [1, 67], "action_shape": [1, 21], "raw_budget": 1000000, "action_repeat": 2, "next_transition_restore": "exact", "action_rng_restore": "exact"}
+{"task": "humanoid-run", "seed": 2, "status": "PASS", "observation_shape": [1, 67], "action_shape": [1, 21], "raw_budget": 1000000, "action_repeat": 2, "next_transition_restore": "exact", "action_rng_restore": "exact"}
+{"task": "humanoid-run", "seed": 3, "status": "PASS", "observation_shape": [1, 67], "action_shape": [1, 21], "raw_budget": 1000000, "action_repeat": 2, "next_transition_restore": "exact", "action_rng_restore": "exact"}
+{"task": "humanoid-run", "seed": 4, "status": "PASS", "observation_shape": [1, 67], "action_shape": [1, 21], "raw_budget": 1000000, "action_repeat": 2, "next_transition_restore": "exact", "action_rng_restore": "exact"}
+{"task": "humanoid-run", "seed": 5, "status": "PASS", "observation_shape": [1, 67], "action_shape": [1, 21], "raw_budget": 1000000, "action_repeat": 2, "next_transition_restore": "exact", "action_rng_restore": "exact"}
+{"task": "humanoid-walk", "seed": 1, "status": "PASS", "observation_shape": [1, 67], "action_shape": [1, 21], "raw_budget": 1000000, "action_repeat": 2, "next_transition_restore": "exact", "action_rng_restore": "exact"}
+{"task": "humanoid-walk", "seed": 2, "status": "PASS", "observation_shape": [1, 67], "action_shape": [1, 21], "raw_budget": 1000000, "action_repeat": 2, "next_transition_restore": "exact", "action_rng_restore": "exact"}
+{"task": "humanoid-walk", "seed": 3, "status": "PASS", "observation_shape": [1, 67], "action_shape": [1, 21], "raw_budget": 1000000, "action_repeat": 2, "next_transition_restore": "exact", "action_rng_restore": "exact"}
+{"task": "humanoid-walk", "seed": 4, "status": "PASS", "observation_shape": [1, 67], "action_shape": [1, 21], "raw_budget": 1000000, "action_repeat": 2, "next_transition_restore": "exact", "action_rng_restore": "exact"}
+{"task": "humanoid-walk", "seed": 5, "status": "PASS", "observation_shape": [1, 67], "action_shape": [1, 21], "raw_budget": 1000000, "action_repeat": 2, "next_transition_restore": "exact", "action_rng_restore": "exact"}
+{"task": "humanoid-stand", "seed": 1, "status": "PASS", "observation_shape": [1, 67], "action_shape": [1, 21], "raw_budget": 1000000, "action_repeat": 2, "next_transition_restore": "exact", "action_rng_restore": "exact"}
+{"task": "humanoid-stand", "seed": 2, "status": "PASS", "observation_shape": [1, 67], "action_shape": [1, 21], "raw_budget": 1000000, "action_repeat": 2, "next_transition_restore": "exact", "action_rng_restore": "exact"}
+{"task": "humanoid-stand", "seed": 3, "status": "PASS", "observation_shape": [1, 67], "action_shape": [1, 21], "raw_budget": 1000000, "action_repeat": 2, "next_transition_restore": "exact", "action_rng_restore": "exact"}
+{"task": "humanoid-stand", "seed": 4, "status": "PASS", "observation_shape": [1, 67], "action_shape": [1, 21], "raw_budget": 1000000, "action_repeat": 2, "next_transition_restore": "exact", "action_rng_restore": "exact"}
+{"task": "humanoid-stand", "seed": 5, "status": "PASS", "observation_shape": [1, 67], "action_shape": [1, 21], "raw_budget": 1000000, "action_repeat": 2, "next_transition_restore": "exact", "action_rng_restore": "exact"}
+{"task": "swimmer-swimmer15", "seed": 1, "status": "PASS", "observation_shape": [1, 61], "action_shape": [1, 14], "raw_budget": 500000, "action_repeat": 2, "next_transition_restore": "exact", "action_rng_restore": "exact"}
+{"task": "swimmer-swimmer15", "seed": 2, "status": "PASS", "observation_shape": [1, 61], "action_shape": [1, 14], "raw_budget": 500000, "action_repeat": 2, "next_transition_restore": "exact", "action_rng_restore": "exact"}
+{"task": "swimmer-swimmer15", "seed": 3, "status": "PASS", "observation_shape": [1, 61], "action_shape": [1, 14], "raw_budget": 500000, "action_repeat": 2, "next_transition_restore": "exact", "action_rng_restore": "exact"}
+{"task": "swimmer-swimmer15", "seed": 4, "status": "PASS", "observation_shape": [1, 61], "action_shape": [1, 14], "raw_budget": 500000, "action_repeat": 2, "next_transition_restore": "exact", "action_rng_restore": "exact"}
+{"task": "swimmer-swimmer15", "seed": 5, "status": "PASS", "observation_shape": [1, 61], "action_shape": [1, 14], "raw_budget": 500000, "action_repeat": 2, "next_transition_restore": "exact", "action_rng_restore": "exact"}
+{"task": "hopper-hop", "seed": 1, "status": "PASS", "observation_shape": [1, 15], "action_shape": [1, 4], "raw_budget": 500000, "action_repeat": 2, "next_transition_restore": "exact", "action_rng_restore": "exact"}
+{"task": "hopper-hop", "seed": 2, "status": "PASS", "observation_shape": [1, 15], "action_shape": [1, 4], "raw_budget": 500000, "action_repeat": 2, "next_transition_restore": "exact", "action_rng_restore": "exact"}
+{"task": "hopper-hop", "seed": 3, "status": "PASS", "observation_shape": [1, 15], "action_shape": [1, 4], "raw_budget": 500000, "action_repeat": 2, "next_transition_restore": "exact", "action_rng_restore": "exact"}
+{"task": "hopper-hop", "seed": 4, "status": "PASS", "observation_shape": [1, 15], "action_shape": [1, 4], "raw_budget": 500000, "action_repeat": 2, "next_transition_restore": "exact", "action_rng_restore": "exact"}
+{"task": "hopper-hop", "seed": 5, "status": "PASS", "observation_shape": [1, 15], "action_shape": [1, 4], "raw_budget": 500000, "action_repeat": 2, "next_transition_restore": "exact", "action_rng_restore": "exact"}
+/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/gymnasium/spaces/box.py:234: UserWarning: [33mWARN: Box low's precision lowered by casting to float32, current low.dtype=float64[0m
+  gym.logger.warn(
+/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/gymnasium/spaces/box.py:304: UserWarning: [33mWARN: Box high's precision lowered by casting to float32, current high.dtype=float64[0m
+  gym.logger.warn(
+MyoSuite:> Registering Myo Envs
+    MyoSuite: A contact-rich simulation suite for musculoskeletal motor control
+        Vittorio Caggiano, Huawei Wang, Guillaume Durandau, Massimo Sartori, Vikash Kumar
+        L4DC-2019 | https://sites.google.com/view/myosuite
+    
+{"task": "myo-key-turn", "seed": 1, "status": "PASS", "observation_shape": [1, 93], "action_shape": [1, 39], "raw_budget": 1000000, "action_repeat": 2, "next_transition_restore": "exact", "action_rng_restore": "exact"}
+{"task": "myo-key-turn", "seed": 2, "status": "PASS", "observation_shape": [1, 93], "action_shape": [1, 39], "raw_budget": 1000000, "action_repeat": 2, "next_transition_restore": "exact", "action_rng_restore": "exact"}
+{"task": "myo-key-turn", "seed": 3, "status": "PASS", "observation_shape": [1, 93], "action_shape": [1, 39], "raw_budget": 1000000, "action_repeat": 2, "next_transition_restore": "exact", "action_rng_restore": "exact"}
+{"task": "myo-key-turn", "seed": 4, "status": "PASS", "observation_shape": [1, 93], "action_shape": [1, 39], "raw_budget": 1000000, "action_repeat": 2, "next_transition_restore": "exact", "action_rng_restore": "exact"}
+{"task": "myo-key-turn", "seed": 5, "status": "PASS", "observation_shape": [1, 93], "action_shape": [1, 39], "raw_budget": 1000000, "action_repeat": 2, "next_transition_restore": "exact", "action_rng_restore": "exact"}
+{"task": "myo-pen-twirl", "seed": 1, "status": "PASS", "observation_shape": [1, 83], "action_shape": [1, 39], "raw_budget": 1000000, "action_repeat": 2, "next_transition_restore": "exact", "action_rng_restore": "exact"}
+{"task": "myo-pen-twirl", "seed": 2, "status": "PASS", "observation_shape": [1, 83], "action_shape": [1, 39], "raw_budget": 1000000, "action_repeat": 2, "next_transition_restore": "exact", "action_rng_restore": "exact"}
+{"task": "myo-pen-twirl", "seed": 3, "status": "PASS", "observation_shape": [1, 83], "action_shape": [1, 39], "raw_budget": 1000000, "action_repeat": 2, "next_transition_restore": "exact", "action_rng_restore": "exact"}
+{"task": "myo-pen-twirl", "seed": 4, "status": "PASS", "observation_shape": [1, 83], "action_shape": [1, 39], "raw_budget": 1000000, "action_repeat": 2, "next_transition_restore": "exact", "action_rng_restore": "exact"}
+{"task": "myo-pen-twirl", "seed": 5, "status": "PASS", "observation_shape": [1, 83], "action_shape": [1, 39], "raw_budget": 1000000, "action_repeat": 2, "next_transition_restore": "exact", "action_rng_restore": "exact"}
+{"task": "myo-pose-hard", "seed": 1, "status": "PASS", "observation_shape": [1, 108], "action_shape": [1, 39], "raw_budget": 1000000, "action_repeat": 2, "next_transition_restore": "exact", "action_rng_restore": "exact"}
+{"task": "myo-pose-hard", "seed": 2, "status": "PASS", "observation_shape": [1, 108], "action_shape": [1, 39], "raw_budget": 1000000, "action_repeat": 2, "next_transition_restore": "exact", "action_rng_restore": "exact"}
+{"task": "myo-pose-hard", "seed": 3, "status": "PASS", "observation_shape": [1, 108], "action_shape": [1, 39], "raw_budget": 1000000, "action_repeat": 2, "next_transition_restore": "exact", "action_rng_restore": "exact"}
+{"task": "myo-pose-hard", "seed": 4, "status": "PASS", "observation_shape": [1, 108], "action_shape": [1, 39], "raw_budget": 1000000, "action_repeat": 2, "next_transition_restore": "exact", "action_rng_restore": "exact"}
+{"task": "myo-pose-hard", "seed": 5, "status": "PASS", "observation_shape": [1, 108], "action_shape": [1, 39], "raw_budget": 1000000, "action_repeat": 2, "next_transition_restore": "exact", "action_rng_restore": "exact"}
+{"task": "myo-reach", "seed": 1, "status": "PASS", "observation_shape": [1, 115], "action_shape": [1, 39], "raw_budget": 1000000, "action_repeat": 2, "next_transition_restore": "exact", "action_rng_restore": "exact"}
+{"task": "myo-reach", "seed": 2, "status": "PASS", "observation_shape": [1, 115], "action_shape": [1, 39], "raw_budget": 1000000, "action_repeat": 2, "next_transition_restore": "exact", "action_rng_restore": "exact"}
+{"task": "myo-reach", "seed": 3, "status": "PASS", "observation_shape": [1, 115], "action_shape": [1, 39], "raw_budget": 1000000, "action_repeat": 2, "next_transition_restore": "exact", "action_rng_restore": "exact"}
+{"task": "myo-reach", "seed": 4, "status": "PASS", "observation_shape": [1, 115], "action_shape": [1, 39], "raw_budget": 1000000, "action_repeat": 2, "next_transition_restore": "exact", "action_rng_restore": "exact"}
+{"task": "myo-reach", "seed": 5, "status": "PASS", "observation_shape": [1, 115], "action_shape": [1, 39], "raw_budget": 1000000, "action_repeat": 2, "next_transition_restore": "exact", "action_rng_restore": "exact"}
+{
+  "label": "CPU simulator checks only; no training, CUDA or scientific qualification",
+  "passed": 55,
+  "tasks": [
+    {
+      "task": "dog-run",
+      "seed": 1,
+      "status": "PASS",
+      "observation_shape": [
+        1,
+        223
+      ],
+      "action_shape": [
+        1,
+        38
+      ],
+      "raw_budget": 1000000,
+      "action_repeat": 2,
+      "next_transition_restore": "exact",
+      "action_rng_restore": "exact"
+    },
+    {
+      "task": "dog-run",
+      "seed": 2,
+      "status": "PASS",
+      "observation_shape": [
+        1,
+        223
+      ],
+      "action_shape": [
+        1,
+        38
+      ],
+      "raw_budget": 1000000,
+      "action_repeat": 2,
+      "next_transition_restore": "exact",
+      "action_rng_restore": "exact"
+    },
+    {
+      "task": "dog-run",
+      "seed": 3,
+      "status": "PASS",
+      "observation_shape": [
+        1,
+        223
+      ],
+      "action_shape": [
+        1,
+        38
+      ],
+      "raw_budget": 1000000,
+      "action_repeat": 2,
+      "next_transition_restore": "exact",
+      "action_rng_restore": "exact"
+    },
+    {
+      "task": "dog-run",
+      "seed": 4,
+      "status": "PASS",
+      "observation_shape": [
+        1,
+        223
+      ],
+      "action_shape": [
+        1,
+        38
+      ],
+      "raw_budget": 1000000,
+      "action_repeat": 2,
+      "next_transition_restore": "exact",
+      "action_rng_restore": "exact"
+    },
+    {
+      "task": "dog-run",
+      "seed": 5,
+      "status": "PASS",
+      "observation_shape": [
+        1,
+        223
+      ],
+      "action_shape": [
+        1,
+        38
+      ],
+      "raw_budget": 1000000,
+      "action_repeat": 2,
+      "next_transition_restore": "exact",
+      "action_rng_restore": "exact"
+    },
+    {
+      "task": "dog-trot",
+      "seed": 1,
+      "status": "PASS",
+      "observation_shape": [
+        1,
+        223
+      ],
+      "action_shape": [
+        1,
+        38
+      ],
+      "raw_budget": 1000000,
+      "action_repeat": 2,
+      "next_transition_restore": "exact",
+      "action_rng_restore": "exact"
+    },
+    {
+      "task": "dog-trot",
+      "seed": 2,
+      "status": "PASS",
+      "observation_shape": [
+        1,
+        223
+      ],
+      "action_shape": [
+        1,
+        38
+      ],
+      "raw_budget": 1000000,
+      "action_repeat": 2,
+      "next_transition_restore": "exact",
+      "action_rng_restore": "exact"
+    },
+    {
+      "task": "dog-trot",
+      "seed": 3,
+      "status": "PASS",
+      "observation_shape": [
+        1,
+        223
+      ],
+      "action_shape": [
+        1,
+        38
+      ],
+      "raw_budget": 1000000,
+      "action_repeat": 2,
+      "next_transition_restore": "exact",
+      "action_rng_restore": "exact"
+    },
+    {
+      "task": "dog-trot",
+      "seed": 4,
+      "status": "PASS",
+      "observation_shape": [
+        1,
+        223
+      ],
+      "action_shape": [
+        1,
+        38
+      ],
+      "raw_budget": 1000000,
+      "action_repeat": 2,
+      "next_transition_restore": "exact",
+      "action_rng_restore": "exact"
+    },
+    {
+      "task": "dog-trot",
+      "seed": 5,
+      "status": "PASS",
+      "observation_shape": [
+        1,
+        223
+      ],
+      "action_shape": [
+        1,
+        38
+      ],
+      "raw_budget": 1000000,
+      "action_repeat": 2,
+      "next_transition_restore": "exact",
+      "action_rng_restore": "exact"
+    },
+    {
+      "task": "humanoid-run",
+      "seed": 1,
+      "status": "PASS",
+      "observation_shape": [
+        1,
+        67
+      ],
+      "action_shape": [
+        1,
+        21
+      ],
+      "raw_budget": 1000000,
+      "action_repeat": 2,
+      "next_transition_restore": "exact",
+      "action_rng_restore": "exact"
+    },
+    {
+      "task": "humanoid-run",
+      "seed": 2,
+      "status": "PASS",
+      "observation_shape": [
+        1,
+        67
+      ],
+      "action_shape": [
+        1,
+        21
+      ],
+      "raw_budget": 1000000,
+      "action_repeat": 2,
+      "next_transition_restore": "exact",
+      "action_rng_restore": "exact"
+    },
+    {
+      "task": "humanoid-run",
+      "seed": 3,
+      "status": "PASS",
+      "observation_shape": [
+        1,
+        67
+      ],
+      "action_shape": [
+        1,
+        21
+      ],
+      "raw_budget": 1000000,
+      "action_repeat": 2,
+      "next_transition_restore": "exact",
+      "action_rng_restore": "exact"
+    },
+    {
+      "task": "humanoid-run",
+      "seed": 4,
+      "status": "PASS",
+      "observation_shape": [
+        1,
+        67
+      ],
+      "action_shape": [
+        1,
+        21
+      ],
+      "raw_budget": 1000000,
+      "action_repeat": 2,
+      "next_transition_restore": "exact",
+      "action_rng_restore": "exact"
+    },
+    {
+      "task": "humanoid-run",
+      "seed": 5,
+      "status": "PASS",
+      "observation_shape": [
+        1,
+        67
+      ],
+      "action_shape": [
+        1,
+        21
+      ],
+      "raw_budget": 1000000,
+      "action_repeat": 2,
+      "next_transition_restore": "exact",
+      "action_rng_restore": "exact"
+    },
+    {
+      "task": "humanoid-walk",
+      "seed": 1,
+      "status": "PASS",
+      "observation_shape": [
+        1,
+        67
+      ],
+      "action_shape": [
+        1,
+        21
+      ],
+      "raw_budget": 1000000,
+      "action_repeat": 2,
+      "next_transition_restore": "exact",
+      "action_rng_restore": "exact"
+    },
+    {
+      "task": "humanoid-walk",
+      "seed": 2,
+      "status": "PASS",
+      "observation_shape": [
+        1,
+        67
+      ],
+      "action_shape": [
+        1,
+        21
+      ],
+      "raw_budget": 1000000,
+      "action_repeat": 2,
+      "next_transition_restore": "exact",
+      "action_rng_restore": "exact"
+    },
+    {
+      "task": "humanoid-walk",
+      "seed": 3,
+      "status": "PASS",
+      "observation_shape": [
+        1,
+        67
+      ],
+      "action_shape": [
+        1,
+        21
+      ],
+      "raw_budget": 1000000,
+      "action_repeat": 2,
+      "next_transition_restore": "exact",
+      "action_rng_restore": "exact"
+    },
+    {
+      "task": "humanoid-walk",
+      "seed": 4,
+      "status": "PASS",
+      "observation_shape": [
+        1,
+        67
+      ],
+      "action_shape": [
+        1,
+        21
+      ],
+      "raw_budget": 1000000,
+      "action_repeat": 2,
+      "next_transition_restore": "exact",
+      "action_rng_restore": "exact"
+    },
+    {
+      "task": "humanoid-walk",
+      "seed": 5,
+      "status": "PASS",
+      "observation_shape": [
+        1,
+        67
+      ],
+      "action_shape": [
+        1,
+        21
+      ],
+      "raw_budget": 1000000,
+      "action_repeat": 2,
+      "next_transition_restore": "exact",
+      "action_rng_restore": "exact"
+    },
+    {
+      "task": "humanoid-stand",
+      "seed": 1,
+      "status": "PASS",
+      "observation_shape": [
+        1,
+        67
+      ],
+      "action_shape": [
+        1,
+        21
+      ],
+      "raw_budget": 1000000,
+      "action_repeat": 2,
+      "next_transition_restore": "exact",
+      "action_rng_restore": "exact"
+    },
+    {
+      "task": "humanoid-stand",
+      "seed": 2,
+      "status": "PASS",
+      "observation_shape": [
+        1,
+        67
+      ],
+      "action_shape": [
+        1,
+        21
+      ],
+      "raw_budget": 1000000,
+      "action_repeat": 2,
+      "next_transition_restore": "exact",
+      "action_rng_restore": "exact"
+    },
+    {
+      "task": "humanoid-stand",
+      "seed": 3,
+      "status": "PASS",
+      "observation_shape": [
+        1,
+        67
+      ],
+      "action_shape": [
+        1,
+        21
+      ],
+      "raw_budget": 1000000,
+      "action_repeat": 2,
+      "next_transition_restore": "exact",
+      "action_rng_restore": "exact"
+    },
+    {
+      "task": "humanoid-stand",
+      "seed": 4,
+      "status": "PASS",
+      "observation_shape": [
+        1,
+        67
+      ],
+      "action_shape": [
+        1,
+        21
+      ],
+      "raw_budget": 1000000,
+      "action_repeat": 2,
+      "next_transition_restore": "exact",
+      "action_rng_restore": "exact"
+    },
+    {
+      "task": "humanoid-stand",
+      "seed": 5,
+      "status": "PASS",
+      "observation_shape": [
+        1,
+        67
+      ],
+      "action_shape": [
+        1,
+        21
+      ],
+      "raw_budget": 1000000,
+      "action_repeat": 2,
+      "next_transition_restore": "exact",
+      "action_rng_restore": "exact"
+    },
+    {
+      "task": "swimmer-swimmer15",
+      "seed": 1,
+      "status": "PASS",
+      "observation_shape": [
+        1,
+        61
+      ],
+      "action_shape": [
+        1,
+        14
+      ],
+      "raw_budget": 500000,
+      "action_repeat": 2,
+      "next_transition_restore": "exact",
+      "action_rng_restore": "exact"
+    },
+    {
+      "task": "swimmer-swimmer15",
+      "seed": 2,
+      "status": "PASS",
+      "observation_shape": [
+        1,
+        61
+      ],
+      "action_shape": [
+        1,
+        14
+      ],
+      "raw_budget": 500000,
+      "action_repeat": 2,
+      "next_transition_restore": "exact",
+      "action_rng_restore": "exact"
+    },
+    {
+      "task": "swimmer-swimmer15",
+      "seed": 3,
+      "status": "PASS",
+      "observation_shape": [
+        1,
+        61
+      ],
+      "action_shape": [
+        1,
+        14
+      ],
+      "raw_budget": 500000,
+      "action_repeat": 2,
+      "next_transition_restore": "exact",
+      "action_rng_restore": "exact"
+    },
+    {
+      "task": "swimmer-swimmer15",
+      "seed": 4,
+      "status": "PASS",
+      "observation_shape": [
+        1,
+        61
+      ],
+      "action_shape": [
+        1,
+        14
+      ],
+      "raw_budget": 500000,
+      "action_repeat": 2,
+      "next_transition_restore": "exact",
+      "action_rng_restore": "exact"
+    },
+    {
+      "task": "swimmer-swimmer15",
+      "seed": 5,
+      "status": "PASS",
+      "observation_shape": [
+        1,
+        61
+      ],
+      "action_shape": [
+        1,
+        14
+      ],
+      "raw_budget": 500000,
+      "action_repeat": 2,
+      "next_transition_restore": "exact",
+      "action_rng_restore": "exact"
+    },
+    {
+      "task": "hopper-hop",
+      "seed": 1,
+      "status": "PASS",
+      "observation_shape": [
+        1,
+        15
+      ],
+      "action_shape": [
+        1,
+        4
+      ],
+      "raw_budget": 500000,
+      "action_repeat": 2,
+      "next_transition_restore": "exact",
+      "action_rng_restore": "exact"
+    },
+    {
+      "task": "hopper-hop",
+      "seed": 2,
+      "status": "PASS",
+      "observation_shape": [
+        1,
+        15
+      ],
+      "action_shape": [
+        1,
+        4
+      ],
+      "raw_budget": 500000,
+      "action_repeat": 2,
+      "next_transition_restore": "exact",
+      "action_rng_restore": "exact"
+    },
+    {
+      "task": "hopper-hop",
+      "seed": 3,
+      "status": "PASS",
+      "observation_shape": [
+        1,
+        15
+      ],
+      "action_shape": [
+        1,
+        4
+      ],
+      "raw_budget": 500000,
+      "action_repeat": 2,
+      "next_transition_restore": "exact",
+      "action_rng_restore": "exact"
+    },
+    {
+      "task": "hopper-hop",
+      "seed": 4,
+      "status": "PASS",
+      "observation_shape": [
+        1,
+        15
+      ],
+      "action_shape": [
+        1,
+        4
+      ],
+      "raw_budget": 500000,
+      "action_repeat": 2,
+      "next_transition_restore": "exact",
+      "action_rng_restore": "exact"
+    },
+    {
+      "task": "hopper-hop",
+      "seed": 5,
+      "status": "PASS",
+      "observation_shape": [
+        1,
+        15
+      ],
+      "action_shape": [
+        1,
+        4
+      ],
+      "raw_budget": 500000,
+      "action_repeat": 2,
+      "next_transition_restore": "exact",
+      "action_rng_restore": "exact"
+    },
+    {
+      "task": "myo-key-turn",
+      "seed": 1,
+      "status": "PASS",
+      "observation_shape": [
+        1,
+        93
+      ],
+      "action_shape": [
+        1,
+        39
+      ],
+      "raw_budget": 1000000,
+      "action_repeat": 2,
+      "next_transition_restore": "exact",
+      "action_rng_restore": "exact"
+    },
+    {
+      "task": "myo-key-turn",
+      "seed": 2,
+      "status": "PASS",
+      "observation_shape": [
+        1,
+        93
+      ],
+      "action_shape": [
+        1,
+        39
+      ],
+      "raw_budget": 1000000,
+      "action_repeat": 2,
+      "next_transition_restore": "exact",
+      "action_rng_restore": "exact"
+    },
+    {
+      "task": "myo-key-turn",
+      "seed": 3,
+      "status": "PASS",
+      "observation_shape": [
+        1,
+        93
+      ],
+      "action_shape": [
+        1,
+        39
+      ],
+      "raw_budget": 1000000,
+      "action_repeat": 2,
+      "next_transition_restore": "exact",
+      "action_rng_restore": "exact"
+    },
+    {
+      "task": "myo-key-turn",
+      "seed": 4,
+      "status": "PASS",
+      "observation_shape": [
+        1,
+        93
+      ],
+      "action_shape": [
+        1,
+        39
+      ],
+      "raw_budget": 1000000,
+      "action_repeat": 2,
+      "next_transition_restore": "exact",
+      "action_rng_restore": "exact"
+    },
+    {
+      "task": "myo-key-turn",
+      "seed": 5,
+      "status": "PASS",
+      "observation_shape": [
+        1,
+        93
+      ],
+      "action_shape": [
+        1,
+        39
+      ],
+      "raw_budget": 1000000,
+      "action_repeat": 2,
+      "next_transition_restore": "exact",
+      "action_rng_restore": "exact"
+    },
+    {
+      "task": "myo-pen-twirl",
+      "seed": 1,
+      "status": "PASS",
+      "observation_shape": [
+        1,
+        83
+      ],
+      "action_shape": [
+        1,
+        39
+      ],
+      "raw_budget": 1000000,
+      "action_repeat": 2,
+      "next_transition_restore": "exact",
+      "action_rng_restore": "exact"
+    },
+    {
+      "task": "myo-pen-twirl",
+      "seed": 2,
+      "status": "PASS",
+      "observation_shape": [
+        1,
+        83
+      ],
+      "action_shape": [
+        1,
+        39
+      ],
+      "raw_budget": 1000000,
+      "action_repeat": 2,
+      "next_transition_restore": "exact",
+      "action_rng_restore": "exact"
+    },
+    {
+      "task": "myo-pen-twirl",
+      "seed": 3,
+      "status": "PASS",
+      "observation_shape": [
+        1,
+        83
+      ],
+      "action_shape": [
+        1,
+        39
+      ],
+      "raw_budget": 1000000,
+      "action_repeat": 2,
+      "next_transition_restore": "exact",
+      "action_rng_restore": "exact"
+    },
+    {
+      "task": "myo-pen-twirl",
+      "seed": 4,
+      "status": "PASS",
+      "observation_shape": [
+        1,
+        83
+      ],
+      "action_shape": [
+        1,
+        39
+      ],
+      "raw_budget": 1000000,
+      "action_repeat": 2,
+      "next_transition_restore": "exact",
+      "action_rng_restore": "exact"
+    },
+    {
+      "task": "myo-pen-twirl",
+      "seed": 5,
+      "status": "PASS",
+      "observation_shape": [
+        1,
+        83
+      ],
+      "action_shape": [
+        1,
+        39
+      ],
+      "raw_budget": 1000000,
+      "action_repeat": 2,
+      "next_transition_restore": "exact",
+      "action_rng_restore": "exact"
+    },
+    {
+      "task": "myo-pose-hard",
+      "seed": 1,
+      "status": "PASS",
+      "observation_shape": [
+        1,
+        108
+      ],
+      "action_shape": [
+        1,
+        39
+      ],
+      "raw_budget": 1000000,
+      "action_repeat": 2,
+      "next_transition_restore": "exact",
+      "action_rng_restore": "exact"
+    },
+    {
+      "task": "myo-pose-hard",
+      "seed": 2,
+      "status": "PASS",
+      "observation_shape": [
+        1,
+        108
+      ],
+      "action_shape": [
+        1,
+        39
+      ],
+      "raw_budget": 1000000,
+      "action_repeat": 2,
+      "next_transition_restore": "exact",
+      "action_rng_restore": "exact"
+    },
+    {
+      "task": "myo-pose-hard",
+      "seed": 3,
+      "status": "PASS",
+      "observation_shape": [
+        1,
+        108
+      ],
+      "action_shape": [
+        1,
+        39
+      ],
+      "raw_budget": 1000000,
+      "action_repeat": 2,
+      "next_transition_restore": "exact",
+      "action_rng_restore": "exact"
+    },
+    {
+      "task": "myo-pose-hard",
+      "seed": 4,
+      "status": "PASS",
+      "observation_shape": [
+        1,
+        108
+      ],
+      "action_shape": [
+        1,
+        39
+      ],
+      "raw_budget": 1000000,
+      "action_repeat": 2,
+      "next_transition_restore": "exact",
+      "action_rng_restore": "exact"
+    },
+    {
+      "task": "myo-pose-hard",
+      "seed": 5,
+      "status": "PASS",
+      "observation_shape": [
+        1,
+        108
+      ],
+      "action_shape": [
+        1,
+        39
+      ],
+      "raw_budget": 1000000,
+      "action_repeat": 2,
+      "next_transition_restore": "exact",
+      "action_rng_restore": "exact"
+    },
+    {
+      "task": "myo-reach",
+      "seed": 1,
+      "status": "PASS",
+      "observation_shape": [
+        1,
+        115
+      ],
+      "action_shape": [
+        1,
+        39
+      ],
+      "raw_budget": 1000000,
+      "action_repeat": 2,
+      "next_transition_restore": "exact",
+      "action_rng_restore": "exact"
+    },
+    {
+      "task": "myo-reach",
+      "seed": 2,
+      "status": "PASS",
+      "observation_shape": [
+        1,
+        115
+      ],
+      "action_shape": [
+        1,
+        39
+      ],
+      "raw_budget": 1000000,
+      "action_repeat": 2,
+      "next_transition_restore": "exact",
+      "action_rng_restore": "exact"
+    },
+    {
+      "task": "myo-reach",
+      "seed": 3,
+      "status": "PASS",
+      "observation_shape": [
+        1,
+        115
+      ],
+      "action_shape": [
+        1,
+        39
+      ],
+      "raw_budget": 1000000,
+      "action_repeat": 2,
+      "next_transition_restore": "exact",
+      "action_rng_restore": "exact"
+    },
+    {
+      "task": "myo-reach",
+      "seed": 4,
+      "status": "PASS",
+      "observation_shape": [
+        1,
+        115
+      ],
+      "action_shape": [
+        1,
+        39
+      ],
+      "raw_budget": 1000000,
+      "action_repeat": 2,
+      "next_transition_restore": "exact",
+      "action_rng_restore": "exact"
+    },
+    {
+      "task": "myo-reach",
+      "seed": 5,
+      "status": "PASS",
+      "observation_shape": [
+        1,
+        115
+      ],
+      "action_shape": [
+        1,
+        39
+      ],
+      "raw_budget": 1000000,
+      "action_repeat": 2,
+      "next_transition_restore": "exact",
+      "action_rng_restore": "exact"
+    },
+    {
+      "task": "h1-reach-v0",
+      "seed": 1,
+      "status": "UNAVAILABLE",
+      "reason": "humanoid_bench absent"
+    },
+    {
+      "task": "h1-reach-v0",
+      "seed": 2,
+      "status": "UNAVAILABLE",
+      "reason": "humanoid_bench absent"
+    },
+    {
+      "task": "h1-reach-v0",
+      "seed": 3,
+      "status": "UNAVAILABLE",
+      "reason": "humanoid_bench absent"
+    },
+    {
+      "task": "h1-reach-v0",
+      "seed": 4,
+      "status": "UNAVAILABLE",
+      "reason": "humanoid_bench absent"
+    },
+    {
+      "task": "h1-reach-v0",
+      "seed": 5,
+      "status": "UNAVAILABLE",
+      "reason": "humanoid_bench absent"
+    },
+    {
+      "task": "h1-run-v0",
+      "seed": 1,
+      "status": "UNAVAILABLE",
+      "reason": "humanoid_bench absent"
+    },
+    {
+      "task": "h1-run-v0",
+      "seed": 2,
+      "status": "UNAVAILABLE",
+      "reason": "humanoid_bench absent"
+    },
+    {
+      "task": "h1-run-v0",
+      "seed": 3,
+      "status": "UNAVAILABLE",
+      "reason": "humanoid_bench absent"
+    },
+    {
+      "task": "h1-run-v0",
+      "seed": 4,
+      "status": "UNAVAILABLE",
+      "reason": "humanoid_bench absent"
+    },
+    {
+      "task": "h1-run-v0",
+      "seed": 5,
+      "status": "UNAVAILABLE",
+      "reason": "humanoid_bench absent"
+    }
+  ]
+}

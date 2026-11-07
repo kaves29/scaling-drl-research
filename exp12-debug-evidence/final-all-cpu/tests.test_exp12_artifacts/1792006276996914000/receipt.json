@@ -1,0 +1,24 @@
+{
+  "module": "tests.test_exp12_artifacts",
+  "source_hash": "52468342b4543cf79e93cc96c34167ddc17c8dd811e7e45949cacf4b5cee0c6b",
+  "success": true,
+  "tests_run": 12,
+  "test_ids": [
+    "tests.test_exp12_artifacts.ArtifactPackageTest.test_backend_commit_mismatch_refused",
+    "tests.test_exp12_artifacts.ArtifactPackageTest.test_existing_archive_or_sidecar_never_overwritten",
+    "tests.test_exp12_artifacts.ArtifactPackageTest.test_exit_zero_is_not_a_qualification_and_bad_status_is_preserved",
+    "tests.test_exp12_artifacts.ArtifactPackageTest.test_full_bytes_checksums_and_frozen_source",
+    "tests.test_exp12_artifacts.ArtifactPackageTest.test_invalid_identifiers_refused",
+    "tests.test_exp12_artifacts.ArtifactPackageTest.test_missing_artifacts_are_explicit_not_invented",
+    "tests.test_exp12_artifacts.ArtifactPackageTest.test_output_inside_input_refused",
+    "tests.test_exp12_artifacts.ArtifactPackageTest.test_partial_trace_is_preserved_and_flagged",
+    "tests.test_exp12_artifacts.ArtifactPackageTest.test_recorded_commit_mismatch_refused_without_output",
+    "tests.test_exp12_artifacts.ArtifactPackageTest.test_slurm_filename_mismatch_refused",
+    "tests.test_exp12_artifacts.ArtifactPackageTest.test_symlink_artifact_refused",
+    "tests.test_exp12_artifacts.ArtifactPackageTest.test_trace_job_id_mismatch_refused"
+  ],
+  "failures": 0,
+  "errors": 0,
+  "skips": [],
+  "unexpected_successes": 0
+}

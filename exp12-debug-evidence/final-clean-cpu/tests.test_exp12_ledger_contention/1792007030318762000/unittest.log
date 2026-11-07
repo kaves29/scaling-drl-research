@@ -1,0 +1,17 @@
+test_concurrent_completion_while_other_workers_keep_claiming (tests.test_exp12_ledger_contention.FinishGuardContentionTest.test_concurrent_completion_while_other_workers_keep_claiming) ... ok
+test_owner_gone_before_retry_is_reconciled_once_and_late_finish_is_refused (tests.test_exp12_ledger_contention.FinishGuardContentionTest.test_owner_gone_before_retry_is_reconciled_once_and_late_finish_is_refused) ... ok
+test_recovery_after_exhaustion_records_exactly_once (tests.test_exp12_ledger_contention.FinishGuardContentionTest.test_recovery_after_exhaustion_records_exactly_once) ... ok
+test_retry_exhaustion_fails_closed_without_writing_anything (tests.test_exp12_ledger_contention.FinishGuardContentionTest.test_retry_exhaustion_fails_closed_without_writing_anything) ... ok
+test_transient_contention_is_waited_out_and_recorded_once (tests.test_exp12_ledger_contention.FinishGuardContentionTest.test_transient_contention_is_waited_out_and_recorded_once) ... ok
+test_collect_keeps_contended_jobs_and_reraises_other_errors (tests.test_exp12_ledger_contention.WorkerFinishRetryTest.test_collect_keeps_contended_jobs_and_reraises_other_errors) ... [scheduler] WARNING: busy; retrying in 60 s
+ok
+test_finish_retry_records_the_first_outcome_once (tests.test_exp12_ledger_contention.WorkerFinishRetryTest.test_finish_retry_records_the_first_outcome_once) ... ok
+test_startup_failure_under_contention_does_not_stop_the_worker (tests.test_exp12_ledger_contention.WorkerFinishRetryTest.test_startup_failure_under_contention_does_not_stop_the_worker) ... [scheduler] WARNING: startup failure of exp1_D4W1536_1 not recorded: transition guard of exp1_D4W1536_1 stayed occupied for 0.1 s; nothing recorded, claim kept
+ok
+test_unrecorded_outcomes_are_kept_for_review_at_the_allocation_end (tests.test_exp12_ledger_contention.WorkerFinishRetryTest.test_unrecorded_outcomes_are_kept_for_review_at_the_allocation_end) ... [scheduler] ERROR: outcome of exp1_D4W1536_1 could not be recorded before the allocation ended; claim left for reconciliation
+ok
+
+----------------------------------------------------------------------
+Ran 9 tests in 1.918s
+
+OK

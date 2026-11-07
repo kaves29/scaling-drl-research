@@ -1,0 +1,60 @@
+/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/matplotlib/_fontconfig_pattern.py:64: PyparsingDeprecationWarning: 'oneOf' deprecated - use 'one_of'
+  prop = Group((name + Suppress("=") + comma_separated(value)) | oneOf(_CONSTANTS))
+/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/matplotlib/_fontconfig_pattern.py:85: PyparsingDeprecationWarning: 'parseString' deprecated - use 'parse_string'
+  parse = parser.parseString(pattern)
+/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/matplotlib/_fontconfig_pattern.py:89: PyparsingDeprecationWarning: 'resetCache' deprecated - use 'reset_cache'
+  parser.resetCache()
+/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/matplotlib/_fontconfig_pattern.py:85: PyparsingDeprecationWarning: 'parseString' deprecated - use 'parse_string'
+  parse = parser.parseString(pattern)
+/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/matplotlib/_fontconfig_pattern.py:89: PyparsingDeprecationWarning: 'resetCache' deprecated - use 'reset_cache'
+  parser.resetCache()
+/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/matplotlib/_fontconfig_pattern.py:85: PyparsingDeprecationWarning: 'parseString' deprecated - use 'parse_string'
+  parse = parser.parseString(pattern)
+/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/matplotlib/_fontconfig_pattern.py:89: PyparsingDeprecationWarning: 'resetCache' deprecated - use 'reset_cache'
+  parser.resetCache()
+/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/matplotlib/_fontconfig_pattern.py:85: PyparsingDeprecationWarning: 'parseString' deprecated - use 'parse_string'
+  parse = parser.parseString(pattern)
+/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/matplotlib/_fontconfig_pattern.py:89: PyparsingDeprecationWarning: 'resetCache' deprecated - use 'reset_cache'
+  parser.resetCache()
+/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/matplotlib/_fontconfig_pattern.py:85: PyparsingDeprecationWarning: 'parseString' deprecated - use 'parse_string'
+  parse = parser.parseString(pattern)
+/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/matplotlib/_fontconfig_pattern.py:89: PyparsingDeprecationWarning: 'resetCache' deprecated - use 'reset_cache'
+  parser.resetCache()
+/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/matplotlib/_fontconfig_pattern.py:85: PyparsingDeprecationWarning: 'parseString' deprecated - use 'parse_string'
+  parse = parser.parseString(pattern)
+/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/matplotlib/_fontconfig_pattern.py:89: PyparsingDeprecationWarning: 'resetCache' deprecated - use 'reset_cache'
+  parser.resetCache()
+/Users/shouryakaveti/VS_Projects/sparse-ppo-drl-research/.venv/lib/python3.12/site-packages/matplotlib/_mathtext.py:45: PyparsingDeprecationWarning: 'enablePackrat' deprecated - use 'enable_packrat'
+  ParserElement.enablePackrat()
+test_explicit_diagnostic_nan_marker_checks_masks_and_finite_values (tests.test_exp12_methodology_corrections.CudaComparisonInputsTest.test_explicit_diagnostic_nan_marker_checks_masks_and_finite_values) ... ok
+test_integer_state_difference_is_exact (tests.test_exp12_methodology_corrections.CudaComparisonInputsTest.test_integer_state_difference_is_exact) ... ok
+test_nonfinite_model_leaves_raise (tests.test_exp12_methodology_corrections.CudaComparisonInputsTest.test_nonfinite_model_leaves_raise) ... ok
+test_structure_and_dtype_mismatch_raise (tests.test_exp12_methodology_corrections.CudaComparisonInputsTest.test_structure_and_dtype_mismatch_raise) ... ok
+test_valid_float_measurement_unchanged_and_thresholds_unset (tests.test_exp12_methodology_corrections.CudaComparisonInputsTest.test_valid_float_measurement_unchanged_and_thresholds_unset) ... ok
+test_inherited_fork_record_is_labeled_without_changing_evidence (tests.test_exp12_methodology_corrections.ForkMeasurementLabelsTest.test_inherited_fork_record_is_labeled_without_changing_evidence) ... ok
+test_manifest_generation_refuses_stale_files_without_overwriting (tests.test_exp12_methodology_corrections.ManifestPersistenceTest.test_manifest_generation_refuses_stale_files_without_overwriting) ... ok
+test_latest_rejects_path_escape_and_dangling_pointer (tests.test_exp12_methodology_corrections.PersistenceInputsTest.test_latest_rejects_path_escape_and_dangling_pointer) ... ok
+test_null_resume_rejects_duplicate_pairs (tests.test_exp12_methodology_corrections.PersistenceInputsTest.test_null_resume_rejects_duplicate_pairs) ... ok
+test_null_resume_rejects_wrong_identity_before_reusing_pair (tests.test_exp12_methodology_corrections.PersistenceInputsTest.test_null_resume_rejects_wrong_identity_before_reusing_pair) ... ok
+test_null_resume_requires_matching_provenance_and_check_index (tests.test_exp12_methodology_corrections.PersistenceInputsTest.test_null_resume_requires_matching_provenance_and_check_index) ... ok
+test_replay_rejects_shape_or_dtype_before_mutation (tests.test_exp12_methodology_corrections.PersistenceInputsTest.test_replay_rejects_shape_or_dtype_before_mutation) ... ok
+test_valid_replay_restore_and_rng_are_unchanged (tests.test_exp12_methodology_corrections.PersistenceInputsTest.test_valid_replay_restore_and_rng_are_unchanged) ... ok
+test_approved_pc_settings_are_accepted_but_probe_or_trigger_edits_are_not (tests.test_exp12_methodology_corrections.PositiveControlInputsTest.test_approved_pc_settings_are_accepted_but_probe_or_trigger_edits_are_not) ... ok
+test_forced_run_cannot_qualify (tests.test_exp12_methodology_corrections.PositiveControlInputsTest.test_forced_run_cannot_qualify) ... ok
+test_missing_extra_or_wrong_round_count_cannot_select (tests.test_exp12_methodology_corrections.PositiveControlInputsTest.test_missing_extra_or_wrong_round_count_cannot_select) ... ok
+test_noncanonical_budget_cannot_qualify (tests.test_exp12_methodology_corrections.PositiveControlInputsTest.test_noncanonical_budget_cannot_qualify) ... ok
+test_nonfinite_candidate_stops_without_selecting (tests.test_exp12_methodology_corrections.PositiveControlInputsTest.test_nonfinite_candidate_stops_without_selecting) ... ok
+test_valid_result_matches_independent_pooled_variance (tests.test_exp12_methodology_corrections.PositiveControlInputsTest.test_valid_result_matches_independent_pooled_variance) ... ok
+test_cli_uses_new_rule_and_exit_status (tests.test_exp12_methodology_corrections.RangeCriterionTest.test_cli_uses_new_rule_and_exit_status) ... {"rule": "IQM(P) / IQM(b) >= 0.9 at the configured pool, every size", "pass": false, "per_size": {"D4W1536": false}, "old_rule_per_size": {"D4W1536": true}, "missing": [], "duplicates": [], "PASS": false}
+{"rule": "IQM(P) / IQM(b) >= 0.9 at the configured pool, every size", "pass": true, "per_size": {"D4W1536": true}, "old_rule_per_size": {"D4W1536": true}, "missing": [], "duplicates": [], "PASS": true}
+{"rule": "IQM(P) / IQM(b) >= 0.9 at the configured pool, every size", "pass": true, "per_size": {"D4W1536": true}, "old_rule_per_size": {"D4W1536": false}, "missing": [], "duplicates": [], "PASS": true}
+{"rule": "IQM(P) / IQM(b) >= 0.9 at the configured pool, every size", "pass": false, "per_size": {"D4W1536": false}, "old_rule_per_size": {"D4W1536": false}, "missing": [], "duplicates": [], "PASS": false}
+{"rule": "IQM(P) / IQM(b) >= 0.9 at the configured pool, every size", "pass": false, "per_size": {"D4W1536": false}, "old_rule_per_size": {"D4W1536": false}, "missing": [], "duplicates": [], "PASS": false}
+ok
+test_duplicate_missing_or_nonfinite_range_cannot_pass (tests.test_exp12_methodology_corrections.RangeCriterionTest.test_duplicate_missing_or_nonfinite_range_cannot_pass) ... ok
+test_mean_of_paired_losses (tests.test_exp12_methodology_corrections.TwinLossOrderTest.test_mean_of_paired_losses) ... ok
+
+----------------------------------------------------------------------
+Ran 22 tests in 0.480s
+
+OK

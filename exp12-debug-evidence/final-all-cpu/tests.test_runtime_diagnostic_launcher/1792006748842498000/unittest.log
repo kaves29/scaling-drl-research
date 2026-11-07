@@ -1,0 +1,349 @@
+test_all_modes_export_cuda_and_cpu_without_legacy_default_override (tests.test_runtime_diagnostic_launcher.RuntimeDiagnosticLauncherTest.test_all_modes_export_cuda_and_cpu_without_legacy_default_override) ... 
+  test_all_modes_export_cuda_and_cpu_without_legacy_default_override (tests.test_runtime_diagnostic_launcher.RuntimeDiagnosticLauncherTest.test_all_modes_export_cuda_and_cpu_without_legacy_default_override) (mode='profile') ... FAIL
+  test_all_modes_export_cuda_and_cpu_without_legacy_default_override (tests.test_runtime_diagnostic_launcher.RuntimeDiagnosticLauncherTest.test_all_modes_export_cuda_and_cpu_without_legacy_default_override) (mode='identity_cold') ... FAIL
+  test_all_modes_export_cuda_and_cpu_without_legacy_default_override (tests.test_runtime_diagnostic_launcher.RuntimeDiagnosticLauncherTest.test_all_modes_export_cuda_and_cpu_without_legacy_default_override) (mode='identity_warm') ... FAIL
+test_cpu_only_backend_cannot_pass_gpu_preflight (tests.test_runtime_diagnostic_launcher.RuntimeDiagnosticLauncherTest.test_cpu_only_backend_cannot_pass_gpu_preflight) ... ERROR
+test_detached_exact_revision_is_accepted_in_all_modes (tests.test_runtime_diagnostic_launcher.RuntimeDiagnosticLauncherTest.test_detached_exact_revision_is_accepted_in_all_modes) ... 
+  test_detached_exact_revision_is_accepted_in_all_modes (tests.test_runtime_diagnostic_launcher.RuntimeDiagnosticLauncherTest.test_detached_exact_revision_is_accepted_in_all_modes) (mode='profile') ... FAIL
+  test_detached_exact_revision_is_accepted_in_all_modes (tests.test_runtime_diagnostic_launcher.RuntimeDiagnosticLauncherTest.test_detached_exact_revision_is_accepted_in_all_modes) (mode='identity_cold') ... FAIL
+  test_detached_exact_revision_is_accepted_in_all_modes (tests.test_runtime_diagnostic_launcher.RuntimeDiagnosticLauncherTest.test_detached_exact_revision_is_accepted_in_all_modes) (mode='identity_warm') ... FAIL
+test_detached_wrong_revision_is_rejected (tests.test_runtime_diagnostic_launcher.RuntimeDiagnosticLauncherTest.test_detached_wrong_revision_is_rejected) ... ok
+test_dirty_checkout_refuses_before_output (tests.test_runtime_diagnostic_launcher.RuntimeDiagnosticLauncherTest.test_dirty_checkout_refuses_before_output) ... ok
+test_exact_revision_on_other_branch_is_accepted (tests.test_runtime_diagnostic_launcher.RuntimeDiagnosticLauncherTest.test_exact_revision_on_other_branch_is_accepted) ... FAIL
+test_expected_commit_must_be_full_literal_hash (tests.test_runtime_diagnostic_launcher.RuntimeDiagnosticLauncherTest.test_expected_commit_must_be_full_literal_hash) ... ok
+test_failure_keeps_status_and_never_retries (tests.test_runtime_diagnostic_launcher.RuntimeDiagnosticLauncherTest.test_failure_keeps_status_and_never_retries) ... FAIL
+test_identity_modes_keep_the_existing_gate_and_cache_scenarios (tests.test_runtime_diagnostic_launcher.RuntimeDiagnosticLauncherTest.test_identity_modes_keep_the_existing_gate_and_cache_scenarios) ... 
+  test_identity_modes_keep_the_existing_gate_and_cache_scenarios (tests.test_runtime_diagnostic_launcher.RuntimeDiagnosticLauncherTest.test_identity_modes_keep_the_existing_gate_and_cache_scenarios) (mode='identity_cold') ... ERROR
+  test_identity_modes_keep_the_existing_gate_and_cache_scenarios (tests.test_runtime_diagnostic_launcher.RuntimeDiagnosticLauncherTest.test_identity_modes_keep_the_existing_gate_and_cache_scenarios) (mode='identity_warm') ... ERROR
+test_invalid_diagnostic_selections_are_explained (tests.test_runtime_diagnostic_launcher.RuntimeDiagnosticLauncherTest.test_invalid_diagnostic_selections_are_explained) ... ok
+test_invalid_output_paths_are_explained (tests.test_runtime_diagnostic_launcher.RuntimeDiagnosticLauncherTest.test_invalid_output_paths_are_explained) ... 
+  test_invalid_output_paths_are_explained (tests.test_runtime_diagnostic_launcher.RuntimeDiagnosticLauncherTest.test_invalid_output_paths_are_explained) (out='/var/folders/ms/h3zjmq652jvg08wcslr2z3t80000gn/T/tmpiocg6a2k/missing/output') ... FAIL
+test_invalid_outputs_fail_validation (tests.test_runtime_diagnostic_launcher.RuntimeDiagnosticLauncherTest.test_invalid_outputs_fail_validation) ... 
+  test_invalid_outputs_fail_validation (tests.test_runtime_diagnostic_launcher.RuntimeDiagnosticLauncherTest.test_invalid_outputs_fail_validation) (mode='missing-output') ... ERROR
+  test_invalid_outputs_fail_validation (tests.test_runtime_diagnostic_launcher.RuntimeDiagnosticLauncherTest.test_invalid_outputs_fail_validation) (mode='nonfinite') ... ERROR
+  test_invalid_outputs_fail_validation (tests.test_runtime_diagnostic_launcher.RuntimeDiagnosticLauncherTest.test_invalid_outputs_fail_validation) (mode='cache-error') ... ERROR
+  test_invalid_outputs_fail_validation (tests.test_runtime_diagnostic_launcher.RuntimeDiagnosticLauncherTest.test_invalid_outputs_fail_validation) (mode='wrong-count') ... ERROR
+test_invalid_submit_directory_is_explained (tests.test_runtime_diagnostic_launcher.RuntimeDiagnosticLauncherTest.test_invalid_submit_directory_is_explained) ... ok
+test_missing_cpu_backend_stops_before_profile_execution (tests.test_runtime_diagnostic_launcher.RuntimeDiagnosticLauncherTest.test_missing_cpu_backend_stops_before_profile_execution) ... ERROR
+test_missing_git_metadata_is_explained (tests.test_runtime_diagnostic_launcher.RuntimeDiagnosticLauncherTest.test_missing_git_metadata_is_explained) ... ok
+test_missing_required_environment_is_explained (tests.test_runtime_diagnostic_launcher.RuntimeDiagnosticLauncherTest.test_missing_required_environment_is_explained) ... ok
+test_missing_required_files_are_explained (tests.test_runtime_diagnostic_launcher.RuntimeDiagnosticLauncherTest.test_missing_required_files_are_explained) ... ok
+test_no_allocation_refuses_before_output (tests.test_runtime_diagnostic_launcher.RuntimeDiagnosticLauncherTest.test_no_allocation_refuses_before_output) ... ok
+test_non_a100_refuses_before_output (tests.test_runtime_diagnostic_launcher.RuntimeDiagnosticLauncherTest.test_non_a100_refuses_before_output) ... ok
+test_only_approved_profile_architectures_are_accepted (tests.test_runtime_diagnostic_launcher.RuntimeDiagnosticLauncherTest.test_only_approved_profile_architectures_are_accepted) ... 
+  test_only_approved_profile_architectures_are_accepted (tests.test_runtime_diagnostic_launcher.RuntimeDiagnosticLauncherTest.test_only_approved_profile_architectures_are_accepted) (arch='D2W512') ... FAIL
+  test_only_approved_profile_architectures_are_accepted (tests.test_runtime_diagnostic_launcher.RuntimeDiagnosticLauncherTest.test_only_approved_profile_architectures_are_accepted) (arch='D4W1024') ... FAIL
+test_output_inside_checkout_refuses (tests.test_runtime_diagnostic_launcher.RuntimeDiagnosticLauncherTest.test_output_inside_checkout_refuses) ... FAIL
+test_real_jax_registry_allows_explicit_cpu_device_with_mock_cuda (tests.test_runtime_diagnostic_launcher.RuntimeDiagnosticLauncherTest.test_real_jax_registry_allows_explicit_cpu_device_with_mock_cuda) ... ERROR
+test_real_probe_schedule_matches_validator (tests.test_runtime_diagnostic_launcher.RuntimeDiagnosticLauncherTest.test_real_probe_schedule_matches_validator) ... ERROR
+test_reused_output_is_preserved (tests.test_runtime_diagnostic_launcher.RuntimeDiagnosticLauncherTest.test_reused_output_is_preserved) ... FAIL
+test_staged_changes_are_rejected_when_detached (tests.test_runtime_diagnostic_launcher.RuntimeDiagnosticLauncherTest.test_staged_changes_are_rejected_when_detached) ... ok
+test_success_requires_bounded_command_and_expected_outputs (tests.test_runtime_diagnostic_launcher.RuntimeDiagnosticLauncherTest.test_success_requires_bounded_command_and_expected_outputs) ... FAIL
+test_timeout_keeps_status_without_profile (tests.test_runtime_diagnostic_launcher.RuntimeDiagnosticLauncherTest.test_timeout_keeps_status_without_profile) ... FAIL
+test_tracked_changes_are_rejected_when_detached (tests.test_runtime_diagnostic_launcher.RuntimeDiagnosticLauncherTest.test_tracked_changes_are_rejected_when_detached) ... ok
+test_wrong_revision_refuses_before_output (tests.test_runtime_diagnostic_launcher.RuntimeDiagnosticLauncherTest.test_wrong_revision_refuses_before_output) ... ok
+
+======================================================================
+ERROR: test_cpu_only_backend_cannot_pass_gpu_preflight (tests.test_runtime_diagnostic_launcher.RuntimeDiagnosticLauncherTest.test_cpu_only_backend_cannot_pass_gpu_preflight)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/tests/test_runtime_diagnostic_launcher.py", line 394, in test_cpu_only_backend_cannot_pass_gpu_preflight
+    self.assertIn("AssertionError", (self.out / "profile.log").read_text())
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/pathlib.py", line 1027, in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/pathlib.py", line 1013, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/var/folders/ms/h3zjmq652jvg08wcslr2z3t80000gn/T/tmpaislb4b7/output/profile.log'
+
+======================================================================
+ERROR: test_identity_modes_keep_the_existing_gate_and_cache_scenarios (tests.test_runtime_diagnostic_launcher.RuntimeDiagnosticLauncherTest.test_identity_modes_keep_the_existing_gate_and_cache_scenarios) (mode='identity_cold')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/tests/test_runtime_diagnostic_launcher.py", line 439, in test_identity_modes_keep_the_existing_gate_and_cache_scenarios
+    result.stderr + (out / "profile.log").read_text(),
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/pathlib.py", line 1027, in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/pathlib.py", line 1013, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/var/folders/ms/h3zjmq652jvg08wcslr2z3t80000gn/T/tmpb7vl_s42/identity_cold/profile.log'
+
+======================================================================
+ERROR: test_identity_modes_keep_the_existing_gate_and_cache_scenarios (tests.test_runtime_diagnostic_launcher.RuntimeDiagnosticLauncherTest.test_identity_modes_keep_the_existing_gate_and_cache_scenarios) (mode='identity_warm')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/tests/test_runtime_diagnostic_launcher.py", line 439, in test_identity_modes_keep_the_existing_gate_and_cache_scenarios
+    result.stderr + (out / "profile.log").read_text(),
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/pathlib.py", line 1027, in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/pathlib.py", line 1013, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/var/folders/ms/h3zjmq652jvg08wcslr2z3t80000gn/T/tmpb7vl_s42/identity_warm/profile.log'
+
+======================================================================
+ERROR: test_invalid_outputs_fail_validation (tests.test_runtime_diagnostic_launcher.RuntimeDiagnosticLauncherTest.test_invalid_outputs_fail_validation) (mode='missing-output')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/tests/test_runtime_diagnostic_launcher.py", line 501, in test_invalid_outputs_fail_validation
+    self.assertNotEqual((out / "exit_status.txt").read_text(), "0\n")
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/pathlib.py", line 1027, in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/pathlib.py", line 1013, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/var/folders/ms/h3zjmq652jvg08wcslr2z3t80000gn/T/tmpxda5ghs0/missing-output/exit_status.txt'
+
+======================================================================
+ERROR: test_invalid_outputs_fail_validation (tests.test_runtime_diagnostic_launcher.RuntimeDiagnosticLauncherTest.test_invalid_outputs_fail_validation) (mode='nonfinite')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/tests/test_runtime_diagnostic_launcher.py", line 501, in test_invalid_outputs_fail_validation
+    self.assertNotEqual((out / "exit_status.txt").read_text(), "0\n")
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/pathlib.py", line 1027, in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/pathlib.py", line 1013, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/var/folders/ms/h3zjmq652jvg08wcslr2z3t80000gn/T/tmpxda5ghs0/nonfinite/exit_status.txt'
+
+======================================================================
+ERROR: test_invalid_outputs_fail_validation (tests.test_runtime_diagnostic_launcher.RuntimeDiagnosticLauncherTest.test_invalid_outputs_fail_validation) (mode='cache-error')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/tests/test_runtime_diagnostic_launcher.py", line 501, in test_invalid_outputs_fail_validation
+    self.assertNotEqual((out / "exit_status.txt").read_text(), "0\n")
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/pathlib.py", line 1027, in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/pathlib.py", line 1013, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/var/folders/ms/h3zjmq652jvg08wcslr2z3t80000gn/T/tmpxda5ghs0/cache-error/exit_status.txt'
+
+======================================================================
+ERROR: test_invalid_outputs_fail_validation (tests.test_runtime_diagnostic_launcher.RuntimeDiagnosticLauncherTest.test_invalid_outputs_fail_validation) (mode='wrong-count')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/tests/test_runtime_diagnostic_launcher.py", line 501, in test_invalid_outputs_fail_validation
+    self.assertNotEqual((out / "exit_status.txt").read_text(), "0\n")
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/pathlib.py", line 1027, in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/pathlib.py", line 1013, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/var/folders/ms/h3zjmq652jvg08wcslr2z3t80000gn/T/tmpxda5ghs0/wrong-count/exit_status.txt'
+
+======================================================================
+ERROR: test_missing_cpu_backend_stops_before_profile_execution (tests.test_runtime_diagnostic_launcher.RuntimeDiagnosticLauncherTest.test_missing_cpu_backend_stops_before_profile_execution)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/tests/test_runtime_diagnostic_launcher.py", line 386, in test_missing_cpu_backend_stops_before_profile_execution
+    "Unable to initialize backend 'cpu'", (self.out / "profile.log").read_text()
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/pathlib.py", line 1027, in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/pathlib.py", line 1013, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/var/folders/ms/h3zjmq652jvg08wcslr2z3t80000gn/T/tmpml45qsbr/output/profile.log'
+
+======================================================================
+ERROR: test_real_jax_registry_allows_explicit_cpu_device_with_mock_cuda (tests.test_runtime_diagnostic_launcher.RuntimeDiagnosticLauncherTest.test_real_jax_registry_allows_explicit_cpu_device_with_mock_cuda)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/tests/test_runtime_diagnostic_launcher.py", line 375, in test_real_jax_registry_allows_explicit_cpu_device_with_mock_cuda
+    log = (self.out / "profile.log").read_text()
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/pathlib.py", line 1027, in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/pathlib.py", line 1013, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/var/folders/ms/h3zjmq652jvg08wcslr2z3t80000gn/T/tmp6bdv1pqp/output/profile.log'
+
+======================================================================
+ERROR: test_real_probe_schedule_matches_validator (tests.test_runtime_diagnostic_launcher.RuntimeDiagnosticLauncherTest.test_real_probe_schedule_matches_validator)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/tests/test_runtime_diagnostic_launcher.py", line 428, in test_real_probe_schedule_matches_validator
+    result.returncode, 0, result.stderr + (self.out / "profile.log").read_text()
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/pathlib.py", line 1027, in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/lib/python3.12/pathlib.py", line 1013, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/var/folders/ms/h3zjmq652jvg08wcslr2z3t80000gn/T/tmpkut_hy1f/output/profile.log'
+
+======================================================================
+FAIL: test_all_modes_export_cuda_and_cpu_without_legacy_default_override (tests.test_runtime_diagnostic_launcher.RuntimeDiagnosticLauncherTest.test_all_modes_export_cuda_and_cpu_without_legacy_default_override) (mode='profile')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/tests/test_runtime_diagnostic_launcher.py", line 349, in test_all_modes_export_cuda_and_cpu_without_legacy_default_override
+    self.assertEqual(result.returncode, 0, result.stderr)
+AssertionError: 1 != 0 : realpath: illegal option -- m
+usage: realpath [-q] [path ...]
+exp12_runtime_diagnostic: preflight failed: cannot resolve OUT path: 
+
+
+======================================================================
+FAIL: test_all_modes_export_cuda_and_cpu_without_legacy_default_override (tests.test_runtime_diagnostic_launcher.RuntimeDiagnosticLauncherTest.test_all_modes_export_cuda_and_cpu_without_legacy_default_override) (mode='identity_cold')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/tests/test_runtime_diagnostic_launcher.py", line 349, in test_all_modes_export_cuda_and_cpu_without_legacy_default_override
+    self.assertEqual(result.returncode, 0, result.stderr)
+AssertionError: 1 != 0 : realpath: illegal option -- m
+usage: realpath [-q] [path ...]
+exp12_runtime_diagnostic: preflight failed: cannot resolve OUT path: 
+
+
+======================================================================
+FAIL: test_all_modes_export_cuda_and_cpu_without_legacy_default_override (tests.test_runtime_diagnostic_launcher.RuntimeDiagnosticLauncherTest.test_all_modes_export_cuda_and_cpu_without_legacy_default_override) (mode='identity_warm')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/tests/test_runtime_diagnostic_launcher.py", line 349, in test_all_modes_export_cuda_and_cpu_without_legacy_default_override
+    self.assertEqual(result.returncode, 0, result.stderr)
+AssertionError: 1 != 0 : realpath: illegal option -- m
+usage: realpath [-q] [path ...]
+exp12_runtime_diagnostic: preflight failed: cannot resolve OUT path: 
+
+
+======================================================================
+FAIL: test_detached_exact_revision_is_accepted_in_all_modes (tests.test_runtime_diagnostic_launcher.RuntimeDiagnosticLauncherTest.test_detached_exact_revision_is_accepted_in_all_modes) (mode='profile')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/tests/test_runtime_diagnostic_launcher.py", line 185, in test_detached_exact_revision_is_accepted_in_all_modes
+    self.assertEqual(result.returncode, 0, result.stderr)
+AssertionError: 1 != 0 : realpath: illegal option -- m
+usage: realpath [-q] [path ...]
+exp12_runtime_diagnostic: preflight failed: cannot resolve OUT path: 
+
+
+======================================================================
+FAIL: test_detached_exact_revision_is_accepted_in_all_modes (tests.test_runtime_diagnostic_launcher.RuntimeDiagnosticLauncherTest.test_detached_exact_revision_is_accepted_in_all_modes) (mode='identity_cold')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/tests/test_runtime_diagnostic_launcher.py", line 185, in test_detached_exact_revision_is_accepted_in_all_modes
+    self.assertEqual(result.returncode, 0, result.stderr)
+AssertionError: 1 != 0 : realpath: illegal option -- m
+usage: realpath [-q] [path ...]
+exp12_runtime_diagnostic: preflight failed: cannot resolve OUT path: 
+
+
+======================================================================
+FAIL: test_detached_exact_revision_is_accepted_in_all_modes (tests.test_runtime_diagnostic_launcher.RuntimeDiagnosticLauncherTest.test_detached_exact_revision_is_accepted_in_all_modes) (mode='identity_warm')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/tests/test_runtime_diagnostic_launcher.py", line 185, in test_detached_exact_revision_is_accepted_in_all_modes
+    self.assertEqual(result.returncode, 0, result.stderr)
+AssertionError: 1 != 0 : realpath: illegal option -- m
+usage: realpath [-q] [path ...]
+exp12_runtime_diagnostic: preflight failed: cannot resolve OUT path: 
+
+
+======================================================================
+FAIL: test_exact_revision_on_other_branch_is_accepted (tests.test_runtime_diagnostic_launcher.RuntimeDiagnosticLauncherTest.test_exact_revision_on_other_branch_is_accepted)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/tests/test_runtime_diagnostic_launcher.py", line 175, in test_exact_revision_on_other_branch_is_accepted
+    self.assertEqual(result.returncode, 0, result.stderr)
+AssertionError: 1 != 0 : realpath: illegal option -- m
+usage: realpath [-q] [path ...]
+exp12_runtime_diagnostic: preflight failed: cannot resolve OUT path: 
+
+
+======================================================================
+FAIL: test_failure_keeps_status_and_never_retries (tests.test_runtime_diagnostic_launcher.RuntimeDiagnosticLauncherTest.test_failure_keeps_status_and_never_retries)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/tests/test_runtime_diagnostic_launcher.py", line 485, in test_failure_keeps_status_and_never_retries
+    self.assertEqual(result.returncode, 9)
+AssertionError: 1 != 9
+
+======================================================================
+FAIL: test_invalid_output_paths_are_explained (tests.test_runtime_diagnostic_launcher.RuntimeDiagnosticLauncherTest.test_invalid_output_paths_are_explained) (out='/var/folders/ms/h3zjmq652jvg08wcslr2z3t80000gn/T/tmpiocg6a2k/missing/output')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/tests/test_runtime_diagnostic_launcher.py", line 295, in test_invalid_output_paths_are_explained
+    self.assert_preflight_failure(self.run_script(OUT=out), reason)
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/tests/test_runtime_diagnostic_launcher.py", line 163, in assert_preflight_failure
+    self.assertIn(reason, result.stderr)
+AssertionError: 'OUT parent does not exist' not found in 'realpath: illegal option -- m\nusage: realpath [-q] [path ...]\nexp12_runtime_diagnostic: preflight failed: cannot resolve OUT path: \n'
+
+======================================================================
+FAIL: test_only_approved_profile_architectures_are_accepted (tests.test_runtime_diagnostic_launcher.RuntimeDiagnosticLauncherTest.test_only_approved_profile_architectures_are_accepted) (arch='D2W512')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/tests/test_runtime_diagnostic_launcher.py", line 471, in test_only_approved_profile_architectures_are_accepted
+    self.assertEqual(
+AssertionError: 1 != 0
+
+======================================================================
+FAIL: test_only_approved_profile_architectures_are_accepted (tests.test_runtime_diagnostic_launcher.RuntimeDiagnosticLauncherTest.test_only_approved_profile_architectures_are_accepted) (arch='D4W1024')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/tests/test_runtime_diagnostic_launcher.py", line 471, in test_only_approved_profile_architectures_are_accepted
+    self.assertEqual(
+AssertionError: 1 != 0
+
+======================================================================
+FAIL: test_output_inside_checkout_refuses (tests.test_runtime_diagnostic_launcher.RuntimeDiagnosticLauncherTest.test_output_inside_checkout_refuses)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/tests/test_runtime_diagnostic_launcher.py", line 284, in test_output_inside_checkout_refuses
+    self.assert_preflight_failure(
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/tests/test_runtime_diagnostic_launcher.py", line 163, in assert_preflight_failure
+    self.assertIn(reason, result.stderr)
+AssertionError: 'outside the checkout' not found in 'realpath: illegal option -- m\nusage: realpath [-q] [path ...]\nexp12_runtime_diagnostic: preflight failed: cannot resolve OUT path: \n'
+
+======================================================================
+FAIL: test_reused_output_is_preserved (tests.test_runtime_diagnostic_launcher.RuntimeDiagnosticLauncherTest.test_reused_output_is_preserved)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/tests/test_runtime_diagnostic_launcher.py", line 277, in test_reused_output_is_preserved
+    self.assert_preflight_failure(
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/tests/test_runtime_diagnostic_launcher.py", line 163, in assert_preflight_failure
+    self.assertIn(reason, result.stderr)
+AssertionError: 'cannot create new OUT directory' not found in 'realpath: illegal option -- m\nusage: realpath [-q] [path ...]\nexp12_runtime_diagnostic: preflight failed: cannot resolve OUT path: \n'
+
+======================================================================
+FAIL: test_success_requires_bounded_command_and_expected_outputs (tests.test_runtime_diagnostic_launcher.RuntimeDiagnosticLauncherTest.test_success_requires_bounded_command_and_expected_outputs)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/tests/test_runtime_diagnostic_launcher.py", line 320, in test_success_requires_bounded_command_and_expected_outputs
+    self.assertEqual(result.returncode, 0, result.stderr)
+AssertionError: 1 != 0 : realpath: illegal option -- m
+usage: realpath [-q] [path ...]
+exp12_runtime_diagnostic: preflight failed: cannot resolve OUT path: 
+
+
+======================================================================
+FAIL: test_timeout_keeps_status_without_profile (tests.test_runtime_diagnostic_launcher.RuntimeDiagnosticLauncherTest.test_timeout_keeps_status_without_profile)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/shouryakaveti/VS_Projects/scaling-drl-runtime-debug/main/tests/test_runtime_diagnostic_launcher.py", line 491, in test_timeout_keeps_status_without_profile
+    self.assertEqual(self.run_script(FAKE_MODE="timeout").returncode, 124)
+AssertionError: 1 != 124
+
+----------------------------------------------------------------------
+Ran 29 tests in 4.345s
+
+FAILED (failures=15, errors=10)

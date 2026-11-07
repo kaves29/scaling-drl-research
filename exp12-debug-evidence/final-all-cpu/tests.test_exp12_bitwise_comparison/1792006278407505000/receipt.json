@@ -1,0 +1,20 @@
+{
+  "module": "tests.test_exp12_bitwise_comparison",
+  "source_hash": "52468342b4543cf79e93cc96c34167ddc17c8dd811e7e45949cacf4b5cee0c6b",
+  "success": true,
+  "tests_run": 8,
+  "test_ids": [
+    "tests.test_exp12_bitwise_comparison.BitwiseComparisonTest.test_check1_injected_64_eps_rule_is_unchanged",
+    "tests.test_exp12_bitwise_comparison.BitwiseComparisonTest.test_check1_requires_bits_for_control_and_identity_only",
+    "tests.test_exp12_bitwise_comparison.BitwiseComparisonTest.test_dtype_and_signed_zero_are_not_value_equality",
+    "tests.test_exp12_bitwise_comparison.BitwiseComparisonTest.test_identity_comparator_reports_panel_dtype_bits_and_missing_keys",
+    "tests.test_exp12_bitwise_comparison.BitwiseComparisonTest.test_identity_metadata_rejects_signed_zero_dtype_and_nan",
+    "tests.test_exp12_bitwise_comparison.BitwiseComparisonTest.test_nested_metadata_uses_exact_array_and_scalar_comparison",
+    "tests.test_exp12_bitwise_comparison.BitwiseComparisonTest.test_saved_state_components_reject_representation_changes",
+    "tests.test_exp12_bitwise_comparison.BitwiseComparisonTest.test_shape_and_nan_are_rejected_and_layout_is_irrelevant"
+  ],
+  "failures": 0,
+  "errors": 0,
+  "skips": [],
+  "unexpected_successes": 0
+}

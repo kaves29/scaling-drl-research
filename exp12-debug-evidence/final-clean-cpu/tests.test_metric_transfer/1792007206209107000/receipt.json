@@ -1,0 +1,19 @@
+{
+  "module": "tests.test_metric_transfer",
+  "source_hash": "427ac810143706c21cde9966a51d62940d777afd96197166c657d661be5830a6",
+  "success": true,
+  "tests_run": 7,
+  "test_ids": [
+    "tests.test_metric_transfer.MetricTransferTest.test_empty_and_repeated_flushes_do_not_duplicate_rows",
+    "tests.test_metric_transfer.MetricTransferTest.test_full_payload_matches_legacy_rows_meters_and_diagnostics",
+    "tests.test_metric_transfer.MetricTransferTest.test_group_transfers_bound_outstanding_copy_requests",
+    "tests.test_metric_transfer.MetricTransferTest.test_later_group_failure_does_not_partially_collect_or_replay",
+    "tests.test_metric_transfer.MetricTransferTest.test_materialization_preserves_float32_bits_and_mixed_dtypes",
+    "tests.test_metric_transfer.MetricTransferTest.test_transfer_failure_retains_original_pending_and_diagnostics",
+    "tests.test_metric_transfer.MetricTransferTest.test_variable_group_lengths_and_host_precision_preserve_order"
+  ],
+  "failures": 0,
+  "errors": 0,
+  "skips": [],
+  "unexpected_successes": 0
+}

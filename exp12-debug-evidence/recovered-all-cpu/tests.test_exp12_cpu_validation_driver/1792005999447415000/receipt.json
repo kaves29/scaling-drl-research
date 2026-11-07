@@ -1,0 +1,16 @@
+{
+  "module": "tests.test_exp12_cpu_validation_driver",
+  "source_hash": "c07ca4fb99dc3308d1e6fed0f827f0bebd6442ded04ccc6e755cbde6ba77c455",
+  "success": true,
+  "tests_run": 4,
+  "test_ids": [
+    "tests.test_exp12_cpu_validation_driver.CPUValidationDriverTest.test_failure_is_explicit_even_when_other_tests_pass_or_skip",
+    "tests.test_exp12_cpu_validation_driver.CPUValidationDriverTest.test_resume_requires_matching_successful_receipt_and_intact_owned_log",
+    "tests.test_exp12_cpu_validation_driver.CPUValidationDriverTest.test_stale_resume_provenance_is_rejected_and_preserved",
+    "tests.test_exp12_cpu_validation_driver.CPUValidationDriverTest.test_success_retains_skips_instead_of_counting_them_as_passes"
+  ],
+  "failures": 0,
+  "errors": 0,
+  "skips": [],
+  "unexpected_successes": 0
+}

@@ -1,0 +1,1 @@
+Run analyze.py then finish.py using Python with numpy, pandas, scipy, matplotlib. Inputs are read directly from the unchanged pilot ZIP. Source snapshots are pinned to the pilot SHA. All outputs are pilot-only. Full campaign access remains required.

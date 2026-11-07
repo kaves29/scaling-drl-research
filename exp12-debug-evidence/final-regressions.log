@@ -1,0 +1,6 @@
+{"module": "tests.test_exp12_dynamic_scheduler", "success": true}
+{"module": "tests.test_exp12_min_qualification", "success": true}
+{"module": "tests.test_exp12_review_fixes", "success": true}
+{"module": "tests.test_exp12_review_blockers", "success": true}
+{"module": "tests.test_exp12_recording_qualification", "success": true}
+{"module": "tests.test_exp12_twin_critic", "success": true}

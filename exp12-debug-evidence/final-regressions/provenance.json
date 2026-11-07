@@ -1,0 +1,32 @@
+{
+  "source_hash": "427ac810143706c21cde9966a51d62940d777afd96197166c657d661be5830a6",
+  "commit": "723da0d1c0c6f95910468a4aae9c94f1c40f60ed",
+  "diff_sha256": "1d428ff0a5eb88718e2d64b07bd414381342ce59402fe660ce193ce92ebdbd41",
+  "python": "/Users/shouryakaveti/VS_Projects/exp12-debug-evidence/cpu-venv/bin/python",
+  "environment": {
+    "JAX_PLATFORMS": "cpu",
+    "JAX_PLATFORM_NAME": "cpu",
+    "MUJOCO_GL": "disable",
+    "EXP12_JAX_CACHE_DIR": "off",
+    "WANDB_MODE": "disabled",
+    "OMP_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1"
+  },
+  "modules": [
+    "tests.test_exp12_dynamic_scheduler",
+    "tests.test_exp12_min_qualification",
+    "tests.test_exp12_review_blockers",
+    "tests.test_exp12_review_fixes",
+    "tests.test_exp12_twin_critic",
+    "tests.test_exp12_recording_qualification"
+  ],
+  "file_sha256": {
+    "main/scripts/exp12_recording_isolation_qualification.py": "0880e7be8fa83a5e42249391f21bd7a5e4ac82004128528b94b040800fbe0c42",
+    "main/tests/test_exp12_dynamic_scheduler.py": "f30e0a7237df6190f36dcad82e357a5369963fbbe38d631c89a383ffbbcb006f",
+    "main/tests/test_exp12_min_qualification.py": "000017a9afafc4e1cffcdabb28711df1dd9db6d2f5757c85d7e1cdcb3502c5ff",
+    "main/tests/test_exp12_review_blockers.py": "468a8e0e7acbd9d0564c213e9c60d7b0d239bed325252024a1df8fca805d63af",
+    "main/tests/test_exp12_review_fixes.py": "b2fdf740410dcaad811ab148ad690fa53dbfebb665024d070a943db1190bfe98",
+    "main/tests/test_exp12_twin_critic.py": "8e74f8fca37a72e0cfc5764c57788309addfd2fd1a5f9915ee634eb31dbd31ac",
+    "main/tests/test_exp12_recording_qualification.py": "7e5dbb3c3a59c0121ad9eae77059d722084216280415ebf7560c0f42b79eda23"
+  }
+}

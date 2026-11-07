@@ -1,0 +1,13 @@
+{
+  "module": "tests.test_angle1_probe_capture_snapshot",
+  "source_hash": "c07ca4fb99dc3308d1e6fed0f827f0bebd6442ded04ccc6e755cbde6ba77c455",
+  "success": false,
+  "tests_run": 1,
+  "test_ids": [
+    "tests.test_angle1_probe_capture_snapshot.TestProbeCaptureSnapshotMechanism.test_capture_during_training_then_snapshot_round_trips"
+  ],
+  "failures": 0,
+  "errors": 1,
+  "skips": [],
+  "unexpected_successes": 0
+}

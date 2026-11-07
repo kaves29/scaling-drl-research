@@ -1,0 +1,15 @@
+{
+  "scope": "CPU only, 400 interactions; no CUDA qualification",
+  "candidate_on_vs_frozen_on": [],
+  "candidate_on_vs_true_off": [],
+  "candidate_vs_true_off_agent_deviations": {
+    "max_relative_deviation": 0.0,
+    "differing_leaf_count": 0,
+    "largest_leaves": []
+  },
+  "receipt_sha256": {
+    "frozen-on-cpu": "88f669589936101c890a6c9307005ef1454244e3f07062f364ad89176aef5ec6",
+    "candidate-on-cpu": "c2edaa4ea3d6ebd56d87a37d7a961d6aac9586e8abfa81080e9959d26bdeb6d1",
+    "frozen-off-cpu": "fe99ab900363391ff97df954bd396addbcfdc0492925d0b69bb825ffa1451270"
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "module": "tests.test_exp12_hb_cpu_restore",
+  "source_hash": "427ac810143706c21cde9966a51d62940d777afd96197166c657d661be5830a6",
+  "success": true,
+  "tests_run": 3,
+  "test_ids": [
+    "tests.test_exp12_hb_cpu_restore.HumanoidBenchCpuRestoreTest.test_identity_arm_restored_in_a_new_process_matches_the_control",
+    "tests.test_exp12_hb_cpu_restore.HumanoidBenchCpuRestoreTest.test_killed_jobs_resume_bit_identically_in_a_new_process",
+    "tests.test_exp12_hb_cpu_restore.HumanoidBenchCpuRestoreTest.test_the_suite_configures_the_twin_critic"
+  ],
+  "failures": 0,
+  "errors": 0,
+  "skips": [
+    {
+      "test": "tests.test_exp12_hb_cpu_restore.HumanoidBenchCpuRestoreTest.test_identity_arm_restored_in_a_new_process_matches_the_control",
+      "reason": "needs humanoid_bench (MUJOCO_GL=osmesa on CPU hosts)"
+    },
+    {
+      "test": "tests.test_exp12_hb_cpu_restore.HumanoidBenchCpuRestoreTest.test_killed_jobs_resume_bit_identically_in_a_new_process",
+      "reason": "needs humanoid_bench (MUJOCO_GL=osmesa on CPU hosts)"
+    },
+    {
+      "test": "tests.test_exp12_hb_cpu_restore.HumanoidBenchCpuRestoreTest.test_the_suite_configures_the_twin_critic",
+      "reason": "needs humanoid_bench (MUJOCO_GL=osmesa on CPU hosts)"
+    }
+  ],
+  "unexpected_successes": 0
+}

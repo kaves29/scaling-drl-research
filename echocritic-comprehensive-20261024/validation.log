@@ -1,0 +1,62 @@
+[
+  {
+    "check": "record_counts",
+    "passed": true,
+    "detail": "103 records, 96 campaign, eight crashed"
+  },
+  {
+    "check": "complete_canonical_grid",
+    "passed": true,
+    "detail": "4 environments \u00d7 3 architectures \u00d7 seeds1\u20138"
+  },
+  {
+    "check": "full_history_counts",
+    "passed": true,
+    "detail": "103/103"
+  },
+  {
+    "check": "step_integrity",
+    "passed": true,
+    "detail": "No duplicate or reversed logging steps"
+  },
+  {
+    "check": "source_fractional_IQM_reconstruction",
+    "passed": true,
+    "detail": "4738 nonzero-check scores exactly reproduced"
+  },
+  {
+    "check": "independent_final_return_recalculation",
+    "passed": true,
+    "detail": "max discrepancy 2.2737367544323206e-13"
+  },
+  {
+    "check": "pilot_overlap_detected",
+    "passed": true,
+    "detail": "Seven exact observational overlaps; pilot not pooled"
+  },
+  {
+    "check": "archived_curve_fresh_WandB_binding",
+    "passed": true,
+    "detail": "max score error 5.551115123125783e-17"
+  },
+  {
+    "check": "archived_score_identity_fresh",
+    "passed": true,
+    "detail": "FP32 baseline minus pool-MSE identity"
+  },
+  {
+    "check": "archived_curve_current_WandB_binding",
+    "passed": true,
+    "detail": "max score error 1.7763568394002505e-15"
+  },
+  {
+    "check": "archived_score_identity_current",
+    "passed": true,
+    "detail": "FP32 baseline minus pool-MSE identity"
+  },
+  {
+    "check": "raw_manifest_integrity",
+    "passed": true,
+    "detail": "697 immutable files"
+  }
+]

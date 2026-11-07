@@ -1,0 +1,21 @@
+##################################################################################
+# MyoSuite for Exp 1/2: SimBa's released configs/env/myosuite.yaml settings
+# (max_episode_steps 100 for every task -> gamma 0.95 via the TD-MPC2 heuristic,
+# and TimeLimit(100), which truncates myoHandKeyTurnFixed-v0's registered 200).
+##################################################################################
+
+env_type: 'myosuite'
+env_name: ${env_name}
+seed: ${seed}
+
+num_env_steps: 1_000_000
+episodic: false
+
+num_train_envs: 1
+num_eval_envs: 1
+
+no_termination: false
+action_repeat: 2
+rescale_action: true
+reward_scale: 1
+max_episode_steps: 100

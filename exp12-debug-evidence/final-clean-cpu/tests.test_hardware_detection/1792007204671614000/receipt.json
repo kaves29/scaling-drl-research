@@ -1,0 +1,32 @@
+{
+  "module": "tests.test_hardware_detection",
+  "source_hash": "427ac810143706c21cde9966a51d62940d777afd96197166c657d661be5830a6",
+  "success": true,
+  "tests_run": 20,
+  "test_ids": [
+    "tests.test_hardware_detection.ConfigureHardwareEnvTest.test_amd_never_overrides_operator_set_values",
+    "tests.test_hardware_detection.ConfigureHardwareEnvTest.test_amd_sets_rocm_platforms_egl_and_mirrors_hip_from_cuda",
+    "tests.test_hardware_detection.ConfigureHardwareEnvTest.test_amd_without_cuda_visible_devices_set_does_not_invent_hip",
+    "tests.test_hardware_detection.ConfigureHardwareEnvTest.test_darwin_sets_metal_regardless_of_vendor_tools",
+    "tests.test_hardware_detection.ConfigureHardwareEnvTest.test_no_vendor_on_linux_matches_nvidia_behavior_exactly",
+    "tests.test_hardware_detection.ConfigureHardwareEnvTest.test_nvidia_on_linux_leaves_jax_platforms_untouched",
+    "tests.test_hardware_detection.ConfigureHardwareEnvTest.test_second_call_in_same_process_is_cached_and_skips_redetection",
+    "tests.test_hardware_detection.DetectGpuVendorTest.test_both_tools_present_but_fail_returns_none",
+    "tests.test_hardware_detection.DetectGpuVendorTest.test_both_tools_succeed_nvidia_takes_precedence",
+    "tests.test_hardware_detection.DetectGpuVendorTest.test_no_tools_on_path_returns_none",
+    "tests.test_hardware_detection.DetectGpuVendorTest.test_nvidia_smi_present_but_fails_falls_through_to_rocm",
+    "tests.test_hardware_detection.DetectGpuVendorTest.test_nvidia_smi_success_returns_nvidia",
+    "tests.test_hardware_detection.DetectGpuVendorTest.test_rocm_smi_success_returns_amd",
+    "tests.test_hardware_detection.ValidateNvidiaJaxAvailableTest.test_non_nvidia_vendor_is_a_no_op",
+    "tests.test_hardware_detection.ValidateNvidiaJaxAvailableTest.test_nvidia_with_cuda_device_prints_nothing",
+    "tests.test_hardware_detection.ValidateNvidiaJaxAvailableTest.test_nvidia_with_gpu_platform_device_prints_nothing",
+    "tests.test_hardware_detection.ValidateNvidiaJaxAvailableTest.test_nvidia_with_only_cpu_device_warns",
+    "tests.test_hardware_detection.ValidateRocmJaxAvailableTest.test_amd_with_only_cpu_device_warns",
+    "tests.test_hardware_detection.ValidateRocmJaxAvailableTest.test_amd_with_rocm_device_prints_nothing",
+    "tests.test_hardware_detection.ValidateRocmJaxAvailableTest.test_non_amd_vendor_is_a_no_op"
+  ],
+  "failures": 0,
+  "errors": 0,
+  "skips": [],
+  "unexpected_successes": 0
+}

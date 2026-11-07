@@ -1,0 +1,26 @@
+{
+  "module": "tests.test_onset_detection",
+  "source_hash": "52468342b4543cf79e93cc96c34167ddc17c8dd811e7e45949cacf4b5cee0c6b",
+  "success": true,
+  "tests_run": 14,
+  "test_ids": [
+    "tests.test_onset_detection.TestCriticDegradationOnset.test_alignment_with_interval_logged_steps",
+    "tests.test_onset_detection.TestCriticDegradationOnset.test_degradation_sustained_for_more_than_n_steps_is_detected",
+    "tests.test_onset_detection.TestCriticDegradationOnset.test_degradation_that_does_not_persist_long_enough",
+    "tests.test_onset_detection.TestCriticDegradationOnset.test_earliest_qualifying_run_wins_over_a_later_longer_run",
+    "tests.test_onset_detection.TestCriticDegradationOnset.test_no_degradation_never_exceeds_baseline",
+    "tests.test_onset_detection.TestCriticDegradationOnset.test_no_overlap_with_baseline_coverage_needs_manual_review",
+    "tests.test_onset_detection.TestCriticDegradationOnset.test_no_recorded_points_needs_manual_review",
+    "tests.test_onset_detection.TestCriticDegradationOnset.test_onset_is_first_step_of_run_not_last",
+    "tests.test_onset_detection.TestPropagationOnset.test_degradation_with_no_propagation_in_window",
+    "tests.test_onset_detection.TestPropagationOnset.test_exceedance_outside_window_is_not_detected",
+    "tests.test_onset_detection.TestPropagationOnset.test_no_critic_degradation_means_no_onset_detected",
+    "tests.test_onset_detection.TestPropagationOnset.test_propagation_detected_inside_window",
+    "tests.test_onset_detection.TestPropagationOnset.test_propagation_lag_calculation",
+    "tests.test_onset_detection.TestPropagationOnset.test_window_bounds_are_inclusive"
+  ],
+  "failures": 0,
+  "errors": 0,
+  "skips": [],
+  "unexpected_successes": 0
+}
