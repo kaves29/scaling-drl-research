@@ -1,5 +1,9 @@
 # Shared agent handoff
 
+## Online reference-policy Exp2 pilot revision (10 November 2026)
+
+The active `codex/exp2-online-prototype-20261107` checkout has an opt-in pilot candidate under `online_exp2_pilot_reference_small.yaml` and `online_exp2_pilot_reference_large.yaml`. It adds two reference regimes and 10,000-interaction actor-only checkpoint branches, with independent branch observations, matched evaluations, durable branch restart, and per-update reference-policy snapshots for shadow targets. See [the active pilot implementation notes](online_exp2_prototype.md) and [owner specification](online_exp2_revision_spec_20261110.md). Current CPU fixture and short DMC checks are engineering evidence only. Full-size GPU qualification, scientific task/seed/budget/checkpoint/evaluation choices and resource measurement remain open; do not launch a production campaign from this status entry.
+
 ## Online reference-policy Exp2 prototype (7 November 2026)
 
 An isolated `codex/exp2-online-prototype-20261107` branch based on the selected official Exp1 source `22e1666f0ff680699b06ded1ce70ec0962f9c103` adds a CPU-only, opt-in online reference-agent/shadow-critic prototype. See [online_exp2_prototype.md](online_exp2_prototype.md) for its symbol map, outputs and unresolved scientific settings. It is separate from the historical injection protocol and the immutable-replay PR26 proposal. No production GPU launch, Exp1 job change or method freeze follows from this branch. Resolve its final commit and test results from Git and the task handoff.

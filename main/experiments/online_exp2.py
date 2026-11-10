@@ -5,6 +5,8 @@ import io
 import json
 import random
 import subprocess
+import time
+from copy import deepcopy
 from pathlib import Path
 
 import flax.serialization
@@ -32,24 +34,42 @@ from utils.paths import require_absolute
 
 def validate(cfg):
     p = cfg.online_exp2
+    pilot = bool(p.get("pilot_enabled", False))
     needed = ("environments", "training_seeds", "reference_critic", "training_interactions",
               "checkpoint_steps", "probe_checkpoints", "evaluation_episodes", "evaluation_mode",
               "intervention_updates", "analysis_aggregation", "resource_cap_gpu_hours")
+    if pilot:
+        needed = tuple(x for x in needed if x not in ("reference_critic", "intervention_updates")) + (
+            "reference_regime", "diagnostic_horizon", "measurement_interactions")
     missing = [name for name in needed if p.get(name) is None]
     if missing:
         raise ValueError("online Exp2 protocol has unresolved fields: " + ", ".join(missing))
-    if cfg.run_role != "dev" or float(p.resource_cap_gpu_hours) != 0:
+    if pilot:
+        from experiments.exp12.online_exp2_diagnostic import reference_roles
+        reference_roles(p.reference_regime)
+        measurements = [int(x) for x in p.measurement_interactions]
+        if (cfg.run_role != "pilot" or p.dev_architectures is not None
+                or p.reference_critic is not None or p.intervention_updates is not None
+                or int(p.diagnostic_horizon) != 10000
+                or measurements != sorted(set(measurements))
+                or not {0, 5000, 10000}.issubset(measurements)
+                or measurements[-1] != 10000 or float(p.resource_cap_gpu_hours) <= 0):
+            raise ValueError("invalid online Exp2 pilot protocol")
+        if int(p.diagnostic_save_every) < 1:
+            raise ValueError("diagnostic_save_every must be positive")
+    elif cfg.run_role != "dev" or float(p.resource_cap_gpu_hours) != 0:
         raise ValueError("online Exp2 is a CPU development prototype, not a production launch")
     if not p.enabled or p.initialization != "fresh":
         raise ValueError("only opt-in fresh initialization is implemented")
     if cfg.env_name not in p.environments or cfg.seed not in p.training_seeds:
         raise ValueError("environment/seed outside the selected online Exp2 protocol")
-    if set(p.reference_critic) != {"blocks", "width"} or any(
+    if not pilot and (set(p.reference_critic) != {"blocks", "width"} or any(
         int(v) <= 0 for v in p.reference_critic.values()
-    ):
+    )):
         raise ValueError("reference critic must specify positive blocks and width")
-    if p.evaluation_mode not in ("deterministic", "stochastic") or int(p.intervention_updates) != 1:
-        raise ValueError("prototype supports an explicit evaluation mode and one actor step")
+    if (p.evaluation_mode not in ("deterministic", "stochastic") or
+            (not pilot and int(p.intervention_updates) != 1)):
+        raise ValueError("invalid evaluation mode or development actor steps")
     if p.analysis_aggregation != "mean_checkpoint_means":
         raise ValueError("unsupported run-level aggregation")
     steps = int(p.training_interactions)
@@ -88,7 +108,11 @@ def aggregate_run(rows, checkpoints):
 
 class OnlineExp2:
     def __init__(self, cfg, root):
+        cfg = deepcopy(cfg)
         self.last_step, self.checks, self.probes = validate(cfg)
+        self.pilot = bool(cfg.online_exp2.get("pilot_enabled", False))
+        self._pilot_started_at = time.monotonic()
+        self._pilot_prior_device_seconds = 0.
         self.cfg = cfg
         self.root = Path(require_absolute(root, "checkpoint_dir"))
         self.root.mkdir(parents=True, exist_ok=True)
@@ -97,14 +121,24 @@ class OnlineExp2:
             ["git", "rev-parse", "HEAD"], cwd=Path(__file__).resolve().parents[2], text=True
         ).strip()
         source_root = Path(__file__).resolve().parents[1]
-        source_files = ("experiments/online_exp2.py", "experiments/exp12/online_exp2.py",
+        source_files = ("experiments/exp1.py", "experiments/online_exp2.py", "experiments/exp12/online_exp2.py",
+                        "experiments/exp12/online_exp2_diagnostic.py",
+                        "experiments/exp12/online_exp2_pilot.py",
                         "experiments/exp12/trainer.py", "scale_rl/buffers/numpy_buffer.py",
+                        "scale_rl/agents/sac/sac_agent.py",
+                        "scale_rl/agents/wrappers/normalization.py",
+                        "scale_rl/envs/wrappers/repeat_action.py",
                         "scale_rl/agents/sac/sac_update.py", "experiments/exp12/probe.py")
         self.source_hash = _sha(b"".join((name.encode() + b"\0" +
                                           (source_root / name).read_bytes()) for name in source_files))
         OmegaConf.set_struct(cfg, False)
-        cfg.agent.critic_num_blocks = int(cfg.online_exp2.reference_critic.blocks)
-        cfg.agent.critic_hidden_dim = int(cfg.online_exp2.reference_critic.width)
+        if self.pilot:
+            from experiments.exp12.online_exp2_diagnostic import reference_roles
+            reference_arch, _, _ = reference_roles(cfg.online_exp2.reference_regime)
+            cfg.agent.critic_num_blocks, cfg.agent.critic_hidden_dim = reference_arch
+        else:
+            cfg.agent.critic_num_blocks = int(cfg.online_exp2.reference_critic.blocks)
+            cfg.agent.critic_hidden_dim = int(cfg.online_exp2.reference_critic.width)
         cfg.num_interaction_steps = self.last_step
         OmegaConf.set_struct(cfg, True)
         np.random.seed(int(cfg.seed))
@@ -134,17 +168,37 @@ class OnlineExp2:
         self.key, subkey = jax.random.split(self.key)
         return subkey
 
+    def _device_seconds(self):
+        devices = jax.local_device_count() if jax.default_backend() == "gpu" else 1
+        return self._pilot_prior_device_seconds + (time.monotonic() - self._pilot_started_at) * devices
+
+    def _check_resource_cap(self):
+        if (self.pilot and self._device_seconds() >
+                float(self.cfg.online_exp2.resource_cap_gpu_hours) * 3600):
+            raise RuntimeError("online Exp2 pilot resource cap exceeded")
+
     def _before_update(self, trainer, batches, indices):
-        # Both shadow updates in a UTD block use the reference policy/temperature
-        # at the block boundary. The ordinary scanned reference update follows.
+        self._shadow_updates(trainer, batches, indices, None)
+
+    def _after_update(self, trainer, batches, indices, snapshots):
+        self._shadow_updates(trainer, batches, indices, snapshots)
+
+    def _shadow_updates(self, trainer, batches, indices, snapshots):
+        # The pilot uses pre-update policy states returned by the source SAC scan.
         for i, sampled_indices in enumerate(indices):
             raw = {name: value[i] for name, value in batches.items()}
             normalized = dict(raw)
-            if hasattr(trainer.agent, "_normalize"):
+            if snapshots is None and hasattr(trainer.agent, "_normalize"):
                 normalized["observation"] = trainer.agent._normalize(raw["observation"])
                 normalized["next_observation"] = trainer.agent._normalize(raw["next_observation"])
+            actor = trainer._sac_agent.actor
+            temperature = trainer._sac_agent.temperature
+            if snapshots is not None:
+                actor = actor.replace(params=jax.tree.map(lambda x: x[i], snapshots["actor"]))
+                temperature = temperature.replace(
+                    params=jax.tree.map(lambda x: x[i], snapshots["temperature"]))
             self.shadows, result = paired_shadow_update(
-                trainer._sac_agent.actor, trainer._sac_agent.temperature, self.shadows,
+                actor, temperature, self.shadows,
                 normalized, self._next_key(), float(trainer.cfg.agent.gamma),
                 int(trainer.cfg.agent.n_step), float(trainer.cfg.agent.target_tau),
                 bool(trainer.cfg.agent.critic_use_cdq))
@@ -156,6 +210,7 @@ class OnlineExp2:
             self.rows.append({"type": "update", "interaction_step": trainer.interaction_step,
                               "raw_env_steps": trainer.interaction_step * int(trainer.cfg.action_repeat),
                               "reference_update_step": trainer.update_step + i,
+                              "reference_actor_snapshot_sha256": _sha(flax.serialization.to_bytes(actor.params)),
                               "indices": np.asarray(sampled_indices).tolist(),
                               "batch_sha256": _sha(payload),
                               "next_actions_sha256": _sha(np.asarray(result["next_actions"]).tobytes()),
@@ -220,6 +275,10 @@ class OnlineExp2:
                 "terminated": terminated, "truncated": truncated, "seed": int(seed)}
 
     def _checkpoint(self, trainer):
+        if self.pilot:
+            from experiments.exp12.online_exp2_pilot import pilot_checkpoint
+            pilot_checkpoint(self, trainer)
+            return
         batch_size = int(trainer.cfg.buffer.sample_batch_size)
         indices = self.diagnostic_rng.integers(0, trainer.buffer._num_in_buffer, size=batch_size)
         observations = trainer.buffer._observations[indices]
@@ -282,6 +341,28 @@ class OnlineExp2:
             self._probe(step)
         self.save()
 
+    def _pilot_analysis(self):
+        """Keep the independent run separate from its repeated measurements."""
+        rows = [row for row in self.rows if row.get("type") == "pilot_evaluation"]
+        means = {}
+        for horizon in self.cfg.online_exp2.measurement_interactions:
+            if int(horizon) == 0:
+                continue
+            checkpoint_means = {}
+            for step in self.checks:
+                values = [row["advantage_large"] for row in rows
+                          if row["interaction_step"] == step
+                          and row["diagnostic_interactions"] == horizon]
+                if len(values) != int(self.cfg.online_exp2.evaluation_episodes) or not np.all(np.isfinite(values)):
+                    raise ValueError(f"incomplete pilot evaluation: checkpoint {step}, horizon {horizon}")
+                checkpoint_means[step] = float(np.mean(values))
+            means[int(horizon)] = {"checkpoint_means": checkpoint_means,
+                                   "mean_checkpoint_means": float(np.mean(list(checkpoint_means.values())))}
+        return {"reference_regime": self.cfg.online_exp2.reference_regime,
+                "environment": self.cfg.env_name, "training_seed": int(self.cfg.seed),
+                "independent_units": 1,
+                "horizons": means}
+
     def _save_shadow(self, path):
         from flax.serialization import to_bytes
         state = {name: {"critic": shadow.critic, "target": shadow.target,
@@ -297,6 +378,8 @@ class OnlineExp2:
         }, sort_keys=True))
 
     def save(self):
+        if self.pilot:
+            self.trainer.extra_state["online_exp2_device_seconds"] = self._device_seconds()
         self.trainer.extra_state["online_exp2_rows"] = self.rows
         self.trainer.extra_state["online_exp2_fresh_done"] = self.fresh_done
         self.trainer.save(self.root / "state", before_commit=self._save_shadow)
@@ -323,6 +406,10 @@ class OnlineExp2:
         self.diagnostic_rng.bit_generator.state = json.loads(restored["diagnostic_rng"])
         self.rows = self.trainer.extra_state["online_exp2_rows"]
         self.fresh_done = self.trainer.extra_state["online_exp2_fresh_done"]
+        if self.pilot:
+            self._pilot_prior_device_seconds = float(
+                self.trainer.extra_state.get("online_exp2_device_seconds", 0.))
+            self._pilot_started_at = time.monotonic()
 
     def run(self):
         latest = latest_state_dir(self.root / "state")
@@ -330,6 +417,10 @@ class OnlineExp2:
             self.trainer.start()
         else:
             self.restore(latest)
+            self._check_resource_cap()
+            if self.pilot and self.trainer.extra_state.get("online_exp2_pending_checkpoint"):
+                self._checkpoint(self.trainer)
+        self._check_resource_cap()
 
         def fresh(trainer):
             if not self.fresh_done:
@@ -337,6 +428,7 @@ class OnlineExp2:
                 self.fresh_done = True
 
         def after(trainer):
+            self._check_resource_cap()
             if trainer.interaction_step in self.checks and not any(
                 row.get("type") == "intervention" and row.get("interaction_step") == trainer.interaction_step
                 for row in self.rows
@@ -345,10 +437,12 @@ class OnlineExp2:
 
         try:
             self.trainer.train(self.last_step, after_step=after, before_first_update=fresh,
-                               before_updates=self._before_update)
+                               before_updates=None if self.pilot else self._before_update,
+                               after_updates=self._after_update if self.pilot else None)
             self.save()
+            analysis = (self._pilot_analysis() if self.pilot else aggregate_run(self.rows, self.checks))
             atomic_write_text(self.root / "analysis.json", json.dumps(
-                aggregate_run(self.rows, self.checks), sort_keys=True, allow_nan=False))
+                analysis, sort_keys=True, allow_nan=False))
         finally:
             self.trainer.close()
 
@@ -356,10 +450,10 @@ class OnlineExp2:
 @register_experiment("online_exp2_prototype")
 def run(args):
     set_matmul_precision()
-    if jax.default_backend() != "cpu":
-        raise ValueError("online Exp2 prototype is restricted to CPU")
     selected = args.get("config_name")
     cfg = compose_config(args["config_path"],
                          "base_online_exp2" if selected in (None, "base_sac") else selected,
-                         args.get("overrides", []))
+                         args.get("overrides", []), allow_pilot=True)
+    if not cfg.online_exp2.get("pilot_enabled", False) and jax.default_backend() != "cpu":
+        raise ValueError("online Exp2 development prototype is restricted to CPU")
     OnlineExp2(cfg, args["checkpoint_dir"]).run()

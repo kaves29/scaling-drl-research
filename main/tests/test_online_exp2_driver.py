@@ -4,9 +4,11 @@ import tempfile
 import unittest
 from unittest.mock import patch
 import random
+import time
 
 import gymnasium as gym
 import numpy as np
+from omegaconf import OmegaConf
 from gymnasium.vector import SyncVectorEnv
 
 from experiments.exp1 import compose_config
@@ -50,6 +52,16 @@ def tiny_eval_env(**kwargs):
     return SyncVectorEnv([TinyEnv])
 
 
+class GlobalResetTinyEnv(TinyEnv):
+    def reset(self, *, seed=None, options=None):
+        super().reset(seed=seed, options=options)
+        return np.full(3, np.random.random(), np.float32), {}
+
+    def step(self, action):
+        observation, reward, terminated, truncated, info = super().step(action)
+        return observation, reward + np.random.random(), terminated, truncated, info
+
+
 def cfg():
     return compose_config("/workspace/scaling-drl-research/main/configs", "base_online_exp2", [
         "online_exp2.environments=[dog-run]", "online_exp2.training_seeds=[1]",
@@ -69,6 +81,74 @@ def cfg():
 
 
 class OnlineExp2DriverTest(unittest.TestCase):
+    def test_pilot_evaluation_seed_controls_global_environment_rng(self):
+        from experiments.exp12.online_exp2_pilot import _evaluate
+        from tests.test_online_exp2 import OnlineExp2Test
+        OnlineExp2Test.setUpClass()
+        with patch("experiments.exp12.online_exp2_pilot.create_eval_env",
+                   lambda **kwargs: SyncVectorEnv([GlobalResetTinyEnv])):
+            np.random.seed(4)
+            before = np.random.get_state()
+            first = _evaluate(cfg(), OnlineExp2Test.actor, None, 1234)
+            after = np.random.get_state()
+            self.assertEqual(before[2], after[2])
+            np.testing.assert_array_equal(before[1], after[1])
+            np.random.seed(9)
+            second = _evaluate(cfg(), OnlineExp2Test.actor, None, 1234)
+            self.assertEqual(first, second)
+
+    def test_pilot_resource_cap_stops_before_work(self):
+        pilot = cfg()
+        OmegaConf.set_struct(pilot, False)
+        pilot.run_role = "pilot"
+        pilot.online_exp2.pilot_enabled = True
+        pilot.online_exp2.reference_regime = "reference_small"
+        pilot.online_exp2.resource_cap_gpu_hours = 1.
+        with tempfile.TemporaryDirectory(dir="/workspace/scratch") as root:
+            with patch("experiments.online_exp2.validate", return_value=(3, [2], [2])), patch(
+                "experiments.exp12.online_exp2_diagnostic.reference_roles",
+                return_value=((1, 8), (1, 8), (1, 8))
+            ), patch("experiments.exp12.trainer.create_envs", tiny_envs):
+                runner = OnlineExp2(pilot, root)
+                runner._pilot_started_at = time.monotonic() - 7200
+                with self.assertRaisesRegex(RuntimeError, "resource cap"):
+                    runner._check_resource_cap()
+                runner.trainer.close()
+
+    def test_pilot_profiles_are_separate_and_fail_on_unresolved_science(self):
+        for regime in ("reference_small", "reference_large"):
+            name = f"online_exp2_pilot_{regime}"
+            with self.assertRaises(ValueError):
+                compose_config("/workspace/scaling-drl-research/main/configs", name, [])
+            profile = compose_config("/workspace/scaling-drl-research/main/configs", name, [],
+                                     allow_pilot=True)
+            self.assertEqual(profile.online_exp2.reference_regime, regime)
+            self.assertEqual(profile.online_exp2.measurement_interactions, [0, 5000, 10000])
+            with self.assertRaisesRegex(ValueError, "unresolved fields"):
+                validate(profile)
+
+    def test_pilot_requires_explicit_regime_and_fixed_horizon(self):
+        pilot = cfg()
+        OmegaConf.set_struct(pilot, False)
+        pilot.run_role = "pilot"
+        pilot.online_exp2.pilot_enabled = True
+        pilot.online_exp2.reference_regime = "reference_small"
+        pilot.online_exp2.diagnostic_horizon = 10000
+        pilot.online_exp2.measurement_interactions = [0, 5000, 10000]
+        pilot.online_exp2.resource_cap_gpu_hours = 1
+        pilot.online_exp2.dev_architectures = None
+        pilot.online_exp2.reference_critic = None
+        pilot.online_exp2.intervention_updates = None
+        pilot.probe.rounds = 10
+        pilot.probe.steps = 2000
+        pilot.probe.pool_size = 25600
+        pilot.probe.batch_size = 256
+        pilot.probe.eval_chunk = 2560
+        self.assertEqual(validate(pilot), (3, [2], [2]))
+        pilot.online_exp2.reference_regime = "unknown"
+        with self.assertRaises(ValueError):
+            validate(pilot)
+
     def test_equal_checkpoint_analysis(self):
         rows = [{"type": "evaluation", "interaction_step": 1, "advantage_large": 1.},
                 {"type": "evaluation", "interaction_step": 1, "advantage_large": 3.},
@@ -82,12 +162,157 @@ class OnlineExp2DriverTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "unresolved fields"):
             validate(empty)
 
+    def test_pilot_checkpoint_collects_and_updates_without_reference_feedback(self):
+        pilot = cfg()
+        OmegaConf.set_struct(pilot, False)
+        pilot.run_role = "pilot"
+        pilot.online_exp2.pilot_enabled = True
+        pilot.online_exp2.reference_regime = "reference_small"
+        pilot.online_exp2.diagnostic_horizon = 6
+        pilot.online_exp2.resource_cap_gpu_hours = 1
+        pilot.online_exp2.measurement_interactions = [0, 2, 6]
+        pilot.online_exp2.diagnostic_save_every = 2
+        with tempfile.TemporaryDirectory(dir="/workspace/scratch") as root:
+            with patch("experiments.online_exp2.validate", return_value=(3, [2], [2])), patch(
+                "experiments.exp12.online_exp2_diagnostic.reference_roles",
+                return_value=((1, 8), (1, 8), (1, 8))
+            ), patch("experiments.exp12.trainer.create_envs", tiny_envs), patch(
+                "experiments.exp12.online_exp2_pilot._branch_env", lambda *args: SyncVectorEnv([TinyEnv])
+            ), patch("experiments.exp12.online_exp2_pilot.create_eval_env", tiny_eval_env):
+                runner = OnlineExp2(pilot, root)
+                runner.run()
+                evaluations = [r for r in runner.rows if r["type"] == "pilot_evaluation"]
+                self.assertEqual({r["diagnostic_interactions"] for r in evaluations}, {2, 6})
+                self.assertEqual(len(evaluations), 2)
+                record = next(r for r in runner.rows if r["type"] == "pilot_diagnostic")
+                updates = [r for r in runner.rows if r["type"] == "update" and r["interaction_step"] == 2]
+                self.assertEqual(len(updates), 2)
+                self.assertNotEqual(updates[0]["reference_actor_snapshot_sha256"],
+                                    updates[1]["reference_actor_snapshot_sha256"])
+                import hashlib
+                import flax.serialization
+                last_update = [r for r in runner.rows if r["type"] == "update" and r["interaction_step"] == 3][-1]
+                self.assertEqual(last_update["reference_actor_snapshot_sha256"], hashlib.sha256(
+                    flax.serialization.to_bytes(runner.trainer._sac_agent.actor.params)).hexdigest())
+                self.assertEqual(record["branch_counters"]["small"]["interactions"], 6)
+                self.assertEqual(record["branch_counters"]["large"]["interactions"], 6)
+                self.assertEqual(record["branch_counters"]["small"]["optimizer_updates"],
+                                 record["branch_counters"]["large"]["optimizer_updates"])
+                self.assertEqual(set(runner._pilot_analysis()["horizons"]), {2, 6})
+                with open(record["progress_artifact"], "rb") as stream:
+                    import pickle
+                    progress = pickle.load(stream)
+                self.assertEqual(len(progress["branches"]["small"]["branch"]["buffer"]["observations"]), 6)
+                self.assertEqual(len(progress["branches"]["large"]["branch"]["buffer"]["observations"]), 6)
+                np.testing.assert_array_equal(
+                    progress["branches"]["small"]["branch"]["buffer"]["observations"][5],
+                    np.zeros(3, np.float32))
+                self.assertEqual(progress["branches"]["small"]["environment_seeds"],
+                                 progress["branches"]["large"]["environment_seeds"])
+                self.assertEqual(len(progress["branches"]["small"]["environment_seeds"]), 2)
+                self.assertEqual(len(runner.trainer.buffer._observations[:runner.trainer.interaction_step]), 3)
+                baseline_cfg = cfg()
+                baseline_cfg.agent.critic_num_blocks = 1
+                baseline_cfg.agent.critic_hidden_dim = 8
+                baseline_cfg.num_interaction_steps = 3
+                np.random.seed(1)
+                random.seed(1)
+                baseline = Exp12Trainer(baseline_cfg, root + "/baseline")
+                baseline.start()
+                baseline.train(3)
+                for field in ("actor", "critic"):
+                    left = getattr(runner.trainer._sac_agent, field).params
+                    right = getattr(baseline._sac_agent, field).params
+                    self.assertTrue(all(np.array_equal(a, b) for a, b in zip(
+                        jax.tree.leaves(left), jax.tree.leaves(right))), field)
+                np.testing.assert_array_equal(runner.trainer.buffer._observations[:3],
+                                              baseline.buffer._observations[:3])
+                baseline.close()
+
+    def test_pilot_resumes_interrupted_branch(self):
+        from experiments.exp12.online_exp2_diagnostic import DiagnosticActorBranch
+        pilot = cfg()
+        OmegaConf.set_struct(pilot, False)
+        pilot.run_role = "pilot"
+        pilot.online_exp2.pilot_enabled = True
+        pilot.online_exp2.reference_regime = "reference_small"
+        pilot.online_exp2.diagnostic_horizon = 6
+        pilot.online_exp2.resource_cap_gpu_hours = 1
+        pilot.online_exp2.measurement_interactions = [0, 2, 6]
+        pilot.online_exp2.diagnostic_save_every = 2
+        original_act = DiagnosticActorBranch.act
+        interrupted = [False]
+
+        def fail_once(branch, observation, normalize=None):
+            if branch.interactions == 5 and not interrupted[0]:
+                interrupted[0] = True
+                raise RuntimeError("simulated pre-action interruption")
+            return original_act(branch, observation, normalize)
+
+        with tempfile.TemporaryDirectory(dir="/workspace/scratch") as root:
+            with patch("experiments.online_exp2.validate", return_value=(3, [2], [2])), patch(
+                "experiments.exp12.online_exp2_diagnostic.reference_roles",
+                return_value=((1, 8), (1, 8), (1, 8))
+            ), patch("experiments.exp12.trainer.create_envs", tiny_envs), patch(
+                "experiments.exp12.online_exp2_pilot._branch_env", lambda *args: SyncVectorEnv([TinyEnv])
+            ), patch("experiments.exp12.online_exp2_pilot.create_eval_env", tiny_eval_env):
+                with patch.object(DiagnosticActorBranch, "act", fail_once):
+                    with self.assertRaisesRegex(RuntimeError, "interruption"):
+                        OnlineExp2(pilot, root).run()
+                resumed = OnlineExp2(pilot, root)
+                resumed.run()
+                self.assertTrue(interrupted[0])
+                self.assertEqual(resumed.trainer.interaction_step, 3)
+                self.assertEqual(len([r for r in resumed.rows if r["type"] == "pilot_diagnostic"]), 1)
+                self.assertEqual(len([r for r in resumed.rows if r["type"] == "pilot_evaluation"]), 2)
+                import pickle
+                resumed_record = next(r for r in resumed.rows if r["type"] == "pilot_diagnostic")
+                with open(resumed_record["progress_artifact"], "rb") as stream:
+                    resumed_progress = pickle.load(stream)
+                with tempfile.TemporaryDirectory(dir="/workspace/scratch") as control_root:
+                    control = OnlineExp2(pilot, control_root)
+                    control.run()
+                    control_record = next(r for r in control.rows if r["type"] == "pilot_diagnostic")
+                    with open(control_record["progress_artifact"], "rb") as stream:
+                        control_progress = pickle.load(stream)
+                    for name in ("small", "large"):
+                        self.assertEqual(resumed_progress["branches"][name]["branch"]["actor"],
+                                         control_progress["branches"][name]["branch"]["actor"])
+                        self.assertEqual(resumed_progress["branches"][name]["update_records"],
+                                         control_progress["branches"][name]["update_records"])
+
+    def test_pilot_real_dmc_short_checkpoint(self):
+        pilot = cfg()
+        OmegaConf.set_struct(pilot, False)
+        pilot.run_role = "pilot"
+        pilot.online_exp2.pilot_enabled = True
+        pilot.online_exp2.reference_regime = "reference_small"
+        pilot.online_exp2.diagnostic_horizon = 6
+        pilot.online_exp2.resource_cap_gpu_hours = 1
+        pilot.online_exp2.measurement_interactions = [0, 3, 6]
+        pilot.online_exp2.diagnostic_save_every = 3
+        pilot.env.max_episode_steps = 5
+        pilot.env.action_repeat = 1
+        pilot.action_repeat = 1
+        with tempfile.TemporaryDirectory(dir="/workspace/scratch") as root:
+            with patch("experiments.online_exp2.validate", return_value=(3, [2], [2])), patch(
+                "experiments.exp12.online_exp2_diagnostic.reference_roles",
+                return_value=((1, 8), (1, 8), (1, 8))
+            ):
+                runner = OnlineExp2(pilot, root)
+                runner.run()
+                self.assertEqual(len([r for r in runner.rows if r["type"] == "pilot_evaluation"]), 2)
+                self.assertEqual(len([r for r in runner.rows if r["type"] == "pilot_diagnostic"]), 1)
+
     def test_online_fixture_and_restore(self):
         with tempfile.TemporaryDirectory(dir="/workspace/scratch") as root:
             with patch("experiments.exp12.trainer.create_envs", tiny_envs), patch(
                 "experiments.online_exp2.create_eval_env", tiny_eval_env
             ):
-                run = OnlineExp2(cfg(), root)
+                original_cfg = cfg()
+                original_yaml = OmegaConf.to_yaml(original_cfg, resolve=True)
+                run = OnlineExp2(original_cfg, root)
+                self.assertEqual(OmegaConf.to_yaml(original_cfg, resolve=True), original_yaml)
                 run.run()
                 self.assertEqual(run.trainer.interaction_step, 3)
                 self.assertEqual(run.shadows["small"].updates, run.trainer.update_step)
@@ -124,7 +349,7 @@ class OnlineExp2DriverTest(unittest.TestCase):
                 np.testing.assert_array_equal(run.trainer.buffer._observations[:3],
                                               baseline.buffer._observations[:3])
                 baseline.close()
-                restored = OnlineExp2(cfg(), root)
+                restored = OnlineExp2(original_cfg, root)
                 restored.restore(next((restored.root / "state").glob("step_*")))
                 self.assertEqual(restored.shadows["small"].updates, run.shadows["small"].updates)
                 self.assertEqual(len(restored.rows), len(run.rows))

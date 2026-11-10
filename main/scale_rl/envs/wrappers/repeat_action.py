@@ -6,6 +6,7 @@ class RepeatAction(gym.Wrapper):
     def __init__(self, env: gym.Env, action_repeat=4):
         super().__init__(env)
         self._action_repeat = action_repeat
+        self.last_executed_repeats = 0
 
     def step(self, action: np.ndarray):
         total_reward = 0.0
@@ -13,8 +14,10 @@ class RepeatAction(gym.Wrapper):
         truncated = False
         combined_info = {}
 
+        self.last_executed_repeats = 0
         for _ in range(self._action_repeat):
             obs, reward, terminated, truncated, info = self.env.step(action)
+            self.last_executed_repeats += 1
             total_reward += float(reward)
             combined_info.update(info)
             if terminated or truncated:

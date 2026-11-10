@@ -1,5 +1,9 @@
 # Exp1/Exp2 scientific and validation status
 
+## Revised online Experiment 2 pilot candidate (10 November 2026)
+
+The active Experiment 2 branch now has a separate pilot path for small- and large-reference regimes. The main reference trainer and two shadows remain distinct; each checkpoint runs two actor-only branches collecting their own experience against frozen critics, with evaluations at 0/5,000/10,000 interactions. The implementation has CPU synthetic and short real-DMC coverage, including interrupted resume and a reference-trajectory isolation check. It has not undergone full-size GPU or 10,000-step qualification, and the scientific population, main-training budget, checkpoint schedule, evaluation episodes/mode and resource cap remain unset. It is a development candidate, not a confirmatory launch.
+
 ## Online reference-policy Exp2 development (7 November 2026)
 
 The `codex/exp2-online-prototype-20261107` branch contains a proposed online three-role prototype based on official Exp1 candidate `22e1666f0ff680699b06ded1ce70ec0962f9c103`. Its configuration leaves the reference critic, population, schedule and resource choices unresolved and restricts execution to CPU development mode. CPU contracts and a tiny real DMC smoke are engineering checks only; they do not qualify the full-size protocol or authorize a Delta job. Details and evidence boundaries are in [online_exp2_prototype.md](online_exp2_prototype.md). Older sections below retain their dated source-specific status.

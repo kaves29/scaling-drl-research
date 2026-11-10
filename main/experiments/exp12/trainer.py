@@ -151,6 +151,7 @@ class Exp12Trainer:
         after_step: Optional[Callable[["Exp12Trainer"], None]] = None,
         before_first_update: Optional[Callable[["Exp12Trainer"], None]] = None,
         before_updates: Optional[Callable[["Exp12Trainer", Dict[str, np.ndarray]], None]] = None,
+        after_updates: Optional[Callable] = None,
     ) -> None:
         cfg = self.cfg
         for interaction_step in range(self.interaction_step + 1, int(last_step) + 1):
@@ -188,10 +189,10 @@ class Exp12Trainer:
                     self.update_counter -= 1
                     num_updates += 1
                 if num_updates:
-                    sampled = [self.buffer.sample(return_indices=True) if before_updates is not None
+                    sampled = [self.buffer.sample(return_indices=True) if before_updates is not None or after_updates is not None
                                else self.buffer.sample() for _ in range(num_updates)]
                     batch_indices = None
-                    if before_updates is not None:
+                    if before_updates is not None or after_updates is not None:
                         batch_indices = [indices for _, indices in sampled]
                         batches = [batch for batch, _ in sampled]
                     else:
@@ -199,8 +200,15 @@ class Exp12Trainer:
                     batches = {key: np.stack([b[key] for b in batches]) for key in batches[0]}
                     if before_updates is not None:
                         before_updates(self, batches, batch_indices)
-                    update_info = self.agent.update_many(self.update_step, batches, int(cfg.actor_grad_cosine_every),
-                                                         **self.diagnostics.update_kwargs(self))
+                    result = self.agent.update_many(
+                        self.update_step, batches, int(cfg.actor_grad_cosine_every),
+                        return_policy_snapshots=after_updates is not None,
+                        **self.diagnostics.update_kwargs(self))
+                    if after_updates is not None:
+                        update_info, snapshots = result
+                        after_updates(self, batches, batch_indices, snapshots)
+                    else:
+                        update_info = result
                     self.pending.add(self.update_step, update_info)
                     self.update_step += num_updates
 

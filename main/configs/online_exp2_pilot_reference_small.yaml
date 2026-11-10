@@ -1,0 +1,12 @@
+defaults:
+- base_online_exp2
+- _self_
+
+run_role: pilot
+online_exp2:
+  pilot_enabled: true
+  reference_regime: reference_small
+  diagnostic_horizon: 10000
+  measurement_interactions: [0, 5000, 10000]
+  reference_critic: null  # inferred from reference_regime: D2W512
+  intervention_updates: null  # obsolete one-step development setting

@@ -49,14 +49,16 @@ class ForkNow(Exception):
         self.plan = plan
 
 
-def compose_config(config_path: str, config_name: str, overrides):
+def compose_config(config_path: str, config_name: str, overrides, allow_pilot: bool = False):
     GlobalHydra.instance().clear()
     hydra.initialize_config_dir(version_base=None, config_dir=os.path.abspath(config_path))
     cfg = hydra.compose(config_name=config_name, overrides=list(overrides))
     omegaconf.OmegaConf.register_new_resolver("eval", eval, replace=True)
     omegaconf.OmegaConf.resolve(cfg)
-    if "run_role" not in cfg or cfg.run_role not in ("confirmatory", "dev"):
-        raise ValueError("Exp 1/2 runs need configs/base_exp12.yaml (run_role confirmatory|dev).")
+    pilot = allow_pilot and bool(cfg.get("online_exp2", {}).get("pilot_enabled", False))
+    if ("run_role" not in cfg or cfg.run_role not in ("confirmatory", "dev", "pilot")
+            or (cfg.run_role == "pilot" and not pilot)):
+        raise ValueError("Exp 1/2 runs need an approved run role and matching experiment profile.")
     if cfg.get("official_exp1_version") == "no-hb-v1":
         from experiments.exp12.official_exp1 import validate_config
 

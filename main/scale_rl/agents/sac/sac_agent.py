@@ -369,6 +369,7 @@ def _update_sac_networks(
         "temp_target_entropy",
         "actor_grad_cosine_every",
         "saturation_threshold",
+        "return_policy_snapshots",
     ),
 )
 def _update_sac_networks_scan(
@@ -388,6 +389,7 @@ def _update_sac_networks_scan(
     actor_grad_cosine_every: int,
     saturation_threshold: Optional[float] = None,
     kl_ref_observations: Optional[jnp.ndarray] = None,
+    return_policy_snapshots: bool = False,
 ) -> Tuple[PRNGKey, Trainer, Trainer, Trainer, Trainer, Dict[str, jnp.ndarray]]:
     """_update_sac_networks scanned over the leading axis of `batches`. The two optional
     diagnostics (Exp 1/2 only) add outputs and never change the updates."""
@@ -413,6 +415,10 @@ def _update_sac_networks_scan(
             ),
             lambda: jnp.float32(jnp.nan),
         )
+        if return_policy_snapshots:
+            # Source _sac_update trains critic targets with these new states.
+            info["_actor_snapshot_params"] = new_actor.params
+            info["_temperature_snapshot_params"] = new_temperature.params
         return (rng, new_actor, new_critic, new_target_critic, new_temperature), info
 
     num_updates = batches["observation"].shape[0]
@@ -510,6 +516,7 @@ class SACAgent(BaseAgent):
         actor_grad_cosine_every: int,
         saturation_threshold: Optional[float] = None,
         kl_ref_observations: Optional[np.ndarray] = None,
+        return_policy_snapshots: bool = False,
     ) -> Dict[str, jnp.ndarray]:
         """Runs one update per leading-axis slice of `batches` in a single
         compiled call, starting at `update_step`. Returns per-update device
@@ -544,13 +551,19 @@ class SACAgent(BaseAgent):
             actor_grad_cosine_every=actor_grad_cosine_every,
             saturation_threshold=saturation_threshold,
             kl_ref_observations=None if kl_ref_observations is None else jnp.asarray(kl_ref_observations),
+            return_policy_snapshots=return_policy_snapshots,
         )
+
+        snapshots = None
+        if return_policy_snapshots:
+            snapshots = {"actor": update_info.pop("_actor_snapshot_params"),
+                         "temperature": update_info.pop("_temperature_snapshot_params")}
 
         self.actor_entropy_buffer.append(update_info["train/entropy"])
         self.churn_buffer.append(update_info["train/policy_churn"])
         self.actor_loss_buffer.append(update_info["train/actor_loss"])
 
-        return update_info
+        return (update_info, snapshots) if return_policy_snapshots else update_info
 
     def _update_on_device(
         self, batch: Dict[str, np.ndarray], compute_actor_grad_cosine: bool
