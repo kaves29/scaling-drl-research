@@ -11,6 +11,13 @@ import signal
 import sys
 from pathlib import Path
 
+# Kaggle's Python 3.13 runtime installs NumPy 2, but TensorFlow Probability 0.24
+# still calls this scalar-type predicate at SAC distribution construction.
+import numpy
+
+if not hasattr(numpy, "issctype"):
+    numpy.issctype = lambda rep: isinstance(rep, type) and issubclass(rep, numpy.generic)
+
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from experiments.exp1 import compose_config
