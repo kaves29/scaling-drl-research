@@ -1,0 +1,33 @@
+# Owner-approved revised Experiment 2 pilot (handoff 2026-11-11).
+# 1,000,000 raw reference steps at action repeat two; 15 checkpoints; four
+# isolated 10,000-raw-step policy branches per checkpoint. Population members
+# are selected by run-time overrides of env_name/seed/reference_regime.
+defaults:
+- base_online_exp2
+- _self_
+
+project_name: 'experiment-2-pilot-testing'
+run_role: pilot
+exp_name: exp2_pilot
+
+online_exp2:
+  protocol: revised_v1
+  pilot_enabled: true
+  reference_regime: reference_small
+  environments: null  # set per population member
+  training_seeds: null  # set per population member
+  training_interactions: 500000
+  checkpoint_steps: [33333, 66667, 100000, 133333, 166667, 200000, 233333,
+                     266667, 300000, 333333, 366667, 400000, 433333, 466667,
+                     500000]
+  probe_checkpoints: [33333, 66667, 100000, 133333, 166667, 200000, 233333,
+                      266667, 300000, 333333, 366667, 400000, 433333, 466667,
+                      500000]
+  diagnostic_raw_steps: 10000
+  diagnostic_save_every: 5000
+  save_every_interaction_steps: 50000
+  resource_cap_gpu_hours: 48
+  reference_critic: null
+  intervention_updates: null
+  evaluation_episodes: null
+  evaluation_mode: null

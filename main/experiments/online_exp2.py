@@ -34,6 +34,8 @@ from utils.paths import require_absolute
 
 def validate(cfg):
     p = cfg.online_exp2
+    if p.get("protocol") == "revised_v1":
+        return _validate_revised(cfg)
     pilot = bool(p.get("pilot_enabled", False))
     needed = ("environments", "training_seeds", "reference_critic", "training_interactions",
               "checkpoint_steps", "probe_checkpoints", "evaluation_episodes", "evaluation_mode",
@@ -87,6 +89,40 @@ def validate(cfg):
     return steps, checks, probes
 
 
+def _validate_revised(cfg):
+    from experiments.exp12.revised_exp2_population import checkpoint_interactions
+    p = cfg.online_exp2
+    needed = ("environments", "training_seeds", "reference_regime",
+              "training_interactions", "checkpoint_steps", "probe_checkpoints",
+              "diagnostic_raw_steps", "diagnostic_save_every", "resource_cap_gpu_hours")
+    missing = [name for name in needed if p.get(name) is None]
+    if missing:
+        raise ValueError("revised online Exp2 pilot has unresolved fields: " + ", ".join(missing))
+    if (cfg.run_role != "pilot" or not p.enabled or p.initialization != "fresh"
+            or p.reference_critic is not None or p.intervention_updates is not None
+            or p.evaluation_mode is not None or p.evaluation_episodes is not None):
+        raise ValueError("invalid revised online Exp2 pilot identity")
+    if int(p.training_interactions) != 500_000 or int(p.diagnostic_raw_steps) != 10_000:
+        raise ValueError("revised pilot requires 1,000,000 raw steps at action repeat two")
+    steps = int(p.training_interactions)
+    checks = [int(x) for x in p.checkpoint_steps]
+    probes = [int(x) for x in p.probe_checkpoints]
+    expected = checkpoint_interactions()
+    if (checks != expected or any(x not in checks for x in probes)
+            or int(p.diagnostic_save_every) < 1 or int(p.diagnostic_save_every) > 10_000):
+        raise ValueError("invalid revised pilot checkpoint schedule")
+    if cfg.env_name not in p.environments or cfg.seed not in p.training_seeds:
+        raise ValueError("environment/seed outside the revised online Exp2 population")
+    if p.dev_architectures is None and (
+        (cfg.probe.rounds, cfg.probe.steps, cfg.probe.pool_size, cfg.probe.batch_size,
+         cfg.probe.eval_chunk) != (10, 2000, 25600, 256, 2560)
+    ):
+        raise ValueError("full-size revised pilot must use the selected Exp1 assay")
+    if float(p.resource_cap_gpu_hours) <= 0:
+        raise ValueError("revised pilot needs a positive resource cap")
+    return steps, checks, probes
+
+
 def _sha(data):
     return hashlib.sha256(data).hexdigest()
 
@@ -111,6 +147,7 @@ class OnlineExp2:
         cfg = deepcopy(cfg)
         self.last_step, self.checks, self.probes = validate(cfg)
         self.pilot = bool(cfg.online_exp2.get("pilot_enabled", False))
+        self.revised = cfg.online_exp2.get("protocol") == "revised_v1"
         self._pilot_started_at = time.monotonic()
         self._pilot_prior_device_seconds = 0.
         self.cfg = cfg
@@ -124,6 +161,8 @@ class OnlineExp2:
         source_files = ("experiments/exp1.py", "experiments/online_exp2.py", "experiments/exp12/online_exp2.py",
                         "experiments/exp12/online_exp2_diagnostic.py",
                         "experiments/exp12/online_exp2_pilot.py",
+                        "experiments/exp12/revised_exp2_pilot.py",
+                        "experiments/exp12/revised_exp2_population.py",
                         "experiments/exp12/trainer.py", "scale_rl/buffers/numpy_buffer.py",
                         "scale_rl/agents/sac/sac_agent.py",
                         "scale_rl/agents/wrappers/normalization.py",
@@ -275,6 +314,10 @@ class OnlineExp2:
                 "terminated": terminated, "truncated": truncated, "seed": int(seed)}
 
     def _checkpoint(self, trainer):
+        if self.revised:
+            from experiments.exp12.revised_exp2_pilot import revised_pilot_checkpoint
+            revised_pilot_checkpoint(self, trainer, bool(self.cfg.get("wandb_enabled", True)))
+            return
         if self.pilot:
             from experiments.exp12.online_exp2_pilot import pilot_checkpoint
             pilot_checkpoint(self, trainer)
@@ -424,25 +467,42 @@ class OnlineExp2:
 
         def fresh(trainer):
             if not self.fresh_done:
-                self._probe(0)
+                if not self.revised:
+                    self._probe(0)
                 self.fresh_done = True
 
         def after(trainer):
             self._check_resource_cap()
             if trainer.interaction_step in self.checks and not any(
-                row.get("type") == "intervention" and row.get("interaction_step") == trainer.interaction_step
+                (row.get("type") == "intervention"
+                 or row.get("type") == "revised_pilot_checkpoint")
+                and row.get("interaction_step", row.get("checkpoint")) == trainer.interaction_step
                 for row in self.rows
             ):
                 self._checkpoint(trainer)
+            elif (self.revised
+                  and trainer.interaction_step % int(
+                      self.cfg.online_exp2.save_every_interaction_steps) == 0):
+                self.save()
 
         try:
             self.trainer.train(self.last_step, after_step=after, before_first_update=fresh,
                                before_updates=None if self.pilot else self._before_update,
                                after_updates=self._after_update if self.pilot else None)
             self.save()
-            analysis = (self._pilot_analysis() if self.pilot else aggregate_run(self.rows, self.checks))
+            if self.revised:
+                from experiments.exp12.revised_exp2_pilot import revised_analysis
+                analysis = revised_analysis(self)
+            else:
+                analysis = (self._pilot_analysis() if self.pilot
+                            else aggregate_run(self.rows, self.checks))
             atomic_write_text(self.root / "analysis.json", json.dumps(
                 analysis, sort_keys=True, allow_nan=False))
+        except BaseException:
+            # Preserve the latest training state for restart; branch progress is
+            # written by the checkpoint runner before any branch work starts.
+            self.save()
+            raise
         finally:
             self.trainer.close()
 

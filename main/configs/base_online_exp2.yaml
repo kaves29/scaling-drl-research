@@ -10,6 +10,7 @@ critic_measurements:
   enabled: false
 
 online_exp2:
+  protocol: legacy  # legacy (old local pilot) or revised_v1
   enabled: true
   initialization: fresh
   environments: null
@@ -29,3 +30,7 @@ online_exp2:
   diagnostic_horizon: null  # pilot requires 10000 interactions
   measurement_interactions: null  # pilot requires [0, 5000, 10000]
   diagnostic_save_every: 250  # resume granularity, not a scientific measurement
+  diagnostic_raw_steps: null  # revised_v1: actual raw environment steps per branch
+  save_every_interaction_steps: 50000  # revised_v1 reference restart granularity
+
+wandb_enabled: true
