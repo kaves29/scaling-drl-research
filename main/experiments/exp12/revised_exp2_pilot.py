@@ -506,7 +506,9 @@ def revised_pilot_checkpoint(runner, trainer, wandb_enabled):
                                        step_metric=f"pilot/{name}/global_raw_step")
     original_np, original_py = np.random.get_state(), random.getstate()
     try:
-        if step in cfg.online_exp2.probe_checkpoints:
+        probe_done = any(row.get("type") == "probe" and row.get("check") == step
+                         for row in runner.rows)
+        if step in cfg.online_exp2.probe_checkpoints and not probe_done:
             runner._check_resource_cap()
             runner._probe(step)
         for index, name in enumerate(CONDITIONS):
