@@ -1,6 +1,6 @@
 {
-  "id": "shouryakaveti/experiment-2-revised-pilot-qualification",
-  "title": "Exp2 Revised Pilot GPU Qualification",
+  "id": "shouryakaveti/exp2-revised-qualification-v3",
+  "title": "exp2-revised-qualification-v3",
   "code_file": "experiment-2-revised-pilot-qualification.ipynb",
   "language": "python",
   "kernel_type": "notebook",
