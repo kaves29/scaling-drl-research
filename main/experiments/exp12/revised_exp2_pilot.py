@@ -207,15 +207,19 @@ class RevisedBranch:
         return state
 
     @classmethod
-    def from_state_dict(cls, state, reference_actor, critic, target, temperature,
-                        reference_replay, normalizer):
+    def from_state_dict(cls, state, actor_template, critic_template, target_template,
+                        temperature_template, reference_replay, normalizer):
         obj = cls.__new__(cls)
         obj.name = state["name"]
         obj.learning = bool(state["learning"])
-        obj.actor = flax.serialization.from_bytes(reference_actor, state["actor"])
-        obj.critic = critic
-        obj.target = target
-        obj.temperature = temperature
+        obj.actor = flax.serialization.from_bytes(actor_template, state["actor"])
+        # A learning branch's critic/target/temperature move away from the
+        # reference; restoring them from the reference would break bit-exact resume.
+        obj.critic = flax.serialization.from_bytes(critic_template, state["critic"])
+        obj.target = None if state["target"] is None else flax.serialization.from_bytes(
+            target_template, state["target"])
+        obj.temperature = flax.serialization.from_bytes(
+            temperature_template, state["temperature"])
         obj.buffer = (None if obj.learning
                       else ObservationBuffer.from_state_dict(state["buffer"]))
         obj.appended = []
@@ -308,10 +312,9 @@ def _run_branch(runner, name, step, condition_index, progress, directory, normal
             random.setstate(state["python_rng"])
             branch = RevisedBranch.from_state_dict(
                 state["branch"], runner.trainer._sac_agent.actor,
-                copy.deepcopy(runner.shadows[_condition(name)[0]].critic),
-                copy.deepcopy(runner.shadows[_condition(name)[0]].target)
-                if _condition(name)[1] else runner.shadows[_condition(name)[0]].target,
-                copy.deepcopy(runner.trainer._sac_agent.temperature),
+                runner.shadows[_condition(name)[0]].critic,
+                runner.shadows[_condition(name)[0]].target,
+                runner.trainer._sac_agent.temperature,
                 runner.trainer.buffer, normalize)
             env = _branch_env(cfg, state["environment_seed"])
             restore_env(env, state["env"])

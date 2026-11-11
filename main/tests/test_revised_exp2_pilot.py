@@ -129,7 +129,8 @@ class RevisedPilotTest(unittest.TestCase):
             interrupted = [False]
 
             def fail_once(branch, timestep, observation):
-                if branch.raw_steps == 10 and not interrupted[0]:
+                if (branch.name == "small_learning" and branch.raw_steps == 10
+                        and not interrupted[0]):
                     interrupted[0] = True
                     raise RuntimeError("simulated branch interruption")
                 return original(branch, timestep, observation)
