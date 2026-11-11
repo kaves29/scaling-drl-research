@@ -14,6 +14,47 @@ from gymnasium.vector import SyncVectorEnv
 
 
 class DiagnosticPrimitivesTest(unittest.TestCase):
+    def test_branch_replay_is_independent_and_does_not_bridge_episodes(self):
+        from experiments.exp12.online_exp2_diagnostic import copy_reference_replay
+        from scale_rl.buffers.numpy_buffer import NpyUniformBuffer
+        reference = NpyUniformBuffer(TinyEnv.observation_space, TinyEnv.action_space,
+                                     2, .99, 16, 1, 1, 2)
+        reference.reset()
+        transition = {"observation": np.ones((1, 3), np.float32),
+                      "next_observation": np.zeros((1, 3), np.float32),
+                      "action": np.zeros((1, 2), np.float32),
+                      "reward": np.ones(1, np.float32),
+                      "terminated": np.zeros(1, np.float32),
+                      "truncated": np.zeros(1, np.float32)}
+        reference.add(transition)
+        reference.add(transition)
+        branch = copy_reference_replay(reference)
+        self.assertEqual(len(branch), len(reference))
+        self.assertEqual(len(branch._n_step_transitions), 0)
+        self.assertEqual(len(reference._n_step_transitions), 2)
+        branch._observations[0] = 99
+        self.assertFalse(np.array_equal(branch._observations[0], reference._observations[0]))
+        branch.add(transition)
+        branch.add(transition)
+        self.assertEqual(len(reference), 1)
+        self.assertEqual(len(branch), 2)
+
+    def test_learning_branch_step_matches_source_sac_update(self):
+        from experiments.exp12.online_exp2_diagnostic import learning_branch_step
+        from scale_rl.agents.sac.sac_agent import _sac_update
+        existing_tests.OnlineExp2Test.setUpClass()
+        f = existing_tests.OnlineExp2Test
+        batch = {key: jnp.asarray(value) for key, value in f.batch.items()}
+        keys = jax.random.split(jax.random.PRNGKey(37))
+        source = _sac_update(keys[0], keys[1], f.actor, f.shadows['small'].critic,
+                             f.shadows['small'].target, f.temperature, batch,
+                             .99, 1, False, .005, -2., batch)
+        actual = learning_branch_step(keys[0], keys[1], f.actor, f.shadows['small'].critic,
+                                      f.shadows['small'].target, f.temperature, batch,
+                                      .99, 1, False, .005, -2.)
+        for expected, received in zip(source[:4], actual[:4]):
+            self.assertTrue(existing_tests.equal_tree(expected.params, received.params))
+            self.assertTrue(existing_tests.equal_tree(expected.opt_state, received.opt_state))
     def test_terminal_success_reads_vector_final_info(self):
         self.assertEqual(_success({"final_info": [{"success": 1.}]}), 1.)
         self.assertEqual(_success({"success": [0.], "final_info": [{"success": 1.}]}), 1.)

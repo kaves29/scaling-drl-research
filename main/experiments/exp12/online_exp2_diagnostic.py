@@ -13,6 +13,22 @@ from scale_rl.agents.sac.sac_update import update_actor
 from scale_rl.networks.utils import tree_norm
 
 
+def copy_reference_replay(reference):
+    """Copy reference transitions without joining its unfinished episode to a branch."""
+    branch = copy.deepcopy(reference)
+    branch._n_step_transitions.clear()
+    return branch
+
+
+def learning_branch_step(actor_key, critic_key, actor, critic, target, temperature,
+                         batch, gamma, n_step, critic_use_cdq, target_tau, target_entropy):
+    """Use the source SAC update for an isolated, learning actor/critic branch."""
+    from scale_rl.agents.sac.sac_agent import _sac_update
+    return _sac_update(actor_key, critic_key, actor, critic, target, temperature,
+                       batch, gamma, n_step, critic_use_cdq, target_tau,
+                       target_entropy, batch)
+
+
 def reference_roles(regime):
     """Return (reference, small shadow, large shadow) block/width pairs."""
     if regime == "reference_small":
