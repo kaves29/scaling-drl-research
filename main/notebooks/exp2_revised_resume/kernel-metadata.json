@@ -7,10 +7,10 @@
   "is_private": true,
   "enable_gpu": true,
   "enable_internet": true,
-  "dataset_sources": [],
-  "competition_sources": [],
-  "kernel_sources": [
-    "shouryakaveti/experiment-2-revised-complete/4"
+  "dataset_sources": [
+    "shouryakaveti/experiment-2-qualification-recovery"
   ],
+  "competition_sources": [],
+  "kernel_sources": [],
   "machine_shape": "NvidiaTeslaT4"
 }
