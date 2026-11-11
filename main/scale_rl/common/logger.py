@@ -38,11 +38,17 @@ def get_run_info(args):
         f"_AD{args.agent.actor_num_blocks}_AW{args.agent.actor_hidden_dim}"
         f"_seed{args.seed}"
     )
+    if args.get("online_exp2", {}).get("pilot_enabled", False):
+        regime = args.online_exp2.reference_regime
+        group = f"{env}_{regime}_{critic_size_label}"
+        name = f"{name}_{regime}"
     return {
         "group": group,
         "job_type": job_type,
         "name": name,
     }
+
+
 class WandbTrainerLogger(object):
     def __init__(self, cfg: Dict, run_id: Optional[str] = None):
         """`run_id`: a previously-saved wandb.run.id to resume into (see
@@ -63,6 +69,13 @@ class WandbTrainerLogger(object):
             resume="allow" if run_id is not None else None,
         )
 
+        # Disabled/offline W&B may ignore resume=id and generate a new SDK ID.
+        # Keep the persisted logical run identity authoritative for restart.
+        self._run_id = (
+            run_id
+            if run_id is not None
+            else (wandb.run.id if wandb.run is not None else None)
+        )
         self.reset()
 
     @property
@@ -73,7 +86,7 @@ class WandbTrainerLogger(object):
     @property
     def run_id(self) -> Optional[str]:
         """Authoritative WandB run id (None if wandb is disabled)."""
-        return wandb.run.id if wandb.run is not None else None
+        return self._run_id
 
     def update_metric(self, **kwargs) -> None:
         for k, v in kwargs.items():
@@ -97,7 +110,16 @@ class WandbTrainerLogger(object):
         log_data = {}
         log_data.update(self.average_meter_dict.averages())
         log_data.update(self.media_dict)
-        wandb.log(log_data, step=step)
+        if self.cfg.get("online_exp2", {}).get("pilot_enabled", False):
+            wandb.define_metric("reference/*", step_metric="reference/raw_env_steps")
+            wandb.log(
+                {
+                    "reference/raw_env_steps": step,
+                    **{"reference/" + key: value for key, value in log_data.items()},
+                }
+            )
+        else:
+            wandb.log(log_data, step=step)
 
     def reset(self) -> None:
         self.average_meter_dict = AverageMeterDict()

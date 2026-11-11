@@ -1,5 +1,9 @@
 # Exp1/Exp2 scientific and validation status
 
+## Revised online Exp2 implementation candidate (11 November 2026)
+
+The active `codex/exp2-online-prototype-20261107` implementation now connects the approved twenty-run, fifteen-checkpoint design to four sequential frozen/learning small/large branches, actual raw-step budgets, branch-local source SAC and durable restart. See [the implementation report](exp2_implementation_report.md) for validation receipts, source identities, complete Kaggle notebook/qualification commands and execution limitations. This supersedes the older frozen-only pilot description below. CPU tests are engineering evidence; actual Kaggle full-horizon/full-assay concurrency, online W&B and scientific full-budget execution remain unqualified. No Kaggle or Delta job was launched by this implementation task.
+
 ## Revised online Experiment 2 pilot candidate (10 November 2026)
 
 The active Experiment 2 branch now has a separate pilot path for small- and large-reference regimes. The main reference trainer and two shadows remain distinct; each checkpoint runs two actor-only branches collecting their own experience against frozen critics, with evaluations at 0/5,000/10,000 interactions. The implementation has CPU synthetic and short real-DMC coverage, including interrupted resume and a reference-trajectory isolation check. It has not undergone full-size GPU or 10,000-step qualification, and the scientific population, main-training budget, checkpoint schedule, evaluation episodes/mode and resource cap remain unset. It is a development candidate, not a confirmatory launch.

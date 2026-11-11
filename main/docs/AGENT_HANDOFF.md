@@ -1,5 +1,9 @@
 # Shared agent handoff
 
+## Revised online Exp2 implementation (11 November 2026)
+
+The active `codex/exp2-online-prototype-20261107` implementation now connects the approved twenty-run, fifteen-checkpoint design to four sequential frozen/learning small/large branches, actual raw-step budgets, branch-local source SAC and durable restart. See [the implementation report](exp2_implementation_report.md) for validation receipts, source identities, complete Kaggle notebook/qualification commands and execution limitations. This supersedes the older frozen-only pilot description below. CPU tests are engineering evidence; actual Kaggle full-horizon/full-assay concurrency, online W&B and scientific full-budget execution remain unqualified. No Kaggle or Delta job was launched by this implementation task.
+
 ## Online reference-policy Exp2 pilot revision (10 November 2026)
 
 The active `codex/exp2-online-prototype-20261107` checkout has an opt-in pilot candidate under `online_exp2_pilot_reference_small.yaml` and `online_exp2_pilot_reference_large.yaml`. It adds two reference regimes and 10,000-interaction actor-only checkpoint branches, with independent branch observations, matched evaluations, durable branch restart, and per-update reference-policy snapshots for shadow targets. See [the active pilot implementation notes](online_exp2_prototype.md) and [owner specification](online_exp2_revision_spec_20261110.md). Current CPU fixture and short DMC checks are engineering evidence only. Full-size GPU qualification, scientific task/seed/budget/checkpoint/evaluation choices and resource measurement remain open; do not launch a production campaign from this status entry.

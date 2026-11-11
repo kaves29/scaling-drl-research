@@ -22,6 +22,7 @@ from scale_rl.envs.dmc import make_dmc_env
 from scale_rl.envs.myosuite import MYOSUITE_TASKS_DICT, MyosuiteGymnasiumVersionWrapper
 from scale_rl.envs.wrappers import DoNotTerminate, RepeatAction, ScaleReward
 from scale_rl.envs.wrappers.vector import SyncVectorEnv
+from scale_rl.envs.wrappers.repeat_action import repeat_wrapper
 
 SUPPORTED_ENV_TYPES = ("dmc", "myosuite", "humanoid_bench")
 HUMANOID_BENCH_TASKS = ("h1-reach-v0", "h1-run-v0")
@@ -31,7 +32,9 @@ def make_myosuite_env(env_name: str, seed: int) -> gym.Env:
     """Like scale_rl.envs.myosuite.make_myosuite_env, but seeds MyoSuite's RNG."""
     from myosuite.utils import gym as myo_gym
 
-    return MyosuiteGymnasiumVersionWrapper(myo_gym.make(MYOSUITE_TASKS_DICT[env_name], seed=seed))
+    return MyosuiteGymnasiumVersionWrapper(
+        myo_gym.make(MYOSUITE_TASKS_DICT[env_name], seed=seed)
+    )
 
 
 def _import_humanoid_bench():
@@ -56,7 +59,9 @@ def _import_humanoid_bench():
         )
     spec = importlib.util.find_spec("humanoid_bench")
     if spec is None:
-        raise ImportError("humanoid_bench is not installed; see scripts/install_humanoid_bench.sh")
+        raise ImportError(
+            "humanoid_bench is not installed; see scripts/install_humanoid_bench.sh"
+        )
     deps = types.ModuleType("humanoid_bench.dmc_deps")
     deps.__path__ = [os.path.join(spec.submodule_search_locations[0], "dmc_deps")]
     deps.dmc_index = dm_index
@@ -64,7 +69,9 @@ def _import_humanoid_bench():
     sys.modules["humanoid_bench.dmc_deps.dmc_index"] = dm_index
 
     def unavailable(*args, **kwargs):
-        raise RuntimeError("HumanoidBench's torch policy wrappers are not available in this stack.")
+        raise RuntimeError(
+            "HumanoidBench's torch policy wrappers are not available in this stack."
+        )
 
     torch_stub = types.ModuleType("humanoid_bench.mjx.flax_to_torch")
     torch_stub.TorchModel = torch_stub.TorchPolicy = unavailable
@@ -74,10 +81,14 @@ def _import_humanoid_bench():
 
 def make_humanoid_bench_env(env_name: str, seed: int) -> gym.Env:
     if env_name not in HUMANOID_BENCH_TASKS:
-        raise ValueError(f"{env_name!r} is not one of the Exp 1/2 HumanoidBench tasks {HUMANOID_BENCH_TASKS}")
+        raise ValueError(
+            f"{env_name!r} is not one of the Exp 1/2 HumanoidBench tasks {HUMANOID_BENCH_TASKS}"
+        )
     _import_humanoid_bench()
     env = gym.make(env_name)
-    env.reset(seed=seed)  # seeds the env's own np_random once, before ExactRestore wraps it
+    env.reset(
+        seed=seed
+    )  # seeds the env's own np_random once, before ExactRestore wraps it
     return env
 
 
@@ -89,7 +100,10 @@ def get_env_rng_state(env: gym.Env, env_type: str) -> Any:
         return base.np_random.np_random.bit_generator.state
     if env_type == "humanoid_bench":
         # Reach samples its goal from the global np.random at reset.
-        return {"np_random": base.np_random.bit_generator.state, "global": np.random.get_state()}
+        return {
+            "np_random": base.np_random.bit_generator.state,
+            "global": np.random.get_state(),
+        }
     raise ValueError(f"unsupported env_type {env_type!r}")
 
 
@@ -114,22 +128,36 @@ class ExactRestore(gym.Wrapper):
         self._env_type = env_type
         self._rng_at_reset = None
         self._actions = []
+        self._repeat_limits = []
 
     def reset(self, **kwargs):
         if kwargs.get("seed") is not None:
-            raise ValueError("ExactRestore envs must not be reset with an explicit seed.")
+            raise ValueError(
+                "ExactRestore envs must not be reset with an explicit seed."
+            )
         self._rng_at_reset = copy.deepcopy(get_env_rng_state(self.env, self._env_type))
         self._actions = []
+        self._repeat_limits = []
         return self.env.reset(**kwargs)
 
     def step(self, action):
         self._actions.append(np.array(action, copy=True))
+        repeat = repeat_wrapper(self.env)
+        self._repeat_limits.append(
+            repeat.raw_step_limit if repeat is not None else None
+        )
         return self.env.step(action)
 
     def restore_state(self) -> Dict[str, Any]:
         return {
             "rng_at_reset": copy.deepcopy(self._rng_at_reset),
             "actions": [a.copy() for a in self._actions],
+            "repeat_limits": list(self._repeat_limits),
+            "repeat_limit": (
+                repeat_wrapper(self.env).raw_step_limit
+                if repeat_wrapper(self.env) is not None
+                else None
+            ),
         }
 
     def restore(self, state: Dict[str, Any]):
@@ -138,13 +166,30 @@ class ExactRestore(gym.Wrapper):
         the global state afterwards (Exp12Trainer.restore does)."""
         set_env_rng_state(self.env, self._env_type, state["rng_at_reset"])
         obs, _ = self.reset()
-        for action in state["actions"]:
+        repeat = repeat_wrapper(self.env)
+        limits = state.get("repeat_limits", [None] * len(state["actions"]))
+        if len(limits) != len(state["actions"]):
+            raise ValueError("action/repeat history lengths differ")
+        for action, limit in zip(state["actions"], limits):
+            if limit is not None and (type(limit) is not int or limit < 1):
+                raise ValueError("invalid saved repeat allowance")
+            if repeat is not None:
+                repeat.raw_step_limit = limit
             obs, *_ = self.step(action)
+        if repeat is not None:
+            repeat.raw_step_limit = state.get("repeat_limit")
         return obs
 
 
 def _make_one_env(
-    env_type, env_name, seed, rescale_action, no_termination, action_repeat, reward_scale, max_episode_steps
+    env_type,
+    env_name,
+    seed,
+    rescale_action,
+    no_termination,
+    action_repeat,
+    reward_scale,
+    max_episode_steps,
 ) -> gym.Env:
     if env_type == "dmc":
         env = make_dmc_env(env_name, seed)
@@ -153,7 +198,9 @@ def _make_one_env(
     elif env_type == "humanoid_bench":
         env = make_humanoid_bench_env(env_name, seed)
     else:
-        raise ValueError(f"unsupported env_type {env_type!r}; supported: {SUPPORTED_ENV_TYPES}")
+        raise ValueError(
+            f"unsupported env_type {env_type!r}; supported: {SUPPORTED_ENV_TYPES}"
+        )
     if rescale_action:
         env = RescaleAction(env, -1.0, 1.0)
     if no_termination:
@@ -186,28 +233,57 @@ def create_envs(
         raise ValueError("Exp 1/2 requires num_train_envs == num_eval_envs == 1.")
 
     def make(scale):
-        return SyncVectorEnv([
-            lambda: _make_one_env(
-                env_type, env_name, seed, rescale_action, no_termination, action_repeat, scale, max_episode_steps
-            )
-        ])
+        return SyncVectorEnv(
+            [
+                lambda: _make_one_env(
+                    env_type,
+                    env_name,
+                    seed,
+                    rescale_action,
+                    no_termination,
+                    action_repeat,
+                    scale,
+                    max_episode_steps,
+                )
+            ]
+        )
 
     return make(reward_scale), make(1.0)
 
 
-def create_eval_env(env_type: str, seed: int, env_name: str, rescale_action: bool, no_termination: bool,
-                    action_repeat: int, max_episode_steps: int, **kwargs) -> SyncVectorEnv:
+def create_eval_env(
+    env_type: str,
+    seed: int,
+    env_name: str,
+    rescale_action: bool,
+    no_termination: bool,
+    action_repeat: int,
+    max_episode_steps: int,
+    **kwargs,
+) -> SyncVectorEnv:
     """A standalone evaluation env (reward scale 1), e.g. for the post-fork evaluations."""
-    return SyncVectorEnv([
-        lambda: _make_one_env(env_type, env_name, seed, rescale_action, no_termination, action_repeat, 1.0,
-                              max_episode_steps)
-    ])
+    return SyncVectorEnv(
+        [
+            lambda: _make_one_env(
+                env_type,
+                env_name,
+                seed,
+                rescale_action,
+                no_termination,
+                action_repeat,
+                1.0,
+                max_episode_steps,
+            )
+        ]
+    )
 
 
 def env_restore_state(vec_env: SyncVectorEnv) -> Dict[str, Any]:
     return {
         "env": vec_env.envs[0].restore_state(),
-        "action_space_rng": copy.deepcopy(vec_env.action_space.np_random.bit_generator.state),
+        "action_space_rng": copy.deepcopy(
+            vec_env.action_space.np_random.bit_generator.state
+        ),
     }
 
 

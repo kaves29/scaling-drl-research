@@ -26,6 +26,10 @@ online_exp2:
   dev_architectures: null  # small CPU fixtures only
   pilot_enabled: false
   reference_regime: null  # reference_small or reference_large; run separately
-  diagnostic_horizon: null  # pilot requires 10000 interactions
+  reference_raw_steps: null
+  checkpoint_raw_steps: null
+  branch_raw_steps: null
+  measurement_raw_steps: null
+  diagnostic_horizon: null  # legacy development field; unused by revised pilot
   measurement_interactions: null  # pilot requires [0, 5000, 10000]
   diagnostic_save_every: 250  # resume granularity, not a scientific measurement

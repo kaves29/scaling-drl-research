@@ -20,7 +20,10 @@ import numpy as np
 import omegaconf
 import pandas as pd
 
-from experiments.exp12.diagnostics import ActorDiagnostics, DiagnosticPendingUpdateMetrics
+from experiments.exp12.diagnostics import (
+    ActorDiagnostics,
+    DiagnosticPendingUpdateMetrics,
+)
 from experiments.exp12.envs import create_envs, env_restore_state, restore_env
 from experiments.exp12.state import (
     commit_state_dir,
@@ -49,7 +52,9 @@ def evaluate_episodes(agent, env, num_episodes: int):
         observations, _ = env.reset()
         prev_timestep = {"next_observation": observations}
         while not done:
-            actions = agent.sample_actions(interaction_step=0, prev_timestep=prev_timestep, training=False)
+            actions = agent.sample_actions(
+                interaction_step=0, prev_timestep=prev_timestep, training=False
+            )
             observations, rewards, terminateds, truncateds, infos = env.step(actions)
             prev_timestep = {"next_observation": observations}
             episode_return += rewards[0]
@@ -77,15 +82,28 @@ class Exp12Trainer:
         self.train_env, self.eval_env = create_envs(**cfg.env)
         observation_space = self.train_env.observation_space
         action_space = self.train_env.action_space
-        self.buffer = create_buffer(observation_space=observation_space, action_space=action_space, **cfg.buffer)
+        self.buffer = create_buffer(
+            observation_space=observation_space, action_space=action_space, **cfg.buffer
+        )
         self.buffer.reset()
-        self.agent = create_agent(observation_space=observation_space, action_space=action_space, cfg=cfg.agent)
+        self.agent = create_agent(
+            observation_space=observation_space,
+            action_space=action_space,
+            cfg=cfg.agent,
+        )
 
         _, total, actor, critic = self.agent.get_num_parameters()
         omegaconf.OmegaConf.set_struct(cfg, False)
-        cfg.update({"num_params": total, "actor_num_params": actor, "critic_num_params": critic})
+        cfg.update(
+            {
+                "num_params": total,
+                "actor_num_params": actor,
+                "critic_num_params": critic,
+            }
+        )
         omegaconf.OmegaConf.set_struct(cfg, True)
 
+        self.raw_env_steps = 0
         self.interaction_step = 0
         self.update_step = 0
         self.update_counter = 0
@@ -118,8 +136,9 @@ class Exp12Trainer:
 
     def _attach_logger(self, run_id: Optional[str] = None) -> None:
         self.logger = WandbTrainerLogger(self.cfg, run_id=run_id)
-        self.pending = DiagnosticPendingUpdateMetrics(self.logger, int(self.cfg.actor_grad_cosine_every),
-                                                      self.diagnostics)
+        self.pending = DiagnosticPendingUpdateMetrics(
+            self.logger, int(self.cfg.actor_grad_cosine_every), self.diagnostics
+        )
 
     def start(self) -> None:
         """Fresh start: step-0 evaluation, then the first train-env reset."""
@@ -133,40 +152,77 @@ class Exp12Trainer:
         self.observations, _ = self.train_env.reset()
 
     def _evaluate(self, interaction_step: int, num_episodes: int) -> None:
-        eval_info, returns, lengths, successes = evaluate_episodes(self.agent, self.eval_env, num_episodes)
+        eval_info, returns, lengths, successes = evaluate_episodes(
+            self.agent, self.eval_env, num_episodes
+        )
         self.logger.update_metric(**eval_info)
         for i, (ret, length, success) in enumerate(zip(returns, lengths, successes)):
-            self.eval_rows.append({
-                "interaction_step": interaction_step,
-                "env_step": interaction_step * self.cfg.action_repeat,
-                "episode": i,
-                "return": float(ret),
-                "length": int(length),
-                "success": float(success),
-            })
+            self.eval_rows.append(
+                {
+                    "interaction_step": interaction_step,
+                    "env_step": (
+                        self.raw_env_steps
+                        if self.cfg.get("online_exp2", {}).get("pilot_enabled", False)
+                        else interaction_step * self.cfg.action_repeat
+                    ),
+                    "episode": i,
+                    "return": float(ret),
+                    "length": int(length),
+                    "success": float(success),
+                }
+            )
 
     def train(
         self,
         last_step: int,
         after_step: Optional[Callable[["Exp12Trainer"], None]] = None,
         before_first_update: Optional[Callable[["Exp12Trainer"], None]] = None,
-        before_updates: Optional[Callable[["Exp12Trainer", Dict[str, np.ndarray]], None]] = None,
+        before_updates: Optional[
+            Callable[["Exp12Trainer", Dict[str, np.ndarray]], None]
+        ] = None,
         after_updates: Optional[Callable] = None,
     ) -> None:
         cfg = self.cfg
-        for interaction_step in range(self.interaction_step + 1, int(last_step) + 1):
+        raw_budget = cfg.get("online_exp2", {}).get("reference_raw_steps")
+        revised = bool(cfg.get("online_exp2", {}).get("pilot_enabled", False))
+        from scale_rl.envs.wrappers.repeat_action import (
+            executed_raw_steps,
+            limit_raw_steps,
+        )
+
+        while (
+            self.raw_env_steps < int(raw_budget)
+            if revised and raw_budget is not None
+            else self.interaction_step < int(last_step)
+        ):
+            interaction_step = self.interaction_step + 1
+            if revised and raw_budget is not None:
+                thresholds = list(cfg.online_exp2.checkpoint_raw_steps) + [
+                    int(raw_budget)
+                ]
+                next_boundary = min(x for x in thresholds if x > self.raw_env_steps)
+                limit_raw_steps(self.train_env, next_boundary - self.raw_env_steps)
             self.interaction_step = interaction_step
             # SimBa's run.py: uniform random actions until the buffer can be sampled;
             # the agent still sees each observation so obs_rms keeps updating.
             if self.timestep:
-                actions = self.agent.sample_actions(interaction_step, prev_timestep=self.timestep, training=True)
+                actions = self.agent.sample_actions(
+                    interaction_step, prev_timestep=self.timestep, training=True
+                )
             if not self.buffer.can_sample():
                 actions = self.train_env.action_space.sample()
-            next_observations, rewards, terminateds, truncateds, env_infos = self.train_env.step(actions)
+            next_observations, rewards, terminateds, truncateds, env_infos = (
+                self.train_env.step(actions)
+            )
+            self.raw_env_steps += executed_raw_steps(self.train_env)
             next_buffer_observations = next_observations.copy()
             for env_idx in range(cfg.num_train_envs):
-                if terminateds[env_idx] or truncateds[env_idx]:
-                    next_buffer_observations[env_idx] = env_infos["final_observation"][env_idx]
+                if (
+                    terminateds[env_idx] or truncateds[env_idx]
+                ) and "final_observation" in env_infos:
+                    next_buffer_observations[env_idx] = env_infos["final_observation"][
+                        env_idx
+                    ]
             timestep = {
                 "observation": self.observations,
                 "action": actions,
@@ -176,6 +232,12 @@ class Exp12Trainer:
                 "next_observation": next_buffer_observations,
             }
             self.buffer.add(timestep)
+            if (
+                revised
+                and np.any(terminateds | truncateds)
+                and "final_observation" not in env_infos
+            ):
+                next_observations, _ = self.train_env.reset()
             timestep["next_observation"] = next_observations
             self.timestep = timestep
             self.observations = next_observations
@@ -189,21 +251,32 @@ class Exp12Trainer:
                     self.update_counter -= 1
                     num_updates += 1
                 if num_updates:
-                    sampled = [self.buffer.sample(return_indices=True) if before_updates is not None or after_updates is not None
-                               else self.buffer.sample() for _ in range(num_updates)]
+                    sampled = [
+                        (
+                            self.buffer.sample(return_indices=True)
+                            if before_updates is not None or after_updates is not None
+                            else self.buffer.sample()
+                        )
+                        for _ in range(num_updates)
+                    ]
                     batch_indices = None
                     if before_updates is not None or after_updates is not None:
                         batch_indices = [indices for _, indices in sampled]
                         batches = [batch for batch, _ in sampled]
                     else:
                         batches = sampled
-                    batches = {key: np.stack([b[key] for b in batches]) for key in batches[0]}
+                    batches = {
+                        key: np.stack([b[key] for b in batches]) for key in batches[0]
+                    }
                     if before_updates is not None:
                         before_updates(self, batches, batch_indices)
                     result = self.agent.update_many(
-                        self.update_step, batches, int(cfg.actor_grad_cosine_every),
+                        self.update_step,
+                        batches,
+                        int(cfg.actor_grad_cosine_every),
                         return_policy_snapshots=after_updates is not None,
-                        **self.diagnostics.update_kwargs(self))
+                        **self.diagnostics.update_kwargs(self),
+                    )
                     if after_updates is not None:
                         update_info, snapshots = result
                         after_updates(self, batches, batch_indices, snapshots)
@@ -221,11 +294,20 @@ class Exp12Trainer:
 
             if interaction_step % cfg.evaluation_per_interaction_step == 0:
                 self.pending.flush()
-                final = interaction_step + cfg.evaluation_per_interaction_step > cfg.num_interaction_steps
-                self._evaluate(interaction_step, cfg.num_eval_episodes * (10 if final else 1))
+                final = (
+                    interaction_step + cfg.evaluation_per_interaction_step
+                    > cfg.num_interaction_steps
+                )
+                self._evaluate(
+                    interaction_step, cfg.num_eval_episodes * (10 if final else 1)
+                )
 
             if interaction_step % cfg.logging_per_interaction_step == 0:
-                env_step = interaction_step * cfg.action_repeat * cfg.num_train_envs
+                env_step = (
+                    self.raw_env_steps
+                    if revised
+                    else interaction_step * cfg.action_repeat * cfg.num_train_envs
+                )
                 snapshot = {"env_step": env_step}
                 snapshot.update(self.logger.average_meter_dict.averages())
                 snapshot.update(self.logger.media_dict)
@@ -233,9 +315,11 @@ class Exp12Trainer:
                 observer = self.critic_measurements
                 if observer is not None:
                     critic_record = observer.record(
-                        self._sac_agent.critic, metrics_batch,
+                        self._sac_agent.critic,
+                        metrics_batch,
                         interaction_step=self.interaction_step,
-                        optimizer_step=self.update_step, legacy_metrics=snapshot,
+                        optimizer_step=self.update_step,
+                        legacy_metrics=snapshot,
                     )
                     self.logger.update_critic_diagnostics(
                         critic_record, observer.output, step=env_step
@@ -246,37 +330,47 @@ class Exp12Trainer:
             if after_step is not None:
                 after_step(self)
 
-    def save(self, root, keep_previous: bool = False,
-             before_commit: Optional[Callable[[Path], None]] = None) -> Path:
+    def save(
+        self,
+        root,
+        keep_previous: bool = False,
+        before_commit: Optional[Callable[[Path], None]] = None,
+    ) -> Path:
         """Writes the complete state under root and repoints root/LATEST to it."""
         self.pending.flush()
         path = new_state_dir(root, self.interaction_step)
         self.agent.save_checkpoint(str(path))
         save_buffer(self.buffer, path)
         meters = {
-            name: (m.val, m.avg, m.sum, m.count) for name, m in self.logger.average_meter_dict.meters.items()
+            name: (m.val, m.avg, m.sum, m.count)
+            for name, m in self.logger.average_meter_dict.meters.items()
         }
-        save_meta(path, {
-            "interaction_step": self.interaction_step,
-            "update_step": self.update_step,
-            "update_counter": self.update_counter,
-            "numpy_rng_state": np.random.get_state(),
-            "python_rng_state": random.getstate(),
-            "train_env": env_restore_state(self.train_env),
-            "eval_env": env_restore_state(self.eval_env),
-            "observations": self.observations,
-            "timestep": self.timestep,
-            "meters": meters,
-            "media": dict(self.logger.media_dict),
-            "metrics_rows": self.metrics_rows,
-            "eval_rows": self.eval_rows,
-            "wandb_run_id": self.logger.run_id,
-            "extra_state": self.extra_state,
-            "agent_window_buffers": {
-                name: [np.asarray(v) for v in getattr(self._sac_agent, name)] for name in AGENT_WINDOW_BUFFERS
+        save_meta(
+            path,
+            {
+                "raw_env_steps": self.raw_env_steps,
+                "interaction_step": self.interaction_step,
+                "update_step": self.update_step,
+                "update_counter": self.update_counter,
+                "numpy_rng_state": np.random.get_state(),
+                "python_rng_state": random.getstate(),
+                "train_env": env_restore_state(self.train_env),
+                "eval_env": env_restore_state(self.eval_env),
+                "observations": self.observations,
+                "timestep": self.timestep,
+                "meters": meters,
+                "media": dict(self.logger.media_dict),
+                "metrics_rows": self.metrics_rows,
+                "eval_rows": self.eval_rows,
+                "wandb_run_id": self.logger.run_id,
+                "extra_state": self.extra_state,
+                "agent_window_buffers": {
+                    name: [np.asarray(v) for v in getattr(self._sac_agent, name)]
+                    for name in AGENT_WINDOW_BUFFERS
+                },
+                "actor_diagnostics": self.diagnostics.state(),
             },
-            "actor_diagnostics": self.diagnostics.state(),
-        })
+        )
         if before_commit is not None:
             before_commit(path)
         commit_state_dir(root, path, keep_previous=keep_previous)
@@ -290,7 +384,9 @@ class Exp12Trainer:
         meta = load_meta(state_dir)
         injected = meta["extra_state"].get("injection")
         if injected is not None and "injection" not in self.extra_state:
-            self.inject(injected["m"], injected["seed"])  # rebuild the structure the weights belong to
+            self.inject(
+                injected["m"], injected["seed"]
+            )  # rebuild the structure the weights belong to
         self.agent.load_checkpoint(str(state_dir))
         load_buffer(self.buffer, state_dir)
         restore_env(self.train_env, meta["train_env"])
@@ -298,6 +394,9 @@ class Exp12Trainer:
         np.random.set_state(meta["numpy_rng_state"])
         random.setstate(meta["python_rng_state"])
         self.interaction_step = meta["interaction_step"]
+        self.raw_env_steps = meta.get(
+            "raw_env_steps", self.interaction_step * int(self.cfg.action_repeat)
+        )
         self.update_step = meta["update_step"]
         self.update_counter = meta["update_counter"]
         self.observations = meta["observations"]
@@ -321,9 +420,15 @@ class Exp12Trainer:
         from experiments.exp12.twin import is_twin
 
         a = self._sac_agent
-        a._critic, a._target_critic = (inject_twin if is_twin(a._critic.params) else inject)(
-            a._critic, a._target_critic, m_label, injection_key(seed),
-            float(self.cfg.agent.critic_learning_rate), float(self.cfg.agent.critic_weight_decay),
+        a._critic, a._target_critic = (
+            inject_twin if is_twin(a._critic.params) else inject
+        )(
+            a._critic,
+            a._target_critic,
+            m_label,
+            injection_key(seed),
+            float(self.cfg.agent.critic_learning_rate),
+            float(self.cfg.agent.critic_weight_decay),
         )
         self.extra_state["injection"] = {"m": m_label, "seed": int(seed)}
 
@@ -334,8 +439,14 @@ class Exp12Trainer:
     def write_logs(self) -> None:
         logs = self.run_dir / "logs"
         logs.mkdir(parents=True, exist_ok=True)
-        atomic_write_text(logs / f"{self.run_name}.csv", pd.DataFrame(self.metrics_rows).to_csv(index=False))
-        atomic_write_text(logs / f"{self.run_name}_eval_episodes.csv", pd.DataFrame(self.eval_rows).to_csv(index=False))
+        atomic_write_text(
+            logs / f"{self.run_name}.csv",
+            pd.DataFrame(self.metrics_rows).to_csv(index=False),
+        )
+        atomic_write_text(
+            logs / f"{self.run_name}_eval_episodes.csv",
+            pd.DataFrame(self.eval_rows).to_csv(index=False),
+        )
 
     def close(self) -> None:
         self.train_env.close()

@@ -3,10 +3,23 @@ defaults:
 - _self_
 
 run_role: pilot
+project_name: Experiment-2-Pilot-Testing
+probe:
+  rounds: 10
 online_exp2:
   pilot_enabled: true
   reference_regime: reference_small
-  diagnostic_horizon: 10000
-  measurement_interactions: [0, 5000, 10000]
-  reference_critic: null  # inferred from reference_regime: D2W512
-  intervention_updates: null  # obsolete one-step development setting
+  environments: [dog-run, humanoid-run, myo-key-turn, myo-pen-twirl]
+  training_seeds: [1, 2, 3]
+  training_interactions: 500000
+  reference_raw_steps: 1000000
+  checkpoint_steps: [33333, 66667, 100000, 133333, 166667, 200000, 233333, 266667, 300000, 333333, 366667, 400000, 433333, 466667, 500000]
+  checkpoint_raw_steps: [66667, 133333, 200000, 266667, 333333, 400000, 466667, 533333, 600000, 666667, 733333, 800000, 866667, 933333, 1000000]
+  probe_checkpoints: [66667, 133333, 200000, 266667, 333333, 400000, 466667, 533333, 600000, 666667, 733333, 800000, 866667, 933333, 1000000]
+  branch_raw_steps: 10000
+  measurement_raw_steps: [0, 5000, 10000]
+  diagnostic_save_every: 250
+  reference_critic: null
+  intervention_updates: null
+  analysis_aggregation: training_episode_curves
+  resource_cap_gpu_hours: 0

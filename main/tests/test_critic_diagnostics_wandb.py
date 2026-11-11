@@ -48,6 +48,7 @@ def observation(root):
 
 def logger_fixture():
     logger = WandbTrainerLogger.__new__(WandbTrainerLogger)
+    logger.cfg = {}  # This fixture exercises the legacy logging path.
     logger.reset()
     logger.update_metric(**{"train/critic_loss": 7.0})
     return logger

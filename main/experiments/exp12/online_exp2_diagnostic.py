@@ -2,6 +2,7 @@
 
 These helpers are not an experiment runner and do not authorize a pilot.
 """
+
 import copy
 import math
 
@@ -13,20 +14,67 @@ from scale_rl.agents.sac.sac_update import update_actor
 from scale_rl.networks.utils import tree_norm
 
 
-def copy_reference_replay(reference):
+def copy_reference_replay(reference, max_additions=None):
     """Copy reference transitions without joining its unfinished episode to a branch."""
-    branch = copy.deepcopy(reference)
+    if max_additions is None:
+        branch = copy.deepcopy(reference)
+    else:
+        # The branch cannot fill beyond this capacity within its raw-step budget.
+        # Preserve ring indices and all populated cells; avoid copying unused RAM.
+        branch = copy.copy(reference)
+        branch._max_length = min(
+            reference._max_length,
+            len(reference) + int(max_additions) + reference._n_step,
+        )
+        for name in (
+            "_observations",
+            "_actions",
+            "_rewards",
+            "_terminateds",
+            "_truncateds",
+            "_next_observations",
+        ):
+            source = getattr(reference, name)
+            target = np.zeros((branch._max_length,) + source.shape[1:], source.dtype)
+            target[: len(reference)] = source[: len(reference)]
+            setattr(branch, name, target)
+        branch._n_step_transitions = copy.deepcopy(reference._n_step_transitions)
     branch._n_step_transitions.clear()
     return branch
 
 
-def learning_branch_step(actor_key, critic_key, actor, critic, target, temperature,
-                         batch, gamma, n_step, critic_use_cdq, target_tau, target_entropy):
+def learning_branch_step(
+    actor_key,
+    critic_key,
+    actor,
+    critic,
+    target,
+    temperature,
+    batch,
+    gamma,
+    n_step,
+    critic_use_cdq,
+    target_tau,
+    target_entropy,
+):
     """Use the source SAC update for an isolated, learning actor/critic branch."""
     from scale_rl.agents.sac.sac_agent import _sac_update
-    return _sac_update(actor_key, critic_key, actor, critic, target, temperature,
-                       batch, gamma, n_step, critic_use_cdq, target_tau,
-                       target_entropy, batch)
+
+    return _sac_update(
+        actor_key,
+        critic_key,
+        actor,
+        critic,
+        target,
+        temperature,
+        batch,
+        gamma,
+        n_step,
+        critic_use_cdq,
+        target_tau,
+        target_entropy,
+        batch,
+    )
 
 
 def reference_roles(regime):
@@ -38,13 +86,61 @@ def reference_roles(regime):
     raise ValueError(f"unknown reference regime: {regime}")
 
 
-def diagnostic_actor_step(actor, critic, temperature, observations, key, critic_use_cdq):
+def diagnostic_actor_step(
+    actor,
+    critic,
+    temperature,
+    observations,
+    key,
+    critic_use_cdq,
+    diagnostics=None,
+    churn_observations=None,
+    cosine=False,
+):
     """Perform the existing SAC actor update against a frozen critic."""
     observations = jnp.asarray(observations)
     if observations.ndim < 2 or not bool(jnp.all(jnp.isfinite(observations))):
         raise ValueError("actor observations must be a finite batch")
-    updated, info = update_actor(key, actor, critic, temperature,
-                                 {"observation": observations}, critic_use_cdq)
+    kwargs = diagnostics or {}
+    updated, info = update_actor(
+        key,
+        actor,
+        critic,
+        temperature,
+        {"observation": observations},
+        critic_use_cdq,
+        saturation_threshold=kwargs.get("saturation_threshold"),
+    )
+    if diagnostics is not None:
+        from scale_rl.agents.sac.sac_agent import DIAGNOSTICS_PRECISION
+        from scale_rl.agents.sac.sac_update import compute_actor_gradient_cosine
+
+        churn_obs = (
+            observations
+            if churn_observations is None
+            else jnp.asarray(churn_observations)
+        )
+        with jax.default_matmul_precision(DIAGNOSTICS_PRECISION):
+            before = actor(observations=churn_obs).distribution
+            after = updated(observations=churn_obs).distribution
+            info["train/policy_churn"] = jnp.mean(
+                jnp.linalg.norm(
+                    jnp.tanh(after.mean()) - jnp.tanh(before.mean()), axis=-1
+                )
+            )
+            ref = jnp.asarray(kwargs["kl_ref_observations"])
+            before_ref = actor(observations=ref).distribution
+            after_ref = updated(observations=ref).distribution
+            info["train/policy_kl"] = jnp.mean(after_ref.kl_divergence(before_ref))
+        if cosine:
+            info["train/actor_grad_cosine"] = compute_actor_gradient_cosine(
+                jax.random.fold_in(key, 0xC05),
+                actor,
+                critic,
+                temperature,
+                {"observation": observations},
+                critic_use_cdq,
+            )
     delta = jax.tree.map(lambda new, old: new - old, updated.params, actor.params)
     info["parameter_update_norm"] = tree_norm(delta)
     if not bool(jnp.isfinite(info["parameter_update_norm"])):
@@ -71,14 +167,20 @@ class ObservationBuffer:
         self._observations.append(value.copy())
 
     def sample(self, batch_size):
-        if not self._observations or not isinstance(batch_size, (int, np.integer)) or batch_size <= 0:
+        if (
+            not self._observations
+            or not isinstance(batch_size, (int, np.integer))
+            or batch_size <= 0
+        ):
             raise ValueError("sampling requires observations and a positive batch size")
         indices = self._rng.integers(0, len(self), size=int(batch_size))
         return np.stack([self._observations[i] for i in indices]), indices
 
     def state_dict(self):
-        return {"observations": [x.copy() for x in self._observations],
-                "rng": copy.deepcopy(self._rng.bit_generator.state)}
+        return {
+            "observations": [x.copy() for x in self._observations],
+            "rng": copy.deepcopy(self._rng.bit_generator.state),
+        }
 
     @classmethod
     def from_state_dict(cls, state):
@@ -92,7 +194,7 @@ class ObservationBuffer:
 class ActorUpdateSchedule:
     """Match Exp12Trainer's fractional learner-update accumulator."""
 
-    def __init__(self, updates_per_interaction, carry=0.):
+    def __init__(self, updates_per_interaction, carry=0.0):
         self.rate = float(updates_per_interaction)
         self.carry = float(carry)
         if not math.isfinite(self.rate) or self.rate < 0 or not 0 <= self.carry < 1:
@@ -121,8 +223,17 @@ class DiagnosticActorBranch:
     State snapshots here are in-memory; durable environment resume is not yet wired.
     """
 
-    def __init__(self, actor, critic, temperature, seed, batch_size,
-                 updates_per_interaction, critic_use_cdq, carry=0.):
+    def __init__(
+        self,
+        actor,
+        critic,
+        temperature,
+        seed,
+        batch_size,
+        updates_per_interaction,
+        critic_use_cdq,
+        carry=0.0,
+    ):
         if not isinstance(batch_size, (int, np.integer)) or batch_size <= 0:
             raise ValueError("batch_size must be positive")
         self.actor = actor
@@ -136,6 +247,9 @@ class DiagnosticActorBranch:
         self.critic_use_cdq = bool(critic_use_cdq)
         self.interactions = 0
         self.optimizer_updates = 0
+        self.diagnostics = None
+        self.churn_observations = None
+        self.cosine_every = 0
 
     def act(self, raw_observation, normalize=None):
         """Sample from this branch's current actor without touching update RNG."""
@@ -143,8 +257,11 @@ class DiagnosticActorBranch:
         if normalize is not None:
             observation = normalize(observation)
         self.collection_key, key = jax.random.split(self.collection_key)
-        action = np.asarray(self.actor(
-            observations=jnp.asarray(observation), temperature=1.).sample(seed=key))
+        action = np.asarray(
+            self.actor(observations=jnp.asarray(observation), temperature=1.0).sample(
+                seed=key
+            )
+        )
         if not np.all(np.isfinite(action)):
             raise ValueError("nonfinite diagnostic action")
         return action
@@ -159,46 +276,91 @@ class DiagnosticActorBranch:
             if normalize is not None:
                 batch = normalize(batch)
             self.key, action_key = jax.random.split(self.key)
+            if self.churn_observations is None:
+                self.churn_observations = np.array(batch, copy=True)
             self.actor, info = diagnostic_actor_step(
-                self.actor, self.critic, self.temperature, batch, action_key,
-                self.critic_use_cdq)
+                self.actor,
+                self.critic,
+                self.temperature,
+                batch,
+                action_key,
+                self.critic_use_cdq,
+                self.diagnostics,
+                self.churn_observations,
+                bool(
+                    self.cosine_every
+                    and self.optimizer_updates % self.cosine_every == 0
+                ),
+            )
             self.optimizer_updates += 1
             indices_log.append(indices.tolist())
-            update_log.append({name: float(info[name]) for name in
-                               ("train/actor_gnorm", "parameter_update_norm")})
-        return {"sample_indices": indices_log, "updates": update_log,
-                "interactions": self.interactions,
-                "optimizer_updates": self.optimizer_updates}
+            update_log.append({name: float(value) for name, value in info.items()})
+        return {
+            "sample_indices": indices_log,
+            "updates": update_log,
+            "interactions": self.interactions,
+            "optimizer_updates": self.optimizer_updates,
+        }
 
     def state_dict(self):
-        return {"actor": self.actor, "buffer": self.buffer.state_dict(),
-                "schedule": self.schedule.state_dict(), "key": np.asarray(self.key).copy(),
-                "collection_key": np.asarray(self.collection_key).copy(),
-                "batch_size": self.batch_size, "critic_use_cdq": self.critic_use_cdq,
-                "interactions": self.interactions, "optimizer_updates": self.optimizer_updates}
+        return {
+            "actor": self.actor,
+            "buffer": self.buffer.state_dict(),
+            "diagnostics": self.diagnostics,
+            "churn_observations": self.churn_observations,
+            "cosine_every": self.cosine_every,
+            "schedule": self.schedule.state_dict(),
+            "key": np.asarray(self.key).copy(),
+            "collection_key": np.asarray(self.collection_key).copy(),
+            "batch_size": self.batch_size,
+            "critic_use_cdq": self.critic_use_cdq,
+            "interactions": self.interactions,
+            "optimizer_updates": self.optimizer_updates,
+        }
 
     @classmethod
     def from_state_dict(cls, state, critic, temperature):
         schedule = ActorUpdateSchedule.from_state_dict(state["schedule"])
-        obj = cls(state["actor"], critic, temperature, 0, state["batch_size"],
-                  schedule.rate, state["critic_use_cdq"], schedule.carry)
+        obj = cls(
+            state["actor"],
+            critic,
+            temperature,
+            0,
+            state["batch_size"],
+            schedule.rate,
+            state["critic_use_cdq"],
+            schedule.carry,
+        )
         obj.buffer = ObservationBuffer.from_state_dict(state["buffer"])
         obj.key = jnp.asarray(state["key"])
         obj.collection_key = jnp.asarray(state["collection_key"])
         obj.interactions = int(state["interactions"])
         obj.optimizer_updates = int(state["optimizer_updates"])
+        obj.diagnostics = state.get("diagnostics")
+        obj.churn_observations = state.get("churn_observations")
+        obj.cosine_every = state.get("cosine_every", 0)
         return obj
 
 
 def paired_returns(baseline, small, large):
     """Keep matched episode returns and baseline-relative contrasts separate."""
     arrays = [np.asarray(values, dtype=float) for values in (baseline, small, large)]
-    if (any(a.ndim != 1 or not a.size or not np.all(np.isfinite(a)) for a in arrays)
-            or len({len(a) for a in arrays}) != 1):
+    if (
+        any(a.ndim != 1 or not a.size or not np.all(np.isfinite(a)) for a in arrays)
+        or len({len(a) for a in arrays}) != 1
+    ):
         raise ValueError("paired episode returns must be finite and equally sized")
-    return [{"baseline": float(b), "small": float(s), "large": float(l),
-             "delta_small": float(s - b), "delta_large": float(l - b),
-             "advantage_large": float(l - s)} for b, s, l in zip(*arrays)]
+    return [
+        {
+            "baseline": float(b),
+            "small": float(s),
+            "large": float(l),
+            "delta_small": float(s - b),
+            "delta_large": float(l - b),
+            "advantage_large": float(l - s),
+        }
+        for b, s, l in zip(*arrays)
+    ]
 
 
 def regime_contrasts(small_reference_checkpoints, large_reference_checkpoints):
@@ -207,29 +369,42 @@ def regime_contrasts(small_reference_checkpoints, large_reference_checkpoints):
     Inputs are checkpoint-level means for one environment, seed, and horizon;
     callers must not pool episodes or mix environments in these inputs.
     """
-    if (not isinstance(small_reference_checkpoints, dict)
-            or not isinstance(large_reference_checkpoints, dict)
-            or not small_reference_checkpoints
-            or small_reference_checkpoints.keys() != large_reference_checkpoints.keys()):
+    if (
+        not isinstance(small_reference_checkpoints, dict)
+        or not isinstance(large_reference_checkpoints, dict)
+        or not small_reference_checkpoints
+        or small_reference_checkpoints.keys() != large_reference_checkpoints.keys()
+    ):
         raise ValueError("reference regimes must have matching checkpoint coverage")
-    arrays = [np.asarray(list(x.values()), dtype=float) for x in
-              (small_reference_checkpoints, large_reference_checkpoints)]
+    arrays = [
+        np.asarray(list(x.values()), dtype=float)
+        for x in (small_reference_checkpoints, large_reference_checkpoints)
+    ]
     if any(a.ndim != 1 or not a.size or not np.all(np.isfinite(a)) for a in arrays):
         raise ValueError("checkpoint means must be finite nonempty vectors")
     small, large = (float(np.mean(a)) for a in arrays)
-    return {"small_reference": small, "large_reference": large,
-            "sensitivity": large - small, "equal_weight_mean": (small + large) / 2}
+    return {
+        "small_reference": small,
+        "large_reference": large,
+        "sensitivity": large - small,
+        "equal_weight_mean": (small + large) / 2,
+    }
 
 
 def combine_pilot_analyses(small_reference, large_reference):
     """Compare matched independent runs without pooling episodes as replicas."""
-    if (small_reference.get("reference_regime") != "reference_small"
-            or large_reference.get("reference_regime") != "reference_large"
-            or small_reference.get("environment") != large_reference.get("environment")
-            or small_reference.get("training_seed") != large_reference.get("training_seed")
-            or small_reference["horizons"].keys() != large_reference["horizons"].keys()):
+    if (
+        small_reference.get("reference_regime") != "reference_small"
+        or large_reference.get("reference_regime") != "reference_large"
+        or small_reference.get("environment") != large_reference.get("environment")
+        or small_reference.get("training_seed") != large_reference.get("training_seed")
+        or small_reference["horizons"].keys() != large_reference["horizons"].keys()
+    ):
         raise ValueError("pilot analyses must match environment, seed, and horizons")
-    return {int(horizon): regime_contrasts(
-        small_reference["horizons"][horizon]["checkpoint_means"],
-        large_reference["horizons"][horizon]["checkpoint_means"])
-        for horizon in small_reference["horizons"]}
+    return {
+        int(horizon): regime_contrasts(
+            small_reference["horizons"][horizon]["checkpoint_means"],
+            large_reference["horizons"][horizon]["checkpoint_means"],
+        )
+        for horizon in small_reference["horizons"]
+    }
