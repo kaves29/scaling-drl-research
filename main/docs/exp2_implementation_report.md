@@ -192,3 +192,11 @@ before admitting its two-job stress, uses fresh qualification-attempt paths
 so completed-run reloads cannot masquerade as memory stress, and records
 actual workload identities in the receipt. Failure of a concurrent stress
 fails that attempt rather than emitting a successful receipt.
+
+## GPU qualification and actual pilot launch status (12 November 2026)
+
+The resumed Kaggle GPU qualification notebook `shouryakaveti/experiment-2-resume-qualification` version 6 completed successfully. Its `combined_qualification.json` reports both reference regimes at implementation source `a7b229335b9737ab1ea1fe1b9f428bbc3ea26a6a`, all four 10,000-raw-step branch conditions, plasticity probes, and checkpoint restart. The receipt file SHA-256 is `e42829e20049bfa75545f96cafc42d57184f85c2e4345171468b02036db63d7a`. This does not qualify the one-million-step reference duration or two jobs on a single GPU.
+
+The real pilot notebook `main/notebooks/exp2_actual_pilot/` was pushed privately as Kaggle kernel version 1. The launch attempt failed in the first setup cell when `UserSecretsClient` could not provide `WANDB_API_KEY`; it stopped before dependency installation, GPU allocation, and training. No scientific runs started. Separately, the Cloud task's W&B key was accepted and its identity could see the existing `Experiment-2-Pilot-Testing` project. Kaggle does not inherit the Cloud task's secret: the existing W&B secret must be enabled for this notebook in Kaggle Add-ons > Secrets. The notebook keeps W&B online and refuses to start training if that check fails.
+
+The pilot notebook asks for two T4 GPUs and requests up to two jobs per GPU. Its source-bound scheduler uses one job per GPU because the successful qualification exercised one job on each device and did not test two concurrent jobs on the same device. Kaggle URL: https://www.kaggle.com/code/shouryakaveti/experiment-2-actual-pilot. The pilot is not running until a subsequent Kaggle launch passes W&B setup and the scheduler starts.

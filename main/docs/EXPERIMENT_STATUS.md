@@ -1,8 +1,8 @@
 # Exp1/Exp2 scientific and validation status
 
-## Revised online Exp2 implementation candidate (11 November 2026)
+## Revised online Exp2 implementation and pilot status (12 November 2026)
 
-The active `codex/exp2-online-prototype-20261107` implementation now connects the approved twenty-run, fifteen-checkpoint design to four sequential frozen/learning small/large branches, actual raw-step budgets, branch-local source SAC and durable restart. See [the implementation report](exp2_implementation_report.md) for validation receipts, source identities, complete Kaggle notebook/qualification commands and execution limitations. This supersedes the older frozen-only pilot description below. CPU tests are engineering evidence; actual Kaggle full-horizon/full-assay concurrency, online W&B and scientific full-budget execution remain unqualified. No Kaggle or Delta job was launched by this implementation task.
+Kaggle GPU qualification passed at source `a7b229335b9737ab1ea1fe1b9f428bbc3ea26a6a` for small and large reference regimes, including four full 10,000-raw-step branches, the plasticity probe and interruption/restart. It does not qualify two concurrent jobs on one GPU or the full one-million-step run. The real pilot notebook `shouryakaveti/experiment-2-actual-pilot` version 1 failed before training because Kaggle could not read its `WANDB_API_KEY` user secret. No scientific pilot runs have started. Cloud W&B authentication and access to `Experiment-2-Pilot-Testing` were verified; the Kaggle notebook still needs its existing W&B secret enabled. Once that gate is resolved, the scheduler will admit one job per GPU; the exact-source qualification did not test same-GPU concurrency. See [the implementation report](exp2_implementation_report.md) and [continuation handoff](online_exp2_handoff_20261111.md).
 
 ## Revised online Experiment 2 pilot candidate (10 November 2026)
 

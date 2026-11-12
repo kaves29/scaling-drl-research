@@ -1,0 +1,14 @@
+{
+  "id": "shouryakaveti/experiment-2-actual-pilot",
+  "title": "Experiment 2 Actual Pilot",
+  "code_file": "experiment-2-actual-pilot.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_internet": true,
+  "dataset_sources": [],
+  "competition_sources": [],
+  "kernel_sources": [],
+  "machine_shape": "NvidiaTeslaT4"
+}
