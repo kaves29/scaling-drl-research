@@ -160,7 +160,9 @@ def schedule(output, jobs_per_gpu=1, qualification=None):
                         CUDA_VISIBLE_DEVICES=gpu["index"],
                         MUJOCO_EGL_DEVICE_ID="0",
                         XLA_PYTHON_CLIENT_PREALLOCATE="false",
-                        JAX_PLATFORMS="cuda",
+                        # SAC initializes network parameters on CPU, then trains
+                        # on CUDA. Keep both backends available in worker processes.
+                        JAX_PLATFORMS="cuda,cpu",
                         WANDB_MODE="online",
                         PYTHONPATH=str(Path(__file__).parents[2])
                         + os.pathsep
