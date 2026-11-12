@@ -1,13 +1,15 @@
 # Experiment 2 revised pilot: continuation handoff
 
 Status as of 12 November 2026: **GPU engineering qualification passed; the
-scientific pilot is not running**. The private Kaggle pilot notebook
-`shouryakaveti/experiment-2-actual-pilot` version 1 stopped during setup because
-Kaggle could not provide `WANDB_API_KEY`; no pilot training began. The Cloud
-W&B credential authenticates and can access `Experiment-2-Pilot-Testing`, but
-that credential is not automatically passed into Kaggle. Enable the existing
-W&B secret for this Kaggle notebook, then rerun it. The owner's latest
-requirements are in `online_exp2_pilot_revision_requirements.md`.
+scientific pilot is not running**. Kaggle pilot notebook version 1 authenticated
+W&B and found both T4s, but every child failed before training because the
+scheduler set `JAX_PLATFORMS=cuda`; SAC initialization explicitly requests the
+CPU backend as well. Fix commit
+`6be6fdb8ce481acf366cc4ac86ef0816f9b6f257` sets `JAX_PLATFORMS=cuda,cpu`, the
+same backend availability used by the successful qualification. Kaggle pilot
+notebook version 2 is saved without executing it; relaunch version 2 after it
+appears as the current version. No pilot training step completed. The owner's
+latest requirements are in `online_exp2_pilot_revision_requirements.md`.
 This work belongs on branch `codex/exp2-online-prototype-20261107`. Read the
 branch's current HEAD, preserve all pre-existing uncommitted files, and use the
 root/project Agent-Context research instructions and relevant skills.
@@ -90,12 +92,14 @@ qualifies one process per GPU only; it explicitly does not qualify two jobs on
 one GPU or the one-million-step reference budget.
 
 The real pilot notebook is `main/notebooks/exp2_actual_pilot/` and Kaggle
-version 1 is at
+version 2 is at
 https://www.kaggle.com/code/shouryakaveti/experiment-2-actual-pilot. Its first
-API-launched execution ended at the Kaggle Secrets lookup before installing
-dependencies or starting GPU work. After enabling `WANDB_API_KEY` for this
-notebook in Kaggle Add-ons > Secrets, rerun the notebook. W&B must remain online
-for the scientific pilot; do not silently switch pilot logging to offline mode.
-The notebook requests two T4 GPUs and asks the scheduler for a maximum of two
+API-launched execution completed setup and authenticated W&B, but its GPU child
+processes failed during SAC network initialization because only the CUDA JAX
+backend was enabled. The updated worker environment now preserves both CPU and
+CUDA backends. Kaggle version 2 is intentionally saved without execution so the
+owner can relaunch it. Kaggle successfully exposed `WANDB_API_KEY` during
+version 1, so no secret change is currently needed. W&B remains online. The
+notebook requests two T4 GPUs and asks the scheduler for a maximum of two
 jobs/GPU, but the source-bound admission check will use one/GPU until same-GPU
 concurrency is qualified. Do not launch on Delta or affect Experiment 1 jobs.
