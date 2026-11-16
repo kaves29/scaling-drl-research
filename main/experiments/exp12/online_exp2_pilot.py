@@ -681,8 +681,10 @@ def _plot_training_curves(runner, progress, directory):
 def pilot_checkpoint(runner, trainer):
     """Pause reference training, then run one isolated branch at a time."""
     cfg = runner.cfg
-    checkpoint = trainer.raw_env_steps
-    directory = runner.root / "diagnostics" / f"raw_{checkpoint:08d}"
+    axis = getattr(runner, "checkpoint_axis", "raw_env_steps")
+    checkpoint = trainer.update_step if axis == "critic_updates" else trainer.raw_env_steps
+    prefix = "update" if axis == "critic_updates" else "raw"
+    directory = runner.root / "diagnostics" / f"{prefix}_{checkpoint:08d}"
     directory.mkdir(parents=True, exist_ok=True)
     path = directory / "progress.pkl"
     identity = {
@@ -690,6 +692,7 @@ def pilot_checkpoint(runner, trainer):
         "source_sha256": runner.source_hash,
         "source_commit": runner.source_commit,
         "checkpoint": checkpoint,
+        "checkpoint_axis": axis,
         "reference_interaction_step": trainer.interaction_step,
         "reference_regime": cfg.online_exp2.reference_regime,
         "environment": cfg.env_name,
