@@ -12,10 +12,11 @@ from pathlib import Path
 
 import numpy as np
 import wandb
+from omegaconf import OmegaConf
 
 from experiments.exp1 import compose_config
 from experiments.online_exp2 import OnlineExp2
-from experiments.exp12.replay_exp2_contract import admit_parent, checkpoints
+from experiments.exp12.replay_exp2_contract import admit_parent, checkpoints, validate_parent_config
 from experiments.exp12.state import latest_state_dir, load_buffer, load_meta
 from experiments.exp12.precision import set_matmul_precision
 from utils.atomic_io import atomic_write_text
@@ -33,6 +34,9 @@ class ReplayExp2Pilot(OnlineExp2):
         self.update_budget = budget
         schedule = checkpoints(budget)
         super().__init__(cfg, root)
+        metadata = json.loads((state.parent.parent / "run_metadata.json").read_text())
+        validate_parent_config(metadata.get("resolved_config"),
+                               OmegaConf.to_container(self.cfg, resolve=True))
         self.checkpoint_axis = "critic_updates"
         self.parent = parent
         self.parent_state = state

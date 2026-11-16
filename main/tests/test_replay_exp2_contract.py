@@ -5,7 +5,7 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from experiments.exp12.replay_exp2_contract import SOURCE, admit_parent, checkpoints
+from experiments.exp12.replay_exp2_contract import SOURCE, admit_parent, checkpoints, validate_parent_config
 
 
 class ContractTests(unittest.TestCase):
@@ -103,3 +103,66 @@ class OfflineLoopTests(unittest.TestCase):
             trainer.buffer.add.assert_not_called()
             trainer.close.assert_called_once()
             self.assertEqual(json.loads((runner.root/"analysis.json").read_text())["checkpoint_axis"],"critic_updates")
+
+
+class ConfigCompatibilityTests(unittest.TestCase):
+    def test_changed_discount_or_optimizer_rejected_before_restore(self):
+        base = dict(agent={"gamma":.99,"critic_learning_rate":1e-4},
+                    env={"action_repeat":2}, buffer={"n_step":1},
+                    gamma=.99,n_step=1,action_repeat=2,
+                    updates_per_interaction_step=2,actor_grad_cosine_every=30)
+        validate_parent_config(base,base)
+        with self.assertRaisesRegex(ValueError,"gamma"):
+            validate_parent_config(base,{**base,"gamma":.95})
+        with self.assertRaisesRegex(ValueError,"agent"):
+            validate_parent_config(base,{**base,"agent":{**base["agent"],"critic_learning_rate":1e-3}})
+        with self.assertRaisesRegex(ValueError,"resolved_config"):
+            validate_parent_config(None,base)
+
+class NumericReplayRestartTests(unittest.TestCase):
+    def test_shadow_update_and_rng_resume_with_fixed_reference(self):
+        import numpy as np
+        from experiments.online_exp2 import OnlineExp2
+        from experiments.exp12.replay_exp2_pilot import ReplayExp2Pilot
+        from experiments.exp12.online_exp2_pilot import _hash, _reference_state
+        from experiments.exp12.state import latest_state_dir
+        from tests.test_revised_exp2_runner import patches, revised_cfg
+
+        def create(directory):
+            runner=object.__new__(ReplayExp2Pilot)
+            OnlineExp2.__init__(runner,revised_cfg(),directory)
+            runner.parent={"source_commit":SOURCE}
+            runner.checkpoint_axis="critic_updates"
+            runner.update_budget=3
+            return runner
+
+        def step(runner):
+            batch,indices=runner.trainer.buffer.sample(return_indices=True)
+            runner._shadow_updates(runner.trainer,{k:v[None] for k,v in batch.items()},indices[None],None)
+            runner.trainer.update_step += 1
+
+        with tempfile.TemporaryDirectory() as tmp, patches():
+            runner=create(tmp)
+            runner.trainer.start()
+            for i in range(8):
+                runner.trainer.buffer.add({"observation":np.full((1,3),i/10,np.float32),
+                    "next_observation":np.full((1,3),(i+1)/10,np.float32),
+                    "action":np.zeros((1,2),np.float32),"reward":np.array([1.],np.float32),
+                    "terminated":np.array([False]),"truncated":np.array([False])})
+            fixed=_reference_state(runner.trainer)
+            initial=_hash(runner.shadows["small"].critic)
+            step(runner)
+            self.assertNotEqual(initial,_hash(runner.shadows["small"].critic))
+            runner.save()
+            step(runner)
+            expected={name:(_hash(s.critic),_hash(s.target),s.updates) for name,s in runner.shadows.items()}
+            expected_key=np.array(runner.key)
+            self.assertEqual(fixed,_reference_state(runner.trainer))
+            runner.trainer.close()
+            restored=create(tmp)
+            restored.restore(latest_state_dir(Path(tmp)/"state"))
+            step(restored)
+            self.assertEqual(expected,{name:(_hash(s.critic),_hash(s.target),s.updates) for name,s in restored.shadows.items()})
+            np.testing.assert_array_equal(expected_key,np.array(restored.key))
+            self.assertEqual(fixed,_reference_state(restored.trainer))
+            restored.trainer.close()

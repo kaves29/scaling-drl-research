@@ -60,3 +60,20 @@ def admit_parent(manifest_path, identity):
     if verification.get("manifest_sha256") != digest or verification.get("all_files_ok") is not True:
         raise ValueError("transfer verification does not match manifest")
     return state, {**row, "manifest_sha256": digest}
+
+
+def validate_parent_config(recorded, current):
+    """Fail closed on changed SAC/observation/environment semantics.
+
+    Logging, Exp2 probe schedule and the number of reference collection steps
+    deliberately differ. All model, optimizer, buffer, and environment settings
+    must still match the writer's resolved configuration.
+    """
+    if not isinstance(recorded, dict):
+        raise ValueError("parent resolved_config missing; writer compatibility review required")
+    keys = ("agent", "env", "buffer", "gamma", "n_step", "action_repeat",
+            "updates_per_interaction_step", "actor_grad_cosine_every")
+    mismatches = [key for key in keys if key not in recorded or
+                  key not in current or recorded[key] != current[key]]
+    if mismatches:
+        raise ValueError("parent/current protocol mismatch: " + ", ".join(mismatches))
