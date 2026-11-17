@@ -46,18 +46,46 @@ else:
     image = verify_image = modal.Image.debian_slim(python_version="3.12")
 
 MOUNTS = {"/parents": parents, "/results": results}
-PER_SECOND = 0.000222 + 8 * 0.0000131 + 48 * 0.00000222
+def resource_rate(memory_gib):
+    if type(memory_gib) is not int or memory_gib not in (48, 75):
+        raise ValueError("unsupported host-memory reservation")
+    return 0.000222 + 8 * 0.0000131 + memory_gib * 0.00000222
 
 
-def reservation_seconds(reserved, ceiling, session_limit):
+PER_SECOND = resource_rate(48)
+
+
+def reservation_seconds(reserved, ceiling, session_limit, memory_gib=48):
     if (not all(isinstance(v, (int, float)) and not isinstance(v, bool) and math.isfinite(v)
                 for v in (reserved, ceiling, session_limit))
             or reserved < 0 or not 0 < ceiling <= 40 or session_limit <= 0):
         raise ValueError("invalid spending limit or ledger")
-    seconds = min(22 * 3600, int(min(ceiling - reserved, session_limit) / PER_SECOND))
+    seconds = min(22 * 3600, int(min(ceiling - reserved, session_limit) / resource_rate(memory_gib)))
     if seconds < 300:
         raise ValueError("remaining reserved budget below five minutes")
     return seconds
+
+
+def has_start_headroom(gpu_free_mib, host_free_mib):
+    # One prior L4 worker sampled 8.28 GiB GPU / 6.99 GiB RSS before branches.
+    # Leave a 2-GiB margin beyond rounded-up per-worker estimates.
+    return gpu_free_mib >= 11 * 1024 and host_free_mib >= 9 * 1024
+
+
+def memory_headroom():
+    """Use device free memory and the container's actual cgroup memory budget."""
+    output = subprocess.check_output(
+        ["nvidia-smi", "--query-gpu=memory.free", "--format=csv,noheader,nounits"], text=True
+    ).strip().splitlines()
+    if len(output) != 1:
+        raise ValueError("expected exactly one visible GPU")
+    gpu_free_mib = int(output[0].strip())
+    cgroup = Path("/sys/fs/cgroup")
+    limit = int((cgroup / "memory.max").read_text().strip())
+    used = int((cgroup / "memory.current").read_text().strip())
+    if limit <= 0 or used < 0:
+        raise ValueError("invalid cgroup memory measurements")
+    return gpu_free_mib, max(0, (limit - used) // (1024 * 1024))
 
 
 def qualification_context(manifest):
@@ -143,7 +171,7 @@ def verify():
 @app.function(image=image, gpu="L4", cpu=8, memory=49152, volumes=MOUNTS,
               secrets=[modal.Secret.from_name("exp2-wandb")], timeout=23 * 3600,
               max_containers=1, retries=0)
-def qualify(budget_usd: float = 10.0, session_usd: float = 5.0):
+def qualify(budget_usd: float = 10.0, session_usd: float = 5.0, memory_gib: int = 48):
     """Run a single-worker, separately restarted qualification under a reservation."""
     source_commit = subprocess.check_output(["git", "-C", "/source", "rev-parse", "HEAD"], text=True).strip()
     if not 0 < budget_usd <= 40:
@@ -162,8 +190,8 @@ def qualify(budget_usd: float = 10.0, session_usd: float = 5.0):
         raise ValueError("qualification receipt already exists; review it before replacing")
     ledger = output / "budget.json"
     old = json.loads(ledger.read_text()) if ledger.exists() else {"reserved_usd": 2.0}
-    seconds = reservation_seconds(old["reserved_usd"], budget_usd, session_usd)
-    old["reserved_usd"] += seconds * PER_SECOND
+    seconds = reservation_seconds(old["reserved_usd"], budget_usd, session_usd, memory_gib)
+    old["reserved_usd"] += seconds * resource_rate(memory_gib)
     ledger.write_text(json.dumps(old, indent=2))
     results.commit()
     identity, expected_horizon = qualification_context(manifest)
@@ -208,7 +236,7 @@ def qualify(budget_usd: float = 10.0, session_usd: float = 5.0):
     return receipt
 
 
-@app.function(image=image, gpu="L4", cpu=8, memory=49152, volumes=MOUNTS,
+@app.function(image=image, gpu="L4", cpu=8, memory=76800, volumes=MOUNTS,
               secrets=[modal.Secret.from_name("exp2-wandb")], timeout=23 * 3600,
               max_containers=1, retries=0)
 def train(max_workers: int = 7, budget_usd: float = 40.0,
@@ -243,9 +271,10 @@ def train(max_workers: int = 7, budget_usd: float = 40.0,
     reserve = 2.0  # CPU-only verification/build/storage and shutdown allowance.
     ledger = output / "budget.json"
     old = json.loads(ledger.read_text()) if ledger.exists() else {"reserved_usd": reserve}
+    rate = resource_rate(75)
     seconds = reservation_seconds(old["reserved_usd"], budget_usd,
-                                  min(budget_usd, max_seconds * PER_SECOND))
-    old["reserved_usd"] += seconds * PER_SECOND
+                                  min(budget_usd, max_seconds * rate), 75)
+    old["reserved_usd"] += seconds * rate
     ledger.write_text(json.dumps(old, indent=2))
     results.commit()
     deadline = time.monotonic() + seconds
@@ -256,9 +285,17 @@ def train(max_workers: int = 7, budget_usd: float = 40.0,
     active = []
     env = worker_environment()
     last_commit = time.monotonic()
+    last_launch = 0.0
     try:
         while (pending or active) and time.monotonic() < deadline - 120:
             while pending and len(active) < max_workers:
+                if active and time.monotonic() - last_launch < 30:
+                    break
+                gpu_free, host_free = memory_headroom()
+                if not has_start_headroom(gpu_free, host_free):
+                    if not active:
+                        raise RuntimeError("insufficient GPU or host memory headroom")
+                    break
                 identity = pending.pop(0)
                 name = f"{identity['environment']}_seed{identity['seed']}_{identity['reference_regime']}"
                 directory = output / name
@@ -279,7 +316,9 @@ def train(max_workers: int = 7, budget_usd: float = 40.0,
                 proc = subprocess.Popen(command, env=env, cwd="/source/main", stdout=log,
                                         stderr=subprocess.STDOUT)
                 active.append((proc, log, identity, directory))
-                print("START", name, flush=True)
+                last_launch = time.monotonic()
+                print("START", name, "gpu_free_mib", gpu_free,
+                      "host_free_mib", host_free, flush=True)
             for item in list(active):
                 proc, log, identity, directory = item
                 code = proc.poll()
@@ -314,7 +353,7 @@ def train(max_workers: int = 7, budget_usd: float = 40.0,
     return {"pending": len(pending), "interrupted": len(active), "budget": old}
 
 
-@app.function(image=image, gpu="L4", cpu=8, memory=49152, volumes=MOUNTS,
+@app.function(image=image, gpu="L4", cpu=8, memory=76800, volumes=MOUNTS,
               secrets=[modal.Secret.from_name("exp2-wandb")], timeout=23 * 3600,
               max_containers=1, retries=0)
 def qualify_then_train(budget_usd: float = 40.0, qualification_usd: float = 5.0):
@@ -331,14 +370,14 @@ def qualify_then_train(budget_usd: float = 40.0, qualification_usd: float = 5.0)
     if path.exists():
         receipt = json.loads(path.read_text())
     else:
-        receipt = qualify.local(budget_usd, qualification_usd)
+        receipt = qualify.local(budget_usd, qualification_usd, memory_gib=75)
         validate_qualification(receipt, source_commit, digest, identity, expected_horizon)
         results.reload()
         if json.loads(path.read_text()) != receipt:
             raise ValueError("persisted qualification differs from returned evidence")
     validate_qualification(receipt, source_commit, digest, identity, expected_horizon)
     remaining = int(22 * 3600 - (time.monotonic() - session_start))
-    return train.local(max_workers=1, budget_usd=budget_usd, max_seconds=remaining)
+    return train.local(max_workers=7, budget_usd=budget_usd, max_seconds=remaining)
 
 
 @app.local_entrypoint()

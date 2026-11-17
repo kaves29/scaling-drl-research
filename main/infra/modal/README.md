@@ -81,8 +81,9 @@ modal run --detach main/infra/modal/exp2_modal.py --mode qualify_then_train --bu
 ```
 
 The controller resumes from a valid receipt for the same source and manifest.
-It permits one pilot worker and stops if qualification fails or the remaining
-reservation is insufficient. Prior reservations remain charged against the cap.
+It requests up to seven pilot workers but respects the measured worker count in
+the receipt; the current qualification produces only a one-worker receipt.
+It stops if qualification fails or the remaining reservation is insufficient. Prior reservations remain charged against the cap.
 The ledger is an estimate, not an account-wide spending guarantee; run only one
 controller or manual session at a time to avoid concurrent ledger updates.
 
@@ -101,8 +102,16 @@ concurrency; other errors stop and preserve logs.
 
 GPU functions are limited to 23 hours; work sessions reserve at most 22 hours
 and leave shutdown time. Resume uses the same durable output root and source.
-Requested 8 CPU cores and 48 GiB RAM are conservative initial host resources,
-not measured requirements. Their charges can dominate GPU-only cost estimates.
+Standalone qualification requests 8 CPU cores and 48 GiB RAM. Training requests
+8 CPU cores and 75 GiB RAM; the single-container qualification-to-training
+controller also reserves and bills 75 GiB throughout. These are requested
+resources, not measured requirements. Before starting each worker, training
+requires 11 GiB of free GPU memory and 9 GiB of cgroup host-memory headroom,
+and staggers launches by 30 seconds. These thresholds round up the sampled
+one-worker eager-run footprint (8.28 GiB GPU, 6.99 GiB RSS) and add 2 GiB; that
+sample did not reach full branches and is not a peak or compiled-run estimate.
+These checks do not guarantee that later allocations fit or qualify seven
+concurrent workers. Their charges can dominate GPU-only cost estimates.
 The local ledger reserves published GPU/CPU/RAM rates plus a $2 allowance.
 It is an estimate, not an account-wide hard spending limit, and includes no
 unknown prior usage. Verify the account budget and current pricing before
