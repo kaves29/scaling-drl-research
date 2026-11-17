@@ -33,11 +33,15 @@ class StagedImportTest(unittest.TestCase):
             definitions = [call.kwargs for call in app.function.call_args_list]
             self.assertEqual([d['memory'] for d in definitions if d.get('gpu') == 'L4'],
                              [49152, 76800, 76800])
-            smoke = [d for d in definitions if d.get('gpu') == 'A100-80GB']
+            smoke = [d for d in definitions if d.get('gpu') == 'A100-80GB' and d.get('memory') == 20480]
             self.assertEqual(len(smoke), 1)
             self.assertEqual((smoke[0]['memory'], smoke[0]['timeout']), (20480, 600))
             self.assertAlmostEqual(module['A100_SMOKE_RATE'], 0.0008432)
             self.assertAlmostEqual(module['A100_SMOKE_RESERVATION'], 0.50592)
+            self.assertAlmostEqual(module['resource_rate'](75, 'A100-80GB'), 0.0009653)
+            self.assertEqual(len([d for d in definitions if d.get('gpu') == 'A100-80GB'
+                                  and d.get('memory') == (76800, 76800)
+                                  and d.get('cpu') == (8, 8)]), 1)
             with patch.dict(os.environ, {'PYOPENGL_PLATFORM': 'glfw'}):
                 env = module['worker_environment']()
             self.assertEqual(env['MUJOCO_GL'], 'egl')
@@ -63,6 +67,19 @@ class StagedImportTest(unittest.TestCase):
                                            for a in ('small', 'large') for m in ('frozen', 'learning')},
                        'probe_architectures': ['small', 'large'],
                        'interruption': {'checkpoint': 5000, 'raw_env_steps': 5000}}
+            smoke_receipt = {**receipt, 'gpu_model': 'NVIDIA A100-SXM4-80GB',
+                             'gpu_memory_mib': 81920, 'smoke_only': True, 'qualified_workers': 0,
+                             'qualification_protocol': 'a100-smoke-100-20-v1',
+                             'qualification_updates': 100, 'checkpoint': 100,
+                             'branch_horizon': 20, 'full_branch_horizon': False,
+                             'plasticity_probe': False, 'interruption': {'checkpoint': 100, 'raw_env_steps': 10},
+                             'branch_counters': {f'{a}_{m}': {'raw_env_steps': 20}
+                                                 for a in ('small', 'large') for m in ('frozen', 'learning')},
+                             'smoke_probe': {'rounds': 1, 'steps': 5, 'pool_size': 256,
+                                             'batch_size': 32, 'eval_chunk': 64}}
+            module['validate_a100_smoke'](smoke_receipt, 'abc', 'digest', receipt['identity'])
+            with self.assertRaises(ValueError):
+                module['validate_a100_smoke']({**smoke_receipt, 'restart': False}, 'abc', 'digest', receipt['identity'])
             self.assertEqual(module['validate_qualification'](receipt, 'abc', 'digest', receipt['identity'], 10000), 1)
             with self.assertRaises(ValueError):
                 module['validate_qualification']({**receipt, 'checkpoint': 66001}, 'abc', 'digest', receipt['identity'], 10000)
@@ -141,3 +158,44 @@ class StagedImportTest(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     module['qualify_then_train'](40.0, 5.0)
             train.local.assert_not_called()
+            identity = {'environment': 'dog-run', 'seed': 1, 'reference_regime': 'reference_small'}
+            with self.assertRaisesRegex(ValueError, 'analysis'):
+                module['validate_completed_run'](root / 'missing', 'abc', identity)
+            from itertools import count
+            from types import SimpleNamespace
+            pilot_manifest = root / 'pilot-manifest.json'
+            pilot_manifest.write_text(json.dumps({'runs': [
+                {'environment': 'dog-run', 'seed': seed, 'architecture': 'D2W512'}
+                for seed in (1, 2, 3)]}))
+            pilot_output = root / 'pilot-output'
+            pilot_output.mkdir()
+            launched = []
+            def launch(command, **kwargs):
+                self.assertIn('short-smoke-only', kwargs['env']['WANDB_TAGS'])
+                ident = json.loads(command[-1])
+                directory = Path(command[command.index('--output') + 1])
+                (directory / 'analysis.json').write_text(json.dumps({
+                    'source_commit': 'abc', 'protocol': 'exp1-final-replay-v1',
+                    'environment': ident['environment'], 'training_seed': ident['seed'],
+                    'reference_regime': ident['reference_regime']}))
+                launched.append(ident)
+                return SimpleNamespace(poll=lambda: 0)
+            ticks = count(0, 31)
+            with patch.dict(module['run_pilot_workers'].__globals__,
+                            {'memory_headroom': lambda: (50000, 50000)}), \
+                 patch('subprocess.Popen', side_effect=launch), \
+                 patch('time.monotonic', side_effect=lambda: next(ticks)), patch('time.sleep'):
+                result = module['run_pilot_workers'](pilot_manifest, pilot_output, 2, 'abc', 10000, {},
+                                                     wandb_tags='a100-pilot,short-smoke-only')
+            self.assertEqual((len(launched), result['pending'], result['interrupted']), (3, 0, 0))
+            failed_output = root / 'failed-output'
+            failed_output.mkdir()
+            ticks = count(0, 31)
+            failed = SimpleNamespace(poll=lambda: 17)
+            with patch.dict(module['run_pilot_workers'].__globals__,
+                            {'memory_headroom': lambda: (50000, 50000)}), \
+                 patch('subprocess.Popen', return_value=failed) as start, \
+                 patch('time.monotonic', side_effect=lambda: next(ticks)), patch('time.sleep'):
+                with self.assertRaisesRegex(RuntimeError, 'worker exit 17'):
+                    module['run_pilot_workers'](pilot_manifest, failed_output, 1, 'abc', 10000, {})
+            start.assert_called_once()

@@ -8,6 +8,7 @@ import hashlib
 import json
 import math
 import os
+import re
 from pathlib import Path
 import subprocess
 import tempfile
@@ -46,10 +47,13 @@ else:
     image = verify_image = modal.Image.debian_slim(python_version="3.12")
 
 MOUNTS = {"/parents": parents, "/results": results}
-def resource_rate(memory_gib):
-    if type(memory_gib) is not int or memory_gib not in (48, 75):
+def resource_rate(memory_gib, gpu="L4"):
+    if type(memory_gib) is not int or memory_gib not in (20, 48, 75):
         raise ValueError("unsupported host-memory reservation")
-    return 0.000222 + 8 * 0.0000131 + memory_gib * 0.00000222
+    if gpu not in ("L4", "A100-80GB"):
+        raise ValueError("unsupported GPU reservation")
+    gpu_rate = 0.000222 if gpu == "L4" else 0.000694
+    return gpu_rate + 8 * 0.0000131 + memory_gib * 0.00000222
 
 
 PER_SECOND = resource_rate(48)
@@ -58,12 +62,12 @@ A100_SMOKE_RATE = 0.000694 + 8 * 0.0000131 + 20 * 0.00000222
 A100_SMOKE_RESERVATION = 600 * A100_SMOKE_RATE
 
 
-def reservation_seconds(reserved, ceiling, session_limit, memory_gib=48):
+def reservation_seconds(reserved, ceiling, session_limit, memory_gib=48, gpu="L4"):
     if (not all(isinstance(v, (int, float)) and not isinstance(v, bool) and math.isfinite(v)
                 for v in (reserved, ceiling, session_limit))
             or reserved < 0 or not 0 < ceiling <= 40 or session_limit <= 0):
         raise ValueError("invalid spending limit or ledger")
-    seconds = min(22 * 3600, int(min(ceiling - reserved, session_limit) / resource_rate(memory_gib)))
+    seconds = min(22 * 3600, int(min(ceiling - reserved, session_limit) / resource_rate(memory_gib, gpu)))
     if seconds < 300:
         raise ValueError("remaining reserved budget below five minutes")
     return seconds
@@ -130,6 +134,31 @@ def validate_qualification(receipt, source_commit, manifest_hash, identity, expe
             or type(workers) is not int or not 1 <= workers <= 7):
         raise ValueError("incomplete or stale L4 qualification")
     return workers
+
+
+def validate_a100_smoke(receipt, smoke_commit, manifest_hash, identity):
+    conditions = {f"{arch}_{mode}" for arch in ("small", "large")
+                  for mode in ("frozen", "learning")}
+    counters = receipt.get("branch_counters")
+    interrupted = receipt.get("interruption")
+    probe = {"rounds": 1, "steps": 5, "pool_size": 256, "batch_size": 32, "eval_chunk": 64}
+    if (receipt.get("source_commit") != smoke_commit or receipt.get("manifest_sha256") != manifest_hash
+            or receipt.get("identity") != identity or receipt.get("smoke_only") is not True
+            or "A100" not in receipt.get("gpu_model", "")
+            or type(receipt.get("gpu_memory_mib")) is not int or receipt["gpu_memory_mib"] < 75000
+            or receipt.get("qualification_protocol") != "a100-smoke-100-20-v1"
+            or receipt.get("qualification_updates") != 100 or receipt.get("checkpoint") != 100
+            or receipt.get("qualified_workers") != 0 or receipt.get("parent_restore") is not True
+            or receipt.get("restart") is not True or receipt.get("branch_horizon") != 20
+            or receipt.get("full_branch_horizon") is not False or receipt.get("plasticity_probe") is not False
+            or receipt.get("smoke_probe") != probe
+            or sorted(receipt.get("probe_architectures", [])) != ["large", "small"]
+            or not isinstance(counters, dict) or set(counters) != conditions
+            or any(not isinstance(v, dict) or v.get("raw_env_steps") != 20 for v in counters.values())
+            or not isinstance(interrupted, dict) or interrupted.get("checkpoint") != 100
+            or type(interrupted.get("raw_env_steps")) is not int
+            or not 0 < interrupted["raw_env_steps"] < 20):
+        raise ValueError("invalid A100 smoke evidence")
 
 
 def worker_environment():
@@ -340,6 +369,24 @@ def train(max_workers: int = 7, budget_usd: float = 40.0,
     old["reserved_usd"] += seconds * rate
     ledger.write_text(json.dumps(old, indent=2))
     results.commit()
+    return run_pilot_workers(manifest, output, max_workers, source_commit, seconds, old)
+
+
+def validate_completed_run(directory, source_commit, identity):
+    path = directory / "analysis.json"
+    if not path.is_file():
+        raise ValueError(f"worker exited without analysis: {directory}")
+    completed = json.loads(path.read_text())
+    if (completed.get("source_commit") != source_commit
+            or completed.get("protocol") != "exp1-final-replay-v1"
+            or completed.get("environment") != identity["environment"]
+            or completed.get("training_seed") != identity["seed"]
+            or completed.get("reference_regime") != identity["reference_regime"]):
+        raise ValueError("completed run identity mismatch; use new output root")
+
+
+def run_pilot_workers(manifest, output, max_workers, source_commit, seconds, old,
+                      wandb_tags=None):
     deadline = time.monotonic() + seconds
     rows = json.loads(manifest.read_text())["runs"]
     pending = [dict(environment=r["environment"], seed=r["seed"],
@@ -347,6 +394,8 @@ def train(max_workers: int = 7, budget_usd: float = 40.0,
                for r in rows]
     active = []
     env = worker_environment()
+    if wandb_tags:
+        env["WANDB_TAGS"] = ",".join(filter(None, (env.get("WANDB_TAGS"), wandb_tags)))
     last_commit = time.monotonic()
     last_launch = 0.0
     try:
@@ -364,13 +413,7 @@ def train(max_workers: int = 7, budget_usd: float = 40.0,
                 directory = output / name
                 directory.mkdir(exist_ok=True)
                 if (directory / "analysis.json").exists():
-                    completed = json.loads((directory / "analysis.json").read_text())
-                    if (completed.get("source_commit") != source_commit
-                            or completed.get("protocol") != "exp1-final-replay-v1"
-                            or completed.get("environment") != identity["environment"]
-                            or completed.get("training_seed") != identity["seed"]
-                            or completed.get("reference_regime") != identity["reference_regime"]):
-                        raise ValueError("completed run identity mismatch; use new output root")
+                    validate_completed_run(directory, source_commit, identity)
                     continue
                 log = (directory / "process.log").open("a")
                 command = ["python", "-m", "experiments.exp12.replay_exp2_pilot",
@@ -397,6 +440,8 @@ def train(max_workers: int = 7, budget_usd: float = 40.0,
                             pending.append(identity)
                         else:
                             raise RuntimeError(f"worker exit {code}; inspect {directory}")
+                    else:
+                        validate_completed_run(directory, source_commit, identity)
                     print("EXIT", identity, code, flush=True)
             if time.monotonic() - last_commit >= 60:
                 results.commit()
@@ -405,15 +450,84 @@ def train(max_workers: int = 7, budget_usd: float = 40.0,
     finally:
         for proc, log, _, _ in active:
             proc.terminate()
+        shutdown_deadline = time.monotonic() + 90
         for proc, log, _, _ in active:
             try:
-                proc.wait(timeout=90)
+                proc.wait(timeout=max(0, shutdown_deadline - time.monotonic()))
             except subprocess.TimeoutExpired:
                 proc.kill()
                 proc.wait()
             log.close()
         results.commit()
     return {"pending": len(pending), "interrupted": len(active), "budget": old}
+
+
+A100_SMOKE_SOURCE = "f1b0aeb20859f2bd3d6e07c62d0360212be664cb"
+
+
+def verify_a100_smoke_source(smoke_commit):
+    if not re.fullmatch(r"[0-9a-f]{40}", smoke_commit):
+        raise ValueError("invalid smoke source commit")
+    subprocess.run(["git", "-C", "/source", "merge-base", "--is-ancestor",
+                    smoke_commit, "HEAD"], check=True)
+    # Launcher and tests may change; executable experiment, configs and utilities may not.
+    subprocess.run(["git", "-C", "/source", "diff", "--quiet", smoke_commit, "HEAD", "--",
+                    "main", ":(exclude)main/infra/**", ":(exclude)main/tests/**",
+                    ":(exclude)main/docs/**", ":(exclude)main/notebooks/**"], check=True)
+
+
+@app.function(image=image, gpu="A100-80GB", cpu=(8, 8), memory=(76800, 76800), volumes=MOUNTS,
+              secrets=[modal.Secret.from_name("exp2-wandb")], timeout=23 * 3600,
+              max_containers=1, retries=0)
+def a100_pilot(max_workers: int = 8, budget_usd: float = 40.0):
+    """Run full replay pilot after a short, explicitly nonqualifying A100 smoke."""
+    if type(max_workers) is not int or not 1 <= max_workers <= 8:
+        raise ValueError("A100 worker ceiling exceeded")
+    source_commit = subprocess.check_output(
+        ["git", "-C", "/source", "rev-parse", "HEAD"], text=True
+    ).strip()
+    manifest = Path("/parents/exp1-pilot-parents/manifest.json")
+    manifest_hash = hashlib.sha256(manifest.read_bytes()).hexdigest()
+    verification = json.loads(manifest.with_name("verification.json").read_text())
+    if verification.get("all_files_ok") is not True or verification.get("manifest_sha256") != manifest_hash:
+        raise ValueError("verify uploaded parents first")
+    model_lines = subprocess.check_output(
+        ["nvidia-smi", "--query-gpu=name,memory.total", "--format=csv,noheader,nounits"], text=True
+    ).strip().splitlines()
+    if len(model_lines) != 1:
+        raise ValueError("expected exactly one visible GPU")
+    model, total = (part.strip() for part in model_lines[0].rsplit(",", 1))
+    if "A100" not in model or int(total) < 75000:
+        raise ValueError("A100 80 GB required")
+    identity, _ = qualification_context(manifest)
+    smoke_path = (Path("/results/replay-pilot") / f"a100-smoke-{A100_SMOKE_SOURCE}" /
+                  "a100-smoke-result.json")
+    smoke_bytes = smoke_path.read_bytes()
+    smoke = json.loads(smoke_bytes)
+    validate_a100_smoke(smoke, A100_SMOKE_SOURCE, manifest_hash, identity)
+    verify_a100_smoke_source(A100_SMOKE_SOURCE)
+    output = Path("/results/replay-pilot-a100") / source_commit
+    output.mkdir(parents=True, exist_ok=True)
+    metadata = {"source_commit": source_commit, "manifest_sha256": manifest_hash,
+                "smoke_source_commit": A100_SMOKE_SOURCE,
+                "smoke_receipt_sha256": hashlib.sha256(smoke_bytes).hexdigest(),
+                "smoke_scope": "short engineering smoke; no concurrency or scientific qualification",
+                "gpu_model": model, "gpu_memory_mib": int(total),
+                "max_workers": max_workers, "host_memory_gib": 75}
+    provenance = output / "execution.json"
+    if provenance.exists() and json.loads(provenance.read_text()) != metadata:
+        raise ValueError("A100 output provenance mismatch")
+    provenance.write_text(json.dumps(metadata, indent=2))
+    ledger = Path("/results/replay-pilot/budget.json")
+    old = json.loads(ledger.read_text()) if ledger.exists() else {"reserved_usd": 2.0}
+    rate = resource_rate(75, "A100-80GB")
+    seconds = reservation_seconds(old["reserved_usd"], budget_usd, budget_usd, 75, "A100-80GB")
+    old["reserved_usd"] += seconds * rate
+    ledger.write_text(json.dumps(old, indent=2))
+    results.commit()
+    print("A100 engineering smoke passed; concurrency and scientific qualification remain unverified", flush=True)
+    return run_pilot_workers(manifest, output, max_workers, source_commit, seconds, old,
+                             wandb_tags="a100-pilot,short-smoke-only,concurrency-unqualified")
 
 
 @app.function(image=image, gpu="L4", cpu=8, memory=76800, volumes=MOUNTS,
@@ -452,9 +566,11 @@ def main(mode: str = "verify", budget_usd: float = 40.0,
         print(qualify.remote(budget_usd, qualification_usd))
     elif mode == "a100_smoke":
         print(a100_smoke.remote(budget_usd))
+    elif mode == "a100_pilot":
+        print(a100_pilot.remote(max_workers=8, budget_usd=budget_usd))
     elif mode == "qualify_then_train":
         print(qualify_then_train.spawn(budget_usd, qualification_usd).object_id)
     elif mode == "train":
         print(train.remote(budget_usd=budget_usd))
     else:
-        raise ValueError("mode must be verify, qualify, a100_smoke, qualify_then_train or train")
+        raise ValueError("mode must be verify, qualify, a100_smoke, a100_pilot, qualify_then_train or train")

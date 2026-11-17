@@ -139,3 +139,31 @@ pricing checked 17 November 2026, not an account-wide cap; image build, storage,
 external costs and changes to rates are not included. Automatic retries are
 turned off. Running out of time or failing any check does not produce a passing
 smoke result.
+
+## A100 replay pilot
+
+The A100 pilot requests one A100 80 GB, eight CPU cores and 75 GiB host RAM,
+with hard CPU and RAM limits. It starts up to eight workers with dynamic refill,
+30-second staggering and live GPU/cgroup memory checks. The successful A100
+smoke is only an engineering gate: it does not qualify eight-way concurrency,
+full branches or scientific results. Memory checks are heuristics; later GPU or
+host allocation can still cause OOM. Non-OOM worker failures stop the session.
+A completed worker must have a source- and identity-matched analysis artifact.
+
+```bash
+modal run --detach main/infra/modal/exp2_modal.py --mode a100_pilot --budget-usd 40
+```
+
+Outputs are isolated under `/results/replay-pilot-a100/<source-commit>/`. The
+launcher binds the exact smoke receipt and checks that experiment, runtime and
+configuration files match the smoke source; launcher and test changes are
+allowed. W&B runs receive tags `a100-pilot`, `short-smoke-only` and
+`concurrency-unqualified`.
+
+The existing shared reservation ledger remains in force. The estimated A100
+plus 8 CPU and 75 GiB rate is $0.0009653 per second ($3.47508/hour); the
+launcher reserves the remaining amount up to the $40 cumulative ceiling and
+stops before that session reservation expires. This ledger cannot enforce an
+absolute account-wide cap: other sessions, storage, builds, usage beyond its
+history and price changes are outside it. Avoid concurrent sessions and use an
+account-level spending control for an absolute limit.
