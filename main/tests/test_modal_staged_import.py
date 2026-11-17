@@ -55,6 +55,10 @@ class StagedImportTest(unittest.TestCase):
             with patch.dict(module['main'].__globals__, {'train': training}):
                 module['main']('train', 15.0)
             training.remote.assert_called_once_with(budget_usd=15.0)
+            a100 = MagicMock()
+            with patch.dict(module['main'].__globals__, {'a100_pilot': a100}):
+                module['main']('a100_pilot', 40.0, 5.0, 'f' * 40)
+            a100.remote.assert_called_once_with(max_workers=8, budget_usd=40.0, smoke_commit='f' * 40)
             receipt = {'source_commit': 'abc', 'manifest_sha256': 'digest',
                        'gpu_model': 'NVIDIA L4', 'parent_restore': True,
                        'full_branch_horizon': True, 'plasticity_probe': True,
@@ -222,7 +226,8 @@ class StagedImportTest(unittest.TestCase):
             start.assert_called_once()
             verification = manifest.with_name('verification.json')
             verification.write_text(json.dumps({'all_files_ok': True, 'manifest_sha256': digest}))
-            smoke_path = root / ('results/replay-pilot/a100-smoke-' + module['A100_SMOKE_SOURCE']) / 'a100-smoke-result.json'
+            smoke_source = 'f' * 40
+            smoke_path = root / ('results/replay-pilot/a100-smoke-' + smoke_source) / 'a100-smoke-result.json'
             smoke_path.parent.mkdir(parents=True)
             smoke_path.write_text('{}')
             ledger = root / 'results/replay-pilot/budget.json'
@@ -233,5 +238,5 @@ class StagedImportTest(unittest.TestCase):
                     'memory_headroom': MagicMock(side_effect=ValueError('no telemetry'))}), \
                  patch('subprocess.check_output', side_effect=['abc', 'NVIDIA A100 80GB, 81920']):
                 with self.assertRaisesRegex(ValueError, 'no telemetry'):
-                    module['a100_pilot']()
+                    module['a100_pilot'](smoke_commit=smoke_source)
             self.assertFalse(ledger.exists())

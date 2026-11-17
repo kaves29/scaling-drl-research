@@ -139,7 +139,7 @@ class QualificationEvidenceTests(unittest.TestCase):
             with patch.object(sys, 'argv', argv), \
                  patch('subprocess.check_output', return_value='NVIDIA A100 80GB PCIe, 81920'), \
                  patch('jax.default_backend', return_value='gpu'), \
-                 patch('experiments.exp1.compose_config', return_value=cfg), \
+                 patch('experiments.exp12.replay_exp2_pilot.compose_replay_config', return_value=cfg), \
                  patch('experiments.exp12.precision.set_matmul_precision'), \
                  patch.object(ReplayExp2Pilot, '__init__', init), \
                  patch.object(ReplayExp2Pilot, 'run', run):

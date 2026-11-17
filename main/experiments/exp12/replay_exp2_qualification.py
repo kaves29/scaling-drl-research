@@ -59,9 +59,8 @@ def validate_evidence(rows, checkpoint, horizon):
 
 def main():
     import jax
-    from experiments.exp1 import compose_config
     from experiments.exp12.precision import set_matmul_precision
-    from experiments.exp12.replay_exp2_pilot import ReplayExp2Pilot
+    from experiments.exp12.replay_exp2_pilot import ReplayExp2Pilot, compose_replay_config
 
     parser = argparse.ArgumentParser(__doc__)
     parser.add_argument("--parent-manifest", type=Path, required=True)
@@ -86,11 +85,7 @@ def main():
         raise ValueError("qualification phase does not match interruption state")
     identity = args.identity
     set_matmul_precision()
-    cfg = compose_config(str(Path(__file__).parents[2] / "configs"),
-                         "online_exp2_pilot_" + identity["reference_regime"],
-                         ["env=" + ("myosuite_hard" if identity["environment"].startswith("myo-") else "dmc_hard"),
-                          "env_name=" + identity["environment"], "seed=" + str(identity["seed"])],
-                         allow_pilot=True)
+    cfg = compose_replay_config(identity)
 
     class StopQualification(Exception):
         pass

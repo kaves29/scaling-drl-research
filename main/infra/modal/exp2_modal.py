@@ -471,9 +471,6 @@ def run_pilot_workers(manifest, output, max_workers, source_commit, seconds, old
     return {"pending": len(pending), "interrupted": len(active), "budget": old}
 
 
-A100_SMOKE_SOURCE = "f1b0aeb20859f2bd3d6e07c62d0360212be664cb"
-
-
 def verify_a100_smoke_source(smoke_commit):
     if not re.fullmatch(r"[0-9a-f]{40}", smoke_commit):
         raise ValueError("invalid smoke source commit")
@@ -488,7 +485,7 @@ def verify_a100_smoke_source(smoke_commit):
 @app.function(image=image, gpu="A100-80GB", cpu=(8, 8), memory=(76800, 76800), volumes=MOUNTS,
               secrets=[modal.Secret.from_name("exp2-wandb")], timeout=23 * 3600,
               max_containers=1, retries=0)
-def a100_pilot(max_workers: int = 8, budget_usd: float = 40.0):
+def a100_pilot(max_workers: int = 8, budget_usd: float = 40.0, smoke_commit: str = ""):
     """Run full replay pilot after a short, explicitly nonqualifying A100 smoke."""
     if type(max_workers) is not int or not 1 <= max_workers <= 8:
         raise ValueError("A100 worker ceiling exceeded")
@@ -509,12 +506,13 @@ def a100_pilot(max_workers: int = 8, budget_usd: float = 40.0):
     if "A100" not in model or int(total) < 75000:
         raise ValueError("A100 80 GB required")
     identity, _ = qualification_context(manifest)
-    smoke_path = (Path("/results/replay-pilot") / f"a100-smoke-{A100_SMOKE_SOURCE}" /
+    smoke_commit = smoke_commit or source_commit
+    verify_a100_smoke_source(smoke_commit)
+    smoke_path = (Path("/results/replay-pilot") / f"a100-smoke-{smoke_commit}" /
                   "a100-smoke-result.json")
     smoke_bytes = smoke_path.read_bytes()
     smoke = json.loads(smoke_bytes)
-    validate_a100_smoke(smoke, A100_SMOKE_SOURCE, manifest_hash, identity)
-    verify_a100_smoke_source(A100_SMOKE_SOURCE)
+    validate_a100_smoke(smoke, smoke_commit, manifest_hash, identity)
     # Do not reserve an entire session if telemetry or initial headroom fails.
     gpu_free, host_free = memory_headroom()
     if not has_start_headroom(gpu_free, host_free):
@@ -522,7 +520,7 @@ def a100_pilot(max_workers: int = 8, budget_usd: float = 40.0):
     output = Path("/results/replay-pilot-a100") / source_commit
     output.mkdir(parents=True, exist_ok=True)
     metadata = {"source_commit": source_commit, "manifest_sha256": manifest_hash,
-                "smoke_source_commit": A100_SMOKE_SOURCE,
+                "smoke_source_commit": smoke_commit,
                 "smoke_receipt_sha256": hashlib.sha256(smoke_bytes).hexdigest(),
                 "smoke_scope": "short engineering smoke; no concurrency or scientific qualification",
                 "gpu_model": model, "gpu_memory_mib": int(total),
@@ -572,7 +570,7 @@ def qualify_then_train(budget_usd: float = 40.0, qualification_usd: float = 5.0)
 
 @app.local_entrypoint()
 def main(mode: str = "verify", budget_usd: float = 40.0,
-         qualification_usd: float = 5.0):
+         qualification_usd: float = 5.0, smoke_commit: str = ""):
     if mode == "verify":
         print(verify.remote())
     elif mode == "qualify":
@@ -580,7 +578,7 @@ def main(mode: str = "verify", budget_usd: float = 40.0,
     elif mode == "a100_smoke":
         print(a100_smoke.remote(budget_usd))
     elif mode == "a100_pilot":
-        print(a100_pilot.remote(max_workers=8, budget_usd=budget_usd))
+        print(a100_pilot.remote(max_workers=8, budget_usd=budget_usd, smoke_commit=smoke_commit))
     elif mode == "qualify_then_train":
         print(qualify_then_train.spawn(budget_usd, qualification_usd).object_id)
     elif mode == "train":

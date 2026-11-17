@@ -230,3 +230,19 @@ class CompiledReplayTests(unittest.TestCase):
             row = json.loads((Path(tmp) / 'shadow_updates.jsonl').read_text())
             self.assertEqual(row['reference_actor_snapshot_sha256'], expected)
             trainer.close()
+
+
+class ReplayConfigCompositionTests(unittest.TestCase):
+    def test_uses_parent_environment_profiles_for_both_regimes(self):
+        from experiments.exp12.replay_exp2_pilot import compose_replay_config
+        for environment in ('dog-run', 'humanoid-run', 'myo-key-turn', 'myo-pen-twirl'):
+            for regime in ('reference_small', 'reference_large'):
+                with self.subTest(environment=environment, regime=regime):
+                    cfg = compose_replay_config({'environment': environment, 'seed': 1,
+                                                 'reference_regime': regime})
+                    expected_steps = 100 if environment.startswith('myo-') else 1000
+                    expected_gamma = .95 if environment.startswith('myo-') else .99
+                    self.assertEqual(cfg.env.max_episode_steps, expected_steps)
+                    self.assertAlmostEqual(cfg.gamma, expected_gamma)
+                    self.assertAlmostEqual(cfg.agent.gamma, expected_gamma)
+                    self.assertAlmostEqual(cfg.buffer.gamma, expected_gamma)

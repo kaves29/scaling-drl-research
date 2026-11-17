@@ -159,7 +159,9 @@ modal run --detach main/infra/modal/exp2_modal.py --mode a100_pilot --budget-usd
 Outputs are isolated under `/results/replay-pilot-a100/<source-commit>/`. The
 launcher binds the exact smoke receipt and checks that experiment, runtime and
 configuration files match the smoke source; launcher and test changes are
-allowed. W&B runs receive tags `a100-pilot`, `short-smoke-only` and
+allowed. By default the smoke must use the current source commit. A previous
+compatible smoke can be selected with `--smoke-commit <full-sha>`; it still
+must pass the receipt and runtime-tree checks. W&B runs receive tags `a100-pilot`, `short-smoke-only` and
 `concurrency-unqualified`.
 
 The existing shared reservation ledger remains in force. The estimated A100

@@ -20,7 +20,18 @@ from experiments.online_exp2 import OnlineExp2
 from experiments.exp12.replay_exp2_contract import admit_parent, checkpoints, validate_parent_config
 from experiments.exp12.state import latest_state_dir, load_buffer, load_meta
 from experiments.exp12.precision import set_matmul_precision
+from experiments.exp12.official_exp1 import ENVIRONMENTS
 from utils.atomic_io import atomic_write_text
+
+
+def compose_replay_config(identity):
+    """Use the source Exp1 environment profile; parent parity is checked on restore."""
+    environment = identity["environment"]
+    group = dict(ENVIRONMENTS)[environment]
+    return compose_config(str(Path(__file__).parents[2] / "configs"),
+                          "online_exp2_pilot_" + identity["reference_regime"],
+                          ["env=" + group, "env_name=" + environment,
+                           "seed=" + str(identity["seed"])], allow_pilot=True)
 
 
 class ReplayExp2Pilot(OnlineExp2):
@@ -134,11 +145,7 @@ def main():
     args = parser.parse_args()
     identity = args.identity
     set_matmul_precision()
-    cfg = compose_config(str(Path(__file__).parents[2] / "configs"),
-                         "online_exp2_pilot_" + identity["reference_regime"],
-                         ["env=" + ("myosuite_hard" if identity["environment"].startswith("myo-") else "dmc_hard"),
-                          "env_name=" + identity["environment"], "seed=" + str(identity["seed"])],
-                         allow_pilot=True)
+    cfg = compose_replay_config(identity)
     ReplayExp2Pilot(cfg, str(args.output.resolve()), args.parent_manifest, identity).run()
 
 
