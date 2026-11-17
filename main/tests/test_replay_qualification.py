@@ -106,3 +106,44 @@ class QualificationEvidenceTests(unittest.TestCase):
                 with np.load(Path(tmp) / 'probes' / f'{name}_0000.npz') as data:
                     self.assertEqual(data['fresh_losses'].shape, (1, 5))
             trainer.close()
+
+    def test_a100_smoke_entrypoint_constructs_actual_qualifier(self):
+        import json
+        import sys
+        import tempfile
+        from pathlib import Path
+        from unittest.mock import patch
+        from omegaconf import OmegaConf
+        from experiments.exp12 import replay_exp2_qualification as qualification
+        from experiments.exp12.replay_exp2_pilot import ReplayExp2Pilot
+
+        seen = []
+        cfg = OmegaConf.create({'online_exp2': {'branch_raw_steps': 10000,
+            'measurement_raw_steps': [0, 5000, 10000], 'diagnostic_save_every': 250},
+            'probe': {'rounds': 10, 'steps': 2000, 'pool_size': 25600,
+                      'batch_size': 256, 'eval_chunk': 2560}})
+        def init(runner, config, root, manifest, identity):
+            runner.cfg = config
+            runner.update_budget = 990002
+            runner.config_hash = 'pilot'
+            runner.root = Path(root)
+            seen.append(runner)
+        def run(runner):
+            pass
+        with tempfile.TemporaryDirectory() as tmp:
+            output = Path(tmp)
+            (output / 'qualification-interruption.json').write_text('{}')
+            argv = ['smoke', '--parent-manifest', str(output / 'manifest.json'),
+                    '--output', str(output), '--identity', json.dumps({'environment': 'dog-run',
+                    'seed': 1, 'reference_regime': 'reference_small'}), '--phase', 'resume', '--a100-smoke']
+            with patch.object(sys, 'argv', argv), \
+                 patch('subprocess.check_output', return_value='NVIDIA A100 80GB PCIe, 81920'), \
+                 patch('jax.default_backend', return_value='gpu'), \
+                 patch('experiments.exp1.compose_config', return_value=cfg), \
+                 patch('experiments.exp12.precision.set_matmul_precision'), \
+                 patch.object(ReplayExp2Pilot, '__init__', init), \
+                 patch.object(ReplayExp2Pilot, 'run', run):
+                with self.assertRaisesRegex(RuntimeError, 'expected stopping point'):
+                    qualification.main()
+            self.assertEqual(seen[0].update_budget, 100)
+            self.assertEqual(seen[0].cfg.online_exp2.branch_raw_steps, 20)

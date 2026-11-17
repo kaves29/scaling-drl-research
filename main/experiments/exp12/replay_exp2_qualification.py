@@ -96,8 +96,8 @@ def main():
         pass
 
     class Qualifier(ReplayExp2Pilot):
-        def __init__(self, *args):
-            super().__init__(*args)
+        def __init__(self, *runner_args):
+            super().__init__(*runner_args)
             (configure_a100_smoke if args.a100_smoke else configure_qualification)(self)
 
         def _check_resource_cap(self):
