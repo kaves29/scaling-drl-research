@@ -36,6 +36,12 @@ class InventoryTests(unittest.TestCase):
                                           'parent_identity': {'regime': architecture, 'environment': env, 'seed': seed},
                                           'sha256': hashlib.sha256(content).hexdigest(),
                                           'size_bytes': len(content), 'source_commit': SOURCE})
+            bundle = root / 'source/exp1_pilot_source_f597ee9_20261116.bundle'
+            bundle.parent.mkdir(parents=True)
+            bundle.write_bytes(b'source bundle')
+            files.append({'destination_relative_path': bundle.relative_to(root).as_posix(),
+                          'parent_identity': None, 'sha256': hashlib.sha256(bundle.read_bytes()).hexdigest(),
+                          'size_bytes': bundle.stat().st_size, 'source_commit': SOURCE})
             manifest = {'schema_version': 1, 'source_commit': SOURCE, 'volume': 'exp1-pilot-states',
                         'destination_prefix': 'exp1-pilot-parents', 'file_count': len(files),
                         'total_bytes': sum(f['size_bytes'] for f in files), 'files': files}
@@ -53,6 +59,10 @@ class InventoryTests(unittest.TestCase):
             runs = verify_transfer(root, source, receipt)
             self.assertEqual(len(runs), 20)
             self.assertEqual(runs[0]['state'], state)
+            bundle.write_bytes(b'changed')
+            with self.assertRaisesRegex(ValueError, 'checksum'):
+                verify_transfer(root, source, receipt)
+            bundle.write_bytes(b'source bundle')
             (root / files[0]['destination_relative_path']).write_text('changed')
             with self.assertRaisesRegex(ValueError, 'checksum'):
                 verify_transfer(root, source, receipt)

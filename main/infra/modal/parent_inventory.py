@@ -38,9 +38,14 @@ def verify_transfer(root, source_path, receipt_path):
         relative = item["destination_relative_path"]
         parts = Path(relative).parts
         identity = item["parent_identity"]
-        key = (identity["regime"], identity["environment"], identity["seed"])
-        if (key not in expected or item["source_commit"] != SOURCE or len(parts) < 4
-                or parts[:3] != (key[0], key[1], f"seed_{key[2]}")
+        if identity is None:
+            key = None
+            valid_identity = relative == "source/exp1_pilot_source_f597ee9_20261116.bundle"
+        else:
+            key = (identity["regime"], identity["environment"], identity["seed"])
+            valid_identity = (key in expected and len(parts) >= 4
+                              and parts[:3] == (key[0], key[1], f"seed_{key[2]}"))
+        if (not valid_identity or item["source_commit"] != SOURCE
                 or relative in inventory or Path(relative).is_absolute() or ".." in parts):
             raise ValueError("invalid inventory identity or path")
         path = root / relative
@@ -60,7 +65,8 @@ def verify_transfer(root, source_path, receipt_path):
                 h.update(block)
         if size != item["size_bytes"] or h.hexdigest() != item["sha256"]:
             raise ValueError(f"checksum mismatch: {relative}")
-        identities.add(key)
+        if key is not None:
+            identities.add(key)
         inventory.add(relative)
     if identities != expected:
         raise ValueError("incomplete parent population")
