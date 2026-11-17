@@ -53,6 +53,9 @@ def resource_rate(memory_gib):
 
 
 PER_SECOND = resource_rate(48)
+# Modal published per-second A100-80GB, CPU and RAM rates, checked 2026-11-17.
+A100_SMOKE_RATE = 0.000694 + 8 * 0.0000131 + 20 * 0.00000222
+A100_SMOKE_RESERVATION = 600 * A100_SMOKE_RATE
 
 
 def reservation_seconds(reserved, ceiling, session_limit, memory_gib=48):
@@ -236,6 +239,66 @@ def qualify(budget_usd: float = 10.0, session_usd: float = 5.0, memory_gib: int 
     return receipt
 
 
+@app.function(image=image, gpu="A100-80GB", cpu=8, memory=20480, volumes=MOUNTS,
+              timeout=600, max_containers=1, retries=0)
+def a100_smoke(budget_usd: float = 40.0):
+    """A 100-update, shortened engineering smoke; never admits pilot training."""
+    source_commit = subprocess.check_output(
+        ["git", "-C", "/source", "rev-parse", "HEAD"], text=True
+    ).strip()
+    manifest = Path("/parents/exp1-pilot-parents/manifest.json")
+    digest = hashlib.sha256(manifest.read_bytes()).hexdigest()
+    verification = json.loads(manifest.with_name("verification.json").read_text())
+    if verification.get("all_files_ok") is not True or verification.get("manifest_sha256") != digest:
+        raise ValueError("verify uploaded parents first")
+    output = Path("/results/replay-pilot")
+    directory = output / f"a100-smoke-{source_commit}"
+    directory.mkdir(parents=True, exist_ok=True)
+    result_path = directory / "a100-smoke-result.json"
+    if result_path.exists():
+        raise ValueError("A100 smoke result already exists for this source")
+    ledger = output / "budget.json"
+    old = json.loads(ledger.read_text()) if ledger.exists() else {"reserved_usd": 2.0}
+    reserved = old["reserved_usd"]
+    if (not isinstance(reserved, (int, float)) or isinstance(reserved, bool)
+            or not math.isfinite(reserved) or reserved < 0
+            or not isinstance(budget_usd, (int, float)) or isinstance(budget_usd, bool)
+            or not math.isfinite(budget_usd) or not 0 < budget_usd <= 40
+            or reserved + A100_SMOKE_RESERVATION > budget_usd):
+        raise ValueError("A100 smoke exceeds the cumulative spending ceiling")
+    old["reserved_usd"] += A100_SMOKE_RESERVATION
+    ledger.write_text(json.dumps(old, indent=2))
+    results.commit()
+    identity, _ = qualification_context(manifest)
+    env = worker_environment()
+    env["WANDB_MODE"] = "disabled"
+    deadline = time.monotonic() + 540
+    try:
+        for phase in ("interrupt", "resume"):
+            if phase == "interrupt" and (directory / "qualification-interruption.json").exists():
+                continue
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise TimeoutError("A100 smoke time limit reached")
+            command = ["python", "-m", "experiments.exp12.replay_exp2_qualification",
+                       "--parent-manifest", str(manifest), "--output", str(directory),
+                       "--identity", json.dumps(identity), "--phase", phase, "--a100-smoke"]
+            with (directory / "process.log").open("a") as log:
+                subprocess.run(command, cwd="/source/main", env=env, stdout=log,
+                               stderr=subprocess.STDOUT, check=True, timeout=remaining)
+            results.commit()
+        receipt = json.loads(result_path.read_text())
+        if (receipt.get("source_commit") != source_commit or receipt.get("manifest_sha256") != digest
+                or receipt.get("identity") != identity or receipt.get("smoke_only") is not True
+                or receipt.get("qualification_protocol") != "a100-smoke-100-20-v1"
+                or receipt.get("checkpoint") != 100 or receipt.get("branch_horizon") != 20
+                or receipt.get("restart") is not True or "A100" not in receipt.get("gpu_model", "")):
+            raise ValueError("A100 smoke evidence mismatch")
+        return receipt
+    finally:
+        results.commit()
+
+
 @app.function(image=image, gpu="L4", cpu=8, memory=76800, volumes=MOUNTS,
               secrets=[modal.Secret.from_name("exp2-wandb")], timeout=23 * 3600,
               max_containers=1, retries=0)
@@ -387,9 +450,11 @@ def main(mode: str = "verify", budget_usd: float = 40.0,
         print(verify.remote())
     elif mode == "qualify":
         print(qualify.remote(budget_usd, qualification_usd))
+    elif mode == "a100_smoke":
+        print(a100_smoke.remote(budget_usd))
     elif mode == "qualify_then_train":
         print(qualify_then_train.spawn(budget_usd, qualification_usd).object_id)
     elif mode == "train":
         print(train.remote(budget_usd=budget_usd))
     else:
-        raise ValueError("mode must be verify, qualify, qualify_then_train or train")
+        raise ValueError("mode must be verify, qualify, a100_smoke, qualify_then_train or train")

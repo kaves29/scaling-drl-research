@@ -33,6 +33,11 @@ class StagedImportTest(unittest.TestCase):
             definitions = [call.kwargs for call in app.function.call_args_list]
             self.assertEqual([d['memory'] for d in definitions if d.get('gpu') == 'L4'],
                              [49152, 76800, 76800])
+            smoke = [d for d in definitions if d.get('gpu') == 'A100-80GB']
+            self.assertEqual(len(smoke), 1)
+            self.assertEqual((smoke[0]['memory'], smoke[0]['timeout']), (20480, 600))
+            self.assertAlmostEqual(module['A100_SMOKE_RATE'], 0.0008432)
+            self.assertAlmostEqual(module['A100_SMOKE_RESERVATION'], 0.50592)
             with patch.dict(os.environ, {'PYOPENGL_PLATFORM': 'glfw'}):
                 env = module['worker_environment']()
             self.assertEqual(env['MUJOCO_GL'], 'egl')
@@ -65,6 +70,10 @@ class StagedImportTest(unittest.TestCase):
                 module['validate_qualification']({**receipt, 'qualified_workers': True}, 'abc', 'digest', receipt['identity'], 10000)
             with self.assertRaises(ValueError):
                 module['validate_qualification']({**receipt, 'branch_counters': {}}, 'abc', 'digest', receipt['identity'], 10000)
+            with self.assertRaises(ValueError):
+                module['validate_qualification']({**receipt, 'smoke_only': True,
+                    'qualification_protocol': 'a100-smoke-100-20-v1', 'checkpoint': 100},
+                    'abc', 'digest', receipt['identity'], 10000)
             seconds = module['reservation_seconds'](29.0, 40.0, 5.0)
             self.assertGreaterEqual(seconds, 300)
             self.assertLessEqual(seconds * module['PER_SECOND'], 5.0)

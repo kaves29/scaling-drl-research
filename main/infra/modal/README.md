@@ -116,3 +116,26 @@ The local ledger reserves published GPU/CPU/RAM rates plus a $2 allowance.
 It is an estimate, not an account-wide hard spending limit, and includes no
 unknown prior usage. Verify the account budget and current pricing before
 launch. Automatic provider retries are disabled to avoid untracked charges.
+
+
+## A100 engineering smoke
+
+The separate `a100_smoke` mode requests one A100 80 GB, 8 CPUs and 20 GiB
+host RAM. It runs 100 replay updates, 20 raw steps in each branch and a reduced
+one-round, five-step probe. It interrupts a saved learning branch and resumes
+in another process. The shortened run is engineering smoke evidence only: it
+cannot satisfy the full qualification gate or start pilot training, and says
+nothing about nine-worker capacity.
+
+```bash
+modal run --detach main/infra/modal/exp2_modal.py --mode a100_smoke --budget-usd 40
+```
+
+The function has a hard 600-second timeout, with 540 seconds for subprocess
+work and 60 seconds reserved for shutdown. The existing cumulative ledger is
+preserved; it reserves the full 600 seconds at the published A100-80GB + 8 CPU
++ 20 GiB rate of $0.0008432 per second ($0.50592). That is an estimate based on
+pricing checked 17 November 2026, not an account-wide cap; image build, storage,
+external costs and changes to rates are not included. Automatic retries are
+turned off. Running out of time or failing any check does not produce a passing
+smoke result.
