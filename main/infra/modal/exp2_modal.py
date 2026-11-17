@@ -6,6 +6,7 @@ Verify uploads without GPU: modal run main/infra/modal/exp2_modal.py --mode veri
 
 import hashlib
 import json
+import math
 import os
 from pathlib import Path
 import subprocess
@@ -45,6 +46,59 @@ else:
     image = verify_image = modal.Image.debian_slim(python_version="3.12")
 
 MOUNTS = {"/parents": parents, "/results": results}
+PER_SECOND = 0.000222 + 8 * 0.0000131 + 48 * 0.00000222
+
+
+def reservation_seconds(reserved, ceiling, session_limit):
+    if (not all(isinstance(v, (int, float)) and not isinstance(v, bool) and math.isfinite(v)
+                for v in (reserved, ceiling, session_limit))
+            or reserved < 0 or not 0 < ceiling <= 40 or session_limit <= 0):
+        raise ValueError("invalid spending limit or ledger")
+    seconds = min(22 * 3600, int(min(ceiling - reserved, session_limit) / PER_SECOND))
+    if seconds < 300:
+        raise ValueError("remaining reserved budget below five minutes")
+    return seconds
+
+
+def qualification_context(manifest):
+    import yaml
+    row = json.loads(manifest.read_text())["runs"][0]
+    if row["architecture"] not in ("D2W512", "D4W1536"):
+        raise ValueError("unknown qualification architecture")
+    identity = {"environment": row["environment"], "seed": row["seed"],
+                "reference_regime": "reference_small" if row["architecture"] == "D2W512" else "reference_large"}
+    config = Path("/source/main/configs") / f"online_exp2_pilot_{identity['reference_regime']}.yaml"
+    horizon = yaml.safe_load(config.read_text())["online_exp2"]["branch_raw_steps"]
+    return identity, horizon
+
+
+def validate_qualification(receipt, source_commit, manifest_hash, identity, expected_horizon):
+    workers = receipt.get("qualified_workers")
+    horizon = receipt.get("branch_horizon")
+    counters = receipt.get("branch_counters")
+    interruption = receipt.get("interruption")
+    conditions = {f"{arch}_{mode}" for arch in ("small", "large")
+                  for mode in ("frozen", "learning")}
+    if (receipt.get("identity") != identity or horizon != expected_horizon
+            or type(horizon) is not int or horizon <= 0
+            or not isinstance(counters, dict) or set(counters) != conditions
+            or any(not isinstance(value, dict) or value.get("raw_env_steps") != horizon
+                   for value in counters.values())
+            or sorted(receipt.get("probe_architectures", [])) != ["large", "small"]
+            or not isinstance(interruption, dict) or interruption.get("checkpoint") != 5000
+            or type(interruption.get("raw_env_steps")) is not int
+            or not 0 < interruption["raw_env_steps"] < horizon
+            or receipt.get("source_commit") != source_commit
+            or receipt.get("manifest_sha256") != manifest_hash
+            or receipt.get("gpu_model") != "NVIDIA L4"
+            or receipt.get("qualification_protocol") != "replay-qualification-5000-v1"
+            or receipt.get("qualification_updates") != 5000
+            or receipt.get("checkpoint") != 5000
+            or not all(receipt.get(key) is True for key in
+                       ("parent_restore", "full_branch_horizon", "plasticity_probe", "restart"))
+            or type(workers) is not int or not 1 <= workers <= 7):
+        raise ValueError("incomplete or stale L4 qualification")
+    return workers
 
 
 def worker_environment():
@@ -89,7 +143,7 @@ def verify():
 @app.function(image=image, gpu="L4", cpu=8, memory=49152, volumes=MOUNTS,
               secrets=[modal.Secret.from_name("exp2-wandb")], timeout=23 * 3600,
               max_containers=1, retries=0)
-def qualify(budget_usd: float = 10.0):
+def qualify(budget_usd: float = 10.0, session_usd: float = 5.0):
     """Run a single-worker, separately restarted qualification under a reservation."""
     source_commit = subprocess.check_output(["git", "-C", "/source", "rev-parse", "HEAD"], text=True).strip()
     if not 0 < budget_usd <= 40:
@@ -101,23 +155,18 @@ def qualify(budget_usd: float = 10.0):
         raise ValueError("verify uploaded parents first")
     output = Path("/results/replay-pilot")
     output.mkdir(parents=True, exist_ok=True)
-    qualification = output / "qualification"
+    qualification = output / f"qualification-5000-{source_commit}"
     qualification.mkdir(exist_ok=True)
-    final = output / "l4-qualification.json"
+    final = output / f"l4-qualification-{source_commit}.json"
     if final.exists():
         raise ValueError("qualification receipt already exists; review it before replacing")
     ledger = output / "budget.json"
     old = json.loads(ledger.read_text()) if ledger.exists() else {"reserved_usd": 2.0}
-    per_second = 0.000222 + 8 * 0.0000131 + 48 * 0.00000222
-    seconds = min(22 * 3600, int((budget_usd - old["reserved_usd"]) / per_second))
-    if seconds < 300:
-        raise ValueError("remaining reserved budget below five minutes")
-    old["reserved_usd"] += seconds * per_second
+    seconds = reservation_seconds(old["reserved_usd"], budget_usd, session_usd)
+    old["reserved_usd"] += seconds * PER_SECOND
     ledger.write_text(json.dumps(old, indent=2))
     results.commit()
-    row = json.loads(manifest.read_text())["runs"][0]
-    identity = {"environment": row["environment"], "seed": row["seed"],
-                "reference_regime": "reference_small" if row["architecture"] == "D2W512" else "reference_large"}
+    identity, expected_horizon = qualification_context(manifest)
     env = worker_environment()
     deadline = time.monotonic() + seconds
     try:
@@ -128,13 +177,31 @@ def qualify(budget_usd: float = 10.0):
                        "--parent-manifest", str(manifest), "--output", str(qualification),
                        "--identity", json.dumps(identity), "--phase", phase]
             with (qualification / "process.log").open("a") as log:
-                subprocess.run(command, cwd="/source/main", env=env, stdout=log,
-                               stderr=subprocess.STDOUT, check=True,
-                               timeout=max(1, deadline - time.monotonic()))
+                proc = subprocess.Popen(command, cwd="/source/main", env=env, stdout=log,
+                                        stderr=subprocess.STDOUT)
+                try:
+                    while True:
+                        remaining = deadline - time.monotonic()
+                        if remaining <= 0:
+                            raise TimeoutError("qualification reservation expired")
+                        try:
+                            code = proc.wait(timeout=min(60, remaining))
+                            if code:
+                                raise subprocess.CalledProcessError(code, command)
+                            break
+                        except subprocess.TimeoutExpired:
+                            results.commit()
+                finally:
+                    if proc.poll() is None:
+                        proc.terminate()
+                        try:
+                            proc.wait(timeout=30)
+                        except subprocess.TimeoutExpired:
+                            proc.kill()
+                            proc.wait()
             results.commit()
         receipt = json.loads((qualification / "qualification-result.json").read_text())
-        if receipt.get("source_commit") != source_commit or receipt.get("manifest_sha256") != digest:
-            raise ValueError("qualification evidence does not match source and manifest")
+        validate_qualification(receipt, source_commit, digest, identity, expected_horizon)
         final.write_text(json.dumps(receipt, indent=2))
     finally:
         results.commit()
@@ -144,11 +211,14 @@ def qualify(budget_usd: float = 10.0):
 @app.function(image=image, gpu="L4", cpu=8, memory=49152, volumes=MOUNTS,
               secrets=[modal.Secret.from_name("exp2-wandb")], timeout=23 * 3600,
               max_containers=1, retries=0)
-def train(max_workers: int = 7, budget_usd: float = 40.0):
+def train(max_workers: int = 7, budget_usd: float = 40.0,
+          max_seconds: int = 22 * 3600):
     """A session reserves its maximum estimated charge before starting work."""
     source_commit = subprocess.check_output(["git", "-C", "/source", "rev-parse", "HEAD"], text=True).strip()
-    if not 1 <= max_workers <= 7 or not 0 < budget_usd <= 40:
-        raise ValueError("worker or spending ceiling exceeded")
+    if (type(max_workers) is not int or not 1 <= max_workers <= 7
+            or type(max_seconds) is not int or not 300 <= max_seconds <= 22 * 3600
+            or not 0 < budget_usd <= 40):
+        raise ValueError("worker, runtime or spending ceiling exceeded")
     manifest = Path("/parents/exp1-pilot-parents/manifest.json")
     verification = manifest.with_name("verification.json")
     if not verification.exists():
@@ -159,31 +229,23 @@ def train(max_workers: int = 7, budget_usd: float = 40.0):
         raise ValueError("verification receipt does not match manifest")
     output = Path("/results/replay-pilot")
     output.mkdir(parents=True, exist_ok=True)
-    qualification_path = output / "l4-qualification.json"
+    qualification_path = output / f"l4-qualification-{source_commit}.json"
     if not qualification_path.exists():
         raise ValueError("actual L4 restore/branch/probe/restart qualification is required")
     qualification = json.loads(qualification_path.read_text())
     manifest_hash = hashlib.sha256(manifest.read_bytes()).hexdigest()
-    if (qualification.get("source_commit") != source_commit
-            or qualification.get("manifest_sha256") != manifest_hash
-            or qualification.get("gpu_model") != "NVIDIA L4"
-            or not all(qualification.get(key) is True for key in
-                       ("parent_restore", "full_branch_horizon", "plasticity_probe", "restart"))):
-        raise ValueError("incomplete or stale L4 qualification")
-    qualified_workers = qualification.get("qualified_workers", 0)
-    if not isinstance(qualified_workers, int) or not 1 <= qualified_workers <= 7:
-        raise ValueError("invalid qualified worker count")
+    identity, expected_horizon = qualification_context(manifest)
+    qualified_workers = validate_qualification(qualification, source_commit, manifest_hash,
+                                               identity, expected_horizon)
     max_workers = min(max_workers, qualified_workers)
     # Published per-second GPU + requested CPU + requested host-memory rates.
     # Deliberately bill all requested resources for the full session, even idle.
-    per_second = 0.000222 + 8 * 0.0000131 + 48 * 0.00000222
     reserve = 2.0  # CPU-only verification/build/storage and shutdown allowance.
     ledger = output / "budget.json"
     old = json.loads(ledger.read_text()) if ledger.exists() else {"reserved_usd": reserve}
-    seconds = min(22 * 3600, int((budget_usd - old["reserved_usd"]) / per_second))
-    if seconds < 300:
-        raise ValueError("remaining reserved budget below five minutes")
-    old["reserved_usd"] += seconds * per_second
+    seconds = reservation_seconds(old["reserved_usd"], budget_usd,
+                                  min(budget_usd, max_seconds * PER_SECOND))
+    old["reserved_usd"] += seconds * PER_SECOND
     ledger.write_text(json.dumps(old, indent=2))
     results.commit()
     deadline = time.monotonic() + seconds
@@ -252,13 +314,43 @@ def train(max_workers: int = 7, budget_usd: float = 40.0):
     return {"pending": len(pending), "interrupted": len(active), "budget": old}
 
 
+@app.function(image=image, gpu="L4", cpu=8, memory=49152, volumes=MOUNTS,
+              secrets=[modal.Secret.from_name("exp2-wandb")], timeout=23 * 3600,
+              max_containers=1, retries=0)
+def qualify_then_train(budget_usd: float = 40.0, qualification_usd: float = 5.0):
+    """Qualify then train sequentially in one GPU container."""
+    session_start = time.monotonic()
+    source_commit = subprocess.check_output(
+        ["git", "-C", "/source", "rev-parse", "HEAD"], text=True
+    ).strip()
+    manifest = Path("/parents/exp1-pilot-parents/manifest.json")
+    digest = hashlib.sha256(manifest.read_bytes()).hexdigest()
+    identity, expected_horizon = qualification_context(manifest)
+    results.reload()
+    path = Path("/results/replay-pilot") / f"l4-qualification-{source_commit}.json"
+    if path.exists():
+        receipt = json.loads(path.read_text())
+    else:
+        receipt = qualify.local(budget_usd, qualification_usd)
+        validate_qualification(receipt, source_commit, digest, identity, expected_horizon)
+        results.reload()
+        if json.loads(path.read_text()) != receipt:
+            raise ValueError("persisted qualification differs from returned evidence")
+    validate_qualification(receipt, source_commit, digest, identity, expected_horizon)
+    remaining = int(22 * 3600 - (time.monotonic() - session_start))
+    return train.local(max_workers=1, budget_usd=budget_usd, max_seconds=remaining)
+
+
 @app.local_entrypoint()
-def main(mode: str = "verify", budget_usd: float = 10.0):
+def main(mode: str = "verify", budget_usd: float = 40.0,
+         qualification_usd: float = 5.0):
     if mode == "verify":
         print(verify.remote())
     elif mode == "qualify":
-        print(qualify.remote(budget_usd))
+        print(qualify.remote(budget_usd, qualification_usd))
+    elif mode == "qualify_then_train":
+        print(qualify_then_train.spawn(budget_usd, qualification_usd).object_id)
     elif mode == "train":
-        print(train.remote())
+        print(train.remote(budget_usd=budget_usd))
     else:
-        raise ValueError("mode must be verify, qualify or train")
+        raise ValueError("mode must be verify, qualify, qualify_then_train or train")

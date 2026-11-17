@@ -47,7 +47,8 @@ modal run main/infra/modal/exp2_modal.py --mode verify
 
 Verification reads all source-checksum files on a CPU-only Modal container and
 writes `verification.json` only on success. The GPU launcher additionally needs
-a real L4 qualification receipt at `/results/replay-pilot/l4-qualification.json`.
+a real L4 qualification receipt at
+`/results/replay-pilot/l4-qualification-<source-commit>.json`.
 It binds exact source/manifest/GPU and requires parent restore, full branch,
 probe and restart evidence plus measured worker capacity. The source inventory and its recorded Modal verification are stored under
 `/exp1-pilot-transfer-receipts/` on the parent volume. Verification checks the
@@ -55,22 +56,37 @@ receipt against the source inventory, rehashes each uploaded file, checks the
 parent population and metadata, and derives the runner's `manifest.json` and
 `verification.json`. It requires the exact recorded inventory and receipt.
 
-After verification, qualification uses the first manifest identity, interrupts
-a saved learning branch and resumes in a separate process, then checks all four
-full branch horizons and both probes. It can qualify only one worker; it does
-not establish compatibility for every parent or environment. It reserves up to
-$10 against the same local budget ledger as training. Actual GPU qualification
+After verification, qualification uses the first manifest identity and exactly
+5,000 offline updates, isolated in a source-bound qualification directory. It
+interrupts a saved learning branch and resumes in a separate process, then checks
+all four full branch horizons and both probes. The pilot retains its full parent
+update budget and schedule. Qualification covers only one worker and does not
+establish compatibility for every parent or environment. Actual GPU qualification
 remains outstanding; do not hand-write passing evidence.
 
 ```bash
 modal run --detach main/infra/modal/exp2_modal.py --mode qualify
 ```
 
-`--budget-usd` sets the cumulative qualification spending ceiling (maximum
-$40), including earlier reservations. A retry may need a higher ceiling because
-failed sessions retain their full reservations in the ledger.
+`--budget-usd` sets the cumulative spending ceiling (maximum $40), including
+earlier reservations. `--qualification-usd` limits each qualification reservation
+(default $5) so funds remain for training. Failed sessions retain their full
+reservations in the ledger.
 
-After qualification:
+To run qualification and, only if its persisted evidence is valid, start the
+pilot automatically, use the detached controller:
+
+```bash
+modal run --detach main/infra/modal/exp2_modal.py --mode qualify_then_train --budget-usd 40 --qualification-usd 5
+```
+
+The controller resumes from a valid receipt for the same source and manifest.
+It permits one pilot worker and stops if qualification fails or the remaining
+reservation is insufficient. Prior reservations remain charged against the cap.
+The ledger is an estimate, not an account-wide spending guarantee; run only one
+controller or manual session at a time to avoid concurrent ledger updates.
+
+After qualification, a manual pilot can also be started:
 
 ```bash
 modal run --detach main/infra/modal/exp2_modal.py --mode train

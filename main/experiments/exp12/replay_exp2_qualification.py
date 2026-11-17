@@ -7,6 +7,21 @@ import subprocess
 from pathlib import Path
 
 
+QUALIFICATION_UPDATES = 5000
+
+
+def configure_qualification(runner):
+    """Bind a shortened engineering schedule without changing the pilot schedule."""
+    if runner.update_budget < QUALIFICATION_UPDATES:
+        raise ValueError("parent budget is below the qualification update count")
+    runner.parent_update_budget = runner.update_budget
+    runner.update_budget = QUALIFICATION_UPDATES
+    runner.checks = runner.probes = [QUALIFICATION_UPDATES]
+    runner.config_hash = hashlib.sha256(
+        (runner.config_hash + ":qualification-5000-v1").encode()
+    ).hexdigest()
+
+
 def validate_evidence(rows, checkpoint, horizon):
     diagnostics = [row for row in rows if row.get("type") == "pilot_diagnostic"
                    and row.get("checkpoint") == checkpoint]
@@ -53,6 +68,10 @@ def main():
         pass
 
     class Qualifier(ReplayExp2Pilot):
+        def __init__(self, *args):
+            super().__init__(*args)
+            configure_qualification(self)
+
         def _check_resource_cap(self):
             super()._check_resource_cap()
             if args.phase == "interrupt":
@@ -72,14 +91,22 @@ def main():
             if args.phase == "resume":
                 interrupted = json.loads(marker.read_text())
                 checkpoint = trainer.update_step
-                if checkpoint != interrupted["checkpoint"]:
+                if checkpoint != QUALIFICATION_UPDATES or checkpoint != interrupted["checkpoint"]:
                     raise ValueError("restart did not resume interrupted checkpoint")
                 validate_evidence(self.rows, checkpoint, int(self.cfg.online_exp2.branch_raw_steps))
+                diagnostic = next(row for row in self.rows if row.get("type") == "pilot_diagnostic"
+                                  and row.get("checkpoint") == checkpoint)
                 receipt = {"source_commit": self.source_commit,
                            "manifest_sha256": hashlib.sha256(args.parent_manifest.read_bytes()).hexdigest(),
                            "gpu_model": model, "parent_restore": True, "full_branch_horizon": True,
                            "plasticity_probe": True, "restart": True, "qualified_workers": 1,
                            "identity": identity, "checkpoint": checkpoint,
+                           "qualification_updates": QUALIFICATION_UPDATES,
+                           "parent_update_budget": self.parent_update_budget,
+                           "qualification_protocol": "replay-qualification-5000-v1",
+                           "branch_horizon": int(self.cfg.online_exp2.branch_raw_steps),
+                           "branch_counters": diagnostic["branch_counters"],
+                           "probe_architectures": ["small", "large"],
                            "interruption": interrupted}
                 (self.root / "qualification-result.json").write_text(json.dumps(receipt, indent=2))
                 raise StopQualification()
