@@ -84,6 +84,7 @@ class OfflineLoopTests(unittest.TestCase):
             runner.parent = {"source_commit": SOURCE}
             runner.fresh_done = True
             trainer = SimpleNamespace(update_step=0, extra_state={},
+                                      _sac_agent=SimpleNamespace(actor=SimpleNamespace(params={})),
                                       _attach_logger=Mock(), close=Mock())
             trainer.buffer = Mock()
             trainer.buffer.sample.return_value = ({"reward":np.array([1.])},np.array([0]))
@@ -138,7 +139,7 @@ class NumericReplayRestartTests(unittest.TestCase):
 
         def step(runner):
             batch,indices=runner.trainer.buffer.sample(return_indices=True)
-            runner._shadow_updates(runner.trainer,{k:v[None] for k,v in batch.items()},indices[None],None)
+            runner._shadow_updates(runner.trainer,{k:v[None] for k,v in batch.items()},indices[None],None, compiled=True)
             runner.trainer.update_step += 1
 
         with tempfile.TemporaryDirectory() as tmp, patches():
@@ -166,3 +167,66 @@ class NumericReplayRestartTests(unittest.TestCase):
             np.testing.assert_array_equal(expected_key,np.array(restored.key))
             self.assertEqual(fixed,_reference_state(restored.trainer))
             restored.trainer.close()
+
+
+class CompiledReplayTests(unittest.TestCase):
+    def test_compiled_paired_updates_match_eager_including_optimizer_and_targets(self):
+        import jax
+        import numpy as np
+        from experiments.online_exp2 import OnlineExp2
+        from experiments.exp12.online_exp2 import paired_shadow_update, paired_shadow_update_compiled
+        from tests.test_revised_exp2_runner import patches, revised_cfg
+
+        with tempfile.TemporaryDirectory() as tmp, patches():
+            runner = OnlineExp2(revised_cfg(), tmp)
+            trainer = runner.trainer
+            trainer.start()
+            for i in range(8):
+                trainer.buffer.add({'observation': np.full((1, 3), i / 10, np.float32),
+                    'next_observation': np.full((1, 3), (i + 1) / 10, np.float32),
+                    'action': np.zeros((1, 2), np.float32), 'reward': np.array([1.], np.float32),
+                    'terminated': np.array([False]), 'truncated': np.array([False])})
+            eager, compiled = runner.shadows, runner.shadows
+            for _ in range(3):
+                batch, _ = trainer.buffer.sample(return_indices=True)
+                batch['observation'] = trainer.agent._normalize(batch['observation'])
+                batch['next_observation'] = trainer.agent._normalize(batch['next_observation'])
+                key = runner._next_key()
+                args = (trainer._sac_agent.actor, trainer._sac_agent.temperature)
+                opts = (float(trainer.cfg.agent.gamma), int(trainer.cfg.agent.n_step),
+                        float(trainer.cfg.agent.target_tau), bool(trainer.cfg.agent.critic_use_cdq))
+                eager, eager_info = paired_shadow_update(*args, eager, batch, key, *opts)
+                compiled, compiled_info = paired_shadow_update_compiled(*args, compiled, batch, key, *opts)
+                for name in ('small', 'large'):
+                    self.assertEqual(eager[name].updates, compiled[name].updates)
+                    for left, right in zip(jax.tree.leaves((eager[name].critic, eager[name].target)),
+                                           jax.tree.leaves((compiled[name].critic, compiled[name].target))):
+                        np.testing.assert_allclose(left, right, rtol=2e-5, atol=2e-6)
+                for left, right in zip(jax.tree.leaves(eager_info), jax.tree.leaves(compiled_info)):
+                    np.testing.assert_allclose(left, right, rtol=2e-5, atol=2e-6)
+            trainer.close()
+
+    def test_replay_record_uses_verified_fixed_actor_hash(self):
+        import flax.serialization
+        import numpy as np
+        from unittest.mock import patch
+        from experiments.online_exp2 import OnlineExp2
+        from tests.test_revised_exp2_runner import patches, revised_cfg
+
+        with tempfile.TemporaryDirectory() as tmp, patches():
+            runner = OnlineExp2(revised_cfg(), tmp)
+            trainer = runner.trainer
+            trainer.start()
+            for i in range(8):
+                trainer.buffer.add({'observation': np.full((1, 3), i / 10, np.float32),
+                    'next_observation': np.full((1, 3), (i + 1) / 10, np.float32),
+                    'action': np.zeros((1, 2), np.float32), 'reward': np.array([1.], np.float32),
+                    'terminated': np.array([False]), 'truncated': np.array([False])})
+            expected = hashlib.sha256(flax.serialization.to_bytes(trainer._sac_agent.actor.params)).hexdigest()
+            batch, indices = trainer.buffer.sample(return_indices=True)
+            with patch('flax.serialization.to_bytes', side_effect=AssertionError('actor serialized again')):
+                runner._shadow_updates(trainer, {k: v[None] for k, v in batch.items()},
+                                       indices[None], None, compiled=True, fixed_actor_hash=expected)
+            row = json.loads((Path(tmp) / 'shadow_updates.jsonl').read_text())
+            self.assertEqual(row['reference_actor_snapshot_sha256'], expected)
+            trainer.close()

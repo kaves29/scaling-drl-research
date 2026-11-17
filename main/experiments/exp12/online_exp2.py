@@ -5,6 +5,7 @@ updates shadow critics and disposable copies of the reference actor.
 """
 
 from dataclasses import dataclass
+from functools import partial
 
 import jax
 import jax.numpy as jnp
@@ -52,6 +53,12 @@ def paired_shadow_update(actor, temperature, shadows, batch, key, gamma, n_step,
     """
     _finite_batch(batch)
     batch = {name: jnp.asarray(value) for name, value in batch.items()}
+    return _paired_shadow_update(actor, temperature, shadows, batch, key, gamma,
+                                 n_step, target_tau, critic_use_cdq)
+
+
+def _paired_shadow_update(actor, temperature, shadows, batch, key, gamma, n_step,
+                          target_tau, critic_use_cdq):
     next_dist = actor(observations=batch["next_observation"])
     next_actions = next_dist.sample(seed=key)
     next_log_probs = next_dist.log_prob(next_actions)
@@ -84,6 +91,31 @@ def paired_shadow_update(actor, temperature, shadows, batch, key, gamma, n_step,
         info[name] = metrics
     return updated, {"next_actions": next_actions, "next_log_probs": next_log_probs,
                      "critics": info}
+
+
+@partial(jax.jit, static_argnames=("gamma", "n_step", "target_tau", "critic_use_cdq"))
+def _compiled_paired_step(actor, temperature, small_critic, small_target,
+                          large_critic, large_target, batch, key, gamma, n_step,
+                          target_tau, critic_use_cdq):
+    shadows = {"small": Shadow(small_critic, small_target, None),
+               "large": Shadow(large_critic, large_target, None)}
+    updated, info = _paired_shadow_update(actor, temperature, shadows, batch, key,
+                                           gamma, n_step, target_tau, critic_use_cdq)
+    return (updated["small"].critic, updated["small"].target,
+            updated["large"].critic, updated["large"].target, info)
+
+
+def paired_shadow_update_compiled(actor, temperature, shadows, batch, key, gamma,
+                                  n_step, target_tau, critic_use_cdq=False):
+    """Compiled replay update with the same per-batch admission and outputs."""
+    _finite_batch(batch)
+    batch = {name: jnp.asarray(value) for name, value in batch.items()}
+    small, large = shadows["small"], shadows["large"]
+    small_critic, small_target, large_critic, large_target, info = _compiled_paired_step(
+        actor, temperature, small.critic, small.target, large.critic, large.target,
+        batch, key, gamma, n_step, target_tau, critic_use_cdq)
+    return {"small": Shadow(small_critic, small_target, small.fresh_params, small.updates + 1),
+            "large": Shadow(large_critic, large_target, large.fresh_params, large.updates + 1)}, info
 
 
 def paired_actor_intervention(actor, temperature, shadows, observations, key,

@@ -10,6 +10,7 @@ import json
 import time
 from pathlib import Path
 
+import flax.serialization
 import numpy as np
 import wandb
 from omegaconf import OmegaConf
@@ -90,6 +91,9 @@ class ReplayExp2Pilot(OnlineExp2):
                 self.save()
             if trainer.extra_state.get("online_exp2_pending_checkpoint"):
                 self._checkpoint(trainer)
+            fixed_actor_hash = hashlib.sha256(
+                flax.serialization.to_bytes(trainer._sac_agent.actor.params)
+            ).hexdigest()
             last_save = time.monotonic()
             while trainer.update_step < self.update_budget:
                 self._check_resource_cap()
@@ -97,7 +101,8 @@ class ReplayExp2Pilot(OnlineExp2):
                 # Reuse paired SAC TD targets with a fixed parent actor and temp.
                 # _shadow_updates applies the parent's frozen observation normalizer.
                 self._shadow_updates(trainer, {k: v[None] for k, v in batch.items()},
-                                     indices[None], None)
+                                     indices[None], None, compiled=True,
+                                     fixed_actor_hash=fixed_actor_hash)
                 trainer.update_step += 1
                 if trainer.update_step in self.checks:
                     self._checkpoint(trainer)

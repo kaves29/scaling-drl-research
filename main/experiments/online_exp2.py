@@ -23,6 +23,7 @@ from experiments.exp12.online_exp2 import (
     gradient_cosine,
     paired_actor_intervention,
     paired_shadow_update,
+    paired_shadow_update_compiled,
 )
 from experiments.exp12.precision import set_matmul_precision
 from experiments.exp12.probe import critic_optimizer, probe_config, summarize
@@ -305,7 +306,8 @@ class OnlineExp2:
     def _after_update(self, trainer, batches, indices, snapshots):
         self._shadow_updates(trainer, batches, indices, snapshots)
 
-    def _shadow_updates(self, trainer, batches, indices, snapshots):
+    def _shadow_updates(self, trainer, batches, indices, snapshots, *, compiled=False,
+                        fixed_actor_hash=None):
         # The pilot uses pre-update policy states returned by the source SAC scan.
         for i, sampled_indices in enumerate(indices):
             raw = {name: value[i] for name, value in batches.items()}
@@ -324,7 +326,8 @@ class OnlineExp2:
                 temperature = temperature.replace(
                     params=jax.tree.map(lambda x: x[i], snapshots["temperature"])
                 )
-            self.shadows, result = paired_shadow_update(
+            update = paired_shadow_update_compiled if compiled else paired_shadow_update
+            self.shadows, result = update(
                 actor,
                 temperature,
                 self.shadows,
@@ -352,7 +355,7 @@ class OnlineExp2:
                 "interaction_step": trainer.interaction_step,
                 "raw_env_steps": trainer.raw_env_steps,
                 "reference_update_step": trainer.update_step + i,
-                "reference_actor_snapshot_sha256": _sha(
+                "reference_actor_snapshot_sha256": fixed_actor_hash if fixed_actor_hash is not None else _sha(
                     flax.serialization.to_bytes(actor.params)
                 ),
                 "indices": np.asarray(sampled_indices).tolist(),
