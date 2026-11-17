@@ -14,35 +14,41 @@ import time
 
 import modal
 
-ROOT = Path(__file__).resolve().parents[3]
-# Bundle the committed source instead of copying a worktree's external .git link.
-# Creating this local source snapshot does not contact Modal or allocate a GPU.
-if subprocess.check_output(["git", "status", "--porcelain", "--untracked-files=no"], cwd=ROOT, text=True).strip():
-    raise RuntimeError("commit reviewed source before building the Modal image")
-SOURCE_COMMIT = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
-bundle = Path(tempfile.gettempdir()) / f"exp2-modal-source-{SOURCE_COMMIT}.bundle"
-if not bundle.exists():
-    subprocess.run(["git", "bundle", "create", str(bundle), "HEAD"], cwd=ROOT, check=True)
 app = modal.App("echocritic-exp2-replay-pilot")
 parents = modal.Volume.from_name("exp1-pilot-states", create_if_missing=True)
 results = modal.Volume.from_name("exp2-pilot-results", create_if_missing=True)
-image = (
-    modal.Image.from_registry("nvidia/cuda:12.3.2-cudnn9-runtime-ubuntu22.04", add_python="3.12")
-    .apt_install("git", "libgl1", "libegl1", "libosmesa6", "build-essential")
-    .pip_install_from_requirements(str(ROOT / "main/requirements.txt"))
-    .pip_install("jax[cuda12]==0.4.34")
-    .add_local_file(str(bundle), remote_path="/tmp/source.bundle", copy=True)
-    .run_commands("git clone /tmp/source.bundle /source",
-                  f"git -C /source checkout --detach {SOURCE_COMMIT}",
-                  "rm /tmp/source.bundle")
-)
+
+# Modal re-imports this module inside the container at /root/exp2_modal.py.
+# Bundle creation and local file mounts exist only in the client checkout.
+if modal.is_local():
+    ROOT = Path(__file__).resolve().parents[3]
+    if subprocess.check_output(["git", "status", "--porcelain", "--untracked-files=no"], cwd=ROOT, text=True).strip():
+        raise RuntimeError("commit reviewed source before building the Modal image")
+    source_commit = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
+    bundle = Path(tempfile.gettempdir()) / f"exp2-modal-source-{source_commit}.bundle"
+    if not bundle.exists():
+        subprocess.run(["git", "bundle", "create", str(bundle), "HEAD"], cwd=ROOT, check=True)
+    image = (
+        modal.Image.from_registry("nvidia/cuda:12.3.2-cudnn9-runtime-ubuntu22.04", add_python="3.12")
+        .apt_install("git", "libgl1", "libegl1", "libosmesa6", "build-essential")
+        .pip_install_from_requirements(str(ROOT / "main/requirements.txt"))
+        .pip_install("jax[cuda12]==0.4.34")
+        .add_local_file(str(bundle), remote_path="/tmp/source.bundle", copy=True)
+        .run_commands("git clone /tmp/source.bundle /source",
+                      f"git -C /source checkout --detach {source_commit}",
+                      "rm /tmp/source.bundle")
+    )
+    verify_image = modal.Image.debian_slim(python_version="3.12").add_local_file(
+        str(ROOT / "main/infra/modal/parent_inventory.py"), "/opt/parent_inventory.py", copy=True
+    )
+else:
+    image = verify_image = modal.Image.debian_slim(python_version="3.12")
+
 MOUNTS = {"/parents": parents, "/results": results}
 
 
 @app.function(
-    image=modal.Image.debian_slim(python_version="3.12").add_local_file(
-        str(ROOT / "main/infra/modal/parent_inventory.py"), "/opt/parent_inventory.py", copy=True
-    ),
+    image=verify_image,
     volumes=MOUNTS,
     timeout=3600,
 )
@@ -78,6 +84,7 @@ def verify():
               max_containers=1, retries=0)
 def qualify(budget_usd: float = 10.0):
     """Run a single-worker, separately restarted qualification under a reservation."""
+    source_commit = subprocess.check_output(["git", "-C", "/source", "rev-parse", "HEAD"], text=True).strip()
     if not 0 < budget_usd <= 40:
         raise ValueError("spending ceiling exceeded")
     manifest = Path("/parents/exp1-pilot-parents/manifest.json")
@@ -121,7 +128,7 @@ def qualify(budget_usd: float = 10.0):
                                timeout=max(1, deadline - time.monotonic()))
             results.commit()
         receipt = json.loads((qualification / "qualification-result.json").read_text())
-        if receipt.get("source_commit") != SOURCE_COMMIT or receipt.get("manifest_sha256") != digest:
+        if receipt.get("source_commit") != source_commit or receipt.get("manifest_sha256") != digest:
             raise ValueError("qualification evidence does not match source and manifest")
         final.write_text(json.dumps(receipt, indent=2))
     finally:
@@ -134,6 +141,7 @@ def qualify(budget_usd: float = 10.0):
               max_containers=1, retries=0)
 def train(max_workers: int = 7, budget_usd: float = 40.0):
     """A session reserves its maximum estimated charge before starting work."""
+    source_commit = subprocess.check_output(["git", "-C", "/source", "rev-parse", "HEAD"], text=True).strip()
     if not 1 <= max_workers <= 7 or not 0 < budget_usd <= 40:
         raise ValueError("worker or spending ceiling exceeded")
     manifest = Path("/parents/exp1-pilot-parents/manifest.json")
@@ -151,7 +159,7 @@ def train(max_workers: int = 7, budget_usd: float = 40.0):
         raise ValueError("actual L4 restore/branch/probe/restart qualification is required")
     qualification = json.loads(qualification_path.read_text())
     manifest_hash = hashlib.sha256(manifest.read_bytes()).hexdigest()
-    if (qualification.get("source_commit") != SOURCE_COMMIT
+    if (qualification.get("source_commit") != source_commit
             or qualification.get("manifest_sha256") != manifest_hash
             or qualification.get("gpu_model") != "NVIDIA L4"
             or not all(qualification.get(key) is True for key in
@@ -193,7 +201,7 @@ def train(max_workers: int = 7, budget_usd: float = 40.0):
                 directory.mkdir(exist_ok=True)
                 if (directory / "analysis.json").exists():
                     completed = json.loads((directory / "analysis.json").read_text())
-                    if (completed.get("source_commit") != SOURCE_COMMIT
+                    if (completed.get("source_commit") != source_commit
                             or completed.get("protocol") != "exp1-final-replay-v1"
                             or completed.get("environment") != identity["environment"]
                             or completed.get("training_seed") != identity["seed"]
