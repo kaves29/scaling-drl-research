@@ -66,6 +66,10 @@ remains outstanding; do not hand-write passing evidence.
 modal run --detach main/infra/modal/exp2_modal.py --mode qualify
 ```
 
+`--budget-usd` sets the cumulative qualification spending ceiling (maximum
+$40), including earlier reservations. A retry may need a higher ceiling because
+failed sessions retain their full reservations in the ledger.
+
 After qualification:
 
 ```bash

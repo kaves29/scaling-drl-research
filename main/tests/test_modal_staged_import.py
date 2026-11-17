@@ -1,4 +1,6 @@
 """The Modal worker re-imports the launcher outside its source checkout."""
+import inspect
+import os
 import runpy
 import shutil
 import sys
@@ -25,4 +27,13 @@ class StagedImportTest(unittest.TestCase):
             app.local_entrypoint.side_effect = lambda **kwargs: lambda f: f
             modal.App = lambda *args, **kwargs: app
             with patch.dict(sys.modules, {'modal': modal}), patch('subprocess.check_output', side_effect=AssertionError('client git called')):
-                runpy.run_path(str(staged))
+                module = runpy.run_path(str(staged))
+            with patch.dict(os.environ, {'PYOPENGL_PLATFORM': 'glfw'}):
+                env = module['worker_environment']()
+            self.assertEqual(env['MUJOCO_GL'], 'egl')
+            self.assertEqual(env['PYOPENGL_PLATFORM'], 'egl')
+            self.assertIn('budget_usd', inspect.signature(module['main']).parameters)
+            remote = MagicMock()
+            with patch.dict(module['main'].__globals__, {'qualify': remote}):
+                module['main']('qualify', 15.0)
+            remote.remote.assert_called_once_with(15.0)

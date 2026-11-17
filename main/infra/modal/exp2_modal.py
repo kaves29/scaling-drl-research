@@ -47,6 +47,13 @@ else:
 MOUNTS = {"/parents": parents, "/results": results}
 
 
+def worker_environment():
+    return dict(os.environ, PYTHONPATH="/source/main", JAX_PLATFORMS="cuda,cpu",
+                MUJOCO_GL="egl", PYOPENGL_PLATFORM="egl", MUJOCO_EGL_DEVICE_ID="0",
+                WANDB_MODE="online", XLA_PYTHON_CLIENT_PREALLOCATE="false",
+                OMP_NUM_THREADS="1", OPENBLAS_NUM_THREADS="1")
+
+
 @app.function(
     image=verify_image,
     volumes=MOUNTS,
@@ -111,9 +118,7 @@ def qualify(budget_usd: float = 10.0):
     row = json.loads(manifest.read_text())["runs"][0]
     identity = {"environment": row["environment"], "seed": row["seed"],
                 "reference_regime": "reference_small" if row["architecture"] == "D2W512" else "reference_large"}
-    env = dict(os.environ, PYTHONPATH="/source/main", JAX_PLATFORMS="cuda,cpu",
-               MUJOCO_GL="egl", MUJOCO_EGL_DEVICE_ID="0", WANDB_MODE="online",
-               XLA_PYTHON_CLIENT_PREALLOCATE="false", OMP_NUM_THREADS="1", OPENBLAS_NUM_THREADS="1")
+    env = worker_environment()
     deadline = time.monotonic() + seconds
     try:
         for phase in ("interrupt", "resume"):
@@ -187,10 +192,7 @@ def train(max_workers: int = 7, budget_usd: float = 40.0):
                     reference_regime="reference_small" if r["architecture"] == "D2W512" else "reference_large")
                for r in rows]
     active = []
-    env = dict(os.environ, PYTHONPATH="/source/main", JAX_PLATFORMS="cuda,cpu",
-               MUJOCO_GL="egl", MUJOCO_EGL_DEVICE_ID="0", WANDB_MODE="online",
-               XLA_PYTHON_CLIENT_PREALLOCATE="false", OMP_NUM_THREADS="1",
-               OPENBLAS_NUM_THREADS="1")
+    env = worker_environment()
     last_commit = time.monotonic()
     try:
         while (pending or active) and time.monotonic() < deadline - 120:
@@ -251,11 +253,11 @@ def train(max_workers: int = 7, budget_usd: float = 40.0):
 
 
 @app.local_entrypoint()
-def main(mode: str = "verify"):
+def main(mode: str = "verify", budget_usd: float = 10.0):
     if mode == "verify":
         print(verify.remote())
     elif mode == "qualify":
-        print(qualify.remote())
+        print(qualify.remote(budget_usd))
     elif mode == "train":
         print(train.remote())
     else:
