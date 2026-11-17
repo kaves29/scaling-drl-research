@@ -49,9 +49,11 @@ Verification reads all source-checksum files on a CPU-only Modal container and
 writes `verification.json` only on success. The GPU launcher additionally needs
 a real L4 qualification receipt at `/results/replay-pilot/l4-qualification.json`.
 It binds exact source/manifest/GPU and requires parent restore, full branch,
-probe and restart evidence plus measured worker capacity. The uploaded volume inspected on 17 November 2026 had no transfer manifest or
-source-side checksum inventory; obtain those from the transfer source before
-verification. A destination-only inventory cannot prove transfer equality.
+probe and restart evidence plus measured worker capacity. The source inventory and its recorded Modal verification are stored under
+`/exp1-pilot-transfer-receipts/` on the parent volume. Verification checks the
+receipt against the source inventory, rehashes each uploaded file, checks the
+parent population and metadata, and derives the runner's `manifest.json` and
+`verification.json`. It requires the exact recorded inventory and receipt.
 
 After verification, qualification uses the first manifest identity, interrupts
 a saved learning branch and resumes in a separate process, then checks all four

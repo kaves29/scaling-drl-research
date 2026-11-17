@@ -39,44 +39,36 @@ image = (
 MOUNTS = {"/parents": parents, "/results": results}
 
 
-@app.function(image=modal.Image.debian_slim(python_version="3.12"), volumes=MOUNTS, timeout=3600)
+@app.function(
+    image=modal.Image.debian_slim(python_version="3.12").add_local_file(
+        str(ROOT / "main/infra/modal/parent_inventory.py"), "/opt/parent_inventory.py", copy=True
+    ),
+    volumes=MOUNTS,
+    timeout=3600,
+)
 def verify():
+    import sys
+    sys.path.insert(0, "/opt")
+    from parent_inventory import verify_transfer
+
     root = Path("/parents/exp1-pilot-parents")
+    source = Path("/parents/exp1-pilot-transfer-receipts/echocritic-exp1-pilot-checksums-20261116.json")
+    uploaded_receipt = source.with_name("exp1-pilot-modal-verification-20261116.json")
+    verification = root / "verification.json"
+    verification.unlink(missing_ok=True)
+    parents.commit()
+    rows = verify_transfer(root, source, uploaded_receipt)
     manifest = root / "manifest.json"
-    count = 0
-    inventory = set()
-    for line in (root / "sha256.txt").read_text().splitlines():
-        expected, relative = line.split("  ", 1)
-        if relative in inventory:
-            raise ValueError("duplicate checksum path")
-        inventory.add(relative)
-        path = (root / relative).resolve()
-        if not path.is_relative_to(root.resolve()):
-            raise ValueError("checksum path escapes parent directory")
-        h = hashlib.sha256()
-        with path.open("rb") as stream:
-            for block in iter(lambda: stream.read(8 * 1024 * 1024), b""):
-                h.update(block)
-        if h.hexdigest() != expected:
-            raise ValueError(f"checksum mismatch: {relative}")
-        count += 1
-    if count == 0:
-        raise ValueError("empty checksum inventory")
-    rows = json.loads(manifest.read_text())["runs"]
-    if len(rows) != 20:
-        raise ValueError("expected 20 parent identities")
-    for row in rows:
-        run = Path(row["architecture"]) / row["environment"] / f"seed_{row['seed']}"
-        state = run / "state" / row["state"]
-        required = [run / "DONE", run / "run_metadata.json", run / "state/LATEST",
-                    *(state / name for name in ("meta.pkl", "buffer.npz", "buffer_meta.pkl", "obs_rms.pkl"))]
-        if any(path.as_posix() not in inventory for path in required):
-            raise ValueError("checksum inventory omits required parent file")
-        if not any(name.startswith((state / "agent_ckpt").as_posix() + "/") for name in inventory):
-            raise ValueError("checksum inventory omits agent checkpoint")
+    temporary = manifest.with_suffix(".tmp")
+    temporary.write_text(json.dumps({"runs": rows}, indent=2) + "\n")
+    temporary.replace(manifest)
     receipt = {"manifest_sha256": hashlib.sha256(manifest.read_bytes()).hexdigest(),
-               "all_files_ok": True, "files": count, "verified_unix": time.time()}
-    (root / "verification.json").write_text(json.dumps(receipt, indent=2))
+               "source_inventory_sha256": hashlib.sha256(source.read_bytes()).hexdigest(),
+               "all_files_ok": True, "files": json.loads(source.read_text())["file_count"],
+               "verified_unix": time.time()}
+    temporary = verification.with_suffix(".tmp")
+    temporary.write_text(json.dumps(receipt, indent=2))
+    temporary.replace(verification)
     parents.commit()
     return receipt
 
