@@ -485,7 +485,8 @@ def verify_a100_smoke_source(smoke_commit):
 @app.function(image=image, gpu="A100-80GB", cpu=(8, 8), memory=(76800, 76800), volumes=MOUNTS,
               secrets=[modal.Secret.from_name("exp2-wandb")], timeout=23 * 3600,
               max_containers=1, retries=0)
-def a100_pilot(max_workers: int = 8, budget_usd: float = 40.0, smoke_commit: str = ""):
+def a100_pilot(session_seconds: int, max_workers: int = 8, smoke_commit: str = "",
+               resume_commit: str = ""):
     """Run full replay pilot after a short, explicitly nonqualifying A100 smoke."""
     if type(max_workers) is not int or not 1 <= max_workers <= 8:
         raise ValueError("A100 worker ceiling exceeded")
@@ -506,6 +507,11 @@ def a100_pilot(max_workers: int = 8, budget_usd: float = 40.0, smoke_commit: str
     if "A100" not in model or int(total) < 75000:
         raise ValueError("A100 80 GB required")
     identity, _ = qualification_context(manifest)
+    if not 300 <= session_seconds <= 22 * 3600:
+        raise ValueError("A100 session must be between five minutes and 22 hours")
+    if resume_commit:
+        verify_a100_smoke_source(resume_commit)
+        source_commit = resume_commit
     smoke_commit = smoke_commit or source_commit
     verify_a100_smoke_source(smoke_commit)
     smoke_path = (Path("/results/replay-pilot") / f"a100-smoke-{smoke_commit}" /
@@ -529,15 +535,13 @@ def a100_pilot(max_workers: int = 8, budget_usd: float = 40.0, smoke_commit: str
     if provenance.exists() and json.loads(provenance.read_text()) != metadata:
         raise ValueError("A100 output provenance mismatch")
     provenance.write_text(json.dumps(metadata, indent=2))
-    ledger = Path("/results/replay-pilot/budget.json")
-    old = json.loads(ledger.read_text()) if ledger.exists() else {"reserved_usd": 2.0}
-    rate = resource_rate(75, "A100-80GB")
-    seconds = reservation_seconds(old["reserved_usd"], budget_usd, budget_usd, 75, "A100-80GB")
-    old["reserved_usd"] += seconds * rate
-    ledger.write_text(json.dumps(old, indent=2))
+    if resume_commit:
+        # The original checkout preserves checkpoint and W&B provenance.
+        subprocess.run(["git", "-C", "/source", "checkout", "--detach",
+                        resume_commit], check=True)
     results.commit()
-    print("A100 engineering smoke passed; concurrency and scientific qualification remain unverified", flush=True)
-    return run_pilot_workers(manifest, output, max_workers, source_commit, seconds, old,
+    return run_pilot_workers(manifest, output, max_workers, source_commit,
+                             session_seconds, {},
                              wandb_tags="a100-pilot,short-smoke-only,concurrency-unqualified")
 
 
@@ -570,7 +574,8 @@ def qualify_then_train(budget_usd: float = 40.0, qualification_usd: float = 5.0)
 
 @app.local_entrypoint()
 def main(mode: str = "verify", budget_usd: float = 40.0,
-         qualification_usd: float = 5.0, smoke_commit: str = ""):
+         qualification_usd: float = 5.0, smoke_commit: str = "",
+         session_seconds: int = 0, resume_commit: str = ""):
     if mode == "verify":
         print(verify.remote())
     elif mode == "qualify":
@@ -578,7 +583,10 @@ def main(mode: str = "verify", budget_usd: float = 40.0,
     elif mode == "a100_smoke":
         print(a100_smoke.remote(budget_usd))
     elif mode == "a100_pilot":
-        print(a100_pilot.remote(max_workers=8, budget_usd=budget_usd, smoke_commit=smoke_commit))
+        if not 300 <= session_seconds <= 22 * 3600:
+            raise ValueError("provide a free-credit-backed --session-seconds limit")
+        print(a100_pilot.spawn(session_seconds, max_workers=8, smoke_commit=smoke_commit,
+                               resume_commit=resume_commit).object_id)
     elif mode == "qualify_then_train":
         print(qualify_then_train.spawn(budget_usd, qualification_usd).object_id)
     elif mode == "train":
