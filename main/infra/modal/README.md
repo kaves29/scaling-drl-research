@@ -107,7 +107,9 @@ Standalone qualification requests 8 CPU cores and 48 GiB RAM. Training requests
 controller also reserves and bills 75 GiB throughout. These are requested
 resources, not measured requirements. Before starting each worker, training
 requires 11 GiB of free GPU memory and 9 GiB of cgroup host-memory headroom,
-and staggers launches by 30 seconds. These thresholds round up the sampled
+and staggers launches by 30 seconds. Cgroup v1 and v2 are supported; missing,
+unlimited or unexpected host limits fail closed. A100 startup checks telemetry
+before reserving the session budget. These thresholds round up the sampled
 one-worker eager-run footprint (8.28 GiB GPU, 6.99 GiB RSS) and add 2 GiB; that
 sample did not reach full branches and is not a peak or compiled-run estimate.
 These checks do not guarantee that later allocations fit or qualify seven

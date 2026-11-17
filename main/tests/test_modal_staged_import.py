@@ -113,6 +113,27 @@ class StagedImportTest(unittest.TestCase):
                  patch('subprocess.check_output', return_value='8192\n8192\n'):
                 with self.assertRaisesRegex(ValueError, 'exactly one'):
                     module['memory_headroom']()
+            (cgroup / 'memory.max').unlink()
+            (cgroup / 'memory.current').unlink()
+            v1 = cgroup / 'memory'
+            v1.mkdir()
+            (v1 / 'memory.limit_in_bytes').write_text(str(75 * 1024 ** 3))
+            (v1 / 'memory.usage_in_bytes').write_text(str(10 * 1024 ** 3))
+            with patch.dict(module['memory_headroom'].__globals__, {'Path': lambda _: cgroup}), \
+                 patch('subprocess.check_output', return_value='8192\n'):
+                self.assertEqual(module['memory_headroom'](), (8192, 65 * 1024))
+            (v1 / 'memory.limit_in_bytes').write_text(str(9223372036854771712))
+            with patch.dict(module['memory_headroom'].__globals__, {'Path': lambda _: cgroup}), \
+                 patch('subprocess.check_output', return_value='8192\n'):
+                with self.assertRaises(ValueError):
+                    module['memory_headroom']()
+            (v1 / 'memory.limit_in_bytes').unlink()
+            (v1 / 'memory.usage_in_bytes').unlink()
+            (cgroup / 'memory.limit_in_bytes').write_text(str(75 * 1024 ** 3))
+            (cgroup / 'memory.usage_in_bytes').write_text(str(10 * 1024 ** 3))
+            with patch.dict(module['memory_headroom'].__globals__, {'Path': lambda _: cgroup}), \
+                 patch('subprocess.check_output', return_value='8192\n'):
+                self.assertEqual(module['memory_headroom'](), (8192, 65 * 1024))
             root = Path(tmp)
             manifest = root / 'parents/exp1-pilot-parents/manifest.json'
             manifest.parent.mkdir(parents=True)
@@ -199,3 +220,18 @@ class StagedImportTest(unittest.TestCase):
                 with self.assertRaisesRegex(RuntimeError, 'worker exit 17'):
                     module['run_pilot_workers'](pilot_manifest, failed_output, 1, 'abc', 10000, {})
             start.assert_called_once()
+            verification = manifest.with_name('verification.json')
+            verification.write_text(json.dumps({'all_files_ok': True, 'manifest_sha256': digest}))
+            smoke_path = root / ('results/replay-pilot/a100-smoke-' + module['A100_SMOKE_SOURCE']) / 'a100-smoke-result.json'
+            smoke_path.parent.mkdir(parents=True)
+            smoke_path.write_text('{}')
+            ledger = root / 'results/replay-pilot/budget.json'
+            with patch.dict(module['a100_pilot'].__globals__, {
+                    'Path': fake_path, 'qualification_context': lambda manifest: (identity, 10000),
+                    'validate_a100_smoke': lambda *args: None,
+                    'verify_a100_smoke_source': lambda *args: None,
+                    'memory_headroom': MagicMock(side_effect=ValueError('no telemetry'))}), \
+                 patch('subprocess.check_output', side_effect=['abc', 'NVIDIA A100 80GB, 81920']):
+                with self.assertRaisesRegex(ValueError, 'no telemetry'):
+                    module['a100_pilot']()
+            self.assertFalse(ledger.exists())

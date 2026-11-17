@@ -88,9 +88,18 @@ def memory_headroom():
         raise ValueError("expected exactly one visible GPU")
     gpu_free_mib = int(output[0].strip())
     cgroup = Path("/sys/fs/cgroup")
-    limit = int((cgroup / "memory.max").read_text().strip())
-    used = int((cgroup / "memory.current").read_text().strip())
-    if limit <= 0 or used < 0:
+    candidates = ((cgroup / "memory.max", cgroup / "memory.current"),
+                  (cgroup / "memory/memory.limit_in_bytes", cgroup / "memory/memory.usage_in_bytes"),
+                  (cgroup / "memory.limit_in_bytes", cgroup / "memory.usage_in_bytes"))
+    for limit_path, used_path in candidates:
+        if limit_path.is_file() and used_path.is_file():
+            limit = int(limit_path.read_text().strip())
+            used = int(used_path.read_text().strip())
+            break
+    else:
+        raise ValueError("cgroup memory limit and usage are unavailable")
+    # Pilot containers have a hard 75-GiB limit; reject unlimited/host cgroups.
+    if limit <= 0 or limit > 75 * 1024 ** 3 or used < 0:
         raise ValueError("invalid cgroup memory measurements")
     return gpu_free_mib, max(0, (limit - used) // (1024 * 1024))
 
@@ -506,6 +515,10 @@ def a100_pilot(max_workers: int = 8, budget_usd: float = 40.0):
     smoke = json.loads(smoke_bytes)
     validate_a100_smoke(smoke, A100_SMOKE_SOURCE, manifest_hash, identity)
     verify_a100_smoke_source(A100_SMOKE_SOURCE)
+    # Do not reserve an entire session if telemetry or initial headroom fails.
+    gpu_free, host_free = memory_headroom()
+    if not has_start_headroom(gpu_free, host_free):
+        raise RuntimeError("insufficient GPU or host memory headroom")
     output = Path("/results/replay-pilot-a100") / source_commit
     output.mkdir(parents=True, exist_ok=True)
     metadata = {"source_commit": source_commit, "manifest_sha256": manifest_hash,
