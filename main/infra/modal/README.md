@@ -169,3 +169,21 @@ stops before that session reservation expires. This ledger cannot enforce an
 absolute account-wide cap: other sessions, storage, builds, usage beyond its
 history and price changes are outside it. Avoid concurrent sessions and use an
 account-level spending control for an absolute limit.
+
+
+## Failed A100 reservation reconciliation
+
+The local-only `reconcile_failed_a100.py` prepares an auditable replacement
+ledger for the specific failed app `ap-ofE9iKlGWLLKdtZElwFuNr`. It requires the
+unchanged original ledger, a stopped-app JSON snapshot, and the provider's
+03:00–04:00 UTC resource report collected after that interval closes. It
+retains $1 of that app's reservation and records input checksums and the
+adjustment, preserving all earlier reservations. It refuses a duplicate or
+changed ledger and writes only a new local output file.
+
+The $1 reserve exceeds the declared GPU/CPU/RAM rate multiplied by the whole
+app lifetime and the reported resource subtotal. It is not a mathematical bound
+on unreported network, storage, builds or later billing adjustments. Preserve
+the original ledger and raw provider snapshots, review the generated file, and
+confirm the account's actual balance before using it; this tool does not upload
+or modify the Modal volume.
