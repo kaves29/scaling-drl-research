@@ -76,7 +76,7 @@ def main():
         raise RuntimeError("qualification requires exactly one visible GPU")
     model, memory = (part.strip() for part in devices[0].rsplit(",", 1))
     if (jax.default_backend() != "gpu" or
-            (args.a100_smoke and ("A100" not in model or int(memory) < 75000)) or
+            (args.a100_smoke and ("A100" not in model or int(memory) < 38000)) or
             (not args.a100_smoke and model != "NVIDIA L4")):
         raise RuntimeError("qualification requires the requested GPU and JAX GPU backend")
     args.output.mkdir(parents=True, exist_ok=True)
