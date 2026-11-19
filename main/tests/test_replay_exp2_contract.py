@@ -122,6 +122,7 @@ class ConfigCompatibilityTests(unittest.TestCase):
 
 class NumericReplayRestartTests(unittest.TestCase):
     def test_shadow_update_and_rng_resume_with_fixed_reference(self):
+        import copy
         import numpy as np
         from experiments.online_exp2 import OnlineExp2
         from experiments.exp12.replay_exp2_pilot import ReplayExp2Pilot
@@ -150,6 +151,7 @@ class NumericReplayRestartTests(unittest.TestCase):
                     "next_observation":np.full((1,3),(i+1)/10,np.float32),
                     "action":np.zeros((1,2),np.float32),"reward":np.array([1.],np.float32),
                     "terminated":np.array([False]),"truncated":np.array([False])})
+            parent_replay = copy.deepcopy(runner.trainer.buffer)
             fixed=_reference_state(runner.trainer)
             initial=_hash(runner.shadows["small"].critic)
             step(runner)
@@ -161,7 +163,10 @@ class NumericReplayRestartTests(unittest.TestCase):
             self.assertEqual(fixed,_reference_state(runner.trainer))
             runner.trainer.close()
             restored=create(tmp)
-            restored.restore(latest_state_dir(Path(tmp)/"state"))
+            restored.trainer.buffer = parent_replay
+            saved = latest_state_dir(Path(tmp) / "state")
+            self.assertFalse((saved / "buffer.npz").exists())
+            restored.restore(saved)
             step(restored)
             self.assertEqual(expected,{name:(_hash(s.critic),_hash(s.target),s.updates) for name,s in restored.shadows.items()})
             np.testing.assert_array_equal(expected_key,np.array(restored.key))

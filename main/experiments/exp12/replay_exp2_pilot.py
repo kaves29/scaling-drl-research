@@ -35,6 +35,8 @@ def compose_replay_config(identity):
 
 
 class ReplayExp2Pilot(OnlineExp2):
+    shadow_log = None
+
     def __init__(self, cfg, root, parent_manifest, identity):
         state, parent = admit_parent(parent_manifest, identity)
         meta = load_meta(state)
@@ -79,8 +81,21 @@ class ReplayExp2Pilot(OnlineExp2):
         manifest_path = path / "online_exp2_manifest.json"
         manifest = json.loads(manifest_path.read_text())
         manifest.update(protocol="exp1-final-replay-v1", parent=self.parent,
-                        checkpoint_axis="critic_updates", offline_critic_updates=self.trainer.update_step)
+                        checkpoint_axis="critic_updates", offline_critic_updates=self.trainer.update_step,
+                        replay_storage="verified-parent")
         atomic_write_text(manifest_path, json.dumps(manifest, sort_keys=True))
+
+    def save(self):
+        if self.shadow_log is not None:
+            self.shadow_log.flush()
+        super().save(save_replay=False)
+
+    def restore(self, path):
+        manifest = json.loads((path / "online_exp2_manifest.json").read_text())
+        parent_replay = manifest.get("replay_storage") == "verified-parent"
+        if parent_replay and manifest.get("parent") != self.parent:
+            raise ValueError("checkpoint replay parent mismatch")
+        super().restore(path, replay_loaded=parent_replay)
 
     def run(self):
         latest = latest_state_dir(self.root / "state")
@@ -96,6 +111,7 @@ class ReplayExp2Pilot(OnlineExp2):
         from experiments.exp12.online_exp2_pilot import _reference_state
         fixed_reference = _reference_state(trainer)
         try:
+            self.shadow_log = (self.root / "shadow_updates.jsonl").open("a")
             if not self.fresh_done:
                 self._probe(0)
                 self.fresh_done = True
@@ -113,13 +129,14 @@ class ReplayExp2Pilot(OnlineExp2):
                 # _shadow_updates applies the parent's frozen observation normalizer.
                 self._shadow_updates(trainer, {k: v[None] for k, v in batch.items()},
                                      indices[None], None, compiled=True,
-                                     fixed_actor_hash=fixed_actor_hash)
+                                     fixed_actor_hash=fixed_actor_hash, log_stream=self.shadow_log)
                 trainer.update_step += 1
                 if trainer.update_step in self.checks:
                     self._checkpoint(trainer)
                     if _reference_state(trainer) != fixed_reference:
                         raise ValueError("offline training changed fixed parent reference")
                 if trainer.update_step % 1000 == 0:
+                    self.shadow_log.flush()
                     if wandb.run is not None:
                         wandb.log({"offline/critic_updates": trainer.update_step,
                                    "offline/fraction_complete": trainer.update_step / self.update_budget})
@@ -132,6 +149,9 @@ class ReplayExp2Pilot(OnlineExp2):
                             checkpoint_axis="critic_updates", critic_update_budget=self.update_budget)
             atomic_write_text(self.root / "analysis.json", json.dumps(analysis, allow_nan=False))
         finally:
+            if self.shadow_log is not None:
+                self.shadow_log.close()
+                self.shadow_log = None
             trainer.close()
             if wandb.run is not None:
                 wandb.finish()

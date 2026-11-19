@@ -201,6 +201,12 @@ def _run_branch(runner, architecture, mode, identity, directory):
     cfg, trainer = runner.cfg, runner.trainer
     condition = architecture + "_" + mode
     path = directory / (condition + ".pkl")
+    state = pickle.loads(path.read_bytes()) if path.exists() else None
+    if state is not None:
+        if state["identity"] != identity or state["condition"] != condition:
+            raise ValueError("branch resume identity mismatch")
+        if state["complete"]:
+            return state["summary"]
     seed = _seed("exp2-branch", cfg.seed, identity["checkpoint"], 0)
     agent, sac = _clone_agent(trainer, runner.shadows[architecture])
     learning = mode == "learning"
@@ -224,12 +230,7 @@ def _run_branch(runner, architecture, mode, identity, directory):
         np.random.seed(seed)
         random.seed(seed)
         env = _branch_env(cfg, seed)
-        if path.exists():
-            state = pickle.loads(path.read_bytes())
-            if state["identity"] != identity or state["condition"] != condition:
-                raise ValueError("branch resume identity mismatch")
-            if state["complete"]:
-                return state["summary"]
+        if state is not None:
             observation = state["observation"]
             restore_env(env, state["env"])
             np.random.set_state(state["numpy_rng"])
@@ -383,22 +384,20 @@ def _run_branch(runner, architecture, mode, identity, directory):
                     state["updates"] += count
             else:
                 # Reuse the established fixed-window KL sampling and saturation definition.
-                observations = frozen.buffer._observations + [previous[0]]
-                local_buffer = SimpleNamespace(
-                    _num_in_buffer=len(observations),
-                    _observations=np.asarray(observations),
-                )
-                fixed_agent = (
-                    SimpleNamespace(_normalize=normalizer) if normalizer else object()
-                )
+                observations = frozen.buffer._observations
+                last = len(observations)
                 local = SimpleNamespace(
                     interaction_step=state["interactions"],
-                    buffer=local_buffer,
-                    agent=fixed_agent,
+                    buffer=SimpleNamespace(_num_in_buffer=last + 1),
+                    agent=SimpleNamespace(_normalize=normalizer) if normalizer else object(),
                 )
-                frozen.diagnostics = (
-                    diagnostics.update_kwargs(local) if diagnostics.enabled else None
-                )
+                frozen.diagnostics = diagnostics.update_kwargs(
+                    local,
+                    take_observations=lambda indices: np.stack([
+                        previous[0] if index == last else observations[index]
+                        for index in indices
+                    ]),
+                ) if diagnostics.enabled else None
                 frozen.cosine_every = int(cfg.actor_grad_cosine_every)
                 update = frozen.observe_and_update(previous[0], normalizer)
                 state["updates"] = frozen.optimizer_updates
@@ -480,13 +479,10 @@ def _run_branch(runner, architecture, mode, identity, directory):
                             0xD1A6,
                         ]
                     )
-                    obs = np.asarray(frozen.buffer._observations)[
-                        rng.integers(
-                            0,
-                            len(frozen.buffer),
-                            size=int(cfg.buffer.sample_batch_size),
-                        )
-                    ]
+                    indices = rng.integers(
+                        0, len(frozen.buffer), size=int(cfg.buffer.sample_batch_size)
+                    )
+                    obs = np.stack([frozen.buffer._observations[i] for i in indices])
                     obs = normalizer(obs) if normalizer else obs
                     diagnostic_key = jax.random.PRNGKey(seed)
                     acts = frozen.actor(observations=jnp.asarray(obs)).sample(

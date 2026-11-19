@@ -307,7 +307,7 @@ class OnlineExp2:
         self._shadow_updates(trainer, batches, indices, snapshots)
 
     def _shadow_updates(self, trainer, batches, indices, snapshots, *, compiled=False,
-                        fixed_actor_hash=None):
+                        fixed_actor_hash=None, log_stream=None):
         # The pilot uses pre-update policy states returned by the source SAC scan.
         for i, sampled_indices in enumerate(indices):
             raw = {name: value[i] for name, value in batches.items()}
@@ -338,6 +338,7 @@ class OnlineExp2:
                 float(trainer.cfg.agent.target_tau),
                 bool(trainer.cfg.agent.critic_use_cdq),
             )
+            result = jax.device_get(result)
             if not all(
                 np.all(np.isfinite(np.asarray(value)))
                 for value in (
@@ -358,7 +359,6 @@ class OnlineExp2:
                 "reference_actor_snapshot_sha256": fixed_actor_hash if fixed_actor_hash is not None else _sha(
                     flax.serialization.to_bytes(actor.params)
                 ),
-                "indices": np.asarray(sampled_indices).tolist(),
                 "batch_sha256": _sha(payload),
                 "next_actions_sha256": _sha(
                     np.asarray(result["next_actions"]).tobytes()
@@ -386,12 +386,14 @@ class OnlineExp2:
                 # Exact sampler state is in reference checkpoints; retain batch identity
                 # without repeating hundreds of indices in every host-side log record.
                 record["indices_sha256"] = _sha(np.asarray(sampled_indices).tobytes())
-                record.pop("indices")
-                with (self.root / "shadow_updates.jsonl").open("a") as stream:
-                    stream.write(
-                        json.dumps(record, sort_keys=True, allow_nan=False) + "\n"
-                    )
+                line = json.dumps(record, sort_keys=True, allow_nan=False) + "\n"
+                if log_stream is None:
+                    with (self.root / "shadow_updates.jsonl").open("a") as stream:
+                        stream.write(line)
+                else:
+                    log_stream.write(line)
             else:
+                record["indices"] = np.asarray(sampled_indices).tolist()
                 self.rows.append(record)
 
     def _probe(self, check):
@@ -696,14 +698,16 @@ class OnlineExp2:
             ),
         )
 
-    def save(self):
+    def save(self, *, save_replay=True):
         if self.pilot:
             self.trainer.extra_state["online_exp2_device_seconds"] = (
                 self._device_seconds()
             )
         self.trainer.extra_state["online_exp2_rows"] = self.rows
         self.trainer.extra_state["online_exp2_fresh_done"] = self.fresh_done
-        self.trainer.save(self.root / "state", before_commit=self._save_shadow)
+        self.trainer.save(
+            self.root / "state", before_commit=self._save_shadow, save_replay=save_replay
+        )
         atomic_write_text(
             self.root / "online_exp2.jsonl",
             "".join(
@@ -712,7 +716,7 @@ class OnlineExp2:
             ),
         )
 
-    def restore(self, path):
+    def restore(self, path, *, replay_loaded=False):
         from flax.serialization import from_bytes
 
         manifest = json.loads((path / "online_exp2_manifest.json").read_text())
@@ -724,7 +728,7 @@ class OnlineExp2:
             or manifest["payload_sha256"] != _sha(data)
         ):
             raise ValueError("online Exp2 checkpoint identity mismatch")
-        self.trainer.restore(path)
+        self.trainer.restore(path, replay_loaded=replay_loaded)
         target = {
             name: {
                 "critic": shadow.critic,

@@ -294,7 +294,8 @@ class DiagnosticActorBranch:
             )
             self.optimizer_updates += 1
             indices_log.append(indices.tolist())
-            update_log.append({name: float(value) for name, value in info.items()})
+            host_info = jax.device_get(info)
+            update_log.append({name: float(value) for name, value in host_info.items()})
         return {
             "sample_indices": indices_log,
             "updates": update_log,

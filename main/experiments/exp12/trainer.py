@@ -335,12 +335,15 @@ class Exp12Trainer:
         root,
         keep_previous: bool = False,
         before_commit: Optional[Callable[[Path], None]] = None,
+        *,
+        save_replay: bool = True,
     ) -> Path:
         """Writes the complete state under root and repoints root/LATEST to it."""
         self.pending.flush()
         path = new_state_dir(root, self.interaction_step)
         self.agent.save_checkpoint(str(path))
-        save_buffer(self.buffer, path)
+        if save_replay:
+            save_buffer(self.buffer, path)
         meters = {
             name: (m.val, m.avg, m.sum, m.count)
             for name, m in self.logger.average_meter_dict.meters.items()
@@ -377,7 +380,7 @@ class Exp12Trainer:
         self.write_logs()
         return path
 
-    def restore(self, state_dir, new_wandb_run: bool = False) -> None:
+    def restore(self, state_dir, new_wandb_run: bool = False, *, replay_loaded: bool = False) -> None:
         """Restores a state written by save(); envs first, since replaying
         them must not perturb the global RNG states restored after."""
         state_dir = Path(state_dir)
@@ -388,7 +391,8 @@ class Exp12Trainer:
                 injected["m"], injected["seed"]
             )  # rebuild the structure the weights belong to
         self.agent.load_checkpoint(str(state_dir))
-        load_buffer(self.buffer, state_dir)
+        if not replay_loaded:
+            load_buffer(self.buffer, state_dir)
         restore_env(self.train_env, meta["train_env"])
         restore_env(self.eval_env, meta["eval_env"])
         np.random.set_state(meta["numpy_rng_state"])

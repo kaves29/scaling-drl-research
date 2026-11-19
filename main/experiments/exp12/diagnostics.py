@@ -34,7 +34,7 @@ class ActorDiagnostics:
         self.kl_ref: Optional[np.ndarray] = None
         self.gnorm: List[float] = []
 
-    def update_kwargs(self, trainer) -> Dict:
+    def update_kwargs(self, trainer, take_observations=None) -> Dict:
         """Extra arguments for agent.update_many at this interaction step."""
         if not self.enabled:
             return {}
@@ -42,7 +42,8 @@ class ActorDiagnostics:
         if window != self.window:
             rng = np.random.default_rng([self.seed, KL_STREAM, window])
             idx = rng.integers(0, trainer.buffer._num_in_buffer, size=self.reference_size)
-            obs = trainer.buffer._observations[idx]
+            obs = (trainer.buffer._observations[idx] if take_observations is None
+                   else take_observations(idx))
             if hasattr(trainer.agent, "_normalize"):
                 obs = trainer.agent._normalize(obs)
             self.kl_ref, self.window = np.asarray(obs, np.float32), window
