@@ -141,6 +141,7 @@ def main():
     parser.add_argument("--workers-per-gpu", type=int, choices=range(1, 7), default=6)
     parser.add_argument("--min-free-mib", type=int, default=11264)
     parser.add_argument("--preflight", action="store_true")
+    parser.add_argument("--fresh", action="store_true", help="start a new pilot in an unused results directory")
     args = parser.parse_args()
     args.manifest, args.results = args.manifest.resolve(), args.results.resolve()
     identities = []
@@ -157,9 +158,17 @@ def main():
     source_commit = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
     if subprocess.check_output(["git", "status", "--porcelain", "--untracked-files=no"]).strip():
         raise ValueError("launch requires a clean pinned source checkout")
-    args.results.mkdir(parents=True, exist_ok=True)
+    if args.fresh:
+        args.results.mkdir(parents=True, exist_ok=False)
+        (args.results / ".fresh-pilot.json").write_text(json.dumps({"source_commit": source_commit, "manifest": str(args.manifest)}))
+    else:
+        args.results.mkdir(parents=True, exist_ok=True)
     with (args.results / ".launcher.lock").open("a") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        marker = args.results / ".fresh-pilot.json"
+        fresh_pilot = marker.is_file() and json.loads(marker.read_text()) == {"source_commit": source_commit, "manifest": str(args.manifest)}
+        if marker.exists() and not fresh_pilot:
+            raise ValueError("fresh pilot marker does not match source and manifest")
         pending = []
         for identity in identities:
             root = args.results / run_name(identity)
@@ -169,7 +178,7 @@ def main():
                 saved = json.loads((state / "online_exp2_manifest.json").read_text())
                 if saved["source_commit"] != source_commit:
                     raise ValueError(f"{root}: checkpoint requires verified source migration")
-            elif not analysis.exists() and identity["reference_regime"] == "reference_small" and (
+            elif not fresh_pilot and not analysis.exists() and identity["reference_regime"] == "reference_small" and (
                 identity["environment"] in {"dog-run", "humanoid-run"} and identity["seed"] in {1, 2, 3}
                 or identity["environment"] == "myo-key-turn" and identity["seed"] in {1, 2}
             ):

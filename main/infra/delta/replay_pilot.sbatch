@@ -8,9 +8,13 @@
 #SBATCH --time=20:00:00
 #SBATCH --signal=B:USR1@120
 set -euo pipefail
-if [[ $# != 4 ]]; then
-    echo "Usage: sbatch [site flags] replay_pilot.sbatch REPO_ROOT PYTHON PARENT_MANIFEST RESULTS" >&2
+if [[ $# -lt 4 || $# -gt 5 ]]; then
+    echo "Usage: sbatch [site flags] replay_pilot.sbatch REPO_ROOT PYTHON PARENT_MANIFEST RESULTS [--fresh]" >&2
     exit 2
 fi
 cd "$1/main"
-exec "$2" -m infra.delta.replay_pilot --manifest "$3" --results "$4"
+if [[ $# == 5 && "$5" != --fresh ]]; then
+    echo "Only --fresh is supported as an optional argument" >&2
+    exit 2
+fi
+exec "$2" -m infra.delta.replay_pilot --manifest "$3" --results "$4" "${@:5}"
