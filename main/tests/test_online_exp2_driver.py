@@ -1,6 +1,7 @@
 """End-to-end CPU fixture for online collection, diagnostics and restore."""
 
 import tempfile
+from pathlib import Path
 import unittest
 from unittest.mock import patch
 import random
@@ -72,7 +73,7 @@ class GlobalResetTinyEnv(TinyEnv):
 
 def cfg():
     return compose_config(
-        "/workspace/scaling-drl-research/main/configs",
+        str(Path(__file__).resolve().parents[1] / "configs"),
         "base_online_exp2",
         [
             "online_exp2.environments=[dog-run]",
@@ -117,13 +118,13 @@ class OnlineExp2DriverTest(unittest.TestCase):
 
     def test_missing_science_fails_closed(self):
         empty = compose_config(
-            "/workspace/scaling-drl-research/main/configs", "base_online_exp2", []
+            str(Path(__file__).resolve().parents[1] / "configs"), "base_online_exp2", []
         )
         with self.assertRaisesRegex(ValueError, "unresolved fields"):
             validate(empty)
 
     def test_online_fixture_and_restore(self):
-        with tempfile.TemporaryDirectory(dir="/workspace/scratch") as root:
+        with tempfile.TemporaryDirectory() as root:
             with patch("experiments.exp12.trainer.create_envs", tiny_envs), patch(
                 "experiments.online_exp2.create_eval_env", tiny_eval_env
             ):
