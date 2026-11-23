@@ -45,7 +45,7 @@ def run(args, identities, source_commit):
     signal.signal(signal.SIGTERM, stop)
     signal.signal(signal.SIGUSR1, stop)
     signal.signal(signal.SIGINT, stop)
-    env = dict(os.environ, JAX_PLATFORMS="cuda", MUJOCO_GL="egl",
+    env = dict(os.environ, JAX_PLATFORMS="cuda,cpu", MUJOCO_GL="egl",
                PYOPENGL_PLATFORM="egl", MUJOCO_EGL_DEVICE_ID="0",
                XLA_PYTHON_CLIENT_PREALLOCATE="false", OMP_NUM_THREADS="1",
                OPENBLAS_NUM_THREADS="1", PYTHONUNBUFFERED="1")
@@ -85,7 +85,10 @@ def run(args, identities, source_commit):
                     continue
                 if inventory[gpu][2] < args.min_free_mib:
                     if workers == 0:
-                        raise RuntimeError(f"insufficient GPU memory on idle device {gpu}")
+                        raise RuntimeError(
+                            f"idle GPU {gpu} has {inventory[gpu][2]} MiB free; "
+                            f"requires {args.min_free_mib} MiB"
+                        )
                     continue
                 identity = pending.pop(0)
                 root = args.results / run_name(identity)
@@ -132,13 +135,15 @@ def validate_completed(root, identity, source_commit):
 
 
 def main():
+    # The launcher only reads metadata. GPU initialization belongs to workers.
+    os.environ["JAX_PLATFORMS"] = "cpu"
     from experiments.exp12.replay_exp2_contract import admit_parent
     from experiments.exp12.state import latest_state_dir
 
     parser = argparse.ArgumentParser(__doc__)
     parser.add_argument("--manifest", type=Path, required=True)
     parser.add_argument("--results", type=Path, required=True)
-    parser.add_argument("--workers-per-gpu", type=int, choices=range(1, 7), default=6)
+    parser.add_argument("--workers-per-gpu", type=int, choices=range(1, 7), default=4)
     parser.add_argument("--min-free-mib", type=int, default=11264)
     parser.add_argument("--preflight", action="store_true")
     parser.add_argument("--fresh", action="store_true", help="start a new pilot in an unused results directory")
