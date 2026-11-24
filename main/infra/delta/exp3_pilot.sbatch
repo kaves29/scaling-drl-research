@@ -6,7 +6,7 @@
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=32G
 #SBATCH --time=02:00:00
-#SBATCH --array=0-7%3
+#SBATCH --array=0-11%3
 set -euo pipefail
 if [[ $# != 5 && $# != 7 && ( $# != 8 || ${8:-} != both ) ]]; then
     echo "Usage: sbatch [site flags] exp3_pilot.sbatch REPO PYTHON MANIFEST RESULTS SOURCE_SHA [EXP2_RESULTS EXP2_SHA [both]]" >&2
@@ -25,14 +25,14 @@ if [[ -z "${CUDA_VISIBLE_DEVICES:-}" || "$CUDA_VISIBLE_DEVICES" == *,* ]]; then
     exit 2
 fi
 index=${SLURM_ARRAY_TASK_ID:?Submit as a Slurm array}
-if (( index < 0 || index > 7 )); then
-    echo "Task index must be 0 through 7" >&2
+if (( index < 0 || index > 11 )); then
+    echo "Task index must be 0 through 11" >&2
     exit 2
 fi
-envs=(dog-run myo-pen-twirl)
+envs=(dog-run humanoid-run)
 refs=(small large)
-environment=${envs[$((index / 4))]}
-seed=$(((index / 2) % 2 + 1))
+environment=${envs[$((index / 6))]}
+seed=$(((index / 2) % 3 + 1))
 reference=${refs[$((index % 2))]}
 
 export JAX_PLATFORMS=cuda MUJOCO_GL=egl PYOPENGL_PLATFORM=egl MUJOCO_EGL_DEVICE_ID=0

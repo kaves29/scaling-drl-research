@@ -45,8 +45,8 @@ The baseline is the unchanged actor on the same evaluation seeds. Store raw
 episode returns and paired changes, not just means. An unreachable KL is labeled
 and omitted from comparisons that require matching. Seeds remain the independent
 units; the two reference regimes, multiple action pairs, and repeated evaluation
-episodes are correlated measurements. Start with seed 1 in dog-run and
-myo-pen-twirl, each in both reference regimes. Reserve seed 2 in both environments
+episodes are correlated measurements. Screen seeds 1 and 2 in dog-run and humanoid-run, each in both
+reference regimes. Reserve seed 3 in both environments
 for confirmation of selected leads. The default horizon is 500 policy
 interactions (episode termination may shorten it). The rank probe uses three
 seeded starting states and four paired continuations per state and direction.
@@ -71,18 +71,19 @@ result, refuses to overwrite an existing one, and logs peak process RSS via
 `/usr/bin/time -v`. No W&B credentials or Modal transfer are needed for
 the Exp1 screen. Keep qualification and production outputs separate.
 
-Array mapping: 0/1 dog-run seed 1, 2/3 dog-run seed 2, 4/5 myo-pen-twirl seed 1,
-6/7 myo-pen-twirl seed 2. Even tasks use the small reference actor; odd tasks
-use the large reference actor.
+Array mapping: tasks 0–5 are dog-run and tasks 6–11 are humanoid-run.
+Within each environment, consecutive pairs correspond to seeds 1, 2, and 3.
+Even tasks use the small reference actor; odd tasks use the large reference actor.
 
-- Submit **one qualification job** on one GPU for up to one hour. Use task 5
-  by default, or task 4 if only it has an eligible Myo checkpoint. If an
+- Submit **one qualification job** on one GPU for up to one hour. Prefer task 7
+  (humanoid-run, seed 1, large reference). If it lacks a checkpoint, prefer
+  another eligible seed 1 or 2 task. If no such task exists, use task 7. If an
   eligible Exp2 checkpoint exists for that case, append
   `EXP2_RESULTS EXP2_SHA both` to run both phases sequentially in the same
   allocation. Otherwise qualify the Exp1 screen alone. Report failures or
   timeouts from this single job before submitting the affected phase.
-- Submit **one Exp1 array** with `--array=0-7%3` and a two-hour limit per task.
-  Run all eight cases. Read seed 1 first for selection and leave the seed 2
+- Submit **one Exp1 array** with `--array=0-11%3` and a two-hour limit per task.
+  Run all 12 cases. Read seeds 1 and 2 for selection and leave the seed 3
   results unopened until the candidate and interpretation rules are fixed.
 - Submit **at most one Exp2 feedback array** containing only eligible retained
   Exp2 checkpoints, with a `%3` throttle and two hours per task. Pass
@@ -96,9 +97,9 @@ Exp2 smoke recorded 4,625 MiB GPU memory and 11.9 GiB peak process RSS for one
 worker. The new qualification measures its own memory and runtime. At most
 three tasks run concurrently, each on a separate GPU.
 
-Physical GPU-hour ceilings are 1 for qualification and 16 per eight-case array,
-or 33 in total. At three available concurrent slots an eight-case array has
-three waves and can take up to six hours of allocated wall time at the
+Physical GPU-hour ceilings are 1 for qualification and 24 per 12-case array,
+or 49 in total. At three available concurrent slots a 12-case array has
+four waves and can take up to eight hours of allocated wall time at the
 two-hour task limit, excluding queue and scheduling gaps. These are ceilings.
 Use the qualification and subsequent task receipts for measured estimates.
 
