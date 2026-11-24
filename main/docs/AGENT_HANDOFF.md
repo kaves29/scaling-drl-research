@@ -1,5 +1,16 @@
 # Shared agent handoff
 
+## Experiment 3 mechanism pilots (24 November 2026)
+
+The opt-in Exp3 diagnostic branch is based on the Delta replay-pilot tip
+`20753356613c853214ea61d91192582d97e28a15`. The [pilot protocol and launch guide](exp3_mechanism_pilots.md)
+defines six mechanism screens, source priority and the Delta array. The five
+frozen-policy diagnostics can screen the verified Exp1 parents first. The
+experience-feedback diagnostic requires a verified paired Exp2 checkpoint.
+CPU fixture tests and real DMC/Myo reset parity are engineering evidence.
+Full-size checkpoint loading, GPU peak memory and elapsed time require a Delta
+qualification. No Slurm job was submitted from the Cloud workspace.
+
 ## Revised online Exp2 implementation (11 November 2026)
 
 The active `codex/exp2-online-prototype-20261107` implementation now connects the approved twenty-run, fifteen-checkpoint design to four sequential frozen/learning small/large branches, actual raw-step budgets, branch-local source SAC and durable restart. See [the implementation report](exp2_implementation_report.md) for validation receipts, source identities, complete Kaggle notebook/qualification commands and execution limitations. This supersedes the older frozen-only pilot description below. CPU tests are engineering evidence; actual Kaggle full-horizon/full-assay concurrency, online W&B and scientific full-budget execution remain unqualified. No Kaggle or Delta job was launched by this implementation task.
