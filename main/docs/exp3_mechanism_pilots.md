@@ -73,31 +73,34 @@ the Exp1 screen. Keep qualification and production outputs separate.
 
 Array mapping: 0/1 dog-run seed 1, 2/3 dog-run seed 2, 4/5 myo-pen-twirl seed 1,
 6/7 myo-pen-twirl seed 2. Even tasks use the small reference actor; odd tasks
-use the large reference actor. First qualify the heavier Myo case with task 5
-and a 30-minute limit. Sample GPU memory through the job, record peak RSS,
-runtime and result completeness. If the run times out, use its timing logs and
-the 2-hour cap for a second qualification, without widening concurrency.
-A fixed 32 GiB host request and one worker per GPU are the launch defaults.
-Two array tasks may run concurrently on separate GPUs. Six workers sharing an
-A100 was a target for Experiment 2 and is not qualified for these diagnostics.
+use the large reference actor.
 
-From the previous Exp2 smoke, the 4,625 MiB VRAM and 11.9 GiB process RSS were
-single-worker observations on an A100 40 GB. They are a starting reference,
-without coverage of wider actors, full rollout counts or feedback compilation.
-One worker per GPU is the only initial operational limit. Increase concurrency
-only if a simultaneous two-worker measurement covers both environments and
-worst observed phases, with enough GPU and Slurm cgroup RAM headroom. This
-launcher deliberately uses separate allocated devices instead of co-location.
+- Submit **one qualification job** on one GPU for up to one hour. Use task 5
+  by default, or task 4 if only it has an eligible Myo checkpoint. If an
+  eligible Exp2 checkpoint exists for that case, append
+  `EXP2_RESULTS EXP2_SHA both` to run both phases sequentially in the same
+  allocation. Otherwise qualify the Exp1 screen alone. Report failures or
+  timeouts from this single job before submitting the affected phase.
+- Submit **one Exp1 array** with `--array=0-7%3` and a two-hour limit per task.
+  Run all eight cases. Read seed 1 first for selection and leave the seed 2
+  results unopened until the candidate and interpretation rules are fixed.
+- Submit **at most one Exp2 feedback array** containing only eligible retained
+  Exp2 checkpoints, with a `%3` throttle and two hours per task. Pass
+  `EXP2_RESULTS EXP2_SHA` without `both`. Use `--dependency=afterany:<Exp1-array-id>`
+  if both arrays are queued together, to cap total concurrency at three GPUs.
+  If qualification did not cover feedback, disclose that and let the feedback
+  loader enforce its provenance and payload checks per task.
 
-Budget ceilings: one 30-minute qualification costs at most 0.5 physical
-GPU-hours. Four screening cases at two hours each can use up to 8 GPU-hours
-and at most four hours of allocated wall time if two slots remain available
-throughout, excluding queue waits. Four held-out cases add up to 8 GPU-hours.
-A separate eight-case feedback array adds up to 16 GPU-hours. These are request
-ceilings, not speed predictions. Use measured qualification time before
-estimating completion. Submit screening tasks `0,1,4,5%2`; preserve
-`2,3,6,7%2` for follow-up. Use the same optional Exp2 input for paired
-feedback cases only when the retained checkpoints are present and valid.
+Each task uses one A100 40 GB, four CPUs, and 32 GiB host RAM. The earlier
+Exp2 smoke recorded 4,625 MiB GPU memory and 11.9 GiB peak process RSS for one
+worker. The new qualification measures its own memory and runtime. At most
+three tasks run concurrently, each on a separate GPU.
+
+Physical GPU-hour ceilings are 1 for qualification and 16 per eight-case array,
+or 33 in total. At three available concurrent slots an eight-case array has
+three waves and can take up to six hours of allocated wall time at the
+two-hour task limit, excluding queue and scheduling gaps. These are ceilings.
+Use the qualification and subsequent task receipts for measured estimates.
 
 With all five Exp1 diagnostics enabled, the maximum per case is approximately
 74,000 evaluation interactions before early episode endings (up to 50,000 for
