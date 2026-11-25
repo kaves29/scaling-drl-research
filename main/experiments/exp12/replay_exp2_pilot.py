@@ -36,6 +36,7 @@ def compose_replay_config(identity):
 
 class ReplayExp2Pilot(OnlineExp2):
     shadow_log = None
+    protocol = "exp1-final-replay-v1"
 
     def __init__(self, cfg, root, parent_manifest, identity):
         state, parent = admit_parent(parent_manifest, identity)
@@ -56,7 +57,7 @@ class ReplayExp2Pilot(OnlineExp2):
         self.parent_state = state
         self.checks = self.probes = schedule
         # Bind the new protocol and exact parent to existing durable restore checks.
-        binding = json.dumps({"protocol": "exp1-final-replay-v1", "parent": parent,
+        binding = json.dumps({"protocol": self.protocol, "parent": parent,
                               "checkpoints": schedule}, sort_keys=True).encode()
         self.config_hash = hashlib.sha256(self.config_hash.encode() + binding).hexdigest()
         self.source_hash = hashlib.sha256(self.source_hash.encode() +
@@ -73,14 +74,14 @@ class ReplayExp2Pilot(OnlineExp2):
         self.trainer.update_counter = meta["update_counter"]
         self.trainer.extra_state["replay_exp2_parent"] = parent
         atomic_write_text(self.root / "parent.json", json.dumps({
-            **parent, "protocol": "exp1-final-replay-v1", "checkpoint_axis": "critic_updates",
+            **parent, "protocol": self.protocol, "checkpoint_axis": "critic_updates",
             "critic_update_budget": budget, "checkpoints": schedule}, indent=2))
 
     def _save_shadow(self, path):
         super()._save_shadow(path)
         manifest_path = path / "online_exp2_manifest.json"
         manifest = json.loads(manifest_path.read_text())
-        manifest.update(protocol="exp1-final-replay-v1", parent=self.parent,
+        manifest.update(protocol=self.protocol, parent=self.parent,
                         checkpoint_axis="critic_updates", offline_critic_updates=self.trainer.update_step,
                         replay_storage="verified-parent")
         atomic_write_text(manifest_path, json.dumps(manifest, sort_keys=True))
@@ -105,7 +106,7 @@ class ReplayExp2Pilot(OnlineExp2):
             self.restore(latest)
         trainer = self.trainer
         if wandb.run is not None:
-            wandb.config.update({"protocol": "exp1-final-replay-v1", "parent": self.parent,
+            wandb.config.update({"protocol": self.protocol, "parent": self.parent,
                                 "checkpoint_axis": "critic_updates", "critic_update_budget": self.update_budget},
                                allow_val_change=True)
         from experiments.exp12.online_exp2_pilot import _reference_state
@@ -145,7 +146,7 @@ class ReplayExp2Pilot(OnlineExp2):
                         last_save = time.monotonic()
             self.save()
             analysis = self._pilot_analysis()
-            analysis.update(protocol="exp1-final-replay-v1", parent=self.parent,
+            analysis.update(protocol=self.protocol, parent=self.parent,
                             checkpoint_axis="critic_updates", critic_update_budget=self.update_budget)
             atomic_write_text(self.root / "analysis.json", json.dumps(analysis, allow_nan=False))
         finally:

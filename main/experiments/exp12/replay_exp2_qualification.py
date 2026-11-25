@@ -61,6 +61,7 @@ def main():
     import jax
     from experiments.exp12.precision import set_matmul_precision
     from experiments.exp12.replay_exp2_pilot import ReplayExp2Pilot, compose_replay_config
+    from experiments.exp12.replay_exp2_heldout import HeldoutReplayPilot
 
     parser = argparse.ArgumentParser(__doc__)
     parser.add_argument("--parent-manifest", type=Path, required=True)
@@ -68,6 +69,7 @@ def main():
     parser.add_argument("--identity", type=json.loads, required=True)
     parser.add_argument("--phase", choices=("interrupt", "resume"), required=True)
     parser.add_argument("--a100-smoke", action="store_true")
+    parser.add_argument("--heldout", action="store_true", help="qualify the held-out protocol")
     args = parser.parse_args()
     devices = subprocess.check_output(
         ["nvidia-smi", "--query-gpu=name,memory.total", "--format=csv,noheader,nounits"], text=True
@@ -90,7 +92,7 @@ def main():
     class StopQualification(Exception):
         pass
 
-    class Qualifier(ReplayExp2Pilot):
+    class Qualifier(HeldoutReplayPilot if args.heldout else ReplayExp2Pilot):
         def __init__(self, *runner_args):
             super().__init__(*runner_args)
             (configure_a100_smoke if args.a100_smoke else configure_qualification)(self)
@@ -118,6 +120,12 @@ def main():
                 if checkpoint != expected_checkpoint or checkpoint != interrupted["checkpoint"]:
                     raise ValueError("restart did not resume interrupted checkpoint")
                 validate_evidence(self.rows, checkpoint, int(self.cfg.online_exp2.branch_raw_steps))
+                if args.heldout:
+                    import numpy as np
+                    heldout = self.root / 'heldout_diagnostics' / f'update_{checkpoint:08d}.npz'
+                    with np.load(heldout, allow_pickle=False) as data:
+                        if str(data['dataset_sha256']) != self.heldout_sha:
+                            raise ValueError('held-out qualification dataset mismatch')
                 diagnostic = next(row for row in self.rows if row.get("type") == "pilot_diagnostic"
                                   and row.get("checkpoint") == checkpoint)
                 receipt = {"source_commit": self.source_commit,
@@ -132,6 +140,8 @@ def main():
                            "branch_counters": diagnostic["branch_counters"],
                            "probe_architectures": ["small", "large"],
                            "interruption": interrupted}
+                if args.heldout:
+                    receipt.update(heldout_protocol=True, heldout_sha256=self.heldout_sha)
                 if args.a100_smoke:
                     receipt.update(smoke_only=True, qualified_workers=0, qualification_updates=100,
                                    qualification_protocol="a100-smoke-100-20-v1",

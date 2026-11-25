@@ -36,7 +36,7 @@ from utils.atomic_io import atomic_write_bytes, atomic_write_text
 from utils.paths import require_absolute
 
 
-def validate(cfg):
+def validate(cfg, branch_raw_steps=10000):
     p = cfg.online_exp2
     pilot = bool(p.get("pilot_enabled", False))
     needed = (
@@ -85,7 +85,7 @@ def validate(cfg):
             or p.dev_architectures is not None
             or p.reference_critic is not None
             or p.intervention_updates is not None
-            or int(p.branch_raw_steps) != 10000
+            or int(p.branch_raw_steps) != branch_raw_steps
             or int(p.reference_raw_steps) != 1000000
             or int(p.training_interactions) != 500000
             or (
@@ -105,8 +105,8 @@ def validate(cfg):
             != [(i * 1000000 + 7) // 15 for i in range(1, 16)]
             or list(p.probe_checkpoints) != list(p.checkpoint_raw_steps)
             or measurements != sorted(set(measurements))
-            or measurements != [0, 5000, 10000]
-            or measurements[-1] != 10000
+            or measurements != [0, branch_raw_steps // 2, branch_raw_steps]
+            or measurements[-1] != branch_raw_steps
             or float(p.resource_cap_gpu_hours) < 0
         ):
             raise ValueError("invalid online Exp2 pilot protocol")
@@ -202,7 +202,8 @@ def aggregate_run(rows, checkpoints):
 class OnlineExp2:
     def __init__(self, cfg, root):
         cfg = deepcopy(cfg)
-        self.last_step, self.checks, self.probes = validate(cfg)
+        self.last_step, self.checks, self.probes = validate(
+            cfg, branch_raw_steps=getattr(self, 'validated_branch_raw_steps', 10000))
         self.pilot = bool(cfg.online_exp2.get("pilot_enabled", False))
         self._pilot_started_at = time.monotonic()
         self._pilot_prior_device_seconds = 0.0
