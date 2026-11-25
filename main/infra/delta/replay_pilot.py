@@ -51,20 +51,16 @@ def identities_from_manifest(manifest):
 
 
 def identities_for_shard(identities, shard_index, shard_count):
-    """Split matched environment/seed pairs deterministically across job shards."""
+    """Split run identities deterministically and evenly across job shards."""
     if type(shard_count) is not int or shard_count < 1:
         raise ValueError("shard count must be positive")
     if type(shard_index) is not int or not 0 <= shard_index < shard_count:
         raise ValueError("shard index must be between zero and shard_count - 1")
-    pairs = {}
-    for identity in identities:
-        pairs.setdefault((identity["environment"], identity["seed"]), []).append(identity)
-    ordered = list(pairs.values())
-    if any(len(pair) != 2 or {row["reference_regime"] for row in pair} !=
-           {"reference_small", "reference_large"} for pair in ordered):
-        raise ValueError("sharding requires complete small/large parent pairs")
-    return [identity for pair_index, pair in enumerate(ordered)
-            if pair_index % shard_count == shard_index for identity in pair]
+    keys = [(row["environment"], row["seed"], row["reference_regime"])
+            for row in identities]
+    if len(set(keys)) != len(keys):
+        raise ValueError("sharding requires unique parent identities")
+    return identities[shard_index::shard_count]
 
 
 def gpu_inventory():

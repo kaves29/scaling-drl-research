@@ -47,9 +47,10 @@ manifest and results paths and mode `resume`. For the first slice, use mode
 Each requests one L40, up to 7,050 seconds of work after the GPU pod starts,
 seven worker slots, 15 checkpoints, and the held-out protocol. The runner then
 uses up to 150 seconds to stop workers and save resumable checkpoints. No
-Kubernetes job deadline counts time spent waiting for a GPU. It splits the ten matched pairs as
-four, three, and three pairs (8, 6, and 6 parent-specific runs), so each
-small/large pair stays on one GPU. Each job has a distinct results subdirectory;
+Kubernetes job deadline counts time spent waiting for a GPU. It splits the 20
+parent-specific runs as 7, 7, and 6 so the first two GPUs can each fill seven
+worker slots. Matching environment/seed runs may be on different GPUs; their
+identities remain in metadata and W&B config. Each job has a distinct results subdirectory;
 the same shard path can be resumed by generating another Job with mode `resume`
 and a new batch ID.
 

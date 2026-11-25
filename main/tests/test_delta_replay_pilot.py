@@ -32,22 +32,17 @@ def test_manifest_is_ten_matched_pairs_across_four_pilot_environments():
     }
 
 
-def test_three_shards_keep_each_small_large_pair_together_and_balance_load():
+def test_three_shards_balance_run_identities_without_overlap():
     identities = identities_from_manifest(paired_manifest())
     shards = [identities_for_shard(identities, index, 3) for index in range(3)]
-    assert [len(shard) for shard in shards] == [8, 6, 6]
-    assert sorted(row["environment"] + str(row["seed"])
-                  for shard in shards for row in shard) == sorted(
-        row["environment"] + str(row["seed"]) for row in identities
-    )
-    for shard in shards:
-        by_pair = {}
-        for row in shard:
-            by_pair.setdefault((row["environment"], row["seed"]), set()).add(
-                row["reference_regime"]
-            )
-        assert all(regimes == {"reference_small", "reference_large"}
-                   for regimes in by_pair.values())
+    assert [len(shard) for shard in shards] == [7, 7, 6]
+    shard_keys = [[(row["environment"], row["seed"], row["reference_regime"])
+                   for row in shard] for shard in shards]
+    assert len({key for shard in shard_keys for key in shard}) == 20
+    assert {key for shard in shard_keys for key in shard} == {
+        (row["environment"], row["seed"], row["reference_regime"])
+        for row in identities
+    }
 
 
 def test_shard_arguments_are_checked():
