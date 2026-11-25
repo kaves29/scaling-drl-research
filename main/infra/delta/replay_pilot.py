@@ -10,6 +10,46 @@ import sys
 import time
 
 
+PILOT_ENVIRONMENTS = {
+    "dog-run": (1, 2, 3),
+    "humanoid-run": (1, 2, 3),
+    "myo-key-turn": (1, 2),
+    "myo-pen-twirl": (1, 2),
+}
+REGIMES = {"D2W512": "reference_small", "D4W1536": "reference_large"}
+
+
+def identities_from_manifest(manifest):
+    """Require ten paired Exp1 parents across the four established pilot tasks."""
+    rows = manifest.get("runs")
+    if not isinstance(rows, list) or len(rows) != 20:
+        raise ValueError("expected exactly 20 Exp1 parent rows (ten matched pairs)")
+    paired, seen = {}, set()
+    for row in rows:
+        environment, seed = row.get("environment"), row.get("seed")
+        architecture = row.get("architecture")
+        if environment not in PILOT_ENVIRONMENTS or architecture not in REGIMES:
+            raise ValueError("parent manifest contains an unexpected environment or architecture")
+        if type(seed) is not int or seed not in PILOT_ENVIRONMENTS[environment]:
+            raise ValueError("parent manifest contains an unexpected seed")
+        key, regime = (environment, seed), REGIMES[architecture]
+        if (key, regime) in seen:
+            raise ValueError("duplicate parent identity in manifest")
+        seen.add((key, regime))
+        paired.setdefault(key, set()).add(regime)
+    expected = {(env, seed) for env, seeds in PILOT_ENVIRONMENTS.items() for seed in seeds}
+    if set(paired) != expected or any(
+        regimes != {"reference_small", "reference_large"} for regimes in paired.values()
+    ):
+        raise ValueError("manifest must contain both reference regimes for all ten matched pairs")
+    return [
+        {"environment": env, "seed": seed, "reference_regime": regime}
+        for env, seeds in PILOT_ENVIRONMENTS.items()
+        for seed in seeds
+        for regime in ("reference_small", "reference_large")
+    ]
+
+
 def gpu_inventory():
     rows = subprocess.check_output(
         ["nvidia-smi", "--query-gpu=uuid,name,memory.total,memory.free",
@@ -57,7 +97,9 @@ def run(args, identities, source_commit):
                     continue
                 log.close()
                 del active[proc]
-                if code:
+                if code == 75 and stopping:
+                    print(f"Saved resumable state for {root.name} at the wall-time stop", flush=True)
+                elif code:
                     with (root / "process.log").open("rb") as stream:
                         end = stream.seek(0, 2)
                         stream.seek(max(log_start[root], end - 65536))
@@ -71,7 +113,7 @@ def run(args, identities, source_commit):
                     else:
                         raise RuntimeError(f"{root.name} exited {code}. See {root}/process.log")
                 else:
-                    validate_completed(root, identity, source_commit)
+                    validate_completed(root, identity, source_commit, args.heldout)
             if not pending:
                 if active:
                     time.sleep(2)
@@ -92,10 +134,15 @@ def run(args, identities, source_commit):
                 root.mkdir(exist_ok=True)
                 log = (root / "process.log").open("ab")
                 log_start[root] = log.tell()
+                module = ("experiments.exp12.replay_exp2_heldout" if args.heldout
+                          else "experiments.exp12.replay_exp2_pilot")
+                command = [sys.executable, "-m", module,
+                           "--parent-manifest", str(args.manifest), "--output", str(root),
+                           "--identity", json.dumps(identity)]
+                if args.heldout:
+                    command.extend(("--checkpoint-count", str(args.checkpoint_count)))
                 proc = subprocess.Popen(
-                    [sys.executable, "-m", "experiments.exp12.replay_exp2_pilot",
-                     "--parent-manifest", str(args.manifest), "--output", str(root),
-                     "--identity", json.dumps(identity)],
+                    command,
                     stdout=log, stderr=subprocess.STDOUT,
                     env=dict(env, CUDA_VISIBLE_DEVICES=gpu),
                 )
@@ -106,14 +153,18 @@ def run(args, identities, source_commit):
     finally:
         for proc in active:
             if proc.poll() is None:
-                proc.terminate()
-        deadline = time.monotonic() + 45
+                proc.send_signal(signal.SIGUSR1)
+        deadline = time.monotonic() + 90
         for proc, (_, _, log, _) in active.items():
             try:
                 proc.wait(timeout=max(0, deadline - time.monotonic()))
             except subprocess.TimeoutExpired:
-                proc.kill()
-                proc.wait()
+                proc.terminate()
+                try:
+                    proc.wait(timeout=20)
+                except subprocess.TimeoutExpired:
+                    proc.kill()
+                    proc.wait()
             log.close()
     return 75 if stopping else 0
 
@@ -122,9 +173,10 @@ def run_name(identity):
     return "{environment}_seed{seed}_{reference_regime}".format(**identity)
 
 
-def validate_completed(root, identity, source_commit):
+def validate_completed(root, identity, source_commit, heldout=False):
     completed = json.loads((root / "analysis.json").read_text())
-    expected = dict(source_commit=source_commit, protocol="exp1-final-replay-v1",
+    expected = dict(source_commit=source_commit,
+                    protocol="exp2-heldout-v1" if heldout else "exp1-final-replay-v1",
                     environment=identity["environment"], training_seed=identity["seed"],
                     reference_regime=identity["reference_regime"])
     if any(completed.get(k) != v for k, v in expected.items()):
@@ -139,36 +191,42 @@ def main():
     parser.add_argument("--manifest", type=Path, required=True)
     parser.add_argument("--results", type=Path, required=True)
     parser.add_argument("--workers-per-gpu", type=int, choices=range(1, 7), default=6)
+    parser.add_argument("--checkpoint-count", type=int, choices=(15, 20), default=15)
     parser.add_argument("--min-free-mib", type=int, default=11264)
     parser.add_argument("--preflight", action="store_true")
+    parser.add_argument("--heldout", action="store_true",
+                        help="run the separate held-out diagnostic protocol")
     parser.add_argument("--fresh", action="store_true", help="start a new pilot in an unused results directory")
     args = parser.parse_args()
     args.manifest, args.results = args.manifest.resolve(), args.results.resolve()
-    identities = []
-    for row in json.loads(args.manifest.read_text())["runs"]:
-        regime = {"D2W512": "reference_small", "D4W1536": "reference_large"}[row["architecture"]]
-        identity = dict(environment=row["environment"], seed=row["seed"], reference_regime=regime)
+    identities = identities_from_manifest(json.loads(args.manifest.read_text()))
+    for identity in identities:
         admit_parent(args.manifest, identity)
-        identities.append(identity)
-    if len(identities) != 20 or len({run_name(i) for i in identities}) != 20:
-        raise ValueError("expected 20 unique admitted pilot identities")
     if args.preflight:
-        print("Admitted 20 verified parents")
+        print("Admitted 20 verified parents in ten matched pairs across four environments")
         return 0
     source_commit = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
     if subprocess.check_output(["git", "status", "--porcelain", "--untracked-files=no"]).strip():
         raise ValueError("launch requires a clean pinned source checkout")
     if args.fresh:
         args.results.mkdir(parents=True, exist_ok=False)
-        (args.results / ".fresh-pilot.json").write_text(json.dumps({"source_commit": source_commit, "manifest": str(args.manifest)}))
+        marker_data = {"source_commit": source_commit, "manifest": str(args.manifest)}
+        if args.heldout:
+            marker_data["protocol"] = "exp2-heldout-v1"
+        (args.results / ".fresh-pilot.json").write_text(json.dumps(marker_data, sort_keys=True))
     else:
         args.results.mkdir(parents=True, exist_ok=True)
     with (args.results / ".launcher.lock").open("a") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         marker = args.results / ".fresh-pilot.json"
-        fresh_pilot = marker.is_file() and json.loads(marker.read_text()) == {"source_commit": source_commit, "manifest": str(args.manifest)}
+        expected_marker = {"source_commit": source_commit, "manifest": str(args.manifest)}
+        if args.heldout:
+            expected_marker["protocol"] = "exp2-heldout-v1"
+        fresh_pilot = marker.is_file() and json.loads(marker.read_text()) == expected_marker
         if marker.exists() and not fresh_pilot:
             raise ValueError("fresh pilot marker does not match source and manifest")
+        if args.heldout and not fresh_pilot:
+            raise ValueError("held-out pilot requires a new output directory started with --fresh")
         pending = []
         for identity in identities:
             root = args.results / run_name(identity)
@@ -178,7 +236,7 @@ def main():
                 saved = json.loads((state / "online_exp2_manifest.json").read_text())
                 if saved["source_commit"] != source_commit:
                     raise ValueError(f"{root}: checkpoint requires verified source migration")
-            elif not fresh_pilot and not analysis.exists() and identity["reference_regime"] == "reference_small" and (
+            elif not args.heldout and not fresh_pilot and not analysis.exists() and identity["reference_regime"] == "reference_small" and (
                 identity["environment"] in {"dog-run", "humanoid-run"} and identity["seed"] in {1, 2, 3}
                 or identity["environment"] == "myo-key-turn" and identity["seed"] in {1, 2}
             ):
@@ -186,7 +244,7 @@ def main():
             if not analysis.exists():
                 pending.append(identity)
             else:
-                validate_completed(analysis.parent, identity, source_commit)
+                validate_completed(analysis.parent, identity, source_commit, args.heldout)
         return run(args, pending, source_commit)
 
 

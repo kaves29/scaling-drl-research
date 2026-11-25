@@ -4,6 +4,7 @@ import hashlib
 import io
 import json
 from pathlib import Path
+import sys
 
 import jax
 import jax.numpy as jnp
@@ -177,9 +178,9 @@ def main():
     args = parser.parse_args()
     set_matmul_precision()
     cfg = compose_replay_config(args.identity)
-    HeldoutReplayPilot(cfg, str(args.output.resolve()), args.parent_manifest,
-                       args.identity, args.checkpoint_count).run()
+    return HeldoutReplayPilot(cfg, str(args.output.resolve()), args.parent_manifest,
+                              args.identity, args.checkpoint_count).run()
 
 
 if __name__ == '__main__':
-    main()
+    sys.exit(main())

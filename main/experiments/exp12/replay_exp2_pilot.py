@@ -7,6 +7,8 @@ interactions. Every output records that axis explicitly.
 import argparse
 import hashlib
 import json
+import signal
+import sys
 import time
 from pathlib import Path
 
@@ -111,6 +113,14 @@ class ReplayExp2Pilot(OnlineExp2):
                                allow_val_change=True)
         from experiments.exp12.online_exp2_pilot import _reference_state
         fixed_reference = _reference_state(trainer)
+        self._stop_requested = False
+        previous_handlers = {}
+
+        def request_stop(*_):
+            self._stop_requested = True
+
+        for signum in (signal.SIGUSR1, signal.SIGTERM):
+            previous_handlers[signum] = signal.signal(signum, request_stop)
         try:
             self.shadow_log = (self.root / "shadow_updates.jsonl").open("a")
             if not self.fresh_done:
@@ -124,6 +134,10 @@ class ReplayExp2Pilot(OnlineExp2):
             ).hexdigest()
             last_save = time.monotonic()
             while trainer.update_step < self.update_budget:
+                if self._stop_requested:
+                    self.save()
+                    print("Received scheduler stop signal; saved resumable checkpoint", flush=True)
+                    return 75
                 self._check_resource_cap()
                 batch, indices = trainer.buffer.sample(return_indices=True)
                 # Reuse paired SAC TD targets with a fixed parent actor and temp.
@@ -154,6 +168,8 @@ class ReplayExp2Pilot(OnlineExp2):
                 self.shadow_log.close()
                 self.shadow_log = None
             trainer.close()
+            for signum, handler in previous_handlers.items():
+                signal.signal(signum, handler)
             if wandb.run is not None:
                 wandb.finish()
 
@@ -167,8 +183,8 @@ def main():
     identity = args.identity
     set_matmul_precision()
     cfg = compose_replay_config(identity)
-    ReplayExp2Pilot(cfg, str(args.output.resolve()), args.parent_manifest, identity).run()
+    return ReplayExp2Pilot(cfg, str(args.output.resolve()), args.parent_manifest, identity).run()
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
