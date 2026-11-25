@@ -50,6 +50,23 @@ def identities_from_manifest(manifest):
     ]
 
 
+def identities_for_shard(identities, shard_index, shard_count):
+    """Split matched environment/seed pairs deterministically across job shards."""
+    if type(shard_count) is not int or shard_count < 1:
+        raise ValueError("shard count must be positive")
+    if type(shard_index) is not int or not 0 <= shard_index < shard_count:
+        raise ValueError("shard index must be between zero and shard_count - 1")
+    pairs = {}
+    for identity in identities:
+        pairs.setdefault((identity["environment"], identity["seed"]), []).append(identity)
+    ordered = list(pairs.values())
+    if any(len(pair) != 2 or {row["reference_regime"] for row in pair} !=
+           {"reference_small", "reference_large"} for pair in ordered):
+        raise ValueError("sharding requires complete small/large parent pairs")
+    return [identity for pair_index, pair in enumerate(ordered)
+            if pair_index % shard_count == shard_index for identity in pair]
+
+
 def gpu_inventory():
     rows = subprocess.check_output(
         ["nvidia-smi", "--query-gpu=uuid,name,memory.total,memory.free",
@@ -60,27 +77,53 @@ def gpu_inventory():
             (tuple(part.strip() for part in row.split(",")) for row in rows)}
 
 
+def shard_status(results, identities):
+    """Summarize complete, resumable, and not-yet-started identities."""
+    from experiments.exp12.state import latest_state_dir
+
+    records = []
+    for identity in identities:
+        root = results / run_name(identity)
+        if (root / "analysis.json").is_file():
+            state = "complete"
+        elif latest_state_dir(root / "state") is not None:
+            state = "resumable"
+        else:
+            state = "not_started"
+        records.append({**identity, "status": state})
+    return records
+
+
 def run(args, identities, source_commit):
     if not identities:
         return 0
     inventory = gpu_inventory()
-    visible = os.environ["CUDA_VISIBLE_DEVICES"].split(",")
+    visible = os.environ.get("CUDA_VISIBLE_DEVICES", "").split(",")
+    if not visible or visible == [""]:
+        visible = [str(i) for i in range(len(inventory))]
     gpus = [gpu if gpu in inventory else list(inventory)[int(gpu)] for gpu in visible]
-    if len(set(gpus)) != 2 or any(
-        "A100" not in inventory[gpu][0] or not 38000 <= inventory[gpu][1] <= 45000
-        for gpu in gpus
-    ):
-        raise RuntimeError("expected two allocated A100 40 GB devices")
+    if len(set(gpus)) != args.gpu_count:
+        raise RuntimeError(f"expected {args.gpu_count} allocated GPUs, found {len(set(gpus))}")
+    for gpu in gpus:
+        name, memory = inventory[gpu][0], inventory[gpu][1]
+        if args.gpu_model == "A100" and ("A100" not in name or not 38000 <= memory <= 45000):
+            raise RuntimeError(f"expected an A100 40 GB, found {name} ({memory} MiB)")
+        if args.gpu_model == "L40" and ("L40" not in name or "L40S" in name
+                                         or not 44000 <= memory <= 50000):
+            raise RuntimeError(f"expected an L40 48 GB, found {name} ({memory} MiB)")
     active = {}
     log_start = {}
     pending = list(identities)
     ceilings = dict.fromkeys(gpus, args.workers_per_gpu)
     next_start = dict.fromkeys(gpus, 0)
     stopping = False
+    stop_reason = None
+    started = time.monotonic()
 
-    def stop(*_):
-        nonlocal stopping
+    def stop(*_, reason="signal"):
+        nonlocal stopping, stop_reason
         stopping = True
+        stop_reason = reason
 
     signal.signal(signal.SIGTERM, stop)
     signal.signal(signal.SIGUSR1, stop)
@@ -91,6 +134,10 @@ def run(args, identities, source_commit):
                OPENBLAS_NUM_THREADS="1", PYTHONUNBUFFERED="1")
     try:
         while (active or pending) and not stopping:
+            if args.max_wall_seconds and time.monotonic() - started >= args.max_wall_seconds:
+                stop(reason="runtime_limit")
+                print("Runtime slice reached; stopping dispatch and saving active workers", flush=True)
+                break
             for proc, (gpu, identity, log, root) in list(active.items()):
                 code = proc.poll()
                 if code is None:
@@ -166,7 +213,20 @@ def run(args, identities, source_commit):
                     proc.kill()
                     proc.wait()
             log.close()
-    return 75 if stopping else 0
+    records = shard_status(args.results, identities)
+    from utils.atomic_io import atomic_write_text
+    atomic_write_text(args.results / "slice_status.json", json.dumps({
+        "source_commit": source_commit,
+        "protocol": "exp2-heldout-v1" if args.heldout else "exp1-final-replay-v1",
+        "shard_index": args.shard_index,
+        "shard_count": args.shard_count,
+        "requested_runtime_seconds": args.max_wall_seconds,
+        "stop_reason": stop_reason,
+        "status": "complete" if all(row["status"] == "complete" for row in records)
+                  else "partial",
+        "runs": records,
+    }, indent=2))
+    return 0 if stop_reason == "runtime_limit" else (75 if stopping else 0)
 
 
 def run_name(identity):
@@ -190,7 +250,13 @@ def main():
     parser = argparse.ArgumentParser(__doc__)
     parser.add_argument("--manifest", type=Path, required=True)
     parser.add_argument("--results", type=Path, required=True)
-    parser.add_argument("--workers-per-gpu", type=int, choices=range(1, 7), default=6)
+    parser.add_argument("--workers-per-gpu", type=int, choices=range(1, 8), default=6)
+    parser.add_argument("--gpu-model", choices=("A100", "L40"), default="A100")
+    parser.add_argument("--gpu-count", type=int, default=2)
+    parser.add_argument("--max-wall-seconds", type=int, default=0,
+                        help="stop cleanly after this runtime; zero means no internal limit")
+    parser.add_argument("--shard-count", type=int, default=1)
+    parser.add_argument("--shard-index", type=int, default=0)
     parser.add_argument("--checkpoint-count", type=int, choices=(15, 20), default=15)
     parser.add_argument("--min-free-mib", type=int, default=11264)
     parser.add_argument("--preflight", action="store_true")
@@ -199,11 +265,13 @@ def main():
     parser.add_argument("--fresh", action="store_true", help="start a new pilot in an unused results directory")
     args = parser.parse_args()
     args.manifest, args.results = args.manifest.resolve(), args.results.resolve()
-    identities = identities_from_manifest(json.loads(args.manifest.read_text()))
-    for identity in identities:
+    all_identities = identities_from_manifest(json.loads(args.manifest.read_text()))
+    for identity in all_identities:
         admit_parent(args.manifest, identity)
+    identities = identities_for_shard(all_identities, args.shard_index, args.shard_count)
     if args.preflight:
-        print("Admitted 20 verified parents in ten matched pairs across four environments")
+        print(f"Admitted 20 parents in ten matched pairs; shard {args.shard_index + 1}/"
+              f"{args.shard_count} contains {len(identities)} runs")
         return 0
     source_commit = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
     if subprocess.check_output(["git", "status", "--porcelain", "--untracked-files=no"]).strip():
@@ -213,6 +281,8 @@ def main():
         marker_data = {"source_commit": source_commit, "manifest": str(args.manifest)}
         if args.heldout:
             marker_data["protocol"] = "exp2-heldout-v1"
+            if args.shard_count > 1:
+                marker_data.update(shard_count=args.shard_count, shard_index=args.shard_index)
         (args.results / ".fresh-pilot.json").write_text(json.dumps(marker_data, sort_keys=True))
     else:
         args.results.mkdir(parents=True, exist_ok=True)
@@ -222,6 +292,8 @@ def main():
         expected_marker = {"source_commit": source_commit, "manifest": str(args.manifest)}
         if args.heldout:
             expected_marker["protocol"] = "exp2-heldout-v1"
+            if args.shard_count > 1:
+                expected_marker.update(shard_count=args.shard_count, shard_index=args.shard_index)
         fresh_pilot = marker.is_file() and json.loads(marker.read_text()) == expected_marker
         if marker.exists() and not fresh_pilot:
             raise ValueError("fresh pilot marker does not match source and manifest")

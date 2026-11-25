@@ -40,3 +40,26 @@ bounded allocation slice; it does not guarantee that all 20 runs finish in
 that slice. To resume a stopped slice, resubmit the same script with the same
 manifest and results paths and mode `resume`. For the first slice, use mode
 `fresh` and a new results directory. Never use an old pilot output directory.
+
+## NRP L40 launch
+
+`infra/nrp/heldout_jobs.py` generates three separate Kubernetes Job JSON files.
+Each requests one L40, up to 7,050 seconds of work after the GPU pod starts,
+seven worker slots, 15 checkpoints, and the held-out protocol. The runner then
+uses up to 150 seconds to stop workers and save resumable checkpoints. No
+Kubernetes job deadline counts time spent waiting for a GPU. It splits the ten matched pairs as
+four, three, and three pairs (8, 6, and 6 parent-specific runs), so each
+small/large pair stays on one GPU. Each job has a distinct results subdirectory;
+the same shard path can be resumed by generating another Job with mode `resume`
+and a new batch ID.
+
+NRP details are not assumed by the generator. Before generating or applying
+jobs, verify the user's namespace, a registry image pinned by digest that
+contains this exact clean source and a working CUDA-enabled JAX install, the
+cluster's actual L40 node label, a W&B API Kubernetes Secret, resource quotas,
+and a shared PVC. The PVC must expose the verified parent manifest, its
+`verification.json`, and the parent directories at `/data/exp2/parents`; all
+three pods must be able to read those files and write their separate outputs.
+If any check fails, do not submit jobs. Submitting three jobs requests at most
+six L40 GPU-hours total; the two-hour run limit is per job and does not guarantee
+that all 20 runs finish.
