@@ -124,7 +124,7 @@ def run(args, identities, source_commit):
     signal.signal(signal.SIGTERM, stop)
     signal.signal(signal.SIGUSR1, stop)
     signal.signal(signal.SIGINT, stop)
-    env = dict(os.environ, JAX_PLATFORMS="cuda", MUJOCO_GL="egl",
+    env = dict(os.environ, JAX_PLATFORMS="cuda,cpu", MUJOCO_GL="egl",
                PYOPENGL_PLATFORM="egl", MUJOCO_EGL_DEVICE_ID="0",
                XLA_PYTHON_CLIENT_PREALLOCATE="false", OMP_NUM_THREADS="1",
                OPENBLAS_NUM_THREADS="1", PYTHONUNBUFFERED="1")
@@ -174,7 +174,11 @@ def run(args, identities, source_commit):
                     continue
                 identity = pending.pop(0)
                 root = args.results / run_name(identity)
-                root.mkdir(exist_ok=True)
+                if args.heldout:
+                    from experiments.exp12.replay_exp2_heldout import prepare_output
+                    prepare_output(root, identity, args.manifest, args.checkpoint_count)
+                else:
+                    root.mkdir(exist_ok=True)
                 log = (root / "process.log").open("ab")
                 log_start[root] = log.tell()
                 module = ("experiments.exp12.replay_exp2_heldout" if args.heldout
